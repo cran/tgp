@@ -1,0 +1,33 @@
+\begin{picture}(0,0)%
+\epsfig{file=tree.pstex}%
+\end{picture}%
+\setlength{\unitlength}{3947sp}%
+%
+\begingroup\makeatletter\ifx\SetFigFont\undefined%
+\gdef\SetFigFont#1#2#3#4#5{%
+  \reset@font\fontsize{#1}{#2pt}%
+  \fontfamily{#3}\fontseries{#4}\fontshape{#5}%
+  \selectfont}%
+\fi\endgroup%
+\begin{picture}(2236,2382)(2026,-4160)
+\put(2026,-3511){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\mb{X}[:,u_2] < s_2$}%
+}}}}
+\put(2211,-4138){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$D_1 = \{\mathbf{X}_1, \mathbf{Z}_1\}$}%
+}}}}
+\put(3336,-4138){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$D_2 = \{\mathbf{X}_2, \mathbf{Z}_2\}$}%
+}}}}
+\put(3898,-2970){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$D_3 = \{\mathbf{X}_3, \mathbf{Z}_3\}$}%
+}}}}
+\put(3518,-3511){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\mb{X}[:,u_2] \geq s_2$}%
+}}}}
+\put(4078,-2386){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\mb{X}[:,u_1] \geq s_1$}%
+}}}}
+\put(3547,-1838){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\{u_1, s_1\}$}%
+}}}}
+\put(2985,-2970){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\{u_2, s_2\}$}%
+}}}}
+\put(2176,-2015){\makebox(0,0)[lb]{\smash{{\SetFigFont{8}{9.6}{\rmdefault}{\mddefault}{\updefault}{$\mathcal{T}$: diagram}%
+}}}}
+\put(2626,-2386){\makebox(0,0)[lb]{\smash{{\SetFigFont{6}{7.2}{\rmdefault}{\mddefault}{\updefault}{$\mb{X}[:,u_1] < s_1$}%
+}}}}
+\end{picture}%

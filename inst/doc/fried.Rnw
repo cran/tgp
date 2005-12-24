@@ -1,0 +1,77 @@
+%\VignetteIndexEntry{example on Friedman data}
+%\VignetteKeywords{tgp}
+%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignettePackage{tgp}
+
+\subsection{Friedman data}
+\label{sec:fried}
+
+<<echo=false,results=hide>>=
+library(tgp)
+library(akima)
+library(maptree)
+options(width=70)
+@ 
+
+This Friedman data set is the first one of a suite that was used to
+illustrate MARS (Multivariate Adaptive Regression Splines)
+\cite{freid:1991}.  There are 10 covariates in the data ($\mb{x} =
+\{x_1,x_2,\dots,x_{10}\}$).  The function that describes the
+responses ($Z$), observed with standard Normal noise, has mean
+\begin{equation}
+E(Z|\mb{x}) = \mu = 10 \sin(\pi x_1 x_2) + 20(x_3 - 0.5)^2 + 10x_4 + 5 x_5,
+\label{eq:f1}
+\end{equation}
+but depends only on $\{x_1,\dots,x_5\}$, thus combining nonlinear, linear,
+and irrelevant effects.  Comparisons are made on this data to results
+provided for several other models in recent literature.  Chipman et
+al.~\cite{chip:geor:mccu:2002} used this data to compare
+their linear CART algorithm to four other methods of varying
+parameterization: linear regression, greedy tree, MARS, and neural
+networks.  The statistic they use for comparison is root mean-square
+error (RMSE)
+\begin{align*}
+\mbox{MSE} &= \textstyle \sum_{i=1}^n (\mu_i - \hat{z}_i)^2/n 
+& \mbox{RMSE} &= \sqrt{\mbox{MSE}}
+\end{align*}
+where $\hat{z}_i$ is the model-predicted response for input
+$\mb{x}_i$.  The $\mb{x}$'s are randomly distributed on the unit
+interval.
+
+Input data, responses, and predictive locations of size $N=200$ and
+$N'=1000$, respectively, can be obtained by a function included in the
+{\tt tgp} package.
+<<>>=
+f <- friedman.1.data(200)
+ff <- friedman.1.data(1000)
+X <- f[,1:10]; Z <- f$Y
+XX <- ff[,1:10]
+@ 
+This example compares Bayesian linear CART with Bayesian GP LLM (not
+treed), following the RMSE experiments of Chipman et al.  It
+helps to scale the responses so that they have a mean of zero and a
+range of one.  First, fit the Bayesian linear CART model, and obtain
+the RMSE.
+<<echo=TRUE,results=HIDE>>=
+fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2,10), m0r1=TRUE)
+fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
+fr.btlm.mse
+@ 
+Next, fit the GP LLM, and obtain its RMSE.
+<<echo=TRUE,results=HIDE>>=
+fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, m0r1=TRUE)
+fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
+fr.bgpllm.mse
+@ 
+So, the GP LLM is \Sexpr{signif(fr.btlm.mse/fr.bgpllm.mse,4)} times
+better than Bayesian linear CART on this data, in terms of RMSE (in
+terms of MSE the GP LLM is
+\Sexpr{signif(sqrt(fr.btlm.mse)/sqrt(fr.bgpllm.mse),4)} times better).
+Watching the evolution of the Markov chain for the GP LLM (via the
+progress statements written to {\tt stdout}, not shown because the
+would fit on the page), it is easy to see how the GP LLM quickly
+learns that $\mb{b} = (1,1,1,0,0,0,0,0,0,0)$, and that $\beta_4
+\approx 4$ and $\beta_5 \approx 10$---basically that only the first
+three inputs contribute nonlinearly, the fourth and fifth contribute
+linearly, and the remaining five not at all
+\cite{gramacy:thesis:2005}.

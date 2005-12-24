@@ -1,0 +1,38 @@
+This is a pre-release BETA version of the tgp R package.  It has been tested on
+Linux, FreeBSD, and OSX.  Installation from source under OSX-Tiger (10.4.x) is
+challenging (see http://wiki.urbanek.info/index.cgi?TigeR).  A pre-compiled
+binary is available upon request.
+
+SUPPORT FOR ATLAS
+
+ATLAS is supported as an alternative to standard BLAS and LAPACK for fast,
+automatically tuned, linear algebra routines.  There are three easy steps to
+enable ATLAS support (assuming, of course, you have already installed it --
+http://math-atlas.sourceforge.net) which need to be done before you install
+the package from source:
+
+-- Begin ATLAS Instructions
+
+1.: Edit src/Makevars.  Comment out the existing PKG_LIBS line, and replace it
+with:
+	
+PGK_LIBS = -L/path/to/ATLAS/lib -llapack -lcblas -latlas
+
+you may need replace "-llapack -lcblas -latlas" with whatever ATLAS recommends
+for your OS.  (see ATLAS README.) For example, if your ATLAS compilation
+included F77 support, you would might need to add "-lF77blas", of if you
+compiled with pthreads, you would might use "-llapack -lptcblas -lptf77blas
+-latlas".
+
+2.: Continue editing src/Makevars.  Add:
+
+PKF_CFLAGS = -I/path/to/ATLAS/include
+
+3.: Edit src/linalg.h and commend out lines 40 & 41:
+
+/*#define FORTPACK
+#define FORTBLAS*/
+
+--- End ATLAS Instructions --
+
+Reverse the above instructions to disable ATLAS. Don't forget to re-install.
