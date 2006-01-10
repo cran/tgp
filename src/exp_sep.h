@@ -48,19 +48,19 @@ class ExpSep : public Corr
 	virtual void Update(unsigned int n1, double **X);
 	virtual void Update(unsigned int n1, double **K, double **X);
 	virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, unsigned short *state);
-	virtual void Combine(Corr *c1, Corr *c2, unsigned short *state);
-	virtual void Split(Corr *c1, Corr *c2, unsigned short *state);
+		double *lambda, double **bmu, double **Vb, double tau2, void *state);
+	virtual void Combine(Corr *c1, Corr *c2, void *state);
+	virtual void Split(Corr *c1, Corr *c2, void *state);
 	virtual char* State(void);
-	virtual void priorDraws(Corr **corr, unsigned int howmany, unsigned short *state);
+	virtual void priorDraws(Corr **corr, unsigned int howmany, void *state);
 	virtual double log_Prior(void);
 	virtual unsigned int sum_b(void);
 	virtual void ToggleLinear(void);
-	void get_delta_d(ExpSep* c1, ExpSep* c2, unsigned short *state);
-	void propose_new_d(ExpSep* c1, ExpSep* c2, unsigned short *state);
+	void get_delta_d(ExpSep* c1, ExpSep* c2, void *state);
+	void propose_new_d(ExpSep* c1, ExpSep* c2, void *state);
 	bool propose_new_d(double* d_new, int * b_new, double *pb_new, 
-		double *q_fwd, double *q_bak, unsigned short *state);
-	void draw_d_from_prior(double *d_new, unsigned short *state);
+		double *q_fwd, double *q_bak, void *state);
+	void draw_d_from_prior(double *d_new, void *state);
 };
 
 #endif

@@ -10,8 +10,9 @@
   and slicing.
 }
 \usage{
-plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL, 
-	main = NULL, xlab = NULL, ylab = NULL, zlab = NULL, pc = "pc", ...)
+plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL,
+        map = NULL, main = NULL, xlab = NULL, ylab = NULL,
+        zlab = NULL, pc = "pc", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -57,7 +58,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }
 
-\note{ 2-d plotting requires that the \code{akima} library is installed. 
+\note{ 2-d plotting requires that the \pkg{akima} library is installed. 
 	This plotting function is provided with the intention that it 
 	will be used as an aid in the visualization of \code{"tgp"} class
 	objects.  Users are encouraged to use the source code for 
@@ -75,7 +76,8 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 }
 
 \seealso{ \code{\link[base]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
-	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp.trees}}}
+	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
+	\code{\link{tgp.trees}}, \code{vignette("tgp")}}
 
 \keyword{ hplot }
 \keyword{ tree }

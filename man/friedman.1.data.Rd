@@ -19,8 +19,9 @@ friedman.1.data(n = 100)
 }
 \details{
    10-dim inputs \code{X} are drawn from N(0,1), and responses
-   are N(m(X),1) where \code{m(X) = E(X) = 10*sin(pi*X[,1]*X[,2]) 
-   + 20*(X[,3]-0.5)^2 + 10*X[,4] + 5*X[,5]}
+   are N(m(X),1) where \code{m(X) = E[X]} and
+   \deqn{E[X] = 10\sin(\pi x_1 x_2) + 20(x_3-0.5)^2 + 10x_4 +
+     5x_5}{E[X] = 10*sin(pi*X[,1]*X[,2]) + 20*(X[,3]-0.5)^2 + 10*X[,4] + 5*X[,5]}
 }
 \value{
   Output is a \code{data.frame} with columns
@@ -38,7 +39,6 @@ Friedman, J. H. (1991).
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}

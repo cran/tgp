@@ -168,7 +168,7 @@ void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, doubl
  */
 
 int Exp::Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, unsigned short *state)
+		double *lambda, double **bmu, double **Vb, double tau2, void *state)
 {
 	int success = 0;
 	bool lin_new;
@@ -232,7 +232,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
  * and choose one for "this" correlation function
  */
 
-void Exp::Combine(Corr *c1, Corr *c2, unsigned short *state)
+void Exp::Combine(Corr *c1, Corr *c2, void *state)
 {
 	get_delta_d((Exp*)c1, (Exp*)c2, state);
 	CombineNug(c1, c2, state);
@@ -247,7 +247,7 @@ void Exp::Combine(Corr *c1, Corr *c2, unsigned short *state)
  * for two (new) correlation functions
  */
 
-void Exp::Split(Corr *c1, Corr *c2, unsigned short *state)
+void Exp::Split(Corr *c1, Corr *c2, void *state)
 {
 	propose_new_d((Exp*) c1, (Exp*) c2, state);
 	SplitNug(c1, c2, state);
@@ -260,7 +260,7 @@ void Exp::Split(Corr *c1, Corr *c2, unsigned short *state)
  * compute d from two ds (used in prune)
  */
 
-void Exp::get_delta_d(Exp* c1, Exp* c2, unsigned short *state)
+void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
 {
 	double dch[2];
 	int ii[2];
@@ -279,7 +279,7 @@ void Exp::get_delta_d(Exp* c1, Exp* c2, unsigned short *state)
  * new children partitions. 
  */
 
-void Exp::propose_new_d(Exp* c1, Exp* c2, unsigned short *state)
+void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
 {
 	int i[2];
 	double dnew[2];
@@ -332,7 +332,7 @@ char* Exp::State(void)
  * contained in the params module
  */
 
-void Exp::priorDraws(Corr **corr, unsigned int howmany, unsigned short *state)
+void Exp::priorDraws(Corr **corr, unsigned int howmany, void *state)
 {
 	if(!(*fix)) {
 		double *d = new_vector(howmany);

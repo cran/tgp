@@ -10,6 +10,7 @@
 
 \value{
   Output is a \code{list} with entries:
+
     \item{\code{X}}{2-d \code{data.frame} with 80 input locations}
     \item{\code{Z}}{Numeric vector describing the responses at the \code{X} locations}
     \item{\code{XX}}{2-d \code{data.frame} with the remaining 361 input locations}
@@ -31,7 +32,6 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }

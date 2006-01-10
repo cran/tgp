@@ -51,6 +51,54 @@ void myprintf(FILE *outfile, char *str, ...)
 }
 
 
+/*
+ * error:
+ *
+ * printf style function that reports errors to stderr
+ */
+
+void error(char *str, ...)
+{
+  va_list argp;
+  va_start(argp, str);
+  
+  myprintf(stderr, "ERROR: ");
+
+  #ifdef RPRINT
+  REvprintf(str, argp);
+  #else
+  vfprintf(stderr, str, argp);
+  #endif
+
+  va_end(argp);
+  myflush(stderr);
+}
+
+
+/*
+ * warning:
+ *
+ * printf style function that reports warningss to stderr
+ */
+
+void warning(char *str, ...)
+{
+  va_list argp;
+  va_start(argp, str);
+  
+  myprintf(stderr, "WARNING: ");
+
+  #ifdef RPRINT
+  REvprintf(str, argp);
+  #else
+  vfprintf(stderr, str, argp);
+  #endif
+
+  va_end(argp);
+  myflush(stderr);
+}
+
+
 /* 
  * myflush:
  *

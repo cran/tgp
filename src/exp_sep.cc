@@ -163,7 +163,7 @@ void ExpSep::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
  */
 
 bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new, 
-		double *q_fwd, double *q_bak, unsigned short *state)
+		double *q_fwd, double *q_bak, void *state)
 {
 	*q_bak = *q_fwd = 1.0;
 
@@ -236,7 +236,7 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
  */
 
 int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, unsigned short *state)
+		double *lambda, double **bmu, double **Vb, double tau2, void *state)
 {
 	int success = 0;
 	bool lin_new;
@@ -319,7 +319,7 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
  * and choose one for "this" correlation function
  */
 
-void ExpSep::Combine(Corr *c1, Corr *c2, unsigned short *state)
+void ExpSep::Combine(Corr *c1, Corr *c2, void *state)
 {
 	get_delta_d((ExpSep*)c1, (ExpSep*)c2, state);
 	CombineNug(c1, c2, state);
@@ -334,7 +334,7 @@ void ExpSep::Combine(Corr *c1, Corr *c2, unsigned short *state)
  * for two (new) correlation functions
  */
 
-void ExpSep::Split(Corr *c1, Corr *c2, unsigned short *state)
+void ExpSep::Split(Corr *c1, Corr *c2, void *state)
 {
 	propose_new_d((ExpSep*) c1, (ExpSep*) c2, state);
 	SplitNug(c1, c2, state);
@@ -347,7 +347,7 @@ void ExpSep::Split(Corr *c1, Corr *c2, unsigned short *state)
  * compute d from two ds * (used in prune)
  */
 
-void ExpSep::get_delta_d(ExpSep* c1, ExpSep* c2, unsigned short *state)
+void ExpSep::get_delta_d(ExpSep* c1, ExpSep* c2, void *state)
 {
 	double **dch = (double**) malloc(sizeof(double*) * 2);
 	int ii[2];
@@ -368,7 +368,7 @@ void ExpSep::get_delta_d(ExpSep* c1, ExpSep* c2, unsigned short *state)
  * new children partitions. 
  */
 
-void ExpSep::propose_new_d(ExpSep* c1, ExpSep* c2, unsigned short *state)
+void ExpSep::propose_new_d(ExpSep* c1, ExpSep* c2, void *state)
 {
 	int i[2];
 	double **dnew = new_matrix(2, col-1);
@@ -397,7 +397,7 @@ void ExpSep::propose_new_d(ExpSep* c1, ExpSep* c2, unsigned short *state)
  * the prior distribution
  */
 
-void ExpSep::draw_d_from_prior(double *d_new, unsigned short *state)
+void ExpSep::draw_d_from_prior(double *d_new, void *state)
 {
 	if(gamlin[0] == -1.0) dupv(d_new, d, col-1);
 	else for(unsigned int j=0; j<col-1; j++) 
@@ -449,7 +449,7 @@ char* ExpSep::State(void)
  * contained in the params module
  */
 
-void ExpSep::priorDraws(Corr **corr, unsigned int howmany, unsigned short *state)
+void ExpSep::priorDraws(Corr **corr, unsigned int howmany, void *state)
 {
 	if(!(*fix)) {
 		double *d = new_vector(howmany);

@@ -111,7 +111,7 @@ List::List(void)
 List::~List(void)
 {
 	curr = first;
-	if(curr) myprintf(stderr, "WARNING: nonempty list deleted\n");
+	if(curr) warning("nonempty list deleted\n");
 	while(curr) {
 		LNode* temp = curr;
 		curr = curr->next;

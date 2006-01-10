@@ -101,7 +101,7 @@ class Tree
   private: /* functions */
 
 	/* auxiliaty swap functions */
-	bool rotate(unsigned short *state);
+	bool rotate(void *state);
 	void rotate_right(void);
 	void rotate_left(void);
 	double pT_rotate(Tree* low, Tree* high);
@@ -116,12 +116,12 @@ class Tree
 	void val_order_probs(double **Xo, double **probs,
 		unsigned int var, double **rX, unsigned int rn);
 	double split_prob(void);
-	double propose_split(double *p, unsigned short *state);
-	double propose_val(unsigned short *state);
+	double propose_split(double *p, void *state);
+	double propose_val(void *state);
 
 	/* tau2 grow and prune proposals */
-	void split_tau2(double *tau2_new, unsigned short *state);
-	double combine_tau2(unsigned short *state);
+	void split_tau2(double *tau2_new, void *state);
+	double combine_tau2(void *state);
 
 	/* create lists of tree nodes, 
 	 * and traverse them from first to next ... to last */
@@ -137,7 +137,7 @@ class Tree
 	bool grow_children(void);
 	bool try_revert(bool success, Tree* oldLC, Tree* oldRC, 
 		int old_var, double old_val);
-	bool match(Tree* oldT, unsigned short *state);
+	bool match(Tree* oldT, void *state);
 
 	/* compute lost of the posterior
 	 * (likelihood + plus some prior stuff) 
@@ -160,16 +160,16 @@ class Tree
 
 	/* things that model (module) will initiate 
 	 * on ONLY leaf nodes */
-	bool Draw(unsigned short *state);
+	bool Draw(void *state);
 	void compute_marginal_params(void);
 	void predict(double *ZZ, double *Zpred, double **Ds2xy, double *ego, double **T, 
-			bool err, unsigned short *state);
+			bool err, void *state);
 
 	/* propose tree operations */
-	bool grow(double ratio, unsigned short *state);
-	bool prune(double ratio, unsigned short *state);
-	bool change(unsigned short *state);
-	bool swap(unsigned short *state);
+	bool grow(double ratio, void *state);
+	bool prune(double ratio, void *state);
+	bool change(void *state);
+	bool swap(void *state);
 	void cut_branch(void);
 	void new_data(double **X_new, unsigned int n_new, unsigned int d_new, 
 		double *Z_new, int *p_new);
@@ -220,7 +220,7 @@ class Tree
 	/* seperating prediction from estimation */
 	void add_XX(double **X_pred, unsigned int n_pred, unsigned int d_new);
 	void new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned int d_new);
-	unsigned int* dopt_from_XX(unsigned int N, unsigned short *state);
+	unsigned int* dopt_from_XX(unsigned int N, void *state);
 
 	/* computing the full posterior of the tree */
 	double FullPosterior(double alpha, double beta);

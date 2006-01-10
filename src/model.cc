@@ -54,7 +54,7 @@ FILE *BETAFILE = NULL;
  */
 
 Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double *Z, 
-		double** rect, int Id, unsigned short *state_to_init_consumer)
+		double** rect, int Id, void *state_to_init_consumer)
 {
 	this->params = new Params(params);
 	col = d+1;
@@ -103,12 +103,8 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
 	/* parallel prediction implementation ? */
 	#ifdef PARALLEL 
 	parallel = true;
-	#ifdef RRAND
-	if(NUMTHREADS > 1) {
-	  myprintf(stderr, "ERROR: using thread unsafe unif_rand() with pthreads\n");
-	  exit(0);
-	}
-        #endif
+	if(RNG == CRAN && NUMTHREADS > 1)
+	  warning("using thread unsafe unif_rand() with pthreads\n");
 	#else
 	parallel = false;
 	#endif
@@ -189,7 +185,7 @@ Model::~Model(void)
  * must be pre-allocated.
  */
 
-void Model::rounds(Preds *preds, unsigned int B, unsigned int T, unsigned short *state)
+void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
 {
 	/* check for well-allocated preds module */
 	if(T>B) { assert(preds); assert((T-B) / preds->R == preds->mult); }
@@ -280,7 +276,7 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, unsigned short 
  * Also prints the state based on round r
  */
 
-void Model::hierarchical_draws(Tree** leaves, unsigned int numLeaves, int r, unsigned short *state)
+void Model::hierarchical_draws(Tree** leaves, unsigned int numLeaves, int r, void *state)
 {
 	double **b, **bmle, *s2, *tau2;
 	Corr **corr;
@@ -360,7 +356,7 @@ void Model::deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **
  */
 
 void Model::update_hierarchical_priors(double *s2, double *tau2, Corr **corr, 
-		unsigned int numLeaves, unsigned short *state)
+		unsigned int numLeaves, void *state)
 {
 	if(!params->fix_tau2 && params->BetaPrior() != BFLAT && params->BetaPrior() != BCART) 
 		sigma2_prior_draw(tau2_a0,tau2_g0,tau2,numLeaves,*tau2_a0_l,*tau2_g0_l,state);
@@ -379,7 +375,7 @@ void Model::update_hierarchical_priors(double *s2, double *tau2, Corr **corr,
  * indication of how many predictions it wants.
  */
 
-void Model::predict_master(Tree *leaf, Preds *preds, int index, unsigned short* state)
+void Model::predict_master(Tree *leaf, Preds *preds, int index, void* state)
 {
 	if(index < 0) return;
 	if(index % preds->mult != 0) return;
@@ -400,7 +396,7 @@ void Model::predict_master(Tree *leaf, Preds *preds, int index, unsigned short* 
  */
 
 void Model::predict(Tree* leaf, double **T, Preds* preds, unsigned int index, 
-		bool dnorm, unsigned short *state)
+		bool dnorm, void *state)
 {
 	double ** ZZ = preds->ZZ; 
 	double ** Zp = preds->Zp; 
@@ -420,7 +416,7 @@ void Model::predict(Tree* leaf, double **T, Preds* preds, unsigned int index,
  * chosen randomly 
  */
 
-bool Model::modify_tree(unsigned short *state)
+bool Model::modify_tree(void *state)
 {
 	/* since we may modify the tree we need to 
 	 * update the marginal parameters now! */
@@ -459,7 +455,7 @@ bool Model::modify_tree(unsigned short *state)
  * moved.
  */
 
-bool Model::swap_tree(unsigned short *state)
+bool Model::swap_tree(void *state)
 {
 	unsigned int len;
 	Tree** nodes = t->swapableList(&len);	
@@ -481,7 +477,7 @@ bool Model::swap_tree(unsigned short *state)
  * moved.
  */
 
-bool Model::change_tree(unsigned short *state)
+bool Model::change_tree(void *state)
 {
 	unsigned int len;
 	Tree** nodes = t->internalsList(&len);	
@@ -502,7 +498,7 @@ bool Model::change_tree(unsigned short *state)
  * Choose which part of the tree to attempt to prune
  */
 
-bool Model::prune_tree(unsigned short *state)
+bool Model::prune_tree(void *state)
 {
 	unsigned int len;
 	Tree** nodes = t->prunableList(&len);
@@ -532,7 +528,7 @@ bool Model::prune_tree(unsigned short *state)
  * Choose which part of the tree to attempt to grow on
  */
 
-bool Model::grow_tree(unsigned short *state)
+bool Model::grow_tree(void *state)
 {
 	if(*t_alpha == 0 || *t_beta == 0) return false;
 	
@@ -565,7 +561,7 @@ bool Model::grow_tree(unsigned short *state)
  * are cut (removed) from the tree
  */
 
-void Model::cut_branch(unsigned short *state)
+void Model::cut_branch(void *state)
 {
 	unsigned int len;
 	Tree** nodes = t->internalsList(&len);	
@@ -956,7 +952,8 @@ void Model::close_parallel_preds(void)
 	for(unsigned int i=0; i<NUMTHREADS; i++) free(consumer[i]);
 	free(consumer);
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -984,7 +981,8 @@ void Model::init_parallel_preds(void)
 		consumer[i] = (pthread_t*) malloc(sizeof(pthread_t));
 	num_consumed = num_produced = 0;
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1008,7 +1006,8 @@ void Model::predict_producer(Tree *leaf, double **T, Preds *preds, int index, bo
 	num_produced++;
 	PP->EnQueue((void*) largs);
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1034,7 +1033,8 @@ void Model::produce(void)
 	pthread_mutex_unlock(l_mut);
 	pthread_cond_signal(l_cond_nonempty);
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1053,11 +1053,10 @@ void Model::predict_consumer(void)
 	unsigned int nc = 0;
 
 	/* each consumer needs its on random state variable dor erand48 */
-	unsigned short state[3];
-	state[0] = (unsigned short)(100*runi(this->state_to_init_consumer));
-	state[1] = (unsigned short)(100*runi(this->state_to_init_consumer));
-	state[2] = (unsigned short)(100*runi(this->state_to_init_consumer));
-
+	void *state = newRNGstate(10000000*runi(this->state_to_init_consumer) +
+				  10000*runi(this->state_to_init_consumer) +
+				  100*runi(this->state_to_init_consumer));
+	
 	while(1) {
 
 		pthread_mutex_lock (l_mut);
@@ -1100,8 +1099,13 @@ void Model::predict_consumer(void)
 		delete LL;
 		if(entry == NULL) return;
 	}
+
+	/* free up ior put back RNG state */
+	deleteRNGstate(state);	
+
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1141,7 +1145,8 @@ void Model::consumer_finish(void)
 		pthread_join(*consumer[i], NULL);
 	}
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1161,7 +1166,8 @@ void Model::consumer_start(void)
 		assert(success == 0);
 	}
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
+	exit(0);
 	#endif
 }
 
@@ -1194,7 +1200,7 @@ void Model::wrap_up_predictions(void)
 	pthread_mutex_unlock(l_mut);
 	num_consumed = num_produced = 0;
 	#else
-	myprintf(stderr, "ERROR: not compiled for pthreads\n");
+	error("not compiled for pthreads\n");
 	#endif
 }
 
@@ -1302,7 +1308,7 @@ void Model::PrintPartitions(FILE* PARTSFILE)
  */
 
 void Model::predict_xx(Tree* ll, double **T, Preds* preds, int index, 
-		bool dnorm, unsigned short *state)
+		bool dnorm, void *state)
 {
 	//Tree* leaf = new Tree(ll, false);
 	Tree* leaf = ll;
@@ -1490,8 +1496,6 @@ void register_posterior(Posteriors* posteriors, Tree* t, double post)
 
 void Model::printPosteriors(void)
 {
-	system("rm -rf tree_*.out");
-
 	char filestr[MEDBUFF];
 	sprintf(filestr, "tree_m%d_posts.out", Id);
 	FILE *postsfile = fopen(filestr, "w");
@@ -1718,7 +1722,7 @@ void Model::print_linarea(void)
  * determines that the original gamlin[0] was 0
  */
 
-void Model::Linburn(unsigned int B, unsigned short *state)
+void Model::Linburn(unsigned int B, void *state)
 {
 	double gam = Linear();
 	if(gam) {
@@ -1735,7 +1739,7 @@ void Model::Linburn(unsigned int B, unsigned short *state)
  * B rounds of burning (with NULL preds)
  */
 
-void Model::Burnin(unsigned int B, unsigned short *state)
+void Model::Burnin(unsigned int B, void *state)
 {
 	myprintf(OUTFILE, "\nburn in:\n");
 	rounds(NULL, B, B, state);
@@ -1749,7 +1753,7 @@ void Model::Burnin(unsigned int B, unsigned short *state)
  * provided by the preds variable.
  */
 
-void Model::Sample(Preds *preds, unsigned int R, unsigned short *state)
+void Model::Sample(Preds *preds, unsigned int R, void *state)
 {
 	myprintf(OUTFILE, "\nObtaining samples (nn=%d predictive locations):\n", preds->nn);
 	myflush(OUTFILE);

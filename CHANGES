@@ -1,0 +1,14 @@
+Changes in 1.0-1:
+
+1. Wrote generic random deviate function which can use
+unif_rand(), randomkit, and erand48.
+
+2. Fixed up some documentation bugs and typos.
+
+3. system command in model.cc no longer calls "rm" which
+doesn't work on Windows.
+
+Changes in 1.0-1:
+
+1. No longer using erand48; using unif_rand() from R for
+Windows compatibility.

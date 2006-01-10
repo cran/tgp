@@ -52,12 +52,10 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
 \emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
 submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-16}
 
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }
@@ -80,7 +78,7 @@ This function is still considered experimental.
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}}, \code{\link{plot.tgp}}, 
-	\code{\link{dopt.gp}} \code{\link{tgp.get.partitions}}}
+	\code{\link{dopt.gp}} \code{\link{tgp.get.partitions}}, \code{vignette("tgp")}}
 
 \examples{
 #

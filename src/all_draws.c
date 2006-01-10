@@ -292,7 +292,7 @@ unsigned int col;
 double *b, *bmu; 
 double **Vb;
 double s2;
-unsigned short *state;
+void *state;
 {
 	unsigned int i,j;
 	/*double V[col][col];*/
@@ -334,7 +334,7 @@ double *Z, *b0, *b;
 double **F, **Ti;
 double s2, tau2;
 double nug;
-unsigned short *state;
+void *state;
 {
          unsigned int i,j;
          /*double Vb[col][col];
@@ -380,7 +380,7 @@ unsigned int n, col;
 double *Z, *b0; 
 double **F, **Ti;
 double alpha0, beta0, tau2;
-unsigned short *state;
+void *state;
 {
          double **Vb;
          double *b;
@@ -414,7 +414,7 @@ unsigned short *state;
 double sigma2_draw_no_b_margin(n, col, lambda, alpha0, beta0, state)
 unsigned int n, col;
 double alpha0, beta0, lambda;
-unsigned short *state;
+void *state;
 {
 	double alpha, g, x;
 
@@ -451,7 +451,7 @@ unsigned int col;
 double *b, *b0;
 double **Ti;
 double alpha0, beta0, s2;
-unsigned short *state;
+void *state;
 {
          /*double bmb0[col], Tibmb0[col];*/
          double *bmb0, *Tibmb0;
@@ -519,7 +519,7 @@ double alpha[2], beta[2];
 
 double d_prior_rand(alpha, beta, state)
 double alpha[2], beta[2];
-unsigned short *state;
+void *state;
 {
 	return gamma_mixture_rand(alpha, beta, state);
 }
@@ -534,7 +534,7 @@ unsigned short *state;
 int linear_rand(d, n, gamlin, state)
 unsigned int n;
 double *d, *gamlin;
-unsigned short *state;
+void *state;
 {
 	double p;
 	if(gamlin[0] == 0) return 0;
@@ -558,7 +558,7 @@ int linear_rand_sep(b, pb, d, n, gamlin, state)
 unsigned int n;
 double *d, *gamlin, *pb;
 int *b;
-unsigned short *state;
+void *state;
 {
 	int bb;
 	unsigned int i;
@@ -641,7 +641,7 @@ int *p;
 double *d, *dold;
 double **alpha, **beta;
 double *q_fwd, *q_bak;
-unsigned short *state;
+void *state;
 {
 	unsigned int i;
 	double qf, qb;
@@ -674,7 +674,7 @@ double alpha[2], beta[2];
 
 double nug_prior_rand(alpha, beta, state)
 double alpha[2], beta[2];
-unsigned short *state;
+void *state;
 {
 	return gamma_mixture_rand(alpha, beta, state) + NUGMIN;
 }
@@ -689,20 +689,20 @@ unsigned short *state;
 
 double gamma_mixture_rand(alpha, beta, state)
 double alpha[2], beta[2];
-unsigned short *state;
+void *state;
 {
 	double draw;
 	if(runi(state)<0.5) {
 		gamma_mult_gelman(&draw, alpha[0], beta[0], 1, state);
 		if(draw == 0) {
 			draw = alpha[0]/(beta[0]*beta[0]);
-			myprintf(stderr, "WARNING: bad Gamma draw, using mean\n");
+			warning("bad Gamma draw, using mean\n");
 		}
 	} else {
 		gamma_mult_gelman(&draw, alpha[1], beta[1], 1, state);
 		if(draw == 0) {
 			draw = alpha[1]/(beta[1]*beta[1]);
-			myprintf(stderr, "WARNING: bad Gamma draw, using mean\n");
+			warning("bad Gamma draw, using mean\n");
 		}
 	}
 	assert(draw > 0); /* && draw > 2e-20); */
@@ -724,7 +724,7 @@ unsigned short *state;
 double unif_propose_pos(last, q_fwd, q_bak, state)
 double last;
 double *q_fwd, *q_bak;
-unsigned short *state;
+void *state;
 {
 	double left, right, ret;
 
@@ -743,7 +743,7 @@ unsigned short *state;
 	assert(*q_bak > 0);
 
 	if(ret > 10e10) {
-		myprintf(stderr, "WARNING: unif_propose_pos (%g) is bigger than max.\n", ret);
+	  warning("unif_propose_pos (%g) is bigger than max.\n", ret);
 		ret = 10;
 	}
 	assert(ret > 0);
@@ -760,7 +760,7 @@ unsigned short *state;
 double nug_draw(last, q_fwd, q_bak, state)
 double last;
 double *q_fwd, *q_bak;
-unsigned short *state;
+void *state;
 {
 	return unif_propose_pos(last-NUGMIN, q_fwd, q_bak, state) + NUGMIN;
 }
@@ -813,7 +813,7 @@ void sigma2_prior_draw(a0, g0, s2, n, a0_lambda, g0_lambda, state)
 unsigned int n;
 double a0_lambda, g0_lambda;
 double *a0, *g0, *s2;
-unsigned short *state;
+void *state;
 {
 	double q_fwd, q_bak, a, log_p, lp;
 	double a0_new, g0_new;
@@ -861,7 +861,7 @@ void mixture_priors_draw(alpha, beta, d, n, alpha_lambda, beta_lambda, state)
 unsigned int n;
 double alpha[2], beta[2], alpha_lambda[2], beta_lambda[2]; 
 double *d;
-unsigned short *state;
+void *state;
 {
 	double q_fwd, q_bak, a;
 	double alpha_new[2], beta_new[2];
@@ -919,7 +919,7 @@ double d_alpha[2], d_beta[2];
 double qRatio;
 double d, dlast, nug, a0, g0, lambda, tau2, log_det_K;
 double *lambda_new, *bmu_new, *log_det_K_new;
-unsigned short *state;
+void *state;
 {
 	double pd, pdlast, alpha;
 	unsigned int m = 0;
@@ -980,7 +980,7 @@ double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *d, *log_det_K_new;
 double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log;
 double *lambda_new, *bmu_new;
-unsigned short *state;
+void *state;
 {
 	double pd, pdlast, alpha;
 	unsigned int m = 0;
@@ -1033,7 +1033,7 @@ double *b0, *Z, *log_det_K_new;
 double nug_alpha[2], nug_beta[2];
 double nuglast, a0, g0, lambda, tau2, log_det_K;
 double *lambda_new, *bmu_new;
-unsigned short *state;
+void *state;
 {
 	double q_fwd, q_bak, nug, pnug, pnuglast, alpha;
 	unsigned int i;
@@ -1086,7 +1086,7 @@ void Ti_draw(Ti, col, ch, b, bmle, b0, rho, V, s2, tau2, state)
 unsigned int col, ch, rho;
 double *b0, *s2, *tau2;
 double **b, **V, **Ti, **bmle;
-unsigned short *state;
+void *state;
 {
 	double **sbb0, **S;
 	double *bmb0;
@@ -1133,7 +1133,7 @@ void b0_draw(b0, col, ch, b, s2, Ti, tau2, mu, Ci, state)
 unsigned int col, ch;
 double *b0, *s2, *mu, *tau2;
 double **b, **Ti, **Ci;
-unsigned short *state;
+void *state;
 {
 	int i, info;
 	double s2i_sum, s2i;
