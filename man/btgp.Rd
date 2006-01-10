@@ -47,15 +47,21 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   	leading dimension (rows) of \code{X}, i.e., \code{length(Z) == dim(X)[1]}}
   \item{XX}{ Optional \code{data.frame}, \code{matrix},  or vector of predictive input locations 
   	with the same number of columns as \code{X}, i.e., \code{dim(XX)[2] == dim(X)[2]}}
-  \item{bprior}{Linear (beta) prior, default is "bflat"; alternates include "b0" hierarchical
-   	Normal prior, "bmle" empirical Bayes Normal prior, "bcart" Bayesian linear CART
+  \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
+    alternates include \code{"b0"} hierarchical Normal prior,
+    \code{"bmle"} empirical Bayes Normal prior, \code{"bcart"}
+    Bayesian linear CART
 	style prior from Chipman et al, "b0tau" a independent Normal prior with inverse-gamma variance.}
   \item{tree}{ 3-vector of tree process prior parameterization \code{c(alpha, beta, minpart)} specifying
-  	\code{ p(split leaf of depth eta) = alpha*(1+eta)^beta }, giving zero probability to trees
+  	\deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
+	  \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
+	giving zero probability to trees
 	with partitions containing less than \code{minpart} data points.}
   \item{gamma}{Limiting linear model parameters \code{c(g, t1, t2)}, with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
-	\code{t1 + t2 <= 1} specifies \code{p(b|d) = t1 + exp[-g*(t2-t1)/(d-0.5)]}}
+	\code{t1 + t2 <= 1} specifies
+	\deqn{p(b|d)=t_1 +
+	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family ("exp") or the separable power exponential 
 	family ("expsep", default) }
@@ -143,7 +149,7 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 
   \item{parts}{Internal representation of the regions depicted by partitions of
   	the maximum a' posteriori (MAP) tree}
-  \item{trees}{\code{list} of trees (\code{maptree} representation) which were MAP as a function
+  \item{trees}{\code{list} of trees (\pkg{maptree} representation) which were MAP as a function
   	of each tree height sampled between MCMC rounds \code{B} and \code{T}}
 }
 
@@ -155,12 +161,10 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
 \emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
 submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-16}
 
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
@@ -188,7 +192,8 @@ Once the C code starts executing, there will be no way to kill the process witho
 killing R.  This will be changed in future versions
 }
 
-\seealso{ \code{\link{tgp}}, \code{\link{plot.tgp}}, \code{\link{tgp.trees}}}
+\seealso{ \code{\link{tgp}}, \code{\link{plot.tgp}},
+  \code{\link{tgp.trees}}, \code{vignette("tgp")}}
 
 \examples{
 ##

@@ -66,7 +66,7 @@ Params::Params(unsigned int dim)
 			for(unsigned int i=0; i<d_dim; i++) d[i] = 0.5;
 			break;
 		default: 
-			myprintf(stderr, "ERROR: corr model not implemented\n"); exit(0);
+		  error("corr model not implemented\n"); exit(0);
 	}
 	d_alpha = new_zero_matrix(d_dim, 2);
 	d_beta = new_zero_matrix(d_dim, 2);
@@ -157,9 +157,7 @@ void Params::read_double(double * dparams)
 		case 1: corr_model = EXPSEP;
 			myprintf(stdout, "correlation: separable power exponential\n");
 			break;
-		default: 
-			myprintf(stdout, "ERROR: bad corr model %d\n", (int)dparams[0]);
-			break;
+		default: error("bad corr model %d\n", (int)dparams[0]); exit(0);
 	}
 
 	/* read the beta linear prior model */
@@ -180,9 +178,7 @@ void Params::read_double(double * dparams)
 			myprintf(stdout, "linear prior: b0 flat with tau2\n");
 			break;
 		default: 
-			myprintf(stdout, "ERROR: bad linear prior model %d\n", 
-					(int)dparams[0]);
-			break;
+		  error("bad linear prior model %d\n", (int)dparams[0]); break;
 	}
 
 	/* read starting (initial values) parameter */
@@ -335,9 +331,8 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 		corr_model = EXP;
 		myprintf(stdout, "correlation: isotropic power exponential\n");
 	} else {
-		myprintf(stdout, "ERROR: %s is not a valid correlation function\n", 
-				strtok(line, "\t\n#"));
-		exit(0);
+	  error("%s is not a valid correlation function\n", strtok(line, "\t\n#"));
+	  exit(0);
 	}
 
 	/* read the beta prior model */
@@ -359,9 +354,8 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 		beta_prior = B0;
 		myprintf(stdout, "linear prior: b0 hierarchical \n");
 	} else {
-		myprintf(stdout, "ERROR: %s is not a valid linear prior\n",
-				strtok(line, "\t\n#"));
-		exit(0);
+	  error("%s is not a valid linear prior\n", strtok(line, "\t\n#"));
+	  exit(0);
 	}
 
 	/* read the d, nug, and s2 parameters from the control file */
@@ -681,9 +675,9 @@ void Params::read_beta(char *line)
 	for(unsigned int i=1; i<col; i++) {
 		char *l = strtok(NULL, " \t\n#");
 		if(!l) {
-			myprintf(stderr, "ERROR: not enough beta coefficients (%d)\n", i+1);
-			myprintf(stderr, "\tthere should be (%d)\n", col);
-			exit(0);
+		  error("not enough beta coefficients (%d)\n, there should be (%d)\n", 
+			i+1, col);
+		  exit(0);
 		}
 		b[i] = atof(l);
 	}

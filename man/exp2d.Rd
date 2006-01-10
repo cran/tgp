@@ -19,7 +19,8 @@
 }
 \details{
   The response is evaluated as 
-  \code{Z(X) = X1 * exp(-X1^2 -X2^2)}.  Zero-mean normal noise
+  \deqn{Z(X)=x_1 * exp(x_1^2-x_2^2).}{Z(X) = X1 * exp(-X1^2 -X2^2).}
+  Zero-mean normal noise
   with \code{sd=0.001} has been added to the response
 }
 
@@ -33,7 +34,6 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }

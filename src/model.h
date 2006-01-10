@@ -152,7 +152,7 @@ class Model
 	int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
 
 	bool parallel;				/* use pthreads or not */
-	unsigned short *state_to_init_consumer;	/* to initialize conumer state variables */
+	void *state_to_init_consumer;	/* to initialize conumer state variables */
 	List *PP;				/* producer wait queue (before producing to tlist) */
 	#ifdef PARALLEL
 	pthread_t** consumer;			/* consumer thread handle */
@@ -175,17 +175,17 @@ class Model
 
   public:
 	Model(Params *params, unsigned int d, double **X, unsigned int n, double *Z, 
-			double **rect, int Id, unsigned short *state_to_init_conumer);
+			double **rect, int Id, void *state_to_init_conumer);
 	~Model(void);
-	void rounds(Preds *preds, unsigned int B, unsigned int T, unsigned short *state);
-	void Linburn(unsigned int B, unsigned short *state);
-	void Burnin(unsigned int B, unsigned short *state);
-	void Sample(Preds *preds, unsigned int R, unsigned short *state);
-	bool modify_tree(unsigned short *state);
-	bool change_tree(unsigned short *state);
-	bool grow_tree(unsigned short *state);
-	bool swap_tree(unsigned short *state);
-	bool prune_tree(unsigned short *state);
+	void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
+	void Linburn(unsigned int B, void *state);
+	void Burnin(unsigned int B, void *state);
+	void Sample(Preds *preds, unsigned int R, void *state);
+	bool modify_tree(void *state);
+	bool change_tree(void *state);
+	bool grow_tree(void *state);
+	bool swap_tree(void *state);
+	bool prune_tree(void *state);
 	void printTreeStats(FILE* outfile);
 	void set_TreeRoot(Tree *t);
 	double** get_T(void);
@@ -193,19 +193,19 @@ class Model
 	double* get_b0(void);
 	Params* get_params(void);
 	Tree* get_TreeRoot(void);
-	void hierarchical_draws(Tree** leaves, unsigned int numLeaves, int r, unsigned short *state);
-	void predict_master(Tree *leaf, Preds *preds, int index, unsigned short* state);
+	void hierarchical_draws(Tree** leaves, unsigned int numLeaves, int r, void *state);
+	void predict_master(Tree *leaf, Preds *preds, int index, void* state);
 	void predict(Tree* leaf, double **T, Preds* preds, unsigned int index, bool dnorm, 
-			unsigned short *state);
+			void *state);
 	void allocate_leaf_params(double ***b, double **s2, double **tau2,
 			Corr ***corr, unsigned int numLeaves);
 	void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
 	void update_hierarchical_priors(double *s2, double *tau2, Corr **corr, 
-			unsigned int numLeaves, unsigned short *state);
+			unsigned int numLeaves, void *state);
 	Tree** CopyPartitions(unsigned int *numLeaves);
 	void predict_xx(Tree* ll, double **T, Preds* preds, int index, bool dnorm, 
-			unsigned short *state);
-	void cut_branch(unsigned short *state);
+			void *state);
+	void cut_branch(void *state);
 	void cut_root(void);
 	void new_data(double **X, unsigned int n, unsigned int d, double* Z, double **rect);
 

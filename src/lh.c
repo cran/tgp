@@ -31,6 +31,7 @@
 #include "lh.h"
 #include "matrix.h"
 #include "rhelp.h"
+#include "rand_draws.h"
 
 int compareRank(const void* a, const void* b);
 int compareDouble(const void* a, const void* b);
@@ -53,13 +54,13 @@ typedef struct rank
  * (n*dim matrix returned)
  */
 
-double** rect_sample(int dim, int n)
+double** rect_sample(int dim, int n, void *state)
 {
 	int i,j;
 	double **s = new_matrix(dim, n);
 	for(i=0; i<dim; i++) {
 		for(j=0; j<n; j++) {
-			s[i][j] = unif_rand();
+			s[i][j] = runi(state);
 		}
 	}
 
@@ -72,7 +73,7 @@ double** rect_sample(int dim, int n)
  * within a regular (dim)-dimensional cube.
  */
 
-double** rect_sample_lh(int dim, int n, double** rect, int er)
+double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 {
 	int i,j;
 	double **z, **s, **zout;
@@ -88,7 +89,7 @@ double** rect_sample_lh(int dim, int n, double** rect, int er)
 	 * get initial sample
 	 */
  
-	s = rect_sample(dim, n);
+	s = rect_sample(dim, n, state);
 
 
 	/*
@@ -124,7 +125,7 @@ double** rect_sample_lh(int dim, int n, double** rect, int er)
 	 */
 
 
-	if(er) e = rect_sample(dim, n);
+	if(er) e = rect_sample(dim, n, state);
 
 
 	/*
@@ -287,7 +288,7 @@ void printRect(FILE* outfile, int d, double** rect)
 
 void errorBadRect(void)
 {
-	myprintf(stderr, "ERROR: bad rectangle format\n"); 
+	error("bad rectangle format\n"); 
 	exit(0);
 }
 

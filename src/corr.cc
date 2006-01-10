@@ -213,7 +213,7 @@ double Corr::Nug(void)
  */
 
 bool Corr::DrawNug(unsigned int n, double **F, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, unsigned short *state)
+		double *lambda, double **bmu, double **Vb, double tau2, void *state)
 {
 	bool success = false;
 
@@ -263,7 +263,7 @@ void Corr::SetLinearPriorParams(Model *model)
  * compute nug for two nugs (used in prune)
  */
 
-double Corr::get_delta_nug(Corr* c1, Corr* c2, unsigned short *state)
+double Corr::get_delta_nug(Corr* c1, Corr* c2, void *state)
 {
 	double nugch[2];
 	int ii[2];
@@ -282,7 +282,7 @@ double Corr::get_delta_nug(Corr* c1, Corr* c2, unsigned short *state)
  * new children partitions
  */
 
-void Corr::propose_new_nug(Corr* c1, Corr* c2, unsigned short *state)
+void Corr::propose_new_nug(Corr* c1, Corr* c2, void *state)
 {
 	int i[2];
 	double nugnew[2];
@@ -301,7 +301,7 @@ void Corr::propose_new_nug(Corr* c1, Corr* c2, unsigned short *state)
  * contained in the params module
  */
 
-void Corr::priorDrawsNug(Corr **corr, unsigned int howmany, unsigned short *state)
+void Corr::priorDrawsNug(Corr **corr, unsigned int howmany, void *state)
 {
 	if(!(*fix)) {
 		double *nug = new_vector(howmany);
@@ -320,7 +320,7 @@ void Corr::priorDrawsNug(Corr **corr, unsigned int howmany, unsigned short *stat
  * and choose one for "this" correlation function
  */
 
-void Corr::CombineNug(Corr *c1, Corr *c2, unsigned short *state)
+void Corr::CombineNug(Corr *c1, Corr *c2, void *state)
 {
 	nug = get_delta_nug(c1, c2, state);
 }
@@ -334,7 +334,7 @@ void Corr::CombineNug(Corr *c1, Corr *c2, unsigned short *state)
  * for two (new) correlation functions
  */
 
-void Corr::SplitNug(Corr *c1, Corr *c2, unsigned short *state)
+void Corr::SplitNug(Corr *c1, Corr *c2, void *state)
 {
 	propose_new_nug(c1, c2, state);
 }

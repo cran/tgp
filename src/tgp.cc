@@ -27,7 +27,6 @@ extern "C"
 #include "matrix.h"
 #include "rand_draws.h"  
 #include "rhelp.h"
-#include <R.h>
 }
 #include "model.h"
 #include "params.h"
@@ -50,17 +49,10 @@ void tgp(int* state_in,
 	 double *ZZ_q1_out, double *ZZ_median_out, double *ZZ_q2_out,
 	 double *Ds2x_out, double *ego_out)
 {
-	unsigned short state[3] = {1,2,3};
-	state[0] = (unsigned short) state_in[0];
-	state[1] = (unsigned short) state_in[1];
-	state[2] = (unsigned short) state_in[2];
-	#ifdef RRAND
-	GetRNGstate();
-	myprintf(stdout, "\nstate = %d %d %d ignored, using R RNG\n", 
-		state[0], state[1], state[2]);
-	#else
-	myprintf(stdout, "\nstate = %d %d %d\n", state[0], state[1], state[2]);
-	#endif
+        void *state = (void*) 
+	  newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + state_in[2]));
+	myprintf(stdout, "\n");
+	printRNGstate(state, stdout);
 
 	/* integral dimension parameters */
 	unsigned int n = (unsigned int) *n_in;
@@ -183,9 +175,7 @@ void tgp(int* state_in,
 	fclose(BETAFILE);
 	#endif
 
-	#ifdef RRAND
-	PutRNGstate();
-	#endif
+	deleteRNGstate((void*) state);
 }
 } /* extern "C" */
 

@@ -52,11 +52,7 @@ int *fi_out;
 {
 	unsigned int nn, n, m, ncand;
 	double **Xall, **X, **Xcand, **fixed, **rect;
-	unsigned short state[3];
-
-	state[0] = (unsigned short) state_in[0];
-	state[1] = (unsigned short) state_in[1];
-	state[2] = (unsigned short) state_in[2];
+	void *state = newRNGstate(100000*state_in[0] + 100*state_in[1] + state_in[2]);
 
 	/* integral dimension parameters */
 	n = (unsigned int) *n_in;
@@ -107,7 +103,7 @@ unsigned int m,n1,n2,n;
 double **fixed, **Xcand, **X;
 int *fi;	
 double d, nug;
-unsigned short *state;
+void *state;
 /* remember, column major! */
 {
 	unsigned int i,j, ai, fii;

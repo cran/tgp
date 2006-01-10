@@ -14,8 +14,8 @@
 
 \usage{
 tgp(X, Z, XX = NULL, BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE,
-	linburn = FALSE, params = NULL, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE)
+	linburn = FALSE, params = NULL, pred.n = TRUE,
+        ds2x = FALSE, ego = FALSE)
 }
 
 \arguments{
@@ -89,7 +89,7 @@ tgp(X, Z, XX = NULL, BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE,
 
   \item{parts}{Internal representation of the regions depicted by partitions of
   	the maximum a' posteriori (MAP) tree}
-  \item{trees}{\code{list} of trees (\code{maptree} representation) which were MAP as a function
+  \item{trees}{\code{list} of trees (\pkg{maptree} representation) which were MAP as a function
   	of each tree height sampled between MCMC rounds \code{B} and \code{T}}
 }
 
@@ -101,12 +101,10 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
 \emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
 submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-16}
 
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
@@ -124,7 +122,7 @@ Machine Learning, \bold{48}, 303--324.
 
 \seealso{ \code{\link{tgp.default.params}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
 	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}} \code{\link{bgp}},
-	\code{\link{plot.tgp}}, \code{\link{tgp.trees}}}
+	\code{\link{plot.tgp}}, \code{\link{tgp.trees}}, \code{vignette("tgp")}}
 
 \note{ 
 Inputs \code{X, XX, Z} containing \code{NaN, NA, Inf} are discarded with non-fatal

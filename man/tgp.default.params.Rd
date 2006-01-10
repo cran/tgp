@@ -20,14 +20,18 @@ tgp.default.params(d)
 
    \item{corr}{\code{"expsep"} separable power exponential family correlation model; alternate is "exp" 
    		isotropic power family}
-   \item{bprior}{Linear (beta) prior, default is "bflat"; alternates include "b0" hierarchical
-   	Normal prior, "bmle" empirical Bayes Normal prior, "bcart" Bayesian linear CART
-	style prior from Chipman et al, "b0tau" a independent Normal prior with inverse-gamma variance.}
+   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
+     alternates include \code{"b0"} hierarchical Normal prior,
+     \code{"bmle"} empirical Bayes Normal prior, \code{"bcart"}
+     Bayesian linear CART style prior from Chipman et al, \code{"b0tau"}
+     a independent Normal prior with inverse-gamma variance.}
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range, nugget, s2, and tau2}
    \item{beta}{\code{rep(0,d)} starting values for beta linear parameters}
    \item{tree}{\code{c(0.25,2,10)} tree prior process parameterization 
-   	\code{c(alpha, beta, minpart)} specifying \code{ p(split leaf of depth eta) = 
-	alpha*(1+eta)^beta } with zero probability to trees
+     \code{c(alpha, beta, minpart)} specifying
+     \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
+	  \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
+     with zero probability to trees
 	with partitions containing less than \code{minpart} data points}
    \item{s2.p}{\code{c(5,10)} s2 inverse-gamma prior parameterization \code{c(a0, g0)}
    	where \code{g0} is scale (1/rate) parameter}
@@ -42,7 +46,9 @@ tgp.default.params(d)
    \item{gamma}{\code{c(10,0.2,10)}
         Limiting Linear model parameters c(g, t1, t2), with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
-	\code{t1 + t2 <= 1} specifies \code{p(b|d) = t1 + exp[-g*(t2-t1)/(d-0.5)]}}
+	\code{t1 + t2 <= 1} specifies
+	\deqn{p(b|d)=t_1 +
+	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
    \item{d.lam}{\code{"fixed"} Hierarchical exponential distribution parameters to \code{a1}, \code{g1},
    	\code{a2}, and \code{g2} of the prior distribution for the range parameter \code{d.p};
 	fixed indicates that the hierarchical prior is "turned off"}
@@ -66,12 +72,10 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
 \emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
 submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-16}
 
 Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
-\url{http://www.ams.ucsc.edu/reports/trview.php?content=view&name=ams2005-17}
 
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }
@@ -82,7 +86,7 @@ available as UCSC Technical Report ams2005-17
 "See Also" list below.
 }
 
-\seealso{ \code{\link{tgp}} }
+\seealso{ \code{\link{tgp}}, \code{vignette("tgp")} }
 
 \keyword{ nonparametric }
 \keyword{ smooth }

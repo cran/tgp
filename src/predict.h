@@ -28,12 +28,12 @@
 int predict_full(unsigned int n1, unsigned int n2, unsigned int col, double *z, double *zz, 
 		 double **Ds2xy, double *ego, double *Z, double **F, double **K, double **Ki, 
 		 double **W, double tau2, double **FF, double **xxKx, double ** xxKxx, double *b, 
-		 double ss2, double nug, int err, unsigned short *state);
+		 double ss2, double nug, int err, void *state);
 void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, 
 	double ss2, double denom, double **FW, double tau2, double *fW, double *KpFWFiQx, 
 	double **FFrow, double **KKrow, double **xxKxx, unsigned int which_i);
 int predict_draw(unsigned int n, double *z, double *mean, double *s, 
-		 int err, unsigned short *state);
+		 int err, void *state);
 void compute_ego(unsigned int n, double *ego, double *z, double *mean, double *s);
 
 #endif

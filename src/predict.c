@@ -57,7 +57,7 @@ double *FFrow, *KKrow, *KiZmFb, *b;
 
 	#ifdef DEBUG
 	if(abs(zz) > 10e10) 
-		myprintf(stderr, "WARNING: (predict) abs(zz)=%g > 10e10\n", zz);
+	  warning("(predict) abs(zz)=%g > 10e10\n", zz);
 	#endif
 
 	return zz;
@@ -135,8 +135,7 @@ double **FW, **FFrow, **KKrow, **xxKxx;
 		
 		if(denom <= 0) {
 			#ifdef DEBUG
-			myprintf(stderr, "WARNING: denom=%g, diff=%g, (i=%d, which_i=%d)\n", 
-					denom, diff, i, which_i) ;
+			warning("denom=%g, diff=%g, (i=%d, which_i=%d)\n", denom, diff, i, which_i);
 			#endif
 			Ds2xy[i] = 0;
 		} else Ds2xy[i] = ss2 * diff * diff / denom;
@@ -351,7 +350,7 @@ double tau2;
 int predict_draw(n, z, mean, s, err, state)
 unsigned int n;
 double *z, *mean, *s;
-unsigned short *state;
+void *state;
 int err;
 {
   unsigned int fnan, finf, i;  
@@ -392,7 +391,7 @@ int err;
 double *zz, *z, *Z, *b, *ego;
 double **F, **K, **Ki, **W, **FF, **xxKx, **xxKxx, **Ds2xy;
 double ss2, nug, tau2;
-unsigned short *state;
+void *state;
 {
 	/*double KiZmFb[n1]; 
 	double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], Frow[n1][col];*/

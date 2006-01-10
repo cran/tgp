@@ -32,31 +32,103 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
-#ifdef RRAND
 #include <Rmath.h>
-#endif
+#include <R.h>
+#include "randomkit.h"
 
 #define E   2.7182818284590452354
-#define PI  3.14159265358979323846
+
+int getrngstate = 1;
 
 /* 
- * setseed:
+ * newRNGstate:
  * 
  * seeding the random number generator,
  * from jenise 
  */
 
-void setseed(s)
-int s;
+void* newRNGstate(s)
+unsigned long s;
 {
-  #ifdef RRAND
-  myprintf(stderr, "ERROR: no seed to set when using rand_unif()\n");
-  exit(0);
-  #else
-  /*void srand48();*/
-   srand48((long)s);
-  #endif
+ switch (RNG) {
+ case CRAN: 
+   if(getrngstate) GetRNGstate();
+   getrngstate = 0;
+   return NULL;
+ case RK: {
+   rk_state* state = (rk_state*) malloc(sizeof(rk_state));
+   rk_seed(s, state);
+   return (void*) state;
+ }
+ case ERAND: {
+   unsigned short *state = (unsigned short*) new_uivector(3);
+   state[0] = s / 100000;
+   s = s % 100000;
+   state[1] = s / 100;
+   state[2] = s % 100;
+   return (void*) state;
+ }
+ default:
+   error("RNG type not found\n");
+   exit(0);
+ }
+}
+
+
+/*
+ * deleteRNGstate:
+ *
+ * free memory for RNG seed
+ */
+
+void deleteRNGstate(void *state)
+{
+ switch (RNG) {
+ case CRAN:
+   if(!getrngstate) PutRNGstate();
+   getrngstate = 1;
+   break;
+ case RK:
+   free((rk_state*) state);
+   break;
+ case ERAND:
+   assert(state);
+   free((unsigned short*) state);
+   break;
+ default:
+   error("RNG type not found\n");
+   exit(0);
+ }
+}
+
+
+/*
+ * printRNGstate:
+ *
+ * printRNGstate info out to the outfile
+ */
+
+void printRNGstate(void *state, FILE* outfile)
+{
+  switch (RNG) {
+  case CRAN:
+    assert(!state);
+    myprintf(outfile, "RNG state CRAN comes from R\n");
+    break;
+  case RK:
+    assert(state);
+    myprintf(outfile, "RNG state RK generated with rk_seed\n");
+    break;
+  case ERAND: {
+      unsigned short *s = (unsigned short *) state;
+      assert(s);
+      myprintf(outfile, "RNG state = %d %d %d\n", s[0], s[1], s[2]);
+    }
+    break;
+  default: 
+   error("RNG type not found\n");
+   exit(0);
+  }
 }
 
 
@@ -67,13 +139,25 @@ int s;
  * from jenise 
  */
 
-double runi(unsigned short *state)
+double runi(void *state)
 {
-  #ifdef RRAND
-  return unif_rand();
-  #else
-  return erand48(state);
-  #endif
+  switch (RNG) {
+  case CRAN: 
+    assert(!state);
+    return unif_rand();
+  case RK: {
+    unsigned long rv;
+    assert(state);
+    rv = rk_random((rk_state*) state);
+    return ((double) rv) / RK_MAX;
+  }
+  case ERAND: 
+    assert(state);
+    return erand48(state);
+  default: 
+    error("RNG type not found\n");
+    exit(0);
+  }
 }
 
 
@@ -83,7 +167,7 @@ double runi(unsigned short *state)
  * n draws from a uniform(a,b)
  */
 
-void runif_mult(double* r, double a, double b, unsigned int n, unsigned short *state)
+void runif_mult(double* r, double a, double b, unsigned int n, void *state)
 {
 	double scale;
 	int i;
@@ -104,7 +188,7 @@ void runif_mult(double* r, double a, double b, unsigned int n, unsigned short *s
 
 void rnor(x, state)
 double *x;
-unsigned short *state;
+void *state;
 {
 	double e,v1,v2,w;
 
@@ -129,7 +213,7 @@ unsigned short *state;
 void rnorm_mult(x, n, state)
 unsigned int n;
 double *x;
-unsigned short *state;
+void *state;
 {
 	unsigned int j;
 	double aux[2];
@@ -158,7 +242,7 @@ void mvnrnd(x, mu, cov, n, state)
 unsigned int n;
 double *x, *mu;
 double **cov;
-unsigned short *state;
+void *state;
 {
 	int i,j;
 	double *rn = new_vector(n);
@@ -188,7 +272,7 @@ unsigned int n, cases;
 double *x, *mu; 
 /*double cov[][n];*/
 double **cov;
-unsigned short *state;
+void *state;
 {
     /*double x_temp[n];*/
     double *x_temp;
@@ -217,7 +301,7 @@ unsigned short *state;
  * from William Brown
  */
 
-double rexpo(double lambda, unsigned short *state)
+double rexpo(double lambda, void *state)
 /*
  * Generates from an exponential distribution
  */
@@ -236,7 +320,7 @@ double rexpo(double lambda, unsigned short *state)
  * from William Brown, et. al.
  */
 
-double rgamma1(double alpha, unsigned short *state)
+double rgamma1(double alpha, void *state)
 {
     double uniform0, uniform1;
     double random, x;
@@ -271,7 +355,7 @@ double rgamma1(double alpha, unsigned short *state)
  * from William Brown
  */
 
-double rgamma2(double alpha, unsigned short *state)
+double rgamma2(double alpha, void *state)
 {
     double uniform1,uniform2;
     double c1,c2,c3,c4,c5,w;
@@ -316,7 +400,7 @@ double rgamma2(double alpha, unsigned short *state)
  * Parametrization as in the Gelman's book ( E(x) = alpha/beta )
  */
 
-double rgamma_wb(double alpha, double beta, unsigned short *state)
+double rgamma_wb(double alpha, double beta, void *state)
 {
     double random = 0;
     if (alpha < 1)
@@ -345,7 +429,7 @@ void inv_gamma_mult_gelman(x, alpha, beta, cases, state)
 unsigned int cases;
 double *x;
 double alpha, beta;
-unsigned short *state;
+void *state;
 {
    int i;
 	
@@ -368,7 +452,7 @@ void gamma_mult_gelman(x, alpha, beta, cases, state)
 unsigned int cases;
 double *x; 
 double alpha, beta;
-unsigned short *state;
+void *state;
 {
    int i;
 	
@@ -387,7 +471,7 @@ unsigned short *state;
 
 double rbet(alpha, beta, state)
 double alpha, beta;
-unsigned short *state;
+void *state;
 {
    double g1,g2;
    g1 = rgamma_wb(alpha, 1.0, state);
@@ -409,7 +493,7 @@ void beta_mult(x, alpha, beta, cases, state)
 unsigned int cases;
 double *x; 
 double alpha, beta;
-unsigned short *state;
+void *state;
 {
    int i;
 	
@@ -434,7 +518,7 @@ unsigned short *state;
 void wishrnd(x, S, n, nu, state)
 unsigned int n, nu;
 double **x, **S;
-unsigned short *state;
+void *state;
 {
 
 	/*double alphaT[n][nu], alpha[nu][n], cov[n][n];
@@ -484,7 +568,7 @@ void dsample(x_out, x_indx, n, num_probs, X, probs, state)
 unsigned int n, num_probs;
 double *x_out, *X, *probs;
 unsigned int* x_indx;
-unsigned short *state;
+void *state;
 {
 	double pick;
 	int i, counter;
@@ -524,7 +608,7 @@ unsigned int n, num_probs;
 int *x_out, *X;
 double *probs;
 unsigned int *x_indx;
-unsigned short *state;
+void *state;
 {
 	double pick;
 	int i, counter;
@@ -565,7 +649,7 @@ unsigned int n, num_probs;
 int *x_out, *X;
 double *probs;
 unsigned int *x_indx;
-unsigned short *state;
+void *state;
 {
 	double *p, *p_old;
 	int *x, *x_old;
@@ -627,7 +711,7 @@ unsigned short *state;
  * the integral range [from...to].
  */
 
-int sample_seq(int from, int to, unsigned short *state)
+int sample_seq(int from, int to, void *state)
 {
 	unsigned int len, indx;
 	int k_d;
@@ -658,7 +742,7 @@ int sample_seq(int from, int to, unsigned short *state)
  * NOT THREAD SAFE
  */
 
-unsigned int rpoiso(float xm, unsigned short *state)
+unsigned int rpoiso(float xm, void *state)
 {
 	/* NOT THREAD SAFE */
 	static double sq,alxm,g,oldm=(-1.0); /*oldm is a flag for whether xm has changed 
@@ -755,7 +839,7 @@ double* compute_probs(double* criteria, unsigned int nn, double alpha)
  * be indexed when proposing a GROW
  */
 
-void propose_indices(int *i, double prob, unsigned short *state)
+void propose_indices(int *i, double prob, void *state)
 {
 	double ii = runi(state);
 	if(ii <= prob) { i[0] = 0; i[1] = 1; } 
@@ -783,7 +867,7 @@ void get_indices(int *i, double *parameter)
  * indices 1...N
  */
 
-unsigned int* rand_indices(unsigned int N, unsigned short *state)
+unsigned int* rand_indices(unsigned int N, void *state)
 {
 	int *o;
 	double *nall = new_vector(N);

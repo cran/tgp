@@ -76,26 +76,26 @@ class Corr
 	virtual ~Corr(void);
 	virtual Corr& operator=(const Corr &c)=0;
 	virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, unsigned short *state)=0;
+		double *lambda, double **bmu, double **Vb, double tau2, void *state)=0;
 	virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)=0;
 	virtual void Update(unsigned int n1, double **X)=0;
 	virtual void Update(unsigned int n1, double **K, double **X)=0;
-	virtual void Combine(Corr *c1, Corr *c2, unsigned short *state)=0;
-	virtual void Split(Corr *c1, Corr *c2, unsigned short *state)=0;
+	virtual void Combine(Corr *c1, Corr *c2, void *state)=0;
+	virtual void Split(Corr *c1, Corr *c2, void *state)=0;
 	virtual char* State(void)=0;
-	virtual void priorDraws(Corr **corr, unsigned int howmany, unsigned short *state)=0;
+	virtual void priorDraws(Corr **corr, unsigned int howmany, void *state)=0;
 	virtual double log_Prior(void)=0;
 	virtual unsigned int sum_b(void)=0;
 	virtual void ToggleLinear(void)=0;
 	void SetLinearPriorParams(Model *model);
-	void priorDrawsNug(Corr **corr, unsigned int howmany, unsigned short *state);
-	double get_delta_nug(Corr* c1, Corr* c2, unsigned short *state);
-	void propose_new_nug(Corr* c1, Corr* c2, unsigned short *state);
-	void CombineNug(Corr *c1, Corr *c2, unsigned short *state);
-	void SplitNug(Corr *c1, Corr *c2, unsigned short *state);
+	void priorDrawsNug(Corr **corr, unsigned int howmany, void *state);
+	double get_delta_nug(Corr* c1, Corr* c2, void *state);
+	void propose_new_nug(Corr* c1, Corr* c2, void *state);
+	void CombineNug(Corr *c1, Corr *c2, void *state);
+	void SplitNug(Corr *c1, Corr *c2, void *state);
 	bool DrawNug(unsigned int n, double **F, double *Z, 
 		double *lambda, double **bmu, double **Vb, double tau2, 
-		unsigned short *state);
+		void *state);
 	void swap_new(double **Vb, double **bmu, double *lambda);
 	void allocate_new(unsigned int n);
 	void Invert(unsigned int n);

@@ -127,9 +127,9 @@ void Tree::init(void)
 	/* correlation function and variance parameters */
 	if(corr) delete corr;
 	switch(corr_model) {
-		case EXP: corr = new Exp(this->col, model); break;
-		case EXPSEP: corr = new ExpSep(this->col, model); break;
-		default: myprintf(stderr, "ERROR: corr model not implemented!\n"); exit(0);
+	case EXP: corr = new Exp(this->col, model); break;
+	case EXPSEP: corr = new ExpSep(this->col, model); break;
+	default: error("corr model not implemented!\n"); exit(0);
 	}
 
 	/* variance and hierarchical variance parameters */
@@ -175,9 +175,9 @@ Tree::Tree(const Tree *told, bool copycov)
 	corr_model = told->corr_model;
 	beta_prior = told->beta_prior;
 	switch(corr_model) {
-		case EXP: corr = new Exp(col, model); break;
-		case EXPSEP: corr = new ExpSep(col, model); break;
-		default: myprintf(stderr, "ERROR: corr model not supported!\n"); exit(0);
+	case EXP: corr = new Exp(col, model); break;
+	case EXPSEP: corr = new ExpSep(col, model); break;
+	default: error("corr model not supported!\n"); exit(0);
 	}
 	*corr = *(told->corr);
 	if(told->isLeaf()  && (!corr->Linear() || copycov)) corr->Cov(told->corr);
@@ -267,7 +267,7 @@ void Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
 	/* do not recompute XX if it has already been computed */
 	if(XX) { 
 		assert(pp); 
-		myprintf(stderr, "WARNING: failed add_XX in leaf\n");
+		warning("failed add_XX in leaf\n");
 		return; 
 	}
 	
@@ -465,7 +465,7 @@ void Tree::delete_partition_predict(void)
  * where appropriate)
  */
 
-bool Tree::Draw(unsigned short *state)
+bool Tree::Draw(void *state)
 {
 	/* s2 */
 	if(BFLAT) s2 = sigma2_draw_no_b_margin(n, col, lambda, *s2_a0-col, *s2_g0, state);
@@ -517,7 +517,7 @@ bool Tree::Draw(unsigned short *state)
  */
 
 void Tree::predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, double **T, 
-		   bool err, unsigned short *state)
+		   bool err, void *state)
 {
 	if(!n) myprintf(stderr, "n = %d\n", n);
 	assert(isLeaf() && n);
@@ -555,7 +555,7 @@ void Tree::predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, doubl
 	}
 
 	/* print warnings if there were any */
-	if(warn) myprintf(stderr, "WARNINGS(%d) from predict_full: n=%d, nn=%d\n", warn, n, nn);
+	if(warn) warning("(%d) from predict_full: n=%d, nn=%d\n", warn, n, nn);
 
 	/* copy predictive statistics to the right place in their respective full matrices */
 	if(z) { copy_p_vector(Zpred, p, z, n); free(z); }
@@ -927,7 +927,7 @@ void Tree::rotate_left(void)
  * attempt to rotate the split point of this INTERNAL node and its parent.
  */
 
-bool Tree::rotate(unsigned short *state)
+bool Tree::rotate(void *state)
 {
 	tree_op = ROTATE;
 	assert(!isLeaf());
@@ -991,7 +991,7 @@ double Tree::pT_rotate(Tree* low, Tree* high)
  * while keeping parameters in the lower partitions the same.
  */
 
-bool Tree::swap(unsigned short *state)
+bool Tree::swap(void *state)
 {
 	tree_op = SWAP;
 	assert(!isLeaf());
@@ -1058,7 +1058,7 @@ bool Tree::swap(unsigned short *state)
  * keeping parameters in the lower partitions the same.
  */
 
-bool Tree::change(unsigned short *state)
+bool Tree::change(void *state)
 {
 	tree_op = CHANGE;
 	assert(!isLeaf());
@@ -1116,7 +1116,7 @@ bool Tree::change(unsigned short *state)
  * induced by THIS tree
  */
 
-bool Tree::match(Tree* oldT, unsigned short *state)
+bool Tree::match(Tree* oldT, void *state)
 {
 	assert(oldT);
 
@@ -1186,7 +1186,7 @@ bool Tree::try_revert(bool success, Tree* oldLC, Tree* oldRC,
  * given the old var/val pair, propose a new one 
  */
 
-double Tree::propose_val(unsigned short *state)
+double Tree::propose_val(void *state)
 {
 	double min, max;
 	Tree* root = model->get_TreeRoot();
@@ -1257,7 +1257,7 @@ unsigned int Tree::leavesN(void)
  * combining the D and NUGGET parameters of its children.
  */
 
-bool Tree::prune(double ratio, unsigned short *state)
+bool Tree::prune(double ratio, void *state)
 {
 	tree_op = PRUNE;
 	double q_bak, p_log, pk, pklast, alpha;
@@ -1313,7 +1313,7 @@ bool Tree::prune(double ratio, unsigned short *state)
  * splitting criterion, along new d and nugget parameters
  */
 
-bool Tree::grow(double ratio, unsigned short *state)
+bool Tree::grow(double ratio, void *state)
 {
 	tree_op = GROW;
 	bool success;
@@ -1497,8 +1497,8 @@ double Tree::posterior(void)
 			tau2, *s2_a0, *s2_g0);
 
 	#ifdef DEBUG
-	if(isnan(p)) myprintf(stderr, "WARNING: nan in posterior\n");
-	if(isinf(p)) myprintf(stderr, "WARNING: inf in posterior\n");
+	if(isnan(p)) warning("nan in posterior\n");
+	if(isinf(p)) warning("inf in posterior\n");
 	#endif
 	return p;
 }
@@ -1575,7 +1575,7 @@ void Tree::val_order_probs(double **Xo, double **probs,
  * draw a new split point for the current var-dimension
  */
 
-double Tree::propose_split(double *p, unsigned short *state)
+double Tree::propose_split(double *p, void *state)
 {
 	double *Xo, *probs;
 	double **locs;
@@ -1898,7 +1898,7 @@ void Tree::printTree(FILE* outfile, double** rect, double scale, int root)
  * return the indices of N d-optimal draws from XX (of size nn);
  */
 
-unsigned int* Tree::dopt_from_XX(unsigned int N, unsigned short *state)
+unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
 {
 	assert(N <= nn);
 	assert(XX);
@@ -2111,7 +2111,7 @@ void Tree::cut_branch(void)
  * propose new tau2 parameters for possible new children partitions. 
  */
 
-void Tree::split_tau2(double *tau2_new, unsigned short *state)
+void Tree::split_tau2(double *tau2_new, void *state)
 {
          int i[2];
          /* make the larger partition more likely to get the smaller d */
@@ -2127,7 +2127,7 @@ void Tree::split_tau2(double *tau2_new, unsigned short *state)
  * combine left and right childs tau2 into a single tau2
  */
 
-double Tree::combine_tau2(unsigned short *state)
+double Tree::combine_tau2(void *state)
 {
          double tau2ch[2];
          int ii[2];

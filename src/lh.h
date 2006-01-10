@@ -27,8 +27,8 @@
 
 #include <stdio.h>
 
-double** rect_sample(int dim, int n);
-double** rect_sample_lh(int dim, int n, double** rect, int er);
+double** rect_sample(int dim, int n, void *state);
+double** rect_sample_lh(int dim, int n, double** rect, int er, void *state);
 void rect_scale(double** z, int n, int d, double** rect);
 double** readRect(char* rect, unsigned int *d);
 void errorBadRect(void);

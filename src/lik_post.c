@@ -61,7 +61,7 @@ double a0, g0, tau2, lambda, log_detK;
 
 	/* determine if design matrix is collinear */
 	if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-		/*myprintf(stderr, "WARNING, degenerate design matrix\n"); */
+		/*warning("degenerate design matrix\n"); */
 		return 0.0-1e300*1e300;
 	}
 
@@ -86,7 +86,7 @@ double a0, g0, tau2, lambda, log_detK;
 	/* make sure we got a good p */
 	if(isnan(p)) {
 		p = 0.0-1e300*1e300;
-		/* myprintf(stderr, "WARNING: post_margin_rj, p is NAN\n"); */
+		/* warning("post_margin_rj, p is NAN\n"); */
 		#ifdef DEBUG
 		assert(!isnan(p));
 		#endif
@@ -116,7 +116,7 @@ double a0, g0, lambda, log_detK ;
 
 	/* determine if design matrix is collinear */
 	if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-		/* myprintf(stderr, "WARNING, degenerate design matrix\n"); */
+		/* warning("degenerate design matrix\n"); */
 		return 0.0-1e300*1e300;
 	}
 	
@@ -132,7 +132,7 @@ double a0, g0, lambda, log_detK ;
 	/* make sure we got a good p */
 	if(isnan(p)) {
 		p = 0.0-1e300*1e300;
-		/* myprintf(stderr, "WARNING: post_margin, p is NAN\n"); */
+		/* warning("post_margin, p is NAN\n"); */
 		#ifdef DEBUG
 		assert(!isnan(p));
 		#endif

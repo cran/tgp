@@ -30,6 +30,6 @@
 
 void dopt(double **X, int *fi, double **fixed, double **Xcand, 
 	unsigned int m, unsigned int n1, unsigned int n2, unsigned int n, 
-	double d, double nug, unsigned short *state);
+	double d, double nug, void *state);
 
 #endif

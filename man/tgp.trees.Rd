@@ -20,9 +20,9 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 	from the Markov chain of the tree posterior.  This is equivalent to
 	\code{which = 1:length(out$trees)}.  For example, the first, third,
 	and forth trees would result if \code{which = c(1,3,4)}}
-  \item{main}{Optional character string to add to the main title of the plot}
+  \item{main}{ Optional character string to add to the main title of the plot}
   \item{\dots}{ Extra arguments to the \code{draw.tree} function from 
-  	\code{library(maptree)}}}
+  	\pkg{maptree}}
 }
 
 %\details{
@@ -39,13 +39,14 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 \url{http://people.ucsc.edu/~boobles/tgp.php}
 }
 
-\note{ Plotting trees that the \code{maptree} library is installed, which
-itself requires that the \code{combinat} library also be installed.
+\note{ Plotting trees that the \pkg{maptree} library is installed, which
+itself requires that the \pkg{combinat} library also be installed.
 
 See Examples sections of the functions in the "See Also" section, above}
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
-	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{plot.tgp}}}
+	\code{\link{bgp}}, \code{\link{btgpllm}},
+	\code{\link{plot.tgp}}, \code{vignette("tgp")}}
 
 \keyword{ hplot }
 \keyword{ tree }

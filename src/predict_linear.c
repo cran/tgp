@@ -57,7 +57,7 @@ double *FFrow, *b;
 
 	#ifdef DEBUG
 	if(abs(zz) > 10e10) 
-		myprintf(stderr, "WARNING: (predict) abs(zz)=%g > 10e10\n", zz);
+		warning("(predict) abs(zz)=%g > 10e10\n", zz);
 	#endif
 
 	return zz;
@@ -138,8 +138,7 @@ double **FW, **FFrow;
 		
 		if(denom <= 0) {
 			#ifdef DEBUG
-			myprintf(stderr, "WARNING: denom = %g, diff = %g, (i=%d, which_i=%d)\n", 
-					denom, diff, i, which_i) ;
+		        warning("denom = %g, diff = %g, (i=%d, which_i=%d)\n", denom, diff, i, which_i);
 			#endif
 			Ds2xy[i] = 0;
 		} else Ds2xy[i] = ss2 * diff * diff / denom;
@@ -426,7 +425,7 @@ double *z, *zz, *bmu, *ego;
 double **F, **FF, **Vb, **Ds2xy;
 double s2, nug;
 int err;
-unsigned short *state;
+void *state;
 {
   double *zmean, *zs;
   int warn = 0;
@@ -463,7 +462,7 @@ int err;
 double *zz, *z, *b; 
 double **F, **W, **FF, **Ds2xy;
 double ss2, nug, tau2;
-unsigned short *state;
+void *state;
 {
 	/*double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], Frow[n1][col];*/
 	double **FW, **IDpFWFi, **FFrow, **Frow;
