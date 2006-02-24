@@ -21,22 +21,22 @@
 #
 #*******************************************************************************
 
-
-"tgp.plot.parts.1d" <-
-function(parts,lwd=1)
+# get the grid of locations for the data
+"getlocs" <- 
+function(X)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
+  db <- dim(X);
+  Xsort <- apply(X, 2, sort)
+  unique <- (Xsort[1:(db[1]-1),] != Xsort[2:db[1],])
+  locs.list <- list()
+  for(i in 1:db[2]) {
+    locs <- c(Xsort[unique[,i],i], Xsort[db[1],i])
+    count <- rep(0,length(locs))
+    for(j in 1:length(locs)) {
+      count[j] = sum(Xsort[,i] == locs[j])
+    }
+    ll.i <- list(locs=locs,count=count)
+    locs.list[[i]] <- ll.i
   }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
+  return(locs.list)
 }
-

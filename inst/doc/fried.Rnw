@@ -1,6 +1,6 @@
 %\VignetteIndexEntry{example on Friedman data}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignetteDepends{tgp}
 %\VignettePackage{tgp}
 
 \subsection{Friedman data}
@@ -8,9 +8,7 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-library(akima)
-library(maptree)
-options(width=70)
+options(width=65)
 @ 
 
 This Friedman data set is the first one of a suite that was used to
@@ -68,7 +66,7 @@ better than Bayesian linear CART on this data, in terms of RMSE (in
 terms of MSE the GP LLM is
 \Sexpr{signif(sqrt(fr.btlm.mse)/sqrt(fr.bgpllm.mse),4)} times better).
 Watching the evolution of the Markov chain for the GP LLM (via the
-progress statements written to {\tt stdout}, not shown because the
+progress statements written to {\tt stdout}, not shown because the not
 would fit on the page), it is easy to see how the GP LLM quickly
 learns that $\mb{b} = (1,1,1,0,0,0,0,0,0,0)$, and that $\beta_4
 \approx 4$ and $\beta_5 \approx 10$---basically that only the first

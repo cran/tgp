@@ -2,83 +2,78 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(maptree)
 graphics.off()
-
 
 ###################################################
 ### chunk number 2: 
 ###################################################
-exp2d.data <- exp2d.rand()
-X <- exp2d.data$X; Z <- exp2d.data$Z
-Xcand <- exp2d.data$XX
+library(MASS)
 
 
 ###################################################
 ### chunk number 3: 
 ###################################################
-exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp")
+moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
 
 
 ###################################################
-### chunk number 4: mapt
+### chunk number 4: bgp
 ###################################################
-tgp.trees(exp1)
+plot(moto.bgp, main='GP,', layout='surf')
 
 
 ###################################################
 ### chunk number 5: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
+rl <- readline("press RETURN to continue")
 dev.off()
 
 
 ###################################################
 ### chunk number 6: 
 ###################################################
-XX <- tgp.design(10, Xcand, exp1)
+moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
 
 
 ###################################################
-### chunk number 7: cands
+### chunk number 7: btlm
 ###################################################
-plot(exp1$X, pch=19, cex=0.5); points(XX)
-tgp.plot.parts.2d(exp1$parts)
+plot(moto.btlm, main='Bayesian CART,', layout='surf')
 
 
 ###################################################
 ### chunk number 8: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
+rl <- readline("press RETURN to continue")
 dev.off()
 
 
 ###################################################
 ### chunk number 9: 
 ###################################################
-exp1.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", ego=TRUE, ds2x=TRUE)
+p <- tgp.default.params(2)
+p$bprior <- "b0"
+p$nug.p <- c(1.0,0.1,10.0,0.1)
+moto.tgp <- tgp(X=mcycle[,1], Z=mcycle[,2], params=p,
+	   BTE=c(2000,22000,2))
 
 
 ###################################################
-### chunk number 10: expalm
+### chunk number 10: btgp
 ###################################################
-par(mfrow=c(1,2), bty="n")
-plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout="surf")
-plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout="as", as="alm")
+plot(moto.tgp, main='custom treed GP LLM,', layout='surf')
 
 
 ###################################################
 ### chunk number 11: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
+rl <- readline("press RETURN to continue")
 dev.off()
 
 
 ###################################################
-### chunk number 12: expalcego
+### chunk number 12: btgpq
 ###################################################
-par(mfrow=c(1,2), bty="n")
-plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout='as', as='alc')
-plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout='as', as='ego')
+plot(moto.tgp, main='custom treed GP LLM,', layout='as')
 
 

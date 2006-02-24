@@ -35,7 +35,7 @@ Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \note{This data is used in the examples of the functions

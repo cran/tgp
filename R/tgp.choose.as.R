@@ -21,22 +21,26 @@
 #
 #*******************************************************************************
 
-
-"tgp.plot.parts.1d" <-
-function(parts,lwd=1)
+"tgp.choose.as" <-
+function(out, as)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
+  # choose AS stats to plot
+  if(is.null(as)) {
+     X <- rbind(out$X, out$XX)
+     criteria <- c(out$Zp.q, out$ZZ.q)
+     name <- "error"
+  } else {
+     X <- out$XX
+     criteria <- out$ZZ.q
+     name <- "ALM stats"
+     if(as == "alc") {
+       if(is.null(out$Ds2x)) cat("NOTICE: out$Ds2x is NULL, using ALM\n")
+       else { criteria <- out$Ds2x; name <- "ALC stats" }
+     } else if(as == "ego") {
+       if(is.null(out$ego)) cat("NOTICE: out$ego is NULL, using ALM\n")
+       else { criteria <- out$ego; name <- "EGO stats" }
+     }
   }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
-}
 
+  return(list(X=X, criteria=criteria, name=name))
+}

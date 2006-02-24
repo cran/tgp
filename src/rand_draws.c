@@ -36,6 +36,10 @@
 #include <R.h>
 #include "randomkit.h"
 
+/* for Windows and other OS's without drand support, i
+ * so the compiler won't warn */
+double erand48(unsigned short xseed[3]); 
+
 #define E   2.7182818284590452354
 
 int getrngstate = 1;

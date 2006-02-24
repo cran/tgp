@@ -34,29 +34,32 @@ extern "C"
 #include "corr.h"
 #include "params.h"
 #include "model.h"
-#include "exp.h"
+#include "matern.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <string>
+#include <Rmath.h>
 using namespace std;
 
 #define BUFFMAX 256
 #define PWR 2.0
 
 /*
- * Exp:
+ * Matern:
  * 
  * constructor function
  */
 
-Exp::Exp(unsigned int col, Gp_Prior *gp_prior)
+Matern::Matern(unsigned int col, Gp_Prior *gp_prior)
   : Corr(col, gp_prior)
 {
-  assert(gp_prior->CorrPrior()->CorrModel() == EXP);
-  d = ((Exp_Prior*) prior)->D();
+  phi = ((Matern_Prior*) prior)->PHI();
+  nu = ((Matern_Prior*) prior)->NU();
+  assert(gp_prior->CorrPrior()->CorrModel() == MATERN);
+  d = ((Matern_Prior*) prior)->D();
   xDISTx = NULL;
   nd = 0;
   dreject = 0;
@@ -64,23 +67,26 @@ Exp::Exp(unsigned int col, Gp_Prior *gp_prior)
 
 
 /*
- * Exp (assignment operator):
+ * Matern (assignment operator):
  * 
  * used to assign the parameters of one correlation
  * function to anothers.  Both correlation functions
  * must already have been allocated.
  */
 
-Corr& Exp::operator=(const Corr &c)
+Corr& Matern::operator=(const Corr &c)
 {
-  Exp *e = (Exp*) &c;
+  Matern *e = (Matern*) &c;
   
+  phi = e->phi;
+  nu = e->nu;
+
   log_det_K = e->log_det_K;
   linear = e->linear;
   d = e->d;
   nug = e->nug;
   dreject = e->dreject;
-  assert(prior->CorrModel() == EXP);
+  assert(prior->CorrModel() == MATERN);
   assert(prior == gp_prior->CorrPrior());
   
   /* copy the covariance matrices */
@@ -91,12 +97,12 @@ Corr& Exp::operator=(const Corr &c)
 
 
 /* 
- * ~Exp:
+ * ~Matern:
  * 
  * destructor
  */
 
-Exp::~Exp(void)
+Matern::~Matern(void)
 {
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
@@ -109,8 +115,10 @@ Exp::~Exp(void)
  * compute correlation matrix K
  */
 
-void Exp::Update(unsigned int n, double **X)
-{
+void Matern::Update(unsigned int n, double **X)
+{ 
+
+ 
   if(linear) return;
   assert(this->n == n);
   if(!xDISTx || nd != n) {
@@ -119,7 +127,7 @@ void Exp::Update(unsigned int n, double **X)
     nd = n;
   }
   dist_symm(xDISTx, col-1, X, n, PWR);
-  dist_to_K_symm(K, xDISTx, d, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, phi, nu, nug, n);
   //delete_matrix(xDISTx);
 }
 
@@ -131,11 +139,12 @@ void Exp::Update(unsigned int n, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n, double **K, double **X)
+void Matern::Update(unsigned int n, double **K, double **X)
 {
+   
   double ** xDISTx = new_matrix(n, n);
   dist_symm(xDISTx, col-1, X, n, PWR);
-  dist_to_K_symm(K, xDISTx, d, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, phi, nu, nug, n);
   delete_matrix(xDISTx);
 }
 
@@ -147,11 +156,12 @@ void Exp::Update(unsigned int n, double **K, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
+void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
 {
+  
   double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
-  dist_to_K(K, xxDISTx, d, 0.0, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, phi, nu, 0.0, n1, n2);
   delete_matrix(xxDISTx);
 }
 
@@ -164,7 +174,7 @@ void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, doubl
  * has changed; otherwise returns false
  */
 
-int Exp::Draw(unsigned int n, double **F, double **X, double *Z, 
+int Matern::Draw(unsigned int n, double **F, double **X, double *Z, 
 	      double *lambda, double **bmu, double **Vb, double tau2, 
 	      void *state)
 {
@@ -200,7 +210,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   /* d; rebuilding K, Ki, and marginal params, if necessary */
   if(prior->Linear()) d_new = d;
   else {
-    Exp_Prior* ep = (Exp_Prior*) prior;
+    Matern_Prior* ep = (Matern_Prior*) prior;
     success = 
       d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
 		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
@@ -233,9 +243,9 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
  * and choose one for "this" correlation function
  */
 
-void Exp::Combine(Corr *c1, Corr *c2, void *state)
+void Matern::Combine(Corr *c1, Corr *c2, void *state)
 {
-  get_delta_d((Exp*)c1, (Exp*)c2, state);
+  get_delta_d((Matern*)c1, (Matern*)c2, state);
   CombineNug(c1, c2, state);
 }
 
@@ -248,9 +258,9 @@ void Exp::Combine(Corr *c1, Corr *c2, void *state)
  * for two (new) correlation functions
  */
 
-void Exp::Split(Corr *c1, Corr *c2, void *state)
+void Matern::Split(Corr *c1, Corr *c2, void *state)
 {
-  propose_new_d((Exp*) c1, (Exp*) c2, state);
+  propose_new_d((Matern*) c1, (Matern*) c2, state);
   SplitNug(c1, c2, state);
 }
 
@@ -261,7 +271,7 @@ void Exp::Split(Corr *c1, Corr *c2, void *state)
  * compute d from two ds (used in prune)
  */
 
-void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
+void Matern::get_delta_d(Matern* c1, Matern* c2, void *state)
 {
   double dch[2];
   int ii[2];
@@ -280,11 +290,11 @@ void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
  * new children partitions. 
  */
 
-void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
+void Matern::propose_new_d(Matern* c1, Matern* c2, void *state)
 {
   int i[2];
   double dnew[2];
-  Exp_Prior *ep = (Exp_Prior*) prior;
+  Matern_Prior *ep = (Matern_Prior*) prior;
   propose_indices(i, 0.5, state);
   dnew[i[0]] = d;
   if(prior->Linear()) dnew[i[1]] = d;
@@ -303,7 +313,7 @@ void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
  * of the (parameters of) correlation function
  */
 
-char* Exp::State(void)
+char* Matern::State(void)
 {
   char buffer[BUFFMAX];
 #ifdef PRINTNUG
@@ -333,7 +343,7 @@ char* Exp::State(void)
  * return 1 if linear, 0 otherwise
  */
 
-unsigned int Exp::sum_b(void)
+unsigned int Matern::sum_b(void)
 {
   if(linear) return 1;
   else return 0;
@@ -347,7 +357,7 @@ unsigned int Exp::sum_b(void)
  * make not linear
  */
 
-void Exp::ToggleLinear(void)
+void Matern::ToggleLinear(void)
 {
   if(linear) {
     linear = false;
@@ -363,9 +373,30 @@ void Exp::ToggleLinear(void)
  * return the range parameter
  */
 
-double Exp::D(void)
+double Matern::D(void)
 {
   return d;
+}
+
+/*
+ * PHI:
+ *
+ * return the scale parameter
+ */
+
+double Matern::PHI(void)
+{
+  return phi;
+}
+/*
+ * NU:
+ *
+ * return the nu parameter
+ */
+
+double Matern::NU(void)
+{
+  return nu;
 }
 
 
@@ -376,10 +407,10 @@ double Exp::D(void)
  * the correlation function (e.g. d and nug)
  */
 
-double Exp::log_Prior(void)
+double Matern::log_Prior(void)
 {
   double prob = ((Corr*)this)->log_NugPrior();
-  prob += ((Exp_Prior*) prior)->log_Prior(d, linear);
+  prob += ((Matern_Prior*) prior)->log_Prior(d, linear);
   return prob;
 }
 
@@ -391,25 +422,27 @@ double Exp::log_Prior(void)
  * function with this module governing its prior parameterization
  */
 
-Corr* Exp_Prior::newCorr(void)
+Corr* Matern_Prior::newCorr(void)
 {
-  return new Exp(col, gp_prior);
+  return new Matern(col, gp_prior);
 }
 
 
 /*
- * Exp_Prior:
+ * Matern_Prior:
  * 
  * constructor for the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(unsigned int col) : Corr_Prior(col)
+Matern_Prior::Matern_Prior(unsigned int col) : Corr_Prior(col)
 {
-  corr_model = EXP;
+  corr_model = MATERN;
 
   /* defaults */ 
   d = 0.5;
+  nu = 1.0;
+  phi = 1.0;
   default_d_priors();
   default_d_lambdas();
 }
@@ -422,26 +455,28 @@ Exp_Prior::Exp_Prior(unsigned int col) : Corr_Prior(col)
  * power family
  */
 
-Corr_Prior* Exp_Prior::Dup(void)
+Corr_Prior* Matern_Prior::Dup(void)
 {
-  return new Exp_Prior(this);
+  return new Matern_Prior(this);
 }
 
 
 /*
- * Exp_Prior (new duplicate)
+ * Matern_Prior (new duplicate)
  *
  * duplicating constructor for the prior distribution for 
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
+Matern_Prior::Matern_Prior(Corr_Prior *c) : Corr_Prior(c)
 {
-  Exp_Prior *e = (Exp_Prior*) c;
-  assert(e->corr_model == EXP);
+  Matern_Prior *e = (Matern_Prior*) c;
+  assert(e->corr_model == MATERN);
   corr_model = e->corr_model;
   dupv(gamlin, e->gamlin, 3);
   d = e->d;
+  nu = e->nu;
+  phi = e->phi;
   fix_d = e->fix_d;
   dupv(d_alpha, e->d_alpha, 2);
   dupv(d_beta, e->d_beta, 2);
@@ -450,13 +485,13 @@ Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
 }
 
 /*
- * ~Exp_Prior:
+ * ~Matern_Prior:
  *
  * destructor the the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::~Exp_Prior(void)
+Matern_Prior::~Matern_Prior(void)
 {
 }
 
@@ -468,7 +503,7 @@ Exp_Prior::~Exp_Prior(void)
  * passed in from R
  */
 
-void Exp_Prior::read_double(double *dparams)
+void Matern_Prior::read_double(double *dparams)
 {
   /* read the parameters that have to to with the
    * nugget first */
@@ -476,7 +511,7 @@ void Exp_Prior::read_double(double *dparams)
 
   /* starting value for the range parameter */
   d = dparams[1];
-  //myprintf(stdout, "starting d=%g\n", d);
+  myprintf(stdout, "starting range=%g\n", d);
 
   /* reset dparams to start after the nugget gamlin params */
   dparams += 13;
@@ -493,6 +528,9 @@ void Exp_Prior::read_double(double *dparams)
 				&(dparams[0]), "d lambda");
   }
   dparams += 4; /* reset */
+  phi = dparams[0];
+  nu = dparams[1];
+  myprintf(stdout, "fixed phi %g and nu %g \n", phi, nu);
 }
 
 
@@ -503,7 +541,7 @@ void Exp_Prior::read_double(double *dparams)
  * to default values
  */
 
-void Exp_Prior::default_d_priors(void)
+void Matern_Prior::default_d_priors(void)
 {
   d_alpha[0] = 1.0;
   d_beta[0] = 20.0;
@@ -519,7 +557,7 @@ void Exp_Prior::default_d_priors(void)
  * to default values
  */
 
-void Exp_Prior::default_d_lambdas(void)
+void Matern_Prior::default_d_lambdas(void)
 {
   d_alpha_lambda[0] = 1.0;
   d_beta_lambda[0] = 10.0;
@@ -533,24 +571,46 @@ void Exp_Prior::default_d_lambdas(void)
 /*
  * D:
  * 
- * return the default range parameter setting 
+ * return the default nu parameter setting 
  * for the exponential correllation function 
  */
 
-double Exp_Prior::D(void)
+double Matern_Prior::D(void)
 {
   return d;
 }
+
+/*
+ * PHI:
+ *
+ * return the nu parameter
+ */
+
+double Matern_Prior::PHI(void)
+{
+  return phi;
+}
+/*
+ * NU:
+ *
+ * return the nu parameter
+ */
+
+double Matern_Prior::NU(void)
+{
+  return nu;
+}
+
 
 
 /*
  * DAlpha:
  *
  * return the alpha prior parameter setting to the gamma 
- * distribution prior for the range parameter
+ * distribution prior for the nu parameter
  */
 
-double* Exp_Prior::DAlpha(void)
+double* Matern_Prior::DAlpha(void)
 {
   return d_alpha;
 }
@@ -560,10 +620,10 @@ double* Exp_Prior::DAlpha(void)
  * DBeta:
  *
  * return the beta prior parameter setting to the gamma 
- * distribution prior for the range parameter
+ * distribution prior for the nu parameter
  */
 
-double* Exp_Prior::DBeta(void)
+double* Matern_Prior::DBeta(void)
 {
   return d_beta;
 }
@@ -572,16 +632,16 @@ double* Exp_Prior::DBeta(void)
 /*
  * Draw:
  * 
- * draws for the hierarchical priors for the Exp
+ * draws for the hierarchical priors for the Matern
  * correlation function which are
  * contained in the params module
  */
 
-void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
+void Matern_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
 {
   if(!fix_d) {
     double *d = new_vector(howmany);
-    for(unsigned int i=0; i<howmany; i++) d[i] = ((Exp*)(corr[i]))->D();
+    for(unsigned int i=0; i<howmany; i++) d[i] = ((Matern*)(corr[i]))->D();
     mixture_priors_draw(d_alpha, d_beta, d, howmany, d_alpha_lambda, 
 			d_beta_lambda, state);
     free(d);
@@ -599,7 +659,7 @@ void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
  * the correlation function (e.g. d and nug)
  */
 
-double Exp_Prior::log_Prior(double d, bool linear)
+double Matern_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
   if(gamlin[0] < 0) return prob;
@@ -619,9 +679,9 @@ double Exp_Prior::log_Prior(double d, bool linear)
  * to a file 
  */
 
-void Exp_Prior::Print(FILE *outfile)
+void Matern_Prior::Print(FILE *outfile)
 {
-  myprintf(stdout, "corr prior: isotropic power\n");
+  myprintf(stdout, "corr prior: matern\n");
 
   /* print nugget stugg first */
   PrintNug(outfile);

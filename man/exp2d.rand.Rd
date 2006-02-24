@@ -13,7 +13,7 @@
 
     \item{\code{X}}{2-d \code{data.frame} with 80 input locations}
     \item{\code{Z}}{Numeric vector describing the responses at the \code{X} locations}
-    \item{\code{XX}}{2-d \code{data.frame} with the remaining 361 input locations}
+    \item{\code{XX}}{2-d \code{data.frame} containing the remaining 361 input locations}
 }
 \details{
 	Data is subsampled without replacement from \code{data(\link{exp2d})}.
@@ -33,7 +33,7 @@ Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \note{This data is used in the examples of the functions
@@ -42,4 +42,20 @@ listed above in the "See Also" section}
 \seealso{ \code{\link{exp2d}}, \code{\link{tgp}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
 	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}} \code{\link{bgp}}}
 
+
+\examples{
+# random data
+ed <- exp2d.rand()
+
+# higher span = 0.5 required becuase the data is sparce
+# and was generated randomly
+ed.g <- interp.loess(ed$X[,1], ed$X[,2], ed$Z, span=0.5)
+
+# perspective plot, and plot of the input (X) locations
+par(mfrow=c(1,2), bty="n")
+persp(ed.g, main="loess surface", theta=-30, phi=20,
+      xlab="X[,1]", ylab="X[,2]", zlab="Z")
+plot(ed$X, main="Randomly Subsampled Inputs")
+}
+      
 \keyword{datasets}

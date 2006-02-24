@@ -8,6 +8,7 @@ dopt.gp                 Sequential D-Optimal Design for a Stationary Gaussian Pr
 exp2d                   2-d Exponential Data, for examples
 exp2d.rand              Randomly subsampled 2-d Exponential Data, for examples
 friedman.1.data         First Friedman dataset, for examples
+interp.loess		Loess interpolation onto a uniform grid for 2-d plotting
 plot.tgp                Plotting for Treed Gaussian Process Models
 tgp                     Generic interface to treed Gaussian process models
 tgp.default.params      Default Treed Gaussian Process Model Parameters

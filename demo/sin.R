@@ -2,8 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(akima)
-library(maptree)
+options(width=65)
+graphics.off()
 
 
 ###################################################
@@ -26,54 +26,70 @@ sin.bgp <- bgp(X=X, Z=Z, XX=XX)
 ###################################################
 ### chunk number 4: bgp
 ###################################################
-plot(sin.bgp, main='GP,')
+plot(sin.bgp, main='GP,', layout='surf')
 
 
 ###################################################
 ### chunk number 5: 
 ###################################################
+rl <- readline("pres RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 6: 
+###################################################
 sin.btlm <- btlm(X=X, Z=Z, XX=XX)
 
 
 ###################################################
-### chunk number 6: btlm
+### chunk number 7: btlm
 ###################################################
-plot(sin.btlm, main='Linear CART,')
-
-
-###################################################
-### chunk number 7: btlmtrees
-###################################################
-tgp.trees(sin.btlm)
+plot(sin.btlm, main='Linear CART,', layout='surf')
 
 
 ###################################################
 ### chunk number 8: 
 ###################################################
-sin.btgp <- btgp(X=X, Z=Z, XX=XX)
+rl <- readline("pres RETURN to continue: ")
+dev.off()
 
 
 ###################################################
-### chunk number 9: btgp
+### chunk number 9: btlmtrees
 ###################################################
-plot(sin.btgp, main='treed GP,')
+tgp.trees(sin.btlm)
 
 
 ###################################################
-### chunk number 10: btgptrees
+### chunk number 10: 
 ###################################################
-tgp.trees(sin.btgp)
+rl <- readline("pres RETURN to continue: ")
+dev.off()
 
 
 ###################################################
 ### chunk number 11: 
 ###################################################
-sin.btgpllm <- btgpllm(X=X, Z=Z, XX=XX)
+sin.btgp <- btgp(X=X, Z=Z, XX=XX)
 
 
 ###################################################
-### chunk number 12: btgpllm
+### chunk number 12: btgp
 ###################################################
-plot(sin.btgpllm, main='treed GP LLM,')
+plot(sin.btgp, main='treed GP,', layout='surf')
+
+
+###################################################
+### chunk number 13: 
+###################################################
+rl <- readline("pres RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 14: btgptrees
+###################################################
+tgp.trees(sin.btgp)
 
 

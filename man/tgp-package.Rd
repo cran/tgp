@@ -25,7 +25,7 @@ For a complete list of functions, use \code{library(help="tgp")}.
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 

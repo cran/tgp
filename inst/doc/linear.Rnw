@@ -1,17 +1,15 @@
 %\VignetteIndexEntry{example on linear data}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignetteDepends{tgp,maptree,combinat}
 %\VignettePackage{tgp}
-
 
 \subsection{1-d Linear data}
 \label{sec:ex:1dlinear}
 
 <<echo=false,results=hide>>=
 library(tgp)
-library(akima)
 library(maptree)
-options(width=70)
+options(width=65)
 @ 
 
 Consider data sampled from a linear model.
@@ -39,8 +37,11 @@ lin.blm <- blm(X=X, XX=XX, Z=Z)
 \begin{figure}[ht!]
 \centering
 <<label=blm,fig=TRUE,echo=TRUE,width=7,height=4.5>>=
-plot(lin.blm, main='Linear Model,')
+plot(lin.blm, main='Linear Model,', layout='surf')
 abline(1,2,lty=3,col='blue')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt blm} on
@@ -49,19 +50,25 @@ abline(1,2,lty=3,col='blue')
 \label{f:lin:blm}
 \end{figure}
 
-The first group of text printed to {\tt stdout} is a summary of the
-prior parameterization.  Then, MCMC progress indicators are printed
-every 1,000 rounds.  The linear model is indicated by {\tt
-  cor=[0]}.The GUI versions of {\tt R}, on {\tt Windows} or {\tt MacOS
-  X}, usually buffers {\tt stdout}, rendering this feature essentially
-useless.  In terminal versions, e.g. {\tt Unix}, the progress
-indicators can give a sense of when the code will finish.  Also note
-that a user cannot interact while the {\tt C} code is running.  This
-will be changed in future versions.
+The first group of text printed to {\tt stdout} is a summary of inputs
+to the {\tt C} code, and the prior parameterization.  Then, MCMC
+progress indicators are printed every 1,000 rounds.  The linear model
+is indicated by {\tt cor=[0]}.  In terminal versions, e.g. {\tt Unix},
+the progress indicators can give a sense of when the code will finish.
+GUI versions of {\tt R}---{\tt Windows} or {\tt MacOS X}---usually
+buffer {\tt stdout}, rendering this feature essentially useless as a
+real-time indicator of progress.  Note that a user cannot interact
+with {\tt R} while the {\tt C} code is running.  This will be changed
+in future versions.
 
 The generic {\tt plot} method can be used to visualize the fitted
-posterior predictive surface in terms of means and credible intervals.
+posterior predictive surface (with option {\tt layout = 'surf'}) 
+in terms of means and credible intervals.
 Figure \ref{f:lin:blm} shows how to do it, and what you get.  
+The default option {\tt layout = 'both'} shows both a predictive
+surface and error (or uncertainty) plot, side by side.
+The error plot can be obtained alone via {\tt layout = 'as'}.
+Examples of these layouts appear later.
 
 If, say, you were unsure about the dubious ``linearness'' of this
 data, you might try a GP LLM (using {\tt btgpllm}) and let a more
@@ -72,8 +79,11 @@ lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
 \begin{figure}[ht!]
 \centering
 <<label=gplm,fig=TRUE,echo=TRUE,width=7,height=4.5>>=
-plot(lin.gpllm, main='GP LLM,')
+plot(lin.gpllm, main='GP LLM,', layout='surf')
 abline(1,2,lty=4,col='blue')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt

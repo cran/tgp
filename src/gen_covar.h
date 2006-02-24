@@ -34,9 +34,14 @@ void exp_corr_sep_symm(double **K, unsigned int m, double **X,
 void dist_to_K(double **K, double **DIST, double d, double nug, 
 		unsigned int m, unsigned int n);
 void dist_to_K_symm(double **K, double **DIST, double d, double nug, unsigned int n);
+void matern_dist_to_K(double **K, double **DIST, double d, double phi, double nu, double nug, 
+		unsigned int m, unsigned int n);
+void matern_dist_to_K_symm(double **K, double **DIST, double d, double phi, double nu, double nug, unsigned int n);
 void inverse_chol(double **M, double **Mi, double **Mutil, unsigned int n);
 void inverse_lu(double **M, double **Mi, double **Mutil, unsigned int n);
 void X_to_F(unsigned int n, unsigned int col, double **X, double **F);
 void solve_chol(double *x, double **A, double *b, unsigned int n);
+
+
 
 #endif

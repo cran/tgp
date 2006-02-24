@@ -1,6 +1,6 @@
 %\VignetteIndexEntry{example on motorcycle data}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignetteDepends{tgp,maptree,combinat}
 %\VignettePackage{tgp}
 
 \subsection{Motorcycle Accident Data}
@@ -8,22 +8,19 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-library(akima)
-library(maptree)
-options(width=70)
+options(width=65)
 @ 
 
 The Motorcycle Accident Dataset \cite{silv:1985} is a classic
 nonstationary data set used in recent literature
 \cite{rasm:ghah:nips:2002} to demonstrate the success of nonstationary
-models.  The data consists of measurements of acceleration of the
+models.  The data consists of measurements of the acceleration of the
 head of a motorcycle rider as a function of time in the first moments
-after an impact.
-In addition to being nonstationary, the data has input-dependent
-noise, which makes it useful for illustrating how the treed GP model
-handles this nuance.  There are at least two, and perhaps three
-regions where the response exhibits different behavior both in terms
-of the correlation structure and noise level.
+after an impact.  In addition to being nonstationary, the data has
+input-dependent noise which makes it useful for illustrating how the
+treed GP model handles this nuance.  There are at least two---perhaps
+three---three regions where the response exhibits different behavior
+both in terms of the correlation structure and noise level.
 
 The data is included as part of the {\tt MASS} library in {\tt R}.
 <<>>= 
@@ -31,20 +28,23 @@ library(MASS)
 @ 
 Figure \ref{f:moto:bgp} shows how a stationary GP is able to capture
 the nonlinearity in the response but fails to capture the input
-dependent noise, and increased smoothness (perhaps linearity) in
+dependent noise and increased smoothness (perhaps linearity) in
 parts of the input space.
 <<echo=TRUE,results=HIDE>>=
 moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
 @ 
 Since the responses in this data have a wide range, it helps to
-translate and rescale them so that they have a mean of zero, and a
+translate and rescale them so that they have a mean of zero and a
 range of one.  The {\tt m0r1} argument to {\tt b*} and {\tt tgp}
-functions automates this procedure.  All progress indicators
-are surpressed for this example.
+functions automates this procedure.  Progress indicators
+are surpressed.
 \begin{figure}[ht!]
 \centering
 <<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(moto.bgp, main='GP,')
+plot(moto.bgp, main='GP,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
@@ -58,12 +58,16 @@ noise but fails to capture the waviness of the
 ``whiplash''---center--- segment of th the response.
 <<echo=TRUE,results=HIDE>>=
 moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
-@ Figure \ref{f:moto:btlm} shows the resulting piecewise linear
+@ 
+Figure \ref{f:moto:btlm} shows the resulting piecewise linear
 predictive surface and MAP partition ($\hat{\mathcal{T}}$).
 \begin{figure}[ht!]
 \centering
 <<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(moto.btlm, main='Bayesian CART,')
+plot(moto.btlm, main='Bayesian CART,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
@@ -92,11 +96,16 @@ moto.tgp <- tgp(X=mcycle[,1], Z=mcycle[,2], params=p,
 \begin{figure}[ht!]
 \centering
 <<label=btgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(moto.tgp, main='custom treed GP LLM,')
+plot(moto.tgp, main='custom treed GP LLM,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 <<label=btgpq,fig=TRUE,echo=TRUE,width=7,height=5>>=
-main <- 'quantile difference,'
-plot(moto.tgp$X[,1], moto.tgp$Zp.q, type='l', main=main)
+plot(moto.tgp, main='custom treed GP LLM,', layout='as')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize {\em top} Posterior predictive distribution
@@ -105,12 +114,8 @@ plot(moto.tgp$X[,1], moto.tgp$Zp.q, type='l', main=main)
   Quantile-norm (90\%-5\%) showing input-dependent noise.}
 \label{f:moto:tgp}
 \end{figure}
-The resulting posterior predictive surface is shown in {\em top} half
-of Figure \ref{f:moto:tgp}.  The {\em bottom} half of the figure shows
-the norm (difference) in predictive quantiles, clearly illustrating
-the treed GP's ability to capture input-specific noise in the
-posterior predictive distribution.
-
-Other permutations of possible models, functions and arguments, for
-this data is contained in the {\tt b*} and {\tt tgp} examples sections
-of the respective {\tt R} help files.
+The resulting posterior predictive surface is shown in the {\em top}
+half of Figure \ref{f:moto:tgp}.  The {\em bottom} half of the figure
+shows the norm (difference) in predictive quantiles, clearly
+illustrating the treed GP's ability to capture input-specific noise in
+the posterior predictive distribution.

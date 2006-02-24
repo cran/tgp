@@ -57,7 +57,7 @@ typedef struct preds
   unsigned int d;	/* number of covariates */
   unsigned int R;	/* number of rounds in preds */
   unsigned int mult;	/* number of rounds per prediction */
-  double **ZZ;		/* predictions at candidates XX */
+   double **ZZ;		/* predictions at candidates XX */
   double **Zp;		/* predictions at inputs X */
   double *ego;          /* expected global optimizatoin */
   double **Ds2xy;	/* delta-sigma calculation for XX */
@@ -102,7 +102,6 @@ typedef struct linarea
 typedef struct largs
 {
 	Tree* leaf;
-	double **T;
 	Preds* preds;
 	int index;
 	bool dnorm;
@@ -115,44 +114,21 @@ class Model
 {
   private:
 
-	/*
-	 * known constants
-	 */
-	double *mu;		/* mean prior for b0 */
-	double **Ci;		/* prior covariance for b0 */
-	unsigned int rho;	/* prior df for T */
-	double **V;		/* prior covariance for T */
+
 	unsigned int col;
 	double **iface_rect;
 	int Id;
 
-	double *b0;		/* hierarchical non-tree parameter b0 */
-	double **Ti;		/* hierearical non-tree parameter Ti */
-	double **T;		/* inverse of Ti */
-	double **Tchol;		/* for help in T=inv(Ti) */
+	Params *params;		                /* hierarchical and initial parameters */
+	Base_Prior *base_prior;                 /* base model (e.g., GP) prior module */
 
-	double *s2_a0;		/* alpha s2 inv-gamma prior */
-	double *s2_g0;		/* beta s2 inv-gamma prior */
-	double *s2_a0_l;	/* s2 hierarchical mix-inv-gamma alpha (lambda) parameter */
-	double *s2_g0_l;	/* s2 hierarchical mix-inv-gamma beta (lambda) parameter */
-
-	double *tau2_a0;	/* alpha tau2 inv-gamma prior */
-	double *tau2_g0;	/* beta tau2 inv-gamma prior */
-	double *tau2_a0_l;	/* tau2 hierarchical mix-inv-gamma alpha (lambda) parameter */
-	double *tau2_g0_l;	/* tau2 hierarchical mix-inv-gamma beta (lambda) parameter */
-
-	Params *params;		/* hierarchical and initial parameters */
-
-	Tree* t;		/* root of the partition tree */
-	double *t_alpha;	/* tree grow process prior, alpha */
-	double *t_beta;		/* tree grow process prior, beta */
-	unsigned int *t_minpart;/* tree grow process prior, min partition size */
+	Tree* t;		                /* root of the partition tree */
 
 	/* for computing acceptance proportions of tree proposals */
 	int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
 
 	bool parallel;				/* use pthreads or not */
-	void *state_to_init_consumer;	/* to initialize conumer state variables */
+	void *state_to_init_consumer; 	        /* to initialize conumer state variables */
 	List *PP;				/* producer wait queue (before producing to tlist) */
 	#ifdef PARALLEL
 	pthread_t** consumer;			/* consumer thread handle */
@@ -188,23 +164,12 @@ class Model
 	bool prune_tree(void *state);
 	void printTreeStats(FILE* outfile);
 	void set_TreeRoot(Tree *t);
-	double** get_T(void);
-	double** get_Ti(void);
-	double* get_b0(void);
 	Params* get_params(void);
 	Tree* get_TreeRoot(void);
-	void hierarchical_draws(Tree** leaves, unsigned int numLeaves, int r, void *state);
 	void predict_master(Tree *leaf, Preds *preds, int index, void* state);
-	void predict(Tree* leaf, double **T, Preds* preds, unsigned int index, bool dnorm, 
-			void *state);
-	void allocate_leaf_params(double ***b, double **s2, double **tau2,
-			Corr ***corr, unsigned int numLeaves);
-	void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
-	void update_hierarchical_priors(double *s2, double *tau2, Corr **corr, 
-			unsigned int numLeaves, void *state);
+	void Predict(Tree* leaf, Preds* preds, unsigned int index, bool dnorm, void *state);
 	Tree** CopyPartitions(unsigned int *numLeaves);
-	void predict_xx(Tree* ll, double **T, Preds* preds, int index, bool dnorm, 
-			void *state);
+	void predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *state);
 	void cut_branch(void *state);
 	void cut_root(void);
 	void new_data(double **X, unsigned int n, unsigned int d, double* Z, double **rect);
@@ -212,7 +177,7 @@ class Model
 	void init_parallel_preds(void);
 	void close_parallel_preds(void);
 	void predict_consumer(void);
-	void predict_producer(Tree *leaf, double **T, Preds* preds, int index, bool dnorm);
+	void predict_producer(Tree *leaf, Preds* preds, int index, bool dnorm);
 	void consumer_finish(void);
 	void consumer_start(void);
 	void wrap_up_predictions(void);
@@ -226,15 +191,12 @@ class Model
 	void PrintBestPartitions();
 	void printTree(FILE* outfile);
 	double Posterior(void);
-	void printState(unsigned int r, unsigned int numLeaves, Tree** leaves, Corr **corr, 
-			double *s2, double *tau2);
-	void printRState(unsigned int r, unsigned int numLeaves, Tree** leaves, Corr **corr, 
-			double *s2, double *tau2);
+	void printState(unsigned int r, unsigned int numLeaves, Tree** leaves);
 	void printPosteriors(void);
 	Tree* maxPosteriors(void);
-	double Linear(void);
-	void GP(double gam);
 
+	double Linear(void);
+	void ResetLinear(double gam);
 	void new_linarea(void);
 	void realloc_linarea(void);
 	void delete_linarea(void);
@@ -255,7 +217,7 @@ Posteriors* new_posteriors(void);
 void delete_posteriors(Posteriors* posteriors);
 void register_posterior(Posteriors* posteriors, Tree* t, double post);
 
-void fill_larg(LArgs* larg, Tree *leaf, double **T, Preds* preds, int index, bool dnorm);
+void fill_larg(LArgs* larg, Tree *leaf, Preds* preds, int index, bool dnorm);
 void* predict_consumer_c(void* m);
 void print_parts(FILE *PARTSFILE, Tree *t, double **iface_rect);
 

@@ -22,31 +22,34 @@
  ********************************************************************************/
 
 
-#ifndef __EXP_SEP_H__
-#define __EXP_SEP_H__ 
+#ifndef __MATERN_H__
+#define __MATERN_H__ 
 
 #include "corr.h"
 
-class ExpSep_Prior;
-
+class Matern_Prior;
 
 /*
- * CLASS for the implementation of the separable exponentia
- * power family of correlation functions
+ * CLASS for the implementation of the matern
+ *  family of correlation functions 
  */
 
-class ExpSep : public Corr
+class Matern : public Corr
 {
  private:
-  double *d;		/* kernel correlation width parameter */
-  int *b;		/* dimension-wize linearization */
-  double *d_eff;	/* dimension-wize linearization */
-  double *pb;		/* prob of dimension-wize linearization */
+  double phi;           /* matern scale parameter (usually set to one) */
+  double nu;           /* matern smoothing parameter */
+
+  double d;		/* kernel correlation range parameter */
+  double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */
+  unsigned int nd;      /* for keeping track of the current size of xDISTx (nd x nd) */
   unsigned int dreject; /* d rejection counter */
+ 
  public:
-  ExpSep(unsigned int col, Gp_Prior *prior);
+
+  Matern(unsigned int col, Gp_Prior *gp_prior);
   virtual Corr& operator=(const Corr &c);
-  virtual ~ExpSep(void);
+  virtual ~Matern(void);
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
@@ -55,55 +58,57 @@ class ExpSep : public Corr
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
-   virtual unsigned int sum_b(void);
-  virtual void ToggleLinear(void);
-  void get_delta_d(ExpSep* c1, ExpSep* c2, void *state);
-  void propose_new_d(ExpSep* c1, ExpSep* c2, void *state);
-  bool propose_new_d(double* d_new, int * b_new, double *pb_new, 
-		     double *q_fwd, double *q_bak, void *state);
   virtual double log_Prior(void);
-  void draw_d_from_prior(double *d_new, void *state);
-  double *D(void);
+  virtual unsigned int sum_b(void);
+  virtual void ToggleLinear(void);
+  void get_delta_d(Matern* c1, Matern* c2, void *state);
+  void propose_new_d(Matern* c1, Matern* c2, void *state);
+  double D(void);
+  double PHI(void);
+  double NU(void);
 };
 
 
 /*
- * CLASS for the prior parameterization of the separable 
- * exponential power family of correlation functions 
+ * CLASS for the prior parameterization of exponential
+ * power family of correlation functions
  */
 
-class ExpSep_Prior : public Corr_Prior
+class Matern_Prior : public Corr_Prior
 {
-
  private:
 
-  double *d;
-  double **d_alpha;	/* d gamma-mixture prior alphas */
-  double **d_beta;	/* d gamma-mixture prior beta */
-  bool   fix_d;		/* estimate d-mixture parameters or not */
+  double phi;           /* matern normalizing parameter */
+  double nu;           /* matern smoothing parameter */
+
+  double d;
+  double d_alpha[2];	        /* d gamma-mixture prior alphas */
+  double d_beta[2];	        /* d gamma-mixture prior beta */
+  bool   fix_d;		        /* estimate d-mixture parameters or not */
   double d_alpha_lambda[2];	/* d prior alpha lambda parameter */
   double d_beta_lambda[2];	/* d prior beta lambda parameter */
 
+  
  public:
 
-  ExpSep_Prior(unsigned int col);
-  ExpSep_Prior(Corr_Prior *c);
-  virtual ~ExpSep_Prior(void);
+  Matern_Prior(unsigned int col);
+  Matern_Prior(Corr_Prior *c);
+  virtual ~Matern_Prior(void);
   virtual void read_double(double *dprior);
-  virtual Corr_Prior* Dup(void);
   virtual void Draw(Corr **corr, unsigned int howmany, void *state);
+  virtual Corr_Prior* Dup(void);
   virtual Corr* newCorr(void);
   virtual void Print(FILE *outfile);
-
-  void draw_d_from_prior(double *d_new, void *state);
-  double* D(void);
-  double** DAlpha(void);
-  double** DBeta(void);
+  
+  double PHI(void);
+  double NU(void);
+  double D(void);
+  double* DAlpha(void);
+  double* DBeta(void);
   void default_d_priors(void);
   void default_d_lambdas(void);
-  double log_Prior(double *d, int *b, double *pb, bool linear);
-  double log_DPrior_pdf(double *d);
-  void DPrior_rand(double *d_new, void *state);
+  double log_Prior(double d, bool linear);
+  bool LinearRand(double d, void *state);
 };
 
 #endif

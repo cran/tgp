@@ -1,6 +1,6 @@
 %\VignetteIndexEntry{example on sinusoidal data}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignetteDepends{tgp,maptree,combinat}
 %\VignettePackage{tgp}
 
 \subsection{1-d Synthetic Sine Data}
@@ -8,9 +8,7 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-library(akima)
-library(maptree)
-options(width=70)
+options(width=65)
 @ 
 
 Consider 1-dimensional simulated data which is partly a mixture of
@@ -23,8 +21,11 @@ sines and cosines, and partly linear.
    \end{array} \right. 
    \label{e:sindata}
 \end{equation}
-The {\tt R} code below obtains $N=100$ evenly spaced samples from this 
-data in the domain $[0,20]$, with noise added to keep things interesting.
+
+The {\tt R} code below obtains $N=100$ evenly spaced samples from this
+data in the domain $[0,20]$, with noise added to keep things
+interesting.  Some evenly spaced predictive locations {\tt XX} are
+also created.
 <<>>=
 X <- seq(0,20,length=100)
 XX <- seq(0,20,length=99)
@@ -33,17 +34,19 @@ lin <- X>9.6;
 Z[lin] <- -1 + X[lin]/10
 Z <- Z + rnorm(length(Z), sd=0.1)
 @ 
-Some evenly spaced predictive locations {\tt XX} are also created.
-By design, the data is clearly nonstationary.  Not knowing this, good
-first model choice for this data might be a GP, since it is clearly
-nonlinear.
+
+By design, the data is clearly nonstationary.  Perhaps not knowing
+this, good first model choice for this data might be a GP.
 <<echo=TRUE,results=HIDE>>=
 sin.bgp <- bgp(X=X, Z=Z, XX=XX)
 @ 
 \begin{figure}[ht!]
 \centering
 <<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(sin.bgp, main='GP,')
+plot(sin.bgp, main='GP,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
@@ -68,18 +71,25 @@ $n$ every 1,000 rounds.
 \begin{figure}[ht!]
 \centering
 <<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(sin.btlm, main='Linear CART,')
+plot(sin.btlm, main='Linear CART,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.25cm}
 <<label=btlmtrees,fig=TRUE,echo=TRUE,width=12,height=10>>=
 tgp.trees(sin.btlm)
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-1cm}
 \caption{\footnotesize {\em Top:} Posterior predictive distribution
   using {\tt btlm} on synthetic sinusoidal data: mean and 90\%
   credible interval, and MAP partition ($\hat{\mathcal{T}}$); {\em
     Bottom} MAP trees for each height encountered in the Markov
-  chain.}
+  chain showing $\hat{\sigma}^2$ and the number of observation $n$,
+  at each leaf.}
 \label{f:sin:btlm}
 \end{figure}
 Figure \ref{f:sin:btlm} shows the resulting posterior predictive
@@ -97,11 +107,17 @@ sin.btgp <- btgp(X=X, Z=Z, XX=XX)
 \begin{figure}[ht!]
 \centering
 <<label=btgp,fig=TRUE,echo=FALSE,width=7,height=5>>=
-plot(sin.btgp, main='treed GP,')
+plot(sin.btgp, main='treed GP,', layout='surf')
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.25cm}
 <<label=btgptrees,fig=TRUE,echo=TRUE,width=6,height=5>>=
 tgp.trees(sin.btgp)
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-1cm}
 \caption{\footnotesize {\em Top:} Posterior predictive distribution
@@ -117,22 +133,6 @@ surface ({\em top}) and trees ({\em bottom}).
 
 Finally, speedups can be obtained if the GP is allowed to jump to the
 LLM \cite{gramacy:thesis:2005}, since half of the response surface is
-{\em very} smooth, or linear.
-<<>>=
-sin.btgpllm <- btgpllm(X=X, Z=Z, XX=XX)
-@ 
-\begin{figure}[ht!]
-\centering
-<<label=btgpllm,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(sin.btgpllm, main='treed GP LLM,')
-@
-\vspace{-0.5cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt
-    btgpllm} on synthetic sinusoidal data: mean and 90\% credible
-  interval, and MAP partition $\hat{\mathcal{T}}$.}
-\label{f:sin:btgpllm}
-\end{figure}
-The progress indicators show successful {\em grow} and {\em prune} operations,
-and every 1,000 rounds the partitions under the LLM show {\tt corr=[0]}.
-Figure \ref{f:sin:btgpllm} shows the resulting posterior predictive
-surface and MAP partition ($\hat{\mathcal{T}}$).
+{\em very} smooth, or linear.  This is not shown here since the results
+are very similar to those above, replacing {\tt btgp} with {\tt btgpllm}.
+The example in the next subsection offers a comparison for 2-d data.

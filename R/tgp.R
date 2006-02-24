@@ -60,7 +60,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
 
 	state <- sample(seq(0,1000), 3)
 	#state <- c(123,456,789)
-
+        #print(params)
 	# run the C code
 	ll <- .C("tgp", 
 		state = as.integer(state),

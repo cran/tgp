@@ -44,7 +44,7 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

@@ -57,7 +57,7 @@ Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
@@ -98,7 +98,9 @@ out <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp")
 tgp.trees(out)
 
 # find a treed sequential D-Optimal design 
-# with 10 more points
+# with 10 more points.  It is interesting to 
+# contrast this design with one obtained via
+# the dopt.gp function
 XX <- tgp.design(10, Xcand, out)
 
 # now fit the model again in order to assess

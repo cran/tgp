@@ -2,8 +2,7 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(akima)
-library(maptree)
+graphics.off()
 
 
 ###################################################

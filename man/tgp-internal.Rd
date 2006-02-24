@@ -2,6 +2,7 @@
 %% Part of the sensible export list but (currently?) documented as
 %% internal (or waiting for documentation to be written):
 %% <LIST>
+\alias{tgp.choose.as}
 \alias{tgp.check.params}
 \alias{tgp.partition}
 \alias{tgp.get.trees}
@@ -20,6 +21,7 @@
 \alias{mean0.range1}
 \alias{undo.mean0.range1}
 \alias{check.matrix}
+\alias{getlocs}
 \alias{print.tgp}
 %% </LIST>
 %% Currently (?) exported as used in the grid.layout.Rd \example ...

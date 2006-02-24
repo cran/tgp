@@ -6,7 +6,7 @@ function()
 	s <- c(sample(si, size=50, replace=FALSE), 
 	sample(setdiff(1:n, si), 30, replace=FALSE))
 	X <- as.matrix(exp2d[s,1:2]);
-	ss <- setdiff(1:n, s);
+	ss <- setdiff(1:n, s)
 	XX <- exp2d[ss, 1:2];
 	Z <- as.vector(exp2d[s,3]);
 
