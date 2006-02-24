@@ -35,7 +35,7 @@ Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
 \emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
 submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

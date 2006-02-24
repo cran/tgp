@@ -1,6 +1,6 @@
 %\VignetteIndexEntry{example on adaptive sampling}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,akima,maptree,combinat}
+%\VignetteDepends{tgp,maptree,combinat}
 %\VignettePackage{tgp}
 
 \subsection{Adaptive Sampling}
@@ -8,12 +8,11 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-library(akima)
 library(maptree)
-options(width=70)
+options(width=65)
 @ 
 
-In this section, sequential design of experiments, a.k.a. {\em adaptive
+In this section, sequential design of experiments, a.k.a.~{\em adaptive
 sampling}, is demonstrated on the exponential data of Section
 \ref{sec:exp}.  Gathering, again, the data:
 <<>>=
@@ -24,17 +23,21 @@ Xcand <- exp2d.data$XX
 Start by fitting a treed GP LLM model to the data, without prediction,
 in order to infer the MAP tree $\hat{\mathcal{T}}$.
 <<echo=TRUE,results=HIDE>>=
-exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", R=2)
+exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp")
 @ 
 \begin{figure}[ht!]
 \centering
 <<label=mapt,fig=TRUE,echo=TRUE,width=6,height=5>>=
 tgp.trees(exp1)
 @
+<<echo=false,results=hide>>=
+dev.off()
+@
 \vspace{-1cm}
 \caption{\footnotesize MAP trees of each height encountered in the
-  Markov chain for the exponential data.  $\hat{\mathcal{T}}$ is the
-  one with the maximum $\log(p)$ above.}
+  Markov chain for the exponential data, showing $\hat{\sigma}^2$ and
+  the number of observations $n$ at the leaves.  $\hat{\mathcal{T}}$
+  is the one with the maximum $\log(p)$ above.}
 \label{f:mapt}
 \end{figure} 
 The trees are shown in Figure \ref{f:mapt}.
@@ -57,6 +60,9 @@ uncertainty is usually high there \cite{chaloner:1995}.
 plot(exp1$X, pch=19, cex=0.5); points(XX)
 tgp.plot.parts.2d(exp1$parts)
 @
+<<echo=false,results=hide>>=
+dev.off()
+@
 \vspace{-0.5cm}
 \caption{\footnotesize Treed $D$-optimal candidate locations {\tt XX}
   (circles), input locations {\tt X} (dots), and MAP tree
@@ -71,32 +77,64 @@ versions.
 
 Now, the idea is to fit the treed GP LLM model, again, in order to
 assess uncertainty in the predictive surface at those new candidate
-design points.
+design points.  For illustrative purpose, the following code gathers
+all three adaptive sampling statistics: ALM, ALC, \& EGO.
 <<echo=TRUE,results=HIDE>>=
-exp1.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2)
+exp1.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", ego=TRUE, ds2x=TRUE)
 @ 
-Figure \ref{f:as} shows the posterior predictive surface.
-The error surface, on the {\em right}, summarizes posterior predictive
-uncertainty by a norm of quantiles.
+
+Figure \ref{f:as} shows the posterior predictive surface.  The error
+surface, on the {\em right}, summarizes posterior predictive
+uncertainty by a norm of quantiles.  Since the combined data and
+predictive locations are not densely packed in the input space, the
+{\tt loess} smoother may have trouble with the interpolation.  One
+option is increase the {\tt tgp}-default kernel span supplied to {\tt
+  loess}, e.g., {\tt span = 0.5}.  Or, the {\tt akima} method can be
+used instead.
 \begin{figure}[ht!]
 \centering
-<<label=expas,fig=TRUE,echo=TRUE,width=12.5,height=7.5>>=
-plot(exp1.btgpllm, main="ALM for treed GP LLM,")
+<<label=expalm,fig=TRUE,echo=TRUE,width=12.5,height=7.5>>=
+par(mfrow=c(1,2), bty="n")
+plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout="surf")
+plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout="as", as="alm")
+@
+<<echo=false,results=hide>>=
+dev.off()
 @
 \vspace{-0.5cm}
-\caption{\footnotesize Treed $D$-optimal candidate locations {\tt XX}
+\caption{\footnotesize {\em Left}: Posterior mean surface; {\em right} ALM
+  adaptive sampling image for (only) candidate locations {\tt XX} (circles), 
+  MAP tree $\mathcal{T}$ and input locations {\tt X} (dots).
   (circles), input locations {\tt X} (dots), and MAP tree
   $\hat{\mathcal{T}}$}
 \label{f:as}
 \end{figure} 
+
 In accordance with the ALM algorithm, candidate locations {\tt XX}
 with largest predictive error would be sampled (added into the design)
 next.  These are most likely to be in the interesting region, i.e.,
-the first quadrant. however, due to the random nature of this {\tt
+the first quadrant. However, due to the random nature of this {\tt
   Sweave} document, this is not always the case.  Results depend
 heavily on the clumping of the original design in the un-interesting
 areas, and on the estimate of $\hat{\mathcal{T}}$.
 
-Adaptive sampling via the ALC, or ego (or both) algorithms could
-proceed by setting any/all of the {\tt Ds2x} or {\tt ego} parameters
-to the {\tt b*} and {\tt tgp} to {\tt TRUE}.
+\begin{figure}[ht!]
+\centering
+<<label=expalcego,fig=TRUE,echo=TRUE,width=12.5,height=7.5>>=
+par(mfrow=c(1,2), bty="n")
+plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout='as', as='alc')
+plot(exp1.btgpllm, main="treed GP LLM,", method="akima", layout='as', as='ego')
+@
+<<echo=false,results=hide>>=
+dev.off()
+@
+\vspace{-0.5cm}
+\caption{\footnotesize 
+  Adaptive sampling images for (only) candidate locations {\tt XX} (circles),
+  MAP tree $\mathcal{T}$ and input locations {\tt X} (dots).
+  (circles), input locations {\tt X} (dots), and MAP tree
+  $\hat{\mathcal{T}}$. {\em Left}: ALC; {\em right}: EGO.} 
+\label{f:as:alc:ego}
+\end{figure} 
+Adaptive sampling via the ALC, or EGO (or both) algorithms proceeds
+similarly, following the surfaces shown in Figure \ref{f:as:alc:ego}.

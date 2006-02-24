@@ -2,5 +2,5 @@
 PKG_LIBS = ${LAPACK_LIBS} ${BLAS_LIBS} ${FLIBS}
 
 # Uncomment and modify the two lines below (steps 1 & 2)
-#PKG_CFLAGS = -I/cse/grads/rbgramacy/atlas/OSX_PPCG5AltiVec_2/include
-#PKG_LIBS = -L/cse/grads/rbgramacy/atlas/OSX_PPCG5AltiVec_2/lib -llapack -lcblas -latlas
+#PKG_CFLAGS = -I/home/bobby/atlas/Linux_XeonSSE1_2/include/
+#PKG_LIBS = -L/home/bobby/atlas/Linux_XeonSSE1_2/lib -llapack -lcblas -latlas

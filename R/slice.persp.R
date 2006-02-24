@@ -23,9 +23,10 @@
 
 
 "slice.persp" <-
-function(x,y,p,z,theta=-30,phi=20,xlab="x",ylab="y",zlab="z(x,y)",main="", xlim=NULL, ylim=NULL, ...)
+function(x,y,p,z,theta=-30,phi=20,xlim=NULL, ylim=NULL,
+         method="loess", gridlen=40, span=0.05, ...)
 {
-	g <- slice.interp(x,y,p,z,xlim,ylim)
-	persp(g, theta=theta, phi=phi,xlab=xlab,ylab=ylab,zlab=zlab,main=main,axes=TRUE, box=TRUE, ...)
+  g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
+  persp(g, theta=theta, phi=phi, axes=TRUE, box=TRUE, ...)
 }
 

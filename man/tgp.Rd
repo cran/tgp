@@ -29,8 +29,8 @@ tgp(X, Z, XX = NULL, BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE,
   \item{R}{ Number of repeats or restarts of BTE MCMC rounds, default 1 is no restarts }
   \item{m0r1}{If \code{TRUE} the responses \code{Z} are scaled to have a mean of
   	zero and a range of 1; default is \code{FALSE}}
-  \item{linburn}{ If \code{TRUE} initializes MCMC with \code{2*B} rounds of Bayesian CART 
-  	(\code{bcart}); default is \code{FALSE} }
+  \item{linburn}{ If \code{TRUE} initializes MCMC with \code{B} (additional) 
+  	rounds of Bayesian CART (\code{bcart}); default is \code{FALSE} }
   \item{params}{ Generic parameters list which can be provided for a more flexible model.
   	See \code{\link{tgp.default.params}} for more details about the parameter list}
   \item{pred.n}{ \code{TRUE} (default) value results in prediction at the inputs 
@@ -115,7 +115,7 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

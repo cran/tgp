@@ -36,7 +36,7 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \note{ Plotting trees that the \pkg{maptree} library is installed, which

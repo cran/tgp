@@ -1,4 +1,22 @@
-Changes in 1.0-1:
+1.1: (22 Feb 2006)
+----
+
+1. Modularization overhall of C/C++ code for passing 
+to Matt Taddy, who will be responsible for such future
+additions as Matern correllation functions, and multi-
+resolution GP implementations.
+
+2. Plotting inhancements, including 1-d projections
+and (now default) loess interpolation for 2-d surfaces
+and projections, plotting of ALC & EGO statistics,
+and ability to control plot layout to show mean surface,
+error surface, or both.
+
+3. URL/Email now to UCSC/AMS address.
+
+
+1.0-2: (Dec 2005)
+------
 
 1. Wrote generic random deviate function which can use
 unif_rand(), randomkit, and erand48.
@@ -8,7 +26,9 @@ unif_rand(), randomkit, and erand48.
 3. system command in model.cc no longer calls "rm" which
 doesn't work on Windows.
 
-Changes in 1.0-1:
+
+1.0-1: (Dec 2005)
+------
 
 1. No longer using erand48; using unif_rand() from R for
 Windows compatibility.

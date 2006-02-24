@@ -23,11 +23,10 @@
 
 
 "slice.image" <-
-function(x,y,p,z,xlab="x",ylab="y",main="", xlim=NULL, ylim=NULL,  ...)
+function(x,y,p,z,xlab="x",ylab="y",main="", xlim=NULL, ylim=NULL,
+         method="loess", gridlen=40, span=0.05, ...)
 {
-	g <- slice.interp(x,y,p,z,xlim,ylim)
-	image(g, col=terrain.colors(128),xlab=xlab,ylab=ylab,main=main,...)
-	#grays <- log(seq(2,64,length=128))
-	#image(g, col=gray(grays/max(grays)))
+  g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
+  image(g, col=terrain.colors(128),xlab=xlab,ylab=ylab,main=main,...)
 }
 

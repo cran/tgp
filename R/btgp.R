@@ -25,7 +25,7 @@
 "btgp" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.25,2,10), 
 	BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE, pred.n=TRUE,
-         ds2x=FALSE, ego=FALSE)
+        ds2x=FALSE, ego=FALSE)
 {
 	n <- dim(X)[1]
 	if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 } else { d <- dim(X)[2] }

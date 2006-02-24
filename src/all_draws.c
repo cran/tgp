@@ -135,11 +135,11 @@ double tau2, nug;
  * Z[n], b0[col], b[col], F[col][n], Ki[n][n], Ti[col][col], Vb[col][col];
  */
 
-double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, alpha0, beta0, nug)
+double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, nug)
 unsigned int n, col;
 double *Z, *b0, *b;
 double **F, **Ti, **Vb;
-double alpha0, beta0, tau2;
+double tau2;
 double nug;
 {
 	/*double TiB0[col], KiZ[n], by[col];*/
@@ -235,11 +235,11 @@ double tau2;
  * Z[n], b0[col], b[col]; F[col][n], Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0, alpha0, beta0)
+double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0)
 unsigned int n, col;
 double *Z, *b0, *b;
 double **F, **Ki, **Ti, **Vb;
-double alpha0, beta0, tau2;
+double tau2;
 {
 	/*double TiB0[col], KiZ[n], by[col];*/
 	double *TiB0, *KiZ, *by;
@@ -388,7 +388,7 @@ void *state;
 
 	 Vb = new_matrix(col, col);
 	 b = new_vector(col);
-         lambda = compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, alpha0, beta0, 1.0);
+         lambda = compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, 1.0);
 	 delete_matrix(Vb);
 	 free(b);
 
@@ -635,11 +635,10 @@ double linear_pdf_sep(double *pb, double *d, unsigned int n, double *gamlin)
  * account possible ZERO proposals
  */
 
-void d_proposal(n, p, d, dold, q_fwd, q_bak, alpha, beta, state)
+void d_proposal(n, p, d, dold, q_fwd, q_bak, state)
 unsigned int n;
 int *p;
 double *d, *dold;
-double **alpha, **beta;
 double *q_fwd, *q_bak;
 void *state;
 {
@@ -669,6 +668,8 @@ double alpha[2], beta[2];
 
 
 /*
+ * nug_prior_rand:
+ *
  * rand draws from mixture prior for d and nug
  */
 
@@ -934,11 +935,11 @@ void *state;
 		inverse_chol(K_new, Ki_new, Kchol_new, n);
 		*log_det_K_new = log_determinant_chol(Kchol_new, n);
 		*lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				F, Z, Ki_new, Ti, tau2, b0, a0, g0);
+				F, Z, Ki_new, Ti, tau2, b0);
 	} else {	/* linear */
 		*log_det_K_new = n*log(1.0 + nug);
 		*lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
-				F, Z, Ti, tau2, b0, a0, g0, nug);
+				F, Z, Ti, tau2, b0, nug);
 	}
 
 	if(T[0][0] == 0) m = col;
@@ -992,11 +993,11 @@ void *state;
 		inverse_chol(K_new, Ki_new, Kchol_new, n);
 		*log_det_K_new = log_determinant_chol(Kchol_new, n);
 		*lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				F, Z, Ki_new, Ti, tau2, b0, a0, g0);
+					     F, Z, Ki_new, Ti, tau2, b0);
 	} else {	/* linear */
 		*log_det_K_new = n*log(1.0 + nug);
 		*lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				F, Z, Ti, tau2, b0, a0, g0, nug);
+				F, Z, Ti, tau2, b0, nug);
 	}
 
 	if(T[0][0] == 0) m = col;
@@ -1041,19 +1042,19 @@ void *state;
 
 	/* propose new d, and compute proposal probability */
 	nug = nug_draw(nuglast, &q_fwd, &q_bak, state);
-
+	
 	/* new covariace matrix based on new nug */
 	if(linear) {
 		*log_det_K_new = n * log(1.0 + nug);
 		*lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				F, Z, Ti, tau2, b0, a0, g0, nug);
+				F, Z, Ti, tau2, b0, nug);
 	} else  {
 		dup_matrix(K_new, K, n, n);
 		for(i=0; i<n; i++) K_new[i][i] += (nug - nuglast);
 		inverse_chol(K_new, Ki_new, Kchol_new, n);
 		*log_det_K_new = log_determinant_chol(Kchol_new, n);
 		*lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				F, Z, Ki_new, Ti, tau2, b0, a0, g0);
+				F, Z, Ki_new, Ti, tau2, b0);
 	}
 
 	if(T[0][0] == 0) m = col;

@@ -22,10 +22,10 @@ btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.25, 2, 10),
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	pred.n = TRUE, ds2x = FALSE, ego=FALSE)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	BTE = c(1000, 4000, 3), R = 1, m0r1 = FALSE, 
+	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
 	pred.n = TRUE, ds2x = FALSE, ego=FALSE)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	gamma=c(10,0.2,0.7), BTE = c(2000, 7000, 2), R = 1, 
+	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
 	m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
         ego = FALSE)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
@@ -70,8 +70,8 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{R}{ Number of repeats or restarts of BTE MCMC rounds, default 1 is no restarts}
   \item{m0r1}{If \code{TRUE} the responses \code{Z} are scaled to have a mean of
   	zero and a range of 1; default is \code{FALSE}}
-  \item{linburn}{If \code{TRUE} initializes MCMC with \code{2*B} rounds of Bayesian Linear CART 
-  	(\code{btlm}); default is \code{FALSE} }
+  \item{linburn}{If \code{TRUE} initializes MCMC with \code{B} (additional) 
+  	rounds of Bayesian Linear CART (\code{btlm}); default is \code{FALSE} }
   \item{pred.n}{\code{TRUE} (default) value results in prediction at the inputs \code{X}; \code{FALSE} 
   	skips prediction at \code{X} resulting in a faster implementation}
   \item{ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn) computation of expected
@@ -175,7 +175,7 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu} }

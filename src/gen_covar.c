@@ -26,12 +26,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <Rmath.h>
 #include "matrix.h"
 #include "linalg.h"
 #include "gen_covar.h"
 
 #define PWR 2.0
 #define DEBUG
+#define PI 3.141593
+
 /* #define THRESH 0.5 */
 
 
@@ -172,6 +175,7 @@ double pwr;
 		}
 	}
 }
+
 
 
 
@@ -328,3 +332,73 @@ double **X, **F;
 		for(j=1; j<col; j++) F[j][i] = X[i][j-1];
 	}
 }
+
+
+
+/*
+ * Matern dist_to_K:
+ * 
+ * create covariance matrix from distace matrix
+ * and d/nug parameters all matrices must be alloc'd
+ *
+ * K[n][m], DIST[n][m]
+ */
+
+void matern_dist_to_K(K, DIST, d, phi, nu, nug, m, n)
+unsigned int m,n;
+double **K, **DIST;
+double d, nug, phi, nu;
+{
+	int i,j;
+
+	if(d == 0.0) {
+		if(m == n && nug > 0) id(K, n);
+		else zero(K, n, m);
+	} else {
+		for(i=0; i<n; i++) 
+			for(j=0; j<m; j++) 
+			  K[i][j] = phi*pow(DIST[i][j]/d, nu);
+		          K[i][j] = K[i][j]*bessel_k(DIST[i][j]/d, nu, 1);
+			  K[i][j] = K[i][j]/(pow(2.0, nu-1)*gamma(nu)*pow(d, -2.0*nu));
+                       
+                 
+	}	
+	if(nug > 0 && m == n) for(i=0; i<m; i++) K[i][i] += nug; 
+}
+
+
+/*
+ * Matern dist_to_K_symm:
+ * 
+ * create covariance matrix from distace matrix
+ * and d/nug parameters all matrices must be alloc'd
+ * 
+ * K[n][n], DIST[n][n]
+ */
+
+void matern_dist_to_K_symm(K, DIST, d, phi, nu, nug, n)
+unsigned int n;
+double **K, **DIST;
+double d, nug, phi, nu;
+{
+	int i,j;
+
+	assert(nug >= 0);
+	if(d == 0.0) id(K, n);
+	for(i=0; i<n; i++) {
+		K[i][i] = 1.0 + nug;
+		if(d == 0.0) continue;
+		for(j=i+1; j<n; j++) {
+		          K[i][j] = phi*pow(DIST[i][j]/d, nu);
+		          K[i][j] = K[i][j]*bessel_k(DIST[i][j]/d, nu, 1);
+			  K[i][j] = K[i][j]/(pow(2.0, nu-1)*gamma(nu)*pow(d, -2.0*nu));
+		       	  K[j][i] = K[i][j];
+                          if(i>130){printf("d %g \n", d);} 
+		}
+	}
+}
+
+
+
+
+

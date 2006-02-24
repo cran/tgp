@@ -2,8 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(akima)
 library(maptree)
+graphics.off()
 
 
 ###################################################
@@ -24,20 +24,27 @@ lin.blm <- blm(X=X, XX=XX, Z=Z)
 ###################################################
 ### chunk number 4: blm
 ###################################################
-plot(lin.blm, main='Linear Model,')
+plot(lin.blm, main='Linear Model,', layout='surf')
 abline(1,2,lty=3,col='blue')
 
 
 ###################################################
 ### chunk number 5: 
 ###################################################
+rl <- readline("press RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 6: 
+###################################################
 lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
 
 
 ###################################################
-### chunk number 6: gplm
+### chunk number 7: gplm
 ###################################################
-plot(lin.gpllm, main='GP LLM,')
+plot(lin.gpllm, main='GP LLM,', layout='surf')
 abline(1,2,lty=4,col='blue')
 
 

@@ -33,14 +33,13 @@ void beta_draw_noK(double* b, unsigned int n, unsigned int col, double **F,
 double sigma2_draw_no_b_margin(unsigned int n, unsigned int col, double lambda, double alpha0, double beta0, 
 		void *state);
 double sigma2_draw_no_b_noK(unsigned int n, unsigned int col, double **F, double *Z, 
-		double **Ti, double tau2, double *b0, double alpha0, double beta0, 
-		void *state);
+			    double **Ti, double tau2, double *b0, double alpha0, double beta0,
+			    void *state);
 double compute_lambda_noK(double** Vb, double*b, unsigned int n, unsigned int col, 
-		double **F, double *Z, double **Ti, double tau2, double *b0, double alpha0,
-		double beta0, double nug);
+		double **F, double *Z, double **Ti, double tau2, double *b0, double nug);
 double compute_lambda(double** Vb, double*b, unsigned int n, unsigned int col, 
 		double **F, double *Z, double **Ki, double **Ti, double tau2,
-		double *b0, double alpha0, double beta0);
+		double *b0);
 void Ti_draw(double **Ti, unsigned int col, unsigned int ch, double **b, double **bmle, double *b0, 
 		unsigned int rho, double **V, double *s2, double *tau2, void *state);
 void b0_draw(double *b0, unsigned int col, unsigned int ch, double **b, double *s2, 
@@ -53,8 +52,7 @@ double nug_prior_rand(double *alpha, double *beta, void *state);
 double gamma_mixture_rand(double *alpha, double *beta, void *state);
 void mixture_priors_draw(double *alpha, double *beta, double *d, unsigned int n, 
 		double *alpha_lambda, double *beta_lambda, void *state);
-void d_proposal(unsigned int n, int *p, double *d, double *dold, double *q_fwd, double *q_bak, 
-		double **alpha, double **beta, void *state);
+void d_proposal(unsigned int n, int *p, double *d, double *dold, double *q_fwd, double *q_bak, void *state);
 double unif_propose_pos(double last, double *q_fwd, double *q_bak, void *state);
 double nug_draw(double last, double *q_fwd, double *q_bak, void *state);
 double mixture_priors_ratio(double *alpha_new, double* alpha, 

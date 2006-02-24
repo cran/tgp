@@ -22,25 +22,15 @@
 #*******************************************************************************
 
 
-"tgp.default.params" <-
-function(d)
+"interp.loess" <-
+function(x, y, z, gridlen = 40, span=0.1, ...)
 {
-	params <- list(
-	corr="expsep",			# correllation model (exp, or expsep)
-	bprior="bflat",			# linear prior (b0, bmle, bflat, bcart or b0tau)
-	start=c(0.5,0.1,1.0,1.0), 	# start vals for d, nug, s2, and tau2
-	beta=rep(0,d), 			# start vals beta (length = col = dim + 1)
-	tree=c(0.25,2,10),		# tree prior params <alpha> and <beta>
-	s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>
-	tau2.p=c(5,10),			# tau2 prior params (initial values) <a0> and <g0>
-	d.p=c(1.0,20.0,10.0,10.0),	# d gamma-mix prior params (initial values)
-	nug.p=c(1,1,1,1),		# nug gamma-mix prior params (initial values)
-	gamma=c(10,0.2,0.7),		# gamma linear pdf parameter
-	d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
-	nug.lam="fixed",		# nug hierarch gamma-mix prior params (or "fixed")
-	s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
-	tau2.lam=c(0.2,0.1)		# tau2 hierarch inv-gamma prior params (or "fixed")
-	)
-	return(params)
+  if(length(x) != length(y) && length(y) != length(z))
+    stop("length of x, y and z must be equal")
+  xo <- seq(min(x), max(x), length=gridlen)
+  yo <- seq(min(y), max(y), length=gridlen)
+  xyz.loess <- loess(z ~ x + y, data.frame(x=x, y=y), span=span, ...)
+  g <- expand.grid(x=xo, y=yo)
+  g.pred <- predict(xyz.loess, g)
+  return(list(x=xo, y=yo, z=matrix(g.pred, nrow=gridlen)))
 }
-

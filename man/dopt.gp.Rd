@@ -62,7 +62,7 @@ Gramacy, R. B. \& Lee, H. K. H. (2005).
 \emph{Gaussian Processes and Limiting Linear Models.}
 available as UCSC Technical Report ams2005-17
 
-\url{http://people.ucsc.edu/~boobles/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
@@ -83,8 +83,7 @@ This function is still considered experimental.
 \examples{
 #
 # 2-d Exponential data
-# (Contrast this with the tgp.design example,
-# Also, this example is based on random data.  
+# (This example is based on random data.  
 # It might be fun to run it a few times)
 #
 
@@ -97,10 +96,11 @@ Xcand <- exp2d.data$XX
 # with 10 more points
 dgp <- dopt.gp(10, X, Xcand)
 
-# now fit the model again in order to assess
-# the predictive surface at those new design points
-dout <- btgpllm(X=X, Z=Z, XX=dgp$XX)
-plot(dout)
+# plot the d-optimally chosen locations
+# Contrast with locations chosen via
+# the tgp.design function
+plot(X, pch=19, xlim=c(-2,6), ylim=c(-2,6))
+points(dgp$XX)
 }
 \keyword{ design }
 \keyword{ spatial }

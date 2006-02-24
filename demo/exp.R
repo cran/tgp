@@ -2,8 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(akima)
 library(maptree)
+graphics.off()
 
 
 ###################################################
@@ -21,7 +21,7 @@ exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp")
 
 
 ###################################################
-### chunk number 4: expbgp
+### chunk number 4: bgp
 ###################################################
 plot(exp.bgp, main='GP,')
 
@@ -29,30 +29,77 @@ plot(exp.bgp, main='GP,')
 ###################################################
 ### chunk number 5: 
 ###################################################
-exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", R=3)
+rl <- readline("press RETURN to continue: ")
+dev.off()
 
 
 ###################################################
-### chunk number 6: btlm
+### chunk number 6: 
+###################################################
+exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp")
+
+
+###################################################
+### chunk number 7: btgp
 ###################################################
 plot(exp.btgp, main='treed GP,')
 
 
 ###################################################
-### chunk number 7: btlmtrees
+### chunk number 8: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 9: btgptrees
 ###################################################
 tgp.trees(exp.btgp)
 
 
 ###################################################
-### chunk number 8: 
+### chunk number 10: 
 ###################################################
-exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=3) 	
+rl <- readline("press RETURN to continue: ")
+dev.off()
 
 
 ###################################################
-### chunk number 9: expbtgpllm
+### chunk number 11: 
 ###################################################
-plot(exp.btgpllm, main='treed GP, LLM')
+exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2) 	
+
+
+###################################################
+### chunk number 12: btgpllm
+###################################################
+plot(exp.btgpllm, main='treed GP LLM,')
+
+
+###################################################
+### chunk number 13: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 14: 1dbtgpllm1
+###################################################
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(1))
+
+
+###################################################
+### chunk number 15: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+dev.off()
+
+
+###################################################
+### chunk number 16: 1dbtgpllm2
+###################################################
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(2))
 
 

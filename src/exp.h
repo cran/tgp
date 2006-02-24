@@ -27,36 +27,79 @@
 
 #include "corr.h"
 
+class Exp_Prior;
+
+/*
+ * CLASS for the implementation of the exponential
+ * power family of correlation functions 
+ */
+
 class Exp : public Corr
 {
-  private:
-	  double d;		/* kernel correlation width parameter */
-	  double *alpha;	/* d hierarchical mix-gamma alpha parameter */
-	  double *beta;		/* d hierarchical mix-gamma beta parameter */
-	  double *alpha_l;	/* d hierarchical mix-gamma alpha (lambda) parameter */
-	  double *beta_l;	/* d hierarchical mix-gamma beta (lambda) parameter */
-	  bool* fix;		/* estimate hierarchical prior params or not */
-	  double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */
-	  unsigned int nd;
-	  unsigned int dreject; /* d rejection counter */
-  public:
-	Exp(unsigned int col, Model *model);
-	virtual Corr& operator=(const Corr &c);
-	virtual ~Exp(void);
-	virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
-	virtual void Update(unsigned int n1, double **X);
-	virtual void Update(unsigned int n1, double **K, double **X);
-	virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, void *state);
-	virtual void Combine(Corr *c1, Corr *c2, void *state);
-	virtual void Split(Corr *c1, Corr *c2, void *state);
-	virtual char* State(void);
-	virtual void priorDraws(Corr **corr, unsigned int howmany, void *state);
-	virtual double log_Prior(void);
-	virtual unsigned int sum_b(void);
-	virtual void ToggleLinear(void);
-	void get_delta_d(Exp* c1, Exp* c2, void *state);
-	void propose_new_d(Exp* c1, Exp* c2, void *state);
+ private:
+
+  double d;		/* kernel correlation width parameter */
+  double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */
+  unsigned int nd;      /* for keeping track of the current size of xDISTx (nd x nd) */
+  unsigned int dreject; /* d rejection counter */
+ 
+ public:
+
+  Exp(unsigned int col, Gp_Prior *gp_prior);
+  virtual Corr& operator=(const Corr &c);
+  virtual ~Exp(void);
+  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
+  virtual void Update(unsigned int n1, double **X);
+  virtual void Update(unsigned int n1, double **K, double **X);
+  virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
+		   double *lambda, double **bmu, double **Vb, double tau2, void *state);
+  virtual void Combine(Corr *c1, Corr *c2, void *state);
+  virtual void Split(Corr *c1, Corr *c2, void *state);
+  virtual char* State(void);
+  virtual double log_Prior(void);
+  virtual unsigned int sum_b(void);
+  virtual void ToggleLinear(void);
+  void get_delta_d(Exp* c1, Exp* c2, void *state);
+  void propose_new_d(Exp* c1, Exp* c2, void *state);
+  double D(void);
+};
+
+
+/*
+ * CLASS for the prior parameterization of exponential
+ * power family of correlation functions
+ */
+
+class Exp_Prior : public Corr_Prior
+{
+ private:
+
+  double d;
+  double d_alpha[2];	        /* d gamma-mixture prior alphas */
+  double d_beta[2];	        /* d gamma-mixture prior beta */
+  bool   fix_d;		        /* estimate d-mixture parameters or not */
+  double d_alpha_lambda[2];	/* d prior alpha lambda parameter */
+  double d_beta_lambda[2];	/* d prior beta lambda parameter */
+
+  
+ public:
+
+  Exp_Prior(unsigned int col);
+  Exp_Prior(Corr_Prior *c);
+  virtual ~Exp_Prior(void);
+  virtual void read_double(double *dprior);
+  virtual void Draw(Corr **corr, unsigned int howmany, void *state);
+  virtual Corr_Prior* Dup(void);
+  virtual Corr* newCorr(void);
+  virtual void Print(FILE *outfile);
+
+  double D(void);
+  double* DAlpha(void);
+  double* DBeta(void);
+  void default_d_priors(void);
+  void default_d_lambdas(void);
+  double log_Prior(double d, bool linear);
+  bool LinearRand(double d, void *state);
 };
 
 #endif

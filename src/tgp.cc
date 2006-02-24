@@ -52,7 +52,7 @@ void tgp(int* state_in,
         void *state = (void*) 
 	  newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + state_in[2]));
 	myprintf(stdout, "\n");
-	printRNGstate(state, stdout);
+	// printRNGstate(state, stdout);
 
 	/* integral dimension parameters */
 	unsigned int n = (unsigned int) *n_in;
@@ -68,10 +68,15 @@ void tgp(int* state_in,
 	bool ego = (bool) (ego_out != NULL);
 
 	/* DEBUG: print the input parameters */
-	myprintf(stdout, "n=%d, d=%d, nn=%d, BTE=(%d,%d,%d), R=%d, linburn=%d\n", 
+	myprintf(stdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
 			n, d, nn, B, T, E, R, linburn);
-	if(pred_n) myprintf(stdout, "predicting at data locations\n");
-	if(delta_s2) myprintf(stdout, "obtaining Ds2x ALC samples\n");
+
+	/* print predictive statistic types */
+	if(pred_n || delta_s2 || ego) myprintf(stdout, "preds:");
+	if(pred_n) myprintf(stdout, " data");
+	if(delta_s2) myprintf(stdout, " ALC");
+	if(ego) myprintf(stdout, " EGO");
+	if(pred_n || delta_s2 || ego) myprintf(stdout, "\n");
 	myflush(stdout);
 
 	/* maybe print the booleans and betas out to a file */
@@ -113,7 +118,7 @@ void tgp(int* state_in,
 		#endif
 
 		/* Linear Model Initialization rounds -B thru 1 */
-		if(linburn) model->Linburn(2*B, state);
+		if(linburn) model->Linburn(B, state);
 	
 		/* do model rounds 1 thru B (burn in) */
 		model->Burnin(B, state);
@@ -127,7 +132,7 @@ void tgp(int* state_in,
 		delete_preds(preds);
 
 		/* done with this repetition; prune the tree all the way back */
-		myprintf(stdout, "\nfinished repetition %d 0f %d\n", i+1, R);
+		myprintf(stdout, "\nfinished repetition %d of %d\n", i+1, R);
 		model->cut_root();
 	}
 
