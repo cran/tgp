@@ -10,7 +10,8 @@ A Bayesian nonstationary nonparametric regression package implementing an array 
 }
 \details{
 This package implements Bayesian nonparametric and nonstationary regression
-with "treed Gaussian process models".  The package contains functions which facilitate
+with \dQuote{treed Gaussian process models}.
+The package contains functions which facilitate
 inference for six regression models of varying complexity using Markov chain
 Monte Carlo (MCMC): linear model, linear CART (Classification and Regression
 Tree), Gaussian process (GP),  GP with jumps to the limiting linear model

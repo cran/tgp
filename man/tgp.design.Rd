@@ -4,12 +4,8 @@
 \title{ Sequential Treed D-Optimal Design for Treed Gaussian Process Models }
 \description{
   Based on the maximum a' posteriori (MAP)
-  treed partition in from a \code{"tgp"} object,
-  calculate a sequential treed D-Optimal design by subsampling from
-  a set of candidate locations in each of the regions depicted
-  by the tree.  The number of D-optimal samples chosen
-  in each region is proportional to the number of candidates
-  in the region.
+  treed partition extracted from a \code{"tgp"}-class object,
+  calculate independant sequential treed D-Optimal designs in each of the regions.
 }
 
 \usage{
@@ -24,18 +20,20 @@ tgp.design(howmany, Xcand, out)
   	from which new design points are subsampled.  Must have the same
 	dimension as \code{out$X} }
   \item{out}{ \code{"tgp"} class object which is the output of one of the
-  	model functions which has tree support, e.g.m \code{\link{btgpllm}},
+  	model functions which has tree support, e.g., \code{\link{btgpllm}},
 	\code{\link{btgp}}, \code{\link{btlm}}, or \code{\link{tgp}} }
 }
 
 \details{
   This function partitions \code{Xcand} and \code{out$X} based on
-  the MAP tree in \code{out} and calls
-  \code{\link{dopt.gp}} in order to obtain a D-optimal design with
-  independent stationary Gaussian processes in each
-  region.  The aim is to obtain a a design where new points from \code{Xcand}
-  are spaced out relative to the existing locations (\code{out$X}) in
-  the region. The number of new points from each region is
+  the MAP tree (obtained on \code{"tgp"}-class \code{out} with
+  \code{\link{tgp.get.partitions}}) and calls
+  \code{\link{dopt.gp}} in order to obtain a D-optimal design under
+  independent stationary Gaussian processes models defined in each
+  region.  The aim is to obtain a design where new points from \code{Xcand}
+  are spaced out relative to themselves, and relative to
+  the existing locations (\code{out$X}) in the region.
+  The number of new points from each region is
   proportional to the number of candidates \code{Xcand} in the region.
 }
 
@@ -68,17 +66,20 @@ warnings
 
 D-Optimal computation in each region is preceded by a print statement
 indicated the number of new locations to be chosen and the number of candidates
-in the region.  Other than that, there are no other progress meters which
-indicate how much longer the wait will be .  You will have to be patient.
+in the region.  Other than that, there are no other indicators of progress.
+You will have to be patient.
 Creating treed sequential D-optimal designs is no speedy task.  At least it 
 faster than the non-treed version (see \code{\link{dopt.gp}}).
 
 This function is still considered experimental. 
-(Pardon the pun.)}
+(Pardon the pun.)
+
+The example below is also part of \code{vignette("tgp")}
+}
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}}, \code{\link{plot.tgp}}, 
-	\code{\link{dopt.gp}} \code{\link{tgp.get.partitions}}, \code{vignette("tgp")}}
+	\code{\link{dopt.gp}}, \code{\link{tgp.get.partitions}}}
 
 \examples{
 #

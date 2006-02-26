@@ -12,7 +12,7 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{out}{ \code{"tgp"} class object which is the output of one
+  \item{out}{ \code{"tgp"}-class object which is the output of one
   	the model functions with tree support (e.g. \code{\link{btgpllm}})}
   \item{which}{ Index vector of length less than \code{length(out$trees)}
   	describing trees to plot.  Default (\code{NULL}) is to
@@ -21,8 +21,8 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 	\code{which = 1:length(out$trees)}.  For example, the first, third,
 	and forth trees would result if \code{which = c(1,3,4)}}
   \item{main}{ Optional character string to add to the main title of the plot}
-  \item{\dots}{ Extra arguments to the \code{draw.tree} function from 
-  	\pkg{maptree}}
+  \item{\dots}{ Extra arguments to the \code{\link[maptree]{draw.tree}}
+	function from \pkg{maptree}}
 }
 
 %\details{
@@ -42,7 +42,8 @@ tgp.trees(out, which = NULL, main = NULL, ...)
 \note{ Plotting trees that the \pkg{maptree} library is installed, which
 itself requires that the \pkg{combinat} library also be installed.
 
-See Examples sections of the functions in the "See Also" section, above}
+See \code{vignette("tgp")} and the examples sections of the functions
+under \dQuote{See Also}, below}
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}},

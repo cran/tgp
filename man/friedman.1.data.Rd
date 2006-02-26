@@ -49,8 +49,8 @@ Machine Learning, \bold{48}, 303--324.
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
-\note{Examples using data is are in the package vignette.  
-Read \code{vignette("tgp", package="tgp")}.}
+\note{An example using this data is contained in the package vignette:
+\code{vignette("tgp")}.}
 
 \seealso{ \code{\link{tgp}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
 	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}} \code{\link{bgp}}}

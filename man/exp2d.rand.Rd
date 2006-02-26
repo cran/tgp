@@ -11,9 +11,9 @@
 \value{
   Output is a \code{list} with entries:
 
-    \item{\code{X}}{2-d \code{data.frame} with 80 input locations}
-    \item{\code{Z}}{Numeric vector describing the responses at the \code{X} locations}
-    \item{\code{XX}}{2-d \code{data.frame} containing the remaining 361 input locations}
+    \item{X}{2-d \code{data.frame} with 80 input locations}
+    \item{Z}{Numeric vector describing the responses at the \code{X} locations}
+    \item{XX}{2-d \code{data.frame} containing the remaining 361 input locations}
 }
 \details{
 	Data is subsampled without replacement from \code{data(\link{exp2d})}.
@@ -37,10 +37,10 @@ available as UCSC Technical Report ams2005-17
 }
 
 \note{This data is used in the examples of the functions
-listed above in the "See Also" section}
+listed above in the \dQuote{See Also} section, below}
 
 \seealso{ \code{\link{exp2d}}, \code{\link{tgp}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
-	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}} \code{\link{bgp}}}
+	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{bgp}}}
 
 
 \examples{

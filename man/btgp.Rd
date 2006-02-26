@@ -10,7 +10,7 @@
 \description{ The six functions described below implement Bayesian
   regression models of varying complexity: linear model, linear CART,
   Gaussian process (GP), GP with jumps to the limiting linear model
-  (LLM), treed GP, and treed GP LLM.  They are intended to be a
+  (LLM), treed GP, and treed GP LLM.  They are provided as a
   streamlined interface to the \code{\link{tgp}} function of which
   each of the functions herein represents a special case} }
 
@@ -45,34 +45,39 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{X}{\code{data.frame}, \code{matrix}, or vector of inputs \code{X} }
   \item{Z}{ Vector of output responses \code{Z} of length equal to the
   	leading dimension (rows) of \code{X}, i.e., \code{length(Z) == dim(X)[1]}}
-  \item{XX}{ Optional \code{data.frame}, \code{matrix},  or vector of predictive input locations 
+      \item{XX}{ Optional \code{data.frame}, \code{matrix},
+	or vector of predictive input locations 
   	with the same number of columns as \code{X}, i.e., \code{dim(XX)[2] == dim(X)[2]}}
   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
     alternates include \code{"b0"} hierarchical Normal prior,
     \code{"bmle"} empirical Bayes Normal prior, \code{"bcart"}
     Bayesian linear CART
-	style prior from Chipman et al, "b0tau" a independent Normal prior with inverse-gamma variance.}
-  \item{tree}{ 3-vector of tree process prior parameterization \code{c(alpha, beta, minpart)} specifying
-  	\deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
-	  \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
-	giving zero probability to trees
-	with partitions containing less than \code{minpart} data points.}
-  \item{gamma}{Limiting linear model parameters \code{c(g, t1, t2)}, with growth parameter \code{g > 0}
+    style prior from Chipman et al., \code{"b0tau"} a independent Normal
+    prior with inverse-gamma variance.}
+  \item{tree}{ 3-vector of tree process prior parameterization
+    \code{c(alpha, beta, nmin)} specifying
+    \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
+      \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
+    giving zero probability to trees
+    with partitions containing less than \code{nmin} data points.}
+  \item{gamma}{Limiting linear model parameters \code{c(g, t1, t2)},
+    with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
 	\code{t1 + t2 <= 1} specifies
 	\deqn{p(b|d)=t_1 +
 	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
-  	power exponential family ("exp") or the separable power exponential 
-	family ("expsep", default) }
+  	power exponential family (\code{"exp"}) or the separable power exponential 
+	family (\code{"expsep"}, default) }
   \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and (E)very. Predictive
   	samples are saved every E MCMC rounds starting at round B, stopping at T. }
-  \item{R}{ Number of repeats or restarts of BTE MCMC rounds, default 1 is no restarts}
+  \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds, default 1 is no restarts}
   \item{m0r1}{If \code{TRUE} the responses \code{Z} are scaled to have a mean of
   	zero and a range of 1; default is \code{FALSE}}
   \item{linburn}{If \code{TRUE} initializes MCMC with \code{B} (additional) 
   	rounds of Bayesian Linear CART (\code{btlm}); default is \code{FALSE} }
-  \item{pred.n}{\code{TRUE} (default) value results in prediction at the inputs \code{X}; \code{FALSE} 
+      \item{pred.n}{\code{TRUE} (default) value results in prediction at
+	the inputs \code{X}; \code{FALSE} 
   	skips prediction at \code{X} resulting in a faster implementation}
   \item{ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn) computation of expected
   	reduction in uncertainty calculations at the \code{X} locations, which can be used
@@ -87,7 +92,7 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 
 \details{
   The functions and their arguments can be categorized by whether or not
-  the use treed partitioning (T), GP models, and jumps to the LLM
+  they use treed partitioning (T), GP models, and jumps to the LLM
 
   \tabular{lll}{
   blm \tab - \tab Linear Model \cr
@@ -99,7 +104,7 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   }
 
   Each function implements a special case of the generic function 
-  \code{\link{tgp}} which is an interface to C/C++ code for generic treed Gaussian process 
+  \code{\link{tgp}} which is an interface to C/C++ code for treed Gaussian process 
   modeling of varying parameterization.
   For each of the examples, below, see \code{help(tgp)} for the direct \code{\link{tgp}}
   implementation.
@@ -110,10 +115,10 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 }
 
 \value{
-  \code{bgp} returns an object of type \code{"tgp"}.  The function \code{\link{plot.tgp}}
+  \code{bgp} returns an object of class \code{"tgp"}.  The function \code{\link{plot.tgp}}
   can be used to help visualize results.
 
-  An object of type \code{"tgp"} is a list containing at least the following
+  An object of class \code{"tgp"} is a list containing at least the following
   components...  The final two (\code{parts} \& \code{trees}) are
   tree-related outputs unique to the T (tree)  category functions.
   Tree viewing is supported by \code{\link{tgp.trees}}
@@ -128,7 +133,7 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{BTE}{Input argument: Monte-carlo parameters}
   \item{R}{Input argument: restarts}
   \item{linburn}{Input argument: initialize MCMC with linear CART}
-  \item{params}{\code{list} of model parameters automatically generated by 
+  \item{params}{\code{list} of model parameters generated by 
   	\code{\link{tgp.default.params}}
   	and passed to \code{\link{tgp}}}
   \item{dparams}{Double-representation of model input parameters used by the C-code}
@@ -186,14 +191,16 @@ warnings
 
 Upon execution, MCMC reports are made every 1,000 rounds to indicate progress
 
-Stationary (non-treed) processes on larger inputs, e.g., \code{X,Z}) 
+Stationary (non-treed) processes on larger inputs (e.g., \code{X,Z}) 
 of size greater than 500, *might* be slow in execution, especially on older machines. 
 Once the C code starts executing, there will be no way to kill the process without
-killing R.  This will be changed in future versions
+killing R.  This will be changed in future versions.
+
+Please see \code{vignette("tgp")} for detailed illustration.
 }
 
-\seealso{ \code{\link{tgp}}, \code{\link{plot.tgp}},
-  \code{\link{tgp.trees}}, \code{vignette("tgp")}}
+\seealso{  \code{\link{tgp}}, \code{\link{plot.tgp}},
+  \code{\link{tgp.trees}}}
 
 \examples{
 ##

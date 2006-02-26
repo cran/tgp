@@ -17,7 +17,7 @@ dopt.gp(nn, X, Xcand)
   	be less than or equal to the number of candidates contained in
 	\code{Xcand}, i.e., \code{nn <= dim(Xcand)[1]}}
   \item{X}{ \code{data.frame}, \code{matrix} or vector of input locations
-  	which are forced into (already in) the design.}
+  	which are forced into (already in) the design}
   \item{Xcand}{ \code{data.frame}, \code{matrix} or vector of candidates 
   	from which new design points are subsampled.  Must have the same
 	dimension as \code{X}, i.e., \code{dim(X)[2] == dim(Xcand)[2]}}
@@ -32,8 +32,8 @@ dopt.gp(nn, X, Xcand)
 }
 
 \value{
-  The output is a list which contains the inputs to and outputs of the C code
-  used to find the optimal design.  The chosen design locations are can be 
+  The output is a list which contains the inputs to, and outputs of, the C code
+  used to find the optimal design.  The chosen design locations can be 
   accessed as list members \code{XX} or equivalently \code{Xcand[fi,]}.
 
   \item{state}{unsigned short[3] random number seed to C}
