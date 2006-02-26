@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 1.1
-Date: 2006-2-24
+Version: 1.1-1
+Date: 2006-02-26
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu>
 Depends: R (>= 2.1)
 Suggests: akima, maptree, combinat
@@ -9,7 +9,7 @@ Description: Bayesian Nonparametric and nonstationary regression by treed
  Gaussian processes with jumps to the limiting linear model (LLM).  Special 
  cases also implememted include Bayesian linear models, linear CART, 
  stationary separable and isotropic Gaussian process regression.  Includes
- 1d and 2d plotting functions (with higher dimension projection and slice
+ 1-d and 2-d plotting functions (with higher dimension projection and slice
  capabilities), and tree drawing, designed for visualization of tgp class 
  output. (Tree plotting requires maptree and combinat.)
 Maintainer: Robert B. Gramacy  <rbgramacy@ams.ucsc.edu>

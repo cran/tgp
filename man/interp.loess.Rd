@@ -9,7 +9,7 @@
   \code{\link[graphics]{persp}}, \code{\link[graphics]{image}},
   and \code{\link[graphics]{contour}}, etc.
 
-  This function is intended as an alternative to the
+  This function is designed as an alternative to the
   \code{\link[akima]{interp}} functions from the \pkg{akima}
   library.
 }
@@ -22,10 +22,10 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
   \item{x}{ Vector of \code{X} spatial input locations }
   \item{y}{ Vector of \code{Y} spatial input locations }
   \item{z}{ Vector of \code{Z} responses interpreted as
-    \code{Z = f(X, Y)}}
+    \code{Z = f(X,Y)}}
   \item{gridlen}{ Size of the interpolated grid to be produced.
-    The default of \code{gridlen = 40} causes a \code{40 * 40}}
-    grid of \code{X}, \code{Y}, and \code{Z} values to be computed.
+    The default of \code{gridlen = 40} causes a \code{40 * 40}
+    grid of \code{X}, \code{Y}, and \code{Z} values to be computed.}
     \item{span}{ Kernel span argument to the \code{\link[stats]{loess}}
       function with default setting \code{span = 0.1} set significantly lower than the
       the \code{\link[stats]{loess}} default -- see note below.  }
@@ -35,9 +35,9 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
 
 \details{
   Uses \code{\link[bas]{expand.grid}} function to produce a uniform
-  grid of size \code{gridlen} with domain equal to that of the inputs
-  \code{X} and \code{Y}.  Then a \code{\link[stats]{loess}} a smoother
-  is fit to the data \code{Z = f(X, Y)} as then
+  grid of size \code{gridlen} with domain equal to the rectangle implied
+  by \code{X} and \code{Y}.  Then, a \code{\link[stats]{loess}} a smoother
+  is fit to the data \code{Z = f(X,Y)}.  Finally,
   \code{\link[base]{predict.loess}} is used to  predict onto the grid.
 }
 \value{
@@ -51,18 +51,18 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
     \code{X} grid locations}
   \item{y }{Vector of with \code{length(y) == gridlen} of increasing
     \code{Y} grid locations}
-  \item{z }{\code{matrix} of interpolated responses \code{Z = f(X, Y)}
-    where \code{z[i, j]} contains an estimate of \code{f(x[i], y[j])}}
+  \item{z }{\code{matrix} of interpolated responses \code{Z = f(X,Y)}
+    where \code{z[i,j]} contains an estimate of \code{f(x[i],y[j])}}
 }
 
 \references{
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
 }
 
-\author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}a}
+\author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \note{ 
-  As mentioned above, the default \code{span = 0.05} parameter is 
+  As mentioned above, the default \code{span = 0.1} parameter is 
   signifigantly smaller that the default \code{\link[stats]{loess}} setting.
    This asserts a tacit assumption that
       the input is densly packed and that the variance in the data is be small.  

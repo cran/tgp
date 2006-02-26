@@ -1,11 +1,11 @@
-\name{plot.tap}
+\name{plot.tgp}
 \alias{plot.tgp}
 
 \title{ Plotting for Treed Gaussian Process Models }
 \description{
   A generic function for plotting of \code{"tgp"} class objects.
   1-d posterior mean and error plots, 2-d posterior mean and
-  error image and perspective plots, and 3+-d mean and error
+  error image and perspective plots, and 3+-dimensional mean and error
   image and perspective plots are supported via projection
   and slicing.
 }
@@ -46,19 +46,19 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
   \item{map}{Optional 2-d map (longitude and latitude) 
     from \code{library(maps)} to be shown on top of image plots}
   \item{as}{Optional string indicator for plotting of adaptive sampling
-    statistics: \code{as = "alm"} for ALM, \code{as = "alc"} for ALC,
+    statistics: specifying \code{as = "alm"} for ALM, \code{as = "alc"} for ALC,
     and \code{as = "ego"} for EGO.  The default \code{as = NULL}
     plots error-bars (1d-plots) or error magnitudes (2d-plots), which is
     essentially the same as \code{as = "alm"}}
-  \item{layout}{Specify whether to plot only the mean predictive surface
-    (\code{layout = "surf"}), only the error or adaptive sampling statistics
-    (\code{layout = "as"}), or both (\code{layout = "both"}, the default)}
+  \item{layout}{Specify whether to plot the mean predictive surface
+    (\code{layout = "surf"}), the error or adaptive sampling statistics
+    (\code{layout = "as"}), or default (\code{layout = "both"}) which shows both}
   \item{main}{Optional character string to add to the main title of the plot}
   \item{xlab}{ Optional \code{character} string to add to the x label of the plots}
   \item{ylab}{ Optional \code{character} string to add to the y label of the plots} 
   \item{zlab}{ Optional \code{character} string to add to the z label of the plots;
   	ignored unless \code{pc = "p"}}
-  \item{pc}{ Chooses between perspective posterior mean  and image error plots
+  \item{pc}{ Selects perspective-posterior mean and image-error plots
   	(\code{pc = "pc"}, the default) or a double-image plot (\code{pc
 	  = "c"})}
   \item{method}{ Method of interpolation onto a regular grid for
@@ -78,7 +78,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
   \item{span}{ Span for \code{\link[stats]{loess}} kernel.  See
     \code{help(loess)} for mode details.  This argument is ignored for
     1-d plots and projections, and 2-d plots with
-    \code{method  = "akima"}. \pkg{tgp} package default (\code{span =
+    \code{method  = "akima"}. The \pkg{tgp} package default (\code{span =
       0.1}) is set lower than the \code{\link[stats]{loess}} default.
     Decreasing the span any further, or when
     the data or predictive locations are sparse, warnings may be given and
@@ -99,14 +99,14 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 }
 
 \note{ 	This plotting function is provided with the intention that it 
-	will be used as an aid in the visualization of \code{"tgp"} class
+	will be used as an aid in the visualization of \code{"tgp"}-class
 	objects.  Users are encouraged to use the source code for 
 	this function in order to develop custom plotting functions.
 
 	There seems to be two bugs in the \code{\link[akima]{interp}} function of
 	\code{library(\pkg{akima})}.  The first, benign, bug causes \code{NA}s
 	to appear when plotting 2-d surfaces.  The result is white
-	rectangles (or dQxe{holes}) in the surfaces.  This affect is
+	rectangles (or \dQuote{holes}) in the surfaces.  This affect is
 	most severe when \code{x$X} and \code{x$XX} together form a
 	regular grid, or close to a regular grid.  The second, malign,
 	bug can cause segmentation faults when plotting projections,
@@ -119,13 +119,14 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 	by specifying a 1-d projection argument (e.g. \code{proj=c(1)}
 	for projecting onto the first input variable).
 	
-	For examples, see the help files of those functions in "See Also", below
+	For examples, see  \code{vignette("tgp")} and the 
+	help files of those functions in "See Also", below
 }
 
 \seealso{ \code{\link[base]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
-	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
+	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}},
 	\code{\link{tgp.trees}}, \code{\link[akima]{interp}},
-	\code{\link[base]{loess}} \code{vignette("tgp")}}
+	\code{\link[base]{loess}}}
 
 \keyword{ hplot }
 \keyword{ tree }

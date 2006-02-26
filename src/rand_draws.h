@@ -30,7 +30,7 @@
 #define CRAN 901
 #define RK 902
 #define ERAND 903
-#define RNG RK /* for R for Windows, use unif_rand because it has no erand48 */
+#define RNG RK 
 
 void gamma_mult(double *x, double alpha, double beta, unsigned int cases, void *state);
 void gamma_mult_gelman(double *x, double alpha, double beta, unsigned int cases, void *state);
