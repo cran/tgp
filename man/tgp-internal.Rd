@@ -2,6 +2,7 @@
 %% Part of the sensible export list but (currently?) documented as
 %% internal (or waiting for documentation to be written):
 %% <LIST>
+\alias{tgp.cleanup}
 \alias{tgp.choose.as}
 \alias{tgp.check.params}
 \alias{tgp.partition}

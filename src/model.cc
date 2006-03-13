@@ -35,6 +35,7 @@ extern "C"
 #include <assert.h>
 #include <unistd.h>
 #include <math.h>
+#include <time.h>
 
 #define DNORM true
 #define MEDBUFF 256
@@ -155,6 +156,9 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     if(preds->Ds2xy) zero(preds->Ds2xy, preds->nn, preds->nn);
     if(preds->ego) zerov(preds->ego, preds->nn);
   }
+
+  /* for helping with periodic interrupts */
+  time_t itime = time(NULL);
   
   /* every round, do ... */
   for(int r=0; r<(int)T; r++) {
@@ -209,6 +213,11 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     
     /* clean up the garbage */
     free(leaves); 
+
+    /* periodically check R for interrupts and flush console 
+       every five seconds */
+    itime = my_r_process_events(itime);
+		      
   }
   
   if(parallel && PP) produce();

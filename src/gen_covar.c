@@ -31,9 +31,8 @@
 #include "linalg.h"
 #include "gen_covar.h"
 
-#define PWR 2.0
+
 #define DEBUG
-#define PI 3.141593
 
 /* #define THRESH 0.5 */
 
@@ -42,6 +41,7 @@
  * dist_symm:
  * 
  * compute distance matrix all matices must be alloc'd
+ * pwr is 1 (abs) or 2, anything else defaults to 1 (abs)
  * SYMMETRIC
  * 
  * X[n][m], DIST[n][n]
@@ -52,6 +52,7 @@ unsigned int m,n;
 double **X, **DIST;
 double pwr;
 {
+
 	int i,j,k;
 	double diff;
 	assert(DIST);
@@ -60,10 +61,12 @@ double pwr;
 		DIST[i][i] = 0.0;
 		for(j=i+1; j<n; j++) {
 			diff  = X[i][0] - X[j][0];
-			DIST[j][i] = diff * diff;
+			if(pwr==2.0) DIST[j][i] = diff * diff;
+			else DIST[j][i] = fabs(diff);
 			for(k=1; k<m; k++) {
 				diff  = X[i][k] - X[j][k];
-				DIST[j][i] += diff * diff;
+                                if(pwr==2.0) DIST[j][i] += diff * diff;
+				else DIST[j][i] += fabs(diff);
 			}
 			DIST[i][j] = DIST[j][i];
 		}
@@ -75,6 +78,7 @@ double pwr;
  * dist:
  * 
  * compute distance matrix all matices must be alloc'd
+ * pwr is 1 (abs) or 2, anything else defaults to 1 (abs)
  * 
  * X1[n1][m], X2[n2][m], DIST[n2][n1]
  */
@@ -83,7 +87,8 @@ void dist(DIST, m, X1, n1, X2, n2, pwr)
 unsigned int m,n1,n2;
 double **X1, **X2, **DIST;
 double pwr;
-{
+{       
+
 	int i,j,k;
 	double diff;
 	assert(DIST);
@@ -91,12 +96,14 @@ double pwr;
 	for(i=0; i<n1; i++) {
 		for(j=0; j<n2; j++) {
 			diff  = X1[i][0] - X2[j][0];
-			DIST[j][i] = diff * diff;
+			if(pwr==2.0) DIST[j][i] = diff * diff;
+			else DIST[j][i] = fabs(diff);
 			for(k=1; k<m; k++) {
 				diff  = X1[i][k] - X2[j][k];
-				DIST[j][i] += diff * diff;
+				if(pwr==2.0) DIST[j][i] += diff * diff;
+				else DIST[j][i] += fabs(diff);
 			}
-			/* DIST[j][i] = pow(DIST[j][i], pwr/2); */
+			
 		}
 	}
 }
@@ -344,12 +351,13 @@ double **X, **F;
  * K[n][m], DIST[n][m]
  */
 
-void matern_dist_to_K(K, DIST, d, phi, nu, nug, m, n)
+void matern_dist_to_K(K, DIST, d, nu, nug, m, n)
 unsigned int m,n;
 double **K, **DIST;
-double d, nug, phi, nu;
+double d, nug, nu;
 {
   int i,j;
+  double c = (nu-1.0)*log(2.0)+lgammafn(nu);
   
   if(d == 0.0) {
     if(m == n && nug > 0) id(K, n);
@@ -357,13 +365,16 @@ double d, nug, phi, nu;
   } else {
     for(i=0; i<n; i++) {
       for(j=0; j<m; j++) {
-	K[i][j] = phi*pow(DIST[i][j]/d, nu);
-	K[i][j] = K[i][j]*bessel_k(DIST[i][j]/d, nu, 1);
-	K[i][j] = K[i][j]/(pow(2.0, nu-1)*gammafn(nu)*pow(d, -2.0*nu));
+      K[i][j] = nu*(log(DIST[i][j])-log(d));
+      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1));
+      K[i][j] = exp(K[i][j]-c);
+
+	if(isnan(K[i][j])) K[i][j] = 1.0;
       }
     }
   }	
-  if(nug > 0 && m == n) for(i=0; i<m; i++) K[i][i] += nug; 
+  
+  if(nug > 0 && m == n) for(i=0; i<m; i++) {K[i][i] += nug;} 
 }
 
 
@@ -376,24 +387,27 @@ double d, nug, phi, nu;
  * K[n][n], DIST[n][n]
  */
 
-void matern_dist_to_K_symm(K, DIST, d, phi, nu, nug, n)
+void matern_dist_to_K_symm(K, DIST, d, nu, nug, n)
 unsigned int n;
 double **K, **DIST;
-double d, nug, phi, nu;
+double d, nug, nu;
 {
   int i,j;
-  
+  double c = (nu-1.0)*log(2.0)+lgammafn(nu);
+
   assert(nug >= 0);
   if(d == 0.0) id(K, n);
   for(i=0; i<n; i++) {
     K[i][i] = 1.0 + nug;
     if(d == 0.0) continue;
     for(j=i+1; j<n; j++) {
-      K[i][j] = phi*pow(DIST[i][j]/d, nu);
-      K[i][j] = K[i][j]*bessel_k(DIST[i][j]/d, nu, 1);
-      K[i][j] = K[i][j]/(pow(2.0, nu-1)*gammafn(nu)*pow(d, -2.0*nu));
+      K[i][j] = nu*(log(DIST[i][j])-log(d));
+      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1));
+      K[i][j] = exp(K[i][j]-c);
+        
+      if(isnan(K[i][j])) K[i][j] = 1.0;  
+
       K[j][i] = K[i][j];
-      if(i>130){printf("d %g \n", d);} 
     }
   }
 }

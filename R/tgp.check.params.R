@@ -27,7 +27,7 @@ function(params, d)
 {
 	if(is.null(params)) return(matrix(-1));
 	if(length(params) != 16) {
-		cat(paste("Number of params should be 15, you have", length(params), "\n"));
+		cat(paste("Number of params should be 16, you have", length(params), "\n"));
 		return(NULL)
 	}
         
@@ -105,7 +105,6 @@ function(params, d)
 	# correllation model
 	if(params$corr == "exp") { p <- c(p, 0); }
 	else if(params$corr == "expsep") { p <- c(p, 1); }
-        # else if(params$corr == "matern") { p <- c(p, 2); }
 	else { cat(paste("params$corr =", params$corr, "not valid\n")); return(NULL); }
        
 
@@ -159,7 +158,7 @@ function(params, d)
 	if(params$d.lam[1] == "fixed") p <- c(p, rep(-1, 4))
 	else p <- c(p, as.numeric(params$d.lam))
 
-        p <- c(p, as.numeric(params$par.matern))
+        p <- c(p, as.numeric(params$nu))
          
 	# return the constructed double-vector of parameters for C
 	return(p)

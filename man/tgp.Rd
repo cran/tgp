@@ -132,8 +132,10 @@ Upon execution, MCMC reports are made every 1,000 rounds to indicate progress
 
 Stationary (non-treed) processes on larger inputs (e.g., \code{X,Z}) 
 of size greater than 500, *might* be slow in execution, especially on older machines. 
-Once the C code starts executing, there will be no way to kill the process without
-killing R.  This will be changed in future versions.}
+Once the C code starts executing, it can be interrupted in the usual
+way: either via Ctrl-C (Unix-alikes) or pressing the Stop button in the
+\R-GUI.  When this happens, interrupt messages will indicate which
+required cleanup measures completed before returning control to \R.}
 
 \examples{
 ##

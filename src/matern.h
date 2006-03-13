@@ -37,7 +37,6 @@ class Matern_Prior;
 class Matern : public Corr
 {
  private:
-  double phi;           /* matern scale parameter (usually set to one) */
   double nu;           /* matern smoothing parameter */
 
   double d;		/* kernel correlation range parameter */
@@ -64,7 +63,6 @@ class Matern : public Corr
   void get_delta_d(Matern* c1, Matern* c2, void *state);
   void propose_new_d(Matern* c1, Matern* c2, void *state);
   double D(void);
-  double PHI(void);
   double NU(void);
 };
 
@@ -78,7 +76,6 @@ class Matern_Prior : public Corr_Prior
 {
  private:
 
-  double phi;           /* matern normalizing parameter */
   double nu;           /* matern smoothing parameter */
 
   double d;
@@ -100,7 +97,7 @@ class Matern_Prior : public Corr_Prior
   virtual Corr* newCorr(void);
   virtual void Print(FILE *outfile);
   
-  double PHI(void);
+ 
   double NU(void);
   double D(void);
   double* DAlpha(void);

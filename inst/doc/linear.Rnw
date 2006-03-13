@@ -57,9 +57,7 @@ is indicated by {\tt cor=[0]}.  In terminal versions, e.g. {\tt Unix},
 the progress indicators can give a sense of when the code will finish.
 GUI versions of {\tt R}---{\tt Windows} or {\tt MacOS X}---usually
 buffer {\tt stdout}, rendering this feature essentially useless as a
-real-time indicator of progress.  Note that a user cannot interact
-with {\tt R} while the {\tt C} code is running.  This will be changed
-in future versions.
+real-time indicator of progress.  
 
 The generic {\tt plot} method can be used to visualize the fitted
 posterior predictive surface (with option {\tt layout = 'surf'}) 

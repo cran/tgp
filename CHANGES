@@ -1,3 +1,12 @@
+1.1-2: (04 Mar 2006)
+
+1. Beta version of Matern correllation function working
+(abiet a bit shakily)
+
+2. Tgp class and cleanup function now implemented in 
+order to let tgp be interrupted, and then clean up to
+avoid memory leaks "on.exit()"
+
 1.1-1: (26 Feb 2006)
 ------
 

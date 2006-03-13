@@ -27,9 +27,19 @@ function(x, y, z, gridlen = 40, span=0.1, ...)
 {
   if(length(x) != length(y) && length(y) != length(z))
     stop("length of x, y and z must be equal")
+
+  if(length(x) < 30 && span < 0.5) {
+    warning("with less than 30 points, suggest span >> 0.5 or use akima",
+            immediate. = TRUE)
+    cat(paste("currently trying span =", span, "for", length(x), "points\n"))
+  }
+  
   xo <- seq(min(x), max(x), length=gridlen)
   yo <- seq(min(y), max(y), length=gridlen)
-  xyz.loess <- loess(z ~ x + y, data.frame(x=x, y=y), span=span, ...)
+
+  xyz.loess <-
+    suppressWarnings(loess(z ~ x + y, data.frame(x=x, y=y), span=span, ...))
+
   g <- expand.grid(x=xo, y=yo)
   g.pred <- predict(xyz.loess, g)
   return(list(x=xo, y=yo, z=matrix(g.pred, nrow=gridlen)))
