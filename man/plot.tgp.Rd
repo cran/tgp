@@ -104,7 +104,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 	this function in order to develop custom plotting functions.
 
 	There seems to be two bugs in the \code{\link[akima]{interp}} function of
-	\code{library(\pkg{akima})}.  The first, benign, bug causes \code{NA}s
+	the \pkg{akima} package.  The first, benign, bug causes \code{NA}s
 	to appear when plotting 2-d surfaces.  The result is white
 	rectangles (or \dQuote{holes}) in the surfaces.  This affect is
 	most severe when \code{x$X} and \code{x$XX} together form a

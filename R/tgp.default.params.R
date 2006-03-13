@@ -42,7 +42,7 @@ function(d)
          gamma=c(10,0.2,0.7),		# gamma linear pdf parameter
          d.p=c(1.0,20.0,10.0,10.0),	# d gamma-mix prior params (initial values)
          d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
-         par.matern = c(1.0,0.5)
+         nu=0.5                         # matern correlation smoothing parameter
          )
   return(params)
 }

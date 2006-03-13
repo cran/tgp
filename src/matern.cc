@@ -45,7 +45,7 @@ extern "C"
 using namespace std;
 
 #define BUFFMAX 256
-#define PWR 2.0
+#define PWR 1.0
 
 /*
  * Matern:
@@ -56,7 +56,6 @@ using namespace std;
 Matern::Matern(unsigned int col, Gp_Prior *gp_prior)
   : Corr(col, gp_prior)
 {
-  phi = ((Matern_Prior*) prior)->PHI();
   nu = ((Matern_Prior*) prior)->NU();
   assert(gp_prior->CorrPrior()->CorrModel() == MATERN);
   d = ((Matern_Prior*) prior)->D();
@@ -78,7 +77,7 @@ Corr& Matern::operator=(const Corr &c)
 {
   Matern *e = (Matern*) &c;
   
-  phi = e->phi;
+  
   nu = e->nu;
 
   log_det_K = e->log_det_K;
@@ -127,7 +126,7 @@ void Matern::Update(unsigned int n, double **X)
     nd = n;
   }
   dist_symm(xDISTx, col-1, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, phi, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
   //delete_matrix(xDISTx);
 }
 
@@ -144,7 +143,7 @@ void Matern::Update(unsigned int n, double **K, double **X)
    
   double ** xDISTx = new_matrix(n, n);
   dist_symm(xDISTx, col-1, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, phi, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
   delete_matrix(xDISTx);
 }
 
@@ -161,7 +160,7 @@ void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
   
   double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
-  matern_dist_to_K(K, xxDISTx, d, phi, nu, 0.0, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, nu, 0.0, n1, n2);
   delete_matrix(xxDISTx);
 }
 
@@ -378,16 +377,7 @@ double Matern::D(void)
   return d;
 }
 
-/*
- * PHI:
- *
- * return the scale parameter
- */
 
-double Matern::PHI(void)
-{
-  return phi;
-}
 /*
  * NU:
  *
@@ -442,7 +432,7 @@ Matern_Prior::Matern_Prior(unsigned int col) : Corr_Prior(col)
   /* defaults */ 
   d = 0.5;
   nu = 1.0;
-  phi = 1.0;
+ 
   default_d_priors();
   default_d_lambdas();
 }
@@ -476,7 +466,6 @@ Matern_Prior::Matern_Prior(Corr_Prior *c) : Corr_Prior(c)
   dupv(gamlin, e->gamlin, 3);
   d = e->d;
   nu = e->nu;
-  phi = e->phi;
   fix_d = e->fix_d;
   dupv(d_alpha, e->d_alpha, 2);
   dupv(d_beta, e->d_beta, 2);
@@ -528,9 +517,8 @@ void Matern_Prior::read_double(double *dparams)
 				&(dparams[0]), "d lambda");
   }
   dparams += 4; /* reset */
-  phi = dparams[0];
-  nu = dparams[1];
-  myprintf(stdout, "fixed phi %g and nu %g \n", phi, nu);
+  nu = dparams[0];
+  myprintf(stdout, "fixed nu %g \n", nu);
 }
 
 
@@ -580,16 +568,6 @@ double Matern_Prior::D(void)
   return d;
 }
 
-/*
- * PHI:
- *
- * return the nu parameter
- */
-
-double Matern_Prior::PHI(void)
-{
-  return phi;
-}
 /*
  * NU:
  *

@@ -34,13 +34,12 @@
 #include <assert.h>
 #include <Rmath.h>
 #include <R.h>
+#include <Rmath.h>
 #include "randomkit.h"
 
 /* for Windows and other OS's without drand support, i
  * so the compiler won't warn */
 double erand48(unsigned short xseed[3]); 
-
-#define E   2.7182818284590452354
 
 int getrngstate = 1;
 
@@ -331,9 +330,9 @@ double rgamma1(double alpha, void *state)
     /* int done = 0; */
     uniform0 = runi(state);
     uniform1 = runi(state);
-    if (uniform0 > E/(alpha + E))
+    if (uniform0 > M_E/(alpha + M_E))
     {
-        random = -log((alpha + E)*(1-uniform0)/(alpha*E));
+        random = -log((alpha + M_E)*(1-uniform0)/(alpha*M_E));
         if ( uniform1 > pow(random,alpha - 1))
             return -1;
         else 
@@ -341,7 +340,7 @@ double rgamma1(double alpha, void *state)
     }
     else
     {
-        x = (alpha + E) * uniform0 / E;
+        x = (alpha + M_E) * uniform0 / M_E;
         random = pow(x,1/alpha);
         if ( uniform1 > exp(-random))
             return -1;
@@ -780,7 +779,7 @@ unsigned int rpoiso(float xm, void *state)
 		}
 		do {
 			do { /* y is a deviate from a Lorentzian comparison function. */
-				y=tan(PI*runi(state));
+				y=tan(M_PI*runi(state));
 				em=sq*y+xm; /* em is y, shifted and scaled. */
 			} while (em < 0.0); /* Reject if in regime of zero probability. */
 

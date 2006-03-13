@@ -31,7 +31,6 @@
 #include "linalg.h"
 #include "rhelp.h"
 
-#define PI 3.14159265
 #define LOG_2_PI 1.83787706640935
 
 #define DEBUG

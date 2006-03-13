@@ -24,12 +24,13 @@
 #include "rhelp.h"
 #include <R_ext/Print.h>
 #include <stdarg.h>
-
+#include <time.h>
+#include <R.h>
 
 /* 
  * myprintf:
  *
- * a function many different types of printing--  in particular, using 
+ * a function many different types of printing-- in particular, using 
  * the Rprintf if the code happens to be compiled with RPRINT, 
  * othersie fprintf (takes the same arguments as fprintf)
  */
@@ -51,6 +52,7 @@ void myprintf(FILE *outfile, char *str, ...)
 }
 
 
+#ifndef RPRINT
 /*
  * error:
  *
@@ -97,14 +99,15 @@ void warning(char *str, ...)
   va_end(argp);
   myflush(stderr);
 }
+#endif
 
 
 /* 
  * myflush:
  *
- * a function many different types of flushing--  in particular, using 
- * the R_FlushConsole the code happens to be compiled with RPRINT,
- * otherwise fflush
+ * a function for many different types of flushing--  in particular, 
+ * using * the R_FlushConsole the code happens to be compiled with 
+ * RPRINT, otherwise fflush
  */
 
 void myflush(FILE *outfile)
@@ -114,4 +117,31 @@ void myflush(FILE *outfile)
 	#else
 	fflush(outfile);
 	#endif
+}
+
+
+/*
+ * my_r_process_Events:
+ *
+ * at least every 1 second(s) pass control back to
+ * Ro so that it can check for interrupts and/or 
+ * process other R-gui events
+ */
+
+time_t my_r_process_events(time_t itime)
+{
+  time_t ntime = time(NULL);
+
+#ifdef RPRINT  
+  if(ntime - itime > 1) {
+#if  ( defined(HAVE_AQUA) || defined(Win32) )
+    R_ProcessEvents();
+#else
+    R_CheckUserInterrupt();
+#endif
+    R_FlushConsole();
+    itime = ntime;
+  }
+#endif
+  return itime;
 }

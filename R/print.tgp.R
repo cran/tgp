@@ -4,6 +4,6 @@ print.tgp <- function(x, ...)
 	cat("It is basically a list with the following entries:\n\n")
 	print(names(x), quote=FALSE)
 
-	cat("\nSee tgp or btgpllm for an explanation of the individual entries\n")
+	cat("\nSee tgp or btgp for an explanation of the individual entries\n")
 	cat("See plot.tgp and tgp.trees for help with visualization\n")
 }

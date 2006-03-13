@@ -23,15 +23,16 @@
 
 
 "blm" <-
-function(X, Z, XX=NULL, bprior="bflat", BTE=c(1000,4000,3), R=1, m0r1=FALSE, pred.n=TRUE,
-         ds2x=FALSE, ego=FALSE)
+function(X, Z, XX=NULL, bprior="bflat", BTE=c(1000,4000,3), R=1, m0r1=FALSE,
+         pred.n=TRUE, ds2x=FALSE, ego=FALSE)
 {
-	n <- dim(X)[1]
-	if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 } else { d <- dim(X)[2] }
-	params <- tgp.default.params(d+1)
-	params$bprior <- bprior
-	params$tree <- c(0,0,10)	# no tree
-	params$gamma <- c(-1,0.2,0.7)	# force llm
-	return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,pred.n,ds2x,ego))
+  n <- dim(X)[1]
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- dim(X)[2] }
+  params <- tgp.default.params(d+1)
+  params$bprior <- bprior
+  params$tree <- c(0,0,10)	# no tree
+  params$gamma <- c(-1,0.2,0.7)	# force llm
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,pred.n,ds2x,ego))
 }
 
