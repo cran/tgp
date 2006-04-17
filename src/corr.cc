@@ -38,7 +38,8 @@ extern "C"
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-
+#include <fstream>
+using namespace std;
 
 /*
  * Corr:
@@ -502,12 +503,12 @@ void Corr_Prior::read_double_nug(double *dparams)
   nug = dparams[0]; 
   // myprintf(stdout, "starting nug=%g\n", nug);
 
-  /* the d parameter is at dparams[1] */
+  /* the d parameter is at dparams[1], should change this later */
  
-  /* read nug gamma mixture prior paxrameters */
+  /* read nug gamma mixture prior parrameters */
   get_mix_prior_params_double(nug_alpha, nug_beta, &(dparams[2]), "nug");
 
-  /* d hierarchical lambda prior parameters */
+  /* nug hierarchical lambda prior parameters */
   if((int) dparams[6] == -1) 
     { fix_nug = true; /* myprintf(stdout, "fixing nug prior\n"); */}
   else {
@@ -530,6 +531,51 @@ void Corr_Prior::read_double_nug(double *dparams)
   assert(gamlin[2] + gamlin[1] <= 1);
 }
 
+
+/*
+ * read_ctrlfile_nug:
+ *
+ * read the a prior paramter the control file
+ * items pertaining to the nugget
+ */
+
+void Corr_Prior::read_ctrlfile_nug(ifstream* ctrlfile)
+{
+  char line[BUFFMAX], line_copy[BUFFMAX];
+
+  /* Read the starting nugget value */
+  ctrlfile->getline(line, BUFFMAX);
+  nug = atof(strtok(line, " \t\n#"));
+  myprintf(stdout, "starting nug=%g\n", nug);
+
+  /* read the nug gamma mixture prior parameters */
+  ctrlfile->getline(line, BUFFMAX);
+  get_mix_prior_params(nug_alpha, nug_beta, line, "nug");
+
+  /* nug hierarchical lambda prior parameters */
+  ctrlfile->getline(line, BUFFMAX);
+  strcpy(line_copy, line);
+  if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
+    { fix_nug = true; myprintf(stdout, "fixing nug prior\n"); }
+  else {
+    fix_nug = false;
+    get_mix_prior_params(nug_alpha_lambda, nug_beta_lambda, line, "nug lambda");
+  }
+
+  /* read gamma linear pdf parameter */
+  ctrlfile->getline(line, BUFFMAX);
+  gamlin[0] = atof(strtok(line, " \t\n#"));
+  gamlin[1] = atof(strtok(NULL, " \t\n#"));
+  gamlin[2] = atof(strtok(NULL, " \t\n#"));
+
+  /* print and sanity check the gamma linear pdf parameters */
+  myprintf(stdout, "lin[gam,min,max]=[%g,%g,%g]\n", 
+	   gamlin[0], gamlin[1], gamlin[2]);
+  assert(gamlin[0] == -1 || gamlin[0] >= 0);
+  assert(gamlin[1] >= 0.0 && gamlin[1] <= 1);
+  assert(gamlin[2] >= 0.0 && gamlin[2] <= 1);
+  assert(gamlin[2] + gamlin[1] <= 1); 
+}
 
 /*
  * Nug:
@@ -726,7 +772,7 @@ void Corr_Prior::SetGpPrior(Gp_Prior *gp_prior)
 void Corr_Prior::PrintNug(FILE *outfile)
 {
   /* range parameter */
-  // myprintf(outfile, "starting nug=%g\n", nug);
+  //myprintf(outfile, "starting nug=%g\n", nug);
 
   /* range gamma prior */
   myprintf(outfile, "nug[a,b][0,1]=[%g,%g],[%g,%g]\n", 

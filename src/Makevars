@@ -1,6 +1,9 @@
 # comment out the below line in order to enable ATLAS (step 1)
+PKG_CFLAGS = -DRPRINT
+PKG_CXXFLAGS = -DRPRINT
 PKG_LIBS = ${LAPACK_LIBS} ${BLAS_LIBS} ${FLIBS}
 
 # Uncomment and modify the two lines below (steps 1 & 2)
-#PKG_CFLAGS = -I/home/bobby/atlas/Linux_XeonSSE1_2/include/
-#PKG_LIBS = -L/home/bobby/atlas/Linux_XeonSSE1_2/lib -llapack -lcblas -latlas
+#PKG_CXXFLAGS = -DRPRINT
+#PKG_CFLAGS = -DRPRINT -I/cse/grads/rbgramacy/atlas/OSX_PPCG5AltiVec_2/include
+#PKG_LIBS = -L/cse/grads/rbgramacy/atlas/OSX_PPCG5AltiVec_2/lib -llapack -lcblas -latlas

@@ -697,13 +697,13 @@ void *state;
 		gamma_mult_gelman(&draw, alpha[0], beta[0], 1, state);
 		if(draw == 0) {
 			draw = alpha[0]/(beta[0]*beta[0]);
-			warning("bad Gamma draw, using mean\n");
+			warning("bad Gamma draw, using mean");
 		}
 	} else {
 		gamma_mult_gelman(&draw, alpha[1], beta[1], 1, state);
 		if(draw == 0) {
 			draw = alpha[1]/(beta[1]*beta[1]);
-			warning("bad Gamma draw, using mean\n");
+			warning("bad Gamma draw, using mean");
 		}
 	}
 	assert(draw > 0); /* && draw > 2e-20); */
@@ -744,7 +744,7 @@ void *state;
 	assert(*q_bak > 0);
 
 	if(ret > 10e10) {
-	  warning("unif_propose_pos (%g) is bigger than max.\n", ret);
+	  warning("unif_propose_pos (%g) is bigger than max", ret);
 		ret = 10;
 	}
 	assert(ret > 0);
@@ -1014,6 +1014,66 @@ void *state;
 	else return 0;
 }
 
+/*
+ * d_draw_margin:
+ * 
+ * draws for d given the rest of the parameters
+ * except b and s2 marginalized out
+ *
+ * F[col][n], DIST[n][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col]
+ * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
+ *
+ *  return 1 if draw accepted, 0 if rejected, -1 if error
+ */
+
+int matern_d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, 
+	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
+			 b0, Ti, T, tau2, nug, nu, qRatio, d_alpha, d_beta, a0, g0, lin, state)
+unsigned int n, col;
+int lin;
+double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
+double *b0, *Z;
+double d_alpha[2], d_beta[2];
+double qRatio;
+double d, dlast, nug, nu, a0, g0, lambda, tau2, log_det_K;
+double *lambda_new, *bmu_new, *log_det_K_new;
+void *state;
+{
+	double pd, pdlast, alpha;
+	unsigned int m = 0;
+
+	/* check if we are sticking with linear model */
+	assert(dlast != 0.0);
+
+	/* Knew = dist_to_K(dist, d, nugget);
+	   compute lambda, Vb, and bmu, for the NEW d */
+	if(! lin) {	/* regular */
+	  matern_dist_to_K_symm(K_new, DIST, d, nu, nug, n);
+		inverse_chol(K_new, Ki_new, Kchol_new, n);
+		*log_det_K_new = log_determinant_chol(Kchol_new, n);
+		*lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
+				F, Z, Ki_new, Ti, tau2, b0);
+	} else {	/* linear */
+		*log_det_K_new = n*log(1.0 + nug);
+		*lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
+				F, Z, Ti, tau2, b0, nug);
+	}
+
+	if(T[0][0] == 0) m = col;
+
+	/* start computation of posterior distribution */
+	pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+	pd += d_prior_pdf(d, d_alpha, d_beta);
+	pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+	pdlast += d_prior_pdf(dlast, d_alpha, d_beta);
+
+	/* compute acceptance prob */
+	/*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
+	alpha = exp(pd - pdlast)*qRatio;
+	if(isnan(alpha)) return -1;
+	if(alpha >= 1 || runi(state) < alpha) return 1;
+	else return 0;
+}
 
 /*
  * nug_draw_margin:

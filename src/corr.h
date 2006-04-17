@@ -29,6 +29,9 @@ extern "C"
 {
 #include "rhelp.h"
 }
+#include <fstream>
+
+#define BUFFMAX 256
 
 //#define PRINTNUG
 #define REJECTMAX 1000
@@ -147,12 +150,14 @@ class Corr_Prior
   CORR_MODEL CorrModel(void);
 
   virtual void read_double(double *dprior)=0;
+  virtual void read_ctrlfile(std::ifstream* ctrlfile)=0;
   virtual void Draw(Corr **corr, unsigned int howmany, void *state)=0;
   virtual Corr* newCorr(void)=0;
   virtual void Print(FILE *outfile)=0;
   virtual Corr_Prior* Dup(void)=0;
 
   void read_double_nug(double *dprior);
+  void read_ctrlfile_nug(std::ifstream* ctrlfile);
   double log_NugPrior(double nug);
   double Nug(void);
   void DrawNug(Corr **corr, unsigned int howmany, void *state);

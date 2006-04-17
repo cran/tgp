@@ -25,8 +25,8 @@
 #ifndef __DOPT_H__
 #define __DOPT_H__
 
-#define DOPT_D(m) 0.001*m
-#define DOPT_NUG 0.01
+double DOPT_D(unsigned int m);
+double DOPT_NUG(void);
 
 void dopt(double **X, int *fi, double **fixed, double **Xcand, 
 	unsigned int m, unsigned int n1, unsigned int n2, unsigned int n, 

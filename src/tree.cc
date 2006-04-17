@@ -167,11 +167,12 @@ Tree::~Tree(void)
 /* 
  * Add_XX:
  * 
- * deal with the new predictive data; figuring out which XX locations 
- * (and pp) belong in this partition 
+ * deal with the new predictive data; figuring out which XX locations
+ * (and pp) belong in this partition, return the count of XX determined
+ * via matrix_constrained
  */
 
-void Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
+unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
 {
   assert(col_pred == col);
   assert(isLeaf());
@@ -179,8 +180,8 @@ void Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
   /* do not recompute XX if it has already been computed */
   if(XX) { 
     assert(pp); 
-    warning("failed add_XX in leaf\n");
-    return; 
+    warning("failed add_XX in leaf");
+    return 0; 
   }
   
   int *p_pred = new_ivector(n_pred);
@@ -191,6 +192,8 @@ void Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
   for(unsigned int i=0; i<n_pred; i++)
     if(p_pred[i]) { pp[k] = i; dupv(XX[k], X_pred[i], col-1); k++; }
   free(p_pred);
+
+  return nn;
 }
 
 
@@ -214,6 +217,7 @@ void Tree::new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned in
   
   int *p_new = new_ivector(n_new);
   n = matrix_constrained(p_new, X_new, n_new, col-1, rect);
+  assert(n > 0);
   X = new_matrix(n, col-1);
   Z = new_vector(n);
   p = new_ivector(n);
@@ -1536,7 +1540,7 @@ unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
   int *fi = new_ivector(N); 
   double ** Xboth = new_matrix(N+n, col-1);
   // dopt(Xboth, fi, X, XX, col-1, n, nn, N, d, nug, state);
-  dopt(Xboth, fi, X, XX, col-1, n, nn, N, DOPT_D(col-1), DOPT_NUG, state);
+  dopt(Xboth, fi, X, XX, col-1, n, nn, N, DOPT_D(col-1), DOPT_NUG(), state);
   unsigned int *fi_ret = new_uivector(N); 
   for(unsigned int i=0; i<N; i++) {
     fi_ret[i] = pp[fi[i]-1];

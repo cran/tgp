@@ -70,6 +70,12 @@ int d_sep_draw_margin(double *d, unsigned int n, unsigned int col, double **F,
 		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
 		double **T, double tau2, double nug, double qRatio, double pRatio_log, 
 		double a0, double g0, int lin, void *state);
+int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlast, double **F, double *Z, 
+		double **DIST, double log_det_K, double lambda, double **Vb, 
+		double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
+		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
+		double **T, double tau2, double nug, double nu, double pRatio, double *d_alpha,
+	        double *d_beta, double a0, double g0, int lin, void *state);
 double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, double **F, double *Z, 
 		double **K, double log_det_K, double lambda, double **Vb, 
 		double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 

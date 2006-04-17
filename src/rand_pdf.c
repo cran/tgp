@@ -118,7 +118,8 @@ double **cov;
 
     /* xx = (x - mu) / R; */
     linalg_daxpy(n, -1.0, mu, 1, xx, 1);
-    linalg_dtrsv(CblasNoTrans,n,cov,n,xx,1);
+    /*linalg_dtrsv(CblasTrans,n,cov,n,xx,1);*/
+    linalg_dtrsv(CblasTrans,n,cov,n,xx,1);
 
     /* discrim = sum(x .* x, 2); */
     /* discrim = linalg_ddot(n, xx, 1, xx, 1); */

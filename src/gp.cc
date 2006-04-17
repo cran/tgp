@@ -370,7 +370,7 @@ void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
   /* try to make some predictions, but first: choose LLM or Gp */
   if(corr->Linear())  {
     /* under the limiting linear */
-    predict_full_linear(n, nn, col, z, zz, F, FF, bmu, s2, Vb, ds2xy, ego,
+    predict_full_linear(n, nn, col, z, zz, Z, F, FF, bmu, s2, Vb, ds2xy, ego,
 			corr->Nug(), err, state);
   } else {
     /* full Gp prediction */
@@ -380,7 +380,7 @@ void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
   }
   
   /* print warnings if there were any */
-  if(warn) warning("(%d) from predict_full: n=%d, nn=%d\n", warn, n, nn);
+  if(warn) warning("(%d) from predict_full: n=%d, nn=%d", warn, n, nn);
 }
 
 
@@ -497,8 +497,8 @@ double Gp::Posterior(void)
 			    tau2, p->s2Alpha(), p->s2Beta());
   
 #ifdef DEBUG
-  if(isnan(post)) warning("nan in posterior\n");
-  if(isinf(post)) warning("inf in posterior\n");
+  if(isnan(post)) warning("nan in posterior");
+  if(isinf(post)) warning("inf in posterior");
 #endif
   return post;
 }
@@ -698,6 +698,30 @@ Gp_Prior::Gp_Prior(unsigned int col) : Base_Prior(col)
 }
 
 
+/* 
+ * InitT:
+ *
+ * (re-) initialize the T matrix based on the choice of beta 
+ * prior (assume memory has already been allocated.  This is 
+ * required for the asserts in the Compute function.  Might 
+ * consider getting rid of this later.
+ */
+
+void Gp_Prior::InitT(void)
+{
+  assert(Ti && T && Tchol);
+  if(beta_prior == BFLAT) {
+    zero(Ti, col, col);
+    zero(T, col, col);
+    zero(Tchol, col, col);
+  } else {
+    id(Ti, col);
+    id(T, col);
+    id(Tchol, col);
+  }
+}
+
+
 /*
  * Dup:
  *
@@ -764,6 +788,26 @@ Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
 }
 
 
+/*
+ * ~Gp_Prior:
+ * 
+ * the usual destructor, nothing fancy 
+ */
+
+Gp_Prior::~Gp_Prior(void)
+{
+  free(b);
+  free(mu);
+  free(b0);
+  delete_matrix(Ci);
+  delete_matrix(V);
+  delete_matrix(T);
+  delete_matrix(Ti);
+  delete_matrix(Tchol);
+  delete corr_prior;
+}
+
+
 /* 
  * read_double:
  * 
@@ -781,8 +825,11 @@ void Gp_Prior::read_double(double * dparams)
   case 2: beta_prior=BFLAT; /* myprintf(stdout, "linear prior: flat\n"); */ break;
   case 3: beta_prior=BCART; /* myprintf(stdout, "linear prior: cart\n"); */ break;
   case 4: beta_prior=B0TAU; /* myprintf(stdout, "linear prior: b0 flat with tau2\n"); */ break;
-  default: error("bad linear prior model %d\n", (int)dparams[0]); break;
+  default: error("bad linear prior model %d", (int)dparams[0]); break;
   }
+  
+  /* must properly initialize T, based on beta_prior */
+  InitT();
 
   /* reset dparams to after the above parameters */
   dparams += 1;
@@ -844,7 +891,7 @@ void Gp_Prior::read_double(double * dparams)
   case 2: corr_prior = new Matern_Prior(col);
     //myprintf(stdout, "correlation: isotropic matern\n");
     break;
-  default: error("bad corr model %d\n", (int)dparams[0]); assert(0);
+  default: error("bad corr model %d", (int)dparams[0]);
   }
 
   /* set the gp_prior for this corr_prior */
@@ -855,24 +902,118 @@ void Gp_Prior::read_double(double * dparams)
 }
 
 
-/*
- * ~Gp_Prior:
+/* 
+ * read_ctrlfile:
  * 
- * the usual destructor, nothing fancy 
+ * takes params from a control file
  */
 
-Gp_Prior::~Gp_Prior(void)
+void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
 {
-  free(b);
-  free(mu);
-  free(b0);
-  delete_matrix(Ci);
-  delete_matrix(V);
-  delete_matrix(T);
-  delete_matrix(Ti);
-  delete_matrix(Tchol);
-  delete corr_prior;
+  char line[BUFFMAX], line_copy[BUFFMAX];
+
+  /* read the beta prior model */
+  /* B0, BMLE (Emperical Bayes), BFLAT, or BCART, B0TAU */
+  ctrlfile->getline(line, BUFFMAX);
+  if(!strncmp(line, "b0tau", 5)) {
+    beta_prior = B0TAU;
+    myprintf(stdout, "linear prior: b0 fixed with tau2 \n");
+  } else if(!strncmp(line, "bmle", 4)) {
+    beta_prior = BMLE;
+    myprintf(stdout, "linear prior: emperical bayes\n");
+  } else if(!strncmp(line, "bflat", 5)) {
+    beta_prior = BFLAT;
+    myprintf(stdout, "linear prior: flat \n");
+  } else if(!strncmp(line, "bcart", 5)) {
+    beta_prior = BCART;
+    myprintf(stdout, "linear prior: cart \n");
+  } else if(!strncmp(line, "b0", 2)) {
+    beta_prior = B0;
+    myprintf(stdout, "linear prior: b0 hierarchical \n");
+  } else {
+    error("%s is not a valid linear prior", strtok(line, "\t\n#"));
+  }
+
+  /* must properly initialize T, based on beta_prior */
+  InitT();
+
+  /* read the beta regression coefficients from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  read_beta(line);
+  myprintf(stdout, "starting beta=");
+  printVector(b, col, stdout);
+  
+  /* read the s2 and tau2 initial parameter from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  s2 = atof(strtok(line, " \t\n#"));
+  if(beta_prior != BFLAT) tau2 = atof(strtok(NULL, " \t\n#"));
+  myprintf(stdout, "starting s2=%g tau2=%g\n", s2, tau2);
+  
+  /* read the s2-prior parameters (s2_a0, s2_g0) from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  s2_a0 = atof(strtok(line, " \t\n#"));
+  s2_g0 = atof(strtok(NULL, " \t\n#"));
+  myprintf(stdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
+
+  /* read the tau2-prior parameters (tau2_a0, tau2_g0) from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  if(beta_prior != BFLAT && beta_prior != BCART) {
+    tau2_a0 = atof(strtok(line, " \t\n#"));
+    tau2_g0 = atof(strtok(NULL, " \t\n#"));
+    myprintf(stdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
+  }
+
+  /* read the s2-prior hierarchical parameters 
+   * (s2_a0_lambda, s2_g0_lambda) from the control file */
+  fix_s2 = false;
+  ctrlfile->getline(line, BUFFMAX);
+  strcpy(line_copy, line);
+  if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
+    { fix_s2 = true; myprintf(stdout, "fixing s2 prior\n"); }
+  else {
+    s2_a0_lambda = atof(strtok(line, " \t\n#"));
+    s2_g0_lambda = atof(strtok(NULL, " \t\n#"));
+    myprintf(stdout, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
+  }
+  
+  /* read the s2-prior hierarchical parameters 
+   * (tau2_a0_lambda, tau2_g0_lambda) from the control file */
+  fix_tau2 = false;
+  ctrlfile->getline(line, BUFFMAX);
+  strcpy(line_copy, line);
+  if(beta_prior != BFLAT && beta_prior != BCART) {
+    if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
+      { fix_tau2 = true; myprintf(stdout, "fixing tau2 prior\n"); }
+    else {
+      tau2_a0_lambda = atof(strtok(line, " \t\n#"));
+      tau2_g0_lambda = atof(strtok(NULL, " \t\n#"));
+      myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", tau2_a0_lambda, tau2_g0_lambda);
+    }
+  }
+
+  /* read the correlation model type */
+  /* EXP, EXPSEP or MATERN */
+  ctrlfile->getline(line, BUFFMAX);
+  if(!strncmp(line, "expsep", 6)) {
+    corr_prior = new ExpSep_Prior(col);
+    // myprintf(stdout, "correlation: separable power exponential\n");
+  } else if(!strncmp(line, "exp", 3)) {
+    corr_prior = new Exp_Prior(col);
+    // myprintf(stdout, "correlation: isotropic power exponential\n");
+  } else if(!strncmp(line, "matern", 6)) {
+    corr_prior = new Matern_Prior(col);
+    // myprintf(stdout, "correlation: isotropic matern\n");
+  } else {
+    error("%s is not a valid correlation model", strtok(line, "\t\n#"));
+  }
+
+  /* set the gp_prior for this corr_prior */
+  corr_prior->SetGpPrior(this);
+
+  /* read the rest of the parameters into the corr prior module */
+  corr_prior->read_ctrlfile(ctrlfile);
 }
+
 
 /*
  * default_s2_priors:
@@ -946,9 +1087,7 @@ void Gp_Prior::read_beta(char *line)
   for(unsigned int i=1; i<col; i++) {
     char *l = strtok(NULL, " \t\n#");
     if(!l) {
-      error("not enough beta coefficients (%d)\n, there should be (%d)\n", 
-	    i+1, col);
-      exit(0);
+      error("not enough beta coefficients (%d)\n, there should be (%d)", i+1, col);
     }
     b[i] = atof(l);
   }
@@ -1119,7 +1258,7 @@ void Gp_Prior::Print(FILE* outfile)
   case BFLAT: myprintf(stdout, "linear prior: flat\n"); break;
   case BCART: myprintf(stdout, "linear prior: cart\n"); break;
   case B0TAU: myprintf(stdout, "linear prior: b0 flat with tau2\n"); break;
-  default: error("linear prior not supported\n"); exit(0); break;
+  default: error("linear prior not supported");  break;
   }
 
   /* beta */

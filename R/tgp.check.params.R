@@ -105,6 +105,7 @@ function(params, d)
 	# correllation model
 	if(params$corr == "exp") { p <- c(p, 0); }
 	else if(params$corr == "expsep") { p <- c(p, 1); }
+        else if(params$corr == "matern") { p <- c(p, 2); }
 	else { cat(paste("params$corr =", params$corr, "not valid\n")); return(NULL); }
        
 

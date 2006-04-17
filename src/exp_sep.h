@@ -90,6 +90,7 @@ class ExpSep_Prior : public Corr_Prior
   ExpSep_Prior(Corr_Prior *c);
   virtual ~ExpSep_Prior(void);
   virtual void read_double(double *dprior);
+  virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual Corr_Prior* Dup(void);
   virtual void Draw(Corr **corr, unsigned int howmany, void *state);
   virtual Corr* newCorr(void);

@@ -57,7 +57,7 @@ double *FFrow, *b;
 
 	#ifdef DEBUG
 	if(abs(zz) > 10e10) 
-		warning("(predict) abs(zz)=%g > 10e10\n", zz);
+		warning("(predict) abs(zz)=%g > 10e10", zz);
 	#endif
 
 	return zz;
@@ -138,7 +138,7 @@ double **FW, **FFrow;
 		
 		if(denom <= 0) {
 			#ifdef DEBUG
-		        warning("denom = %g, diff = %g, (i=%d, which_i=%d)\n", denom, diff, i, which_i);
+		        warning("denom = %g, diff = %g, (i=%d, which_i=%d)", denom, diff, i, which_i);
 			#endif
 			Ds2xy[i] = 0;
 		} else Ds2xy[i] = ss2 * diff * diff / denom;
@@ -419,9 +419,9 @@ double s2, nug;
  * and do delta_sigma_linear on them too, if applicable
  */
 
-int predict_full_linear(n, nn, col, z, zz, F, FF, bmu, s2, Vb, Ds2xy, ego, nug, err, state)
+int predict_full_linear(n, nn, col, z, zz, Z, F, FF, bmu, s2, Vb, Ds2xy, ego, nug, err, state)
 unsigned int n, nn, col;
-double *z, *zz, *bmu, *ego;
+double *z, *zz, *Z, *bmu, *ego;
 double **F, **FF, **Vb, **Ds2xy;
 double s2, nug;
 int err;
@@ -442,7 +442,7 @@ void *state;
   zs = new_vector(nn);
   predict_linear(nn, col, zmean, zs, FF, bmu, s2, Vb, Ds2xy, nug);
   warn += predict_draw(nn, zz, zmean, zs, err, state);
-  if(ego) compute_ego(nn, ego, zz, zmean, zs);
+  if(ego) compute_ego(n, nn, ego, Z, zmean, zs);
   free(zmean); free(zs);
 
   return(warn);

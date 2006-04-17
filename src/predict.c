@@ -57,7 +57,7 @@ double *FFrow, *KKrow, *KiZmFb, *b;
 
 	#ifdef DEBUG
 	if(abs(zz) > 10e10) 
-	  warning("(predict) abs(zz)=%g > 10e10\n", zz);
+	  warning("(predict) abs(zz)=%g > 10e10", zz);
 	#endif
 
 	return zz;
@@ -135,7 +135,7 @@ double **FW, **FFrow, **KKrow, **xxKxx;
 		
 		if(denom <= 0) {
 			#ifdef DEBUG
-			warning("denom=%g, diff=%g, (i=%d, which_i=%d)\n", denom, diff, i, which_i);
+			warning("denom=%g, diff=%g, (i=%d, which_i=%d)", denom, diff, i, which_i);
 			#endif
 			Ds2xy[i] = 0;
 		} else Ds2xy[i] = ss2 * diff * diff / denom;
@@ -438,7 +438,7 @@ void *state;
 		
 		/* draw from the posterior predictive distribution */
 		warn += predict_draw(n2, zz, zmean, zs, err, state);
-		if(ego) compute_ego(n2, ego, zz, zmean, zs);
+		if(ego) compute_ego(n1, n2, ego, Z, zmean, zs);
 		free(zmean); free(zs);
 	}
 	if(z) {
@@ -474,8 +474,8 @@ void *state;
  * given by params mean and s2
  */
 
-void compute_ego(n, ego, z, mean, s)
-unsigned int n;
+void compute_ego(n, nn, ego, z, mean, s)
+     unsigned int n, nn;
 double *ego, *z, *mean, *s;
 {
   unsigned int which, i;
@@ -488,7 +488,7 @@ double *ego, *z, *mean, *s;
   fmin = min(z, n, &which);
 
   /* compute expected information about that minimum */
-  for(i=0; i<n; i++) {
+  for(i=0; i<nn; i++) {
     diff = fmin - mean[i];
     stand = diff/s[i];
     normpdf_log(&d, &stand, 0.0, 1.0, 1);
@@ -498,5 +498,8 @@ double *ego, *z, *mean, *s;
     /* check for numerical issues in p and d, and otherwise compute */
     if(isinf(d) || isinf(p) || isnan(d) || isnan(p)) ego[i] = 0.0;
     else ego[i] = diff * d + s[i]*d;
+   
+    if(ego[i] < 0.0) ego[i]=0.0; 
+    
   }
 }

@@ -92,6 +92,7 @@ class Matern_Prior : public Corr_Prior
   Matern_Prior(Corr_Prior *c);
   virtual ~Matern_Prior(void);
   virtual void read_double(double *dprior);
+  virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void Draw(Corr **corr, unsigned int howmany, void *state);
   virtual Corr_Prior* Dup(void);
   virtual Corr* newCorr(void);

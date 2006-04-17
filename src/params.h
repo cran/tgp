@@ -29,14 +29,11 @@
 #include "gp.h"
 #include "base.h"
 
-#define BUFFMAX 256
+//#define BUFFMAX 256
 
 class Params
 {
  private:
-
-  char line[BUFFMAX]; 
-  char line_copy[BUFFMAX];
 
   unsigned int col;	/* dimenstion of the data + 1 for intercept */
   double t_alpha;		/* tree prior parameter alpha */

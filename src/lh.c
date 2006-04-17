@@ -288,8 +288,7 @@ void printRect(FILE* outfile, int d, double** rect)
 
 void errorBadRect(void)
 {
-	error("bad rectangle format\n"); 
-	exit(0);
+  error("bad rectangle format"); 
 }
 
 
