@@ -28,12 +28,16 @@
 #include "lh.h"
 #include "matrix.h"
 #include "dopt.h"
+#include "rhelp.h"
 #include "gen_covar.h"
 #include <stdlib.h>
 #include <assert.h>
 
-#define PWR 2
+#define PWR 2.0
 #define ITERATIONS 5000
+
+double DOPT_D(unsigned int m) { return 0.001*m; }
+double DOPT_NUG(void) { return 0.01; }
 
 
 /*
@@ -77,7 +81,8 @@ int *fi_out;
 	delete_matrix(rect);
 
 	/* call dopt */
-	dopt(X, fi_out, fixed, Xcand, m, n, ncand, nn, DOPT_D(m), DOPT_NUG, state);
+	dopt(X, fi_out, fixed, Xcand, m, n, ncand, nn, DOPT_D((unsigned)m), 
+	     DOPT_NUG(), state);
 
 	delete_matrix(X);
 	delete_matrix(fixed);
@@ -152,13 +157,20 @@ void *state;
 	 */
 
 	/* dist = dist_2d_c(X, X, 1); */
-	dist(DIST, m, X, n+n1, X, n+n1, PWR);
+	dist_symm(DIST, m, X, n+n1, PWR);
 
 	/* K = dist_to_K(DIST, 0.02, 0.01);*/
-	dist_to_K(K, DIST, d, nug, n+n1, n+n1);
+	dist_to_K_symm(K, DIST, d, nug, n+n1);
 	/* d = det(K); */
 	log_det = log_determinant(K, n+n1);
 
+	/*fprintf(stderr, "START log_det = %g\n", log_det);
+	if(log_det == -1e300*1e300) {
+	  matrix_to_file("X.dump", X, n+n1, m);
+	  matrix_to_file("DIST.dump", DIST, n+n1, n+n1);
+	  matrix_to_file("K.dump", K, n+n1, n+n1);
+	  error("zero determinant");
+	  }*/
 
 	/* 
 	 * simulated annealing
@@ -187,9 +199,9 @@ void *state;
 		}
 
 		/* dist = dist_2d_c(X, X, 1); */
-		dist(DIST, m, X, n+n1, X, n+n1, PWR);
+		dist_symm(DIST, m, X, n+n1, PWR);
 		/* K = dist_to_K(DIST, 0.02, 0.01);*/
-		dist_to_K(K, DIST, d, nug, n+n1, n+n1);
+		dist_to_K_symm(K, DIST, d, nug, n+n1);
 		/* d = det(K); */
 		log_det_new = log_determinant(K, n+n1);
 
@@ -197,8 +209,10 @@ void *state;
 		 * see if its worth doing the new one
 		 */
 
-		if(log_det < log_det_new) log_det = log_det_new;
-		else {
+		if(log_det < log_det_new) {
+		  log_det = log_det_new;
+		  /* fprintf(stderr, "i=%d, log_det=%g\n", i, log_det); */
+		} else {
 			/* free(fi) = f; avail(ai) = a; */
 			fi[fii] = f; avail[ai] = a;
 			/* X = [fixed, Xcand(:,free)]; */
@@ -212,3 +226,5 @@ void *state;
 	delete_matrix(K);
 	free(avail);
 }
+
+

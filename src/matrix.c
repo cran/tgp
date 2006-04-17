@@ -40,18 +40,18 @@
 
 double **get_data_rect(double **X, unsigned int N, unsigned int d)
 {
-	unsigned int i,j;
-	double ** rect = new_matrix(2, d);
-
-	for(i=0; i<d; i++) {
-		rect[0][i] = X[0][i];
-		rect[1][i] = X[0][i];
-		for(j=1; j<N; j++) {
-			if(X[j][i] < rect[0][i]) rect[0][i] = X[j][i];
-			else if(X[j][i] > rect[1][i]) rect[1][i] = X[j][i];
-		}
-	}
-	return(rect);
+  unsigned int i,j;
+  double ** rect = new_matrix(2, d);
+  
+  for(i=0; i<d; i++) {
+    rect[0][i] = X[0][i];
+    rect[1][i] = X[0][i];
+    for(j=1; j<N; j++) {
+      if(X[j][i] < rect[0][i]) rect[0][i] = X[j][i];
+      else if(X[j][i] > rect[1][i]) rect[1][i] = X[j][i];
+    }
+  }
+  return(rect);
 }
 
 
@@ -61,8 +61,8 @@ double **get_data_rect(double **X, unsigned int N, unsigned int d)
 
 void zero(double **M, unsigned int n1, unsigned int n2)
 {
-	unsigned int i, j;
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++) M[i][j] = 0;
+  unsigned int i, j;
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) M[i][j] = 0;
 }
 
 
@@ -72,9 +72,9 @@ void zero(double **M, unsigned int n1, unsigned int n2)
 
 void id(double **M, unsigned int n)
 {
-	unsigned int i;
-	zero(M, n, n);
-	for(i=0; i<n; i++) M[i][i] = 1.0;
+  unsigned int i;
+  zero(M, n, n);
+  for(i=0; i<n; i++) M[i][i] = 1.0;
 }
 
 
@@ -85,10 +85,10 @@ void id(double **M, unsigned int n)
 
 double ** new_id_matrix(unsigned int n)
 {
-	unsigned int i;
-	double** m = new_zero_matrix(n, n);
-	for(i=0; i<n; i++) m[i][i] = 1.0;
-	return m;
+  unsigned int i;
+  double** m = new_zero_matrix(n, n);
+  for(i=0; i<n; i++) m[i][i] = 1.0;
+  return m;
 }
 
 
@@ -98,10 +98,10 @@ double ** new_id_matrix(unsigned int n)
 
 double ** new_zero_matrix(unsigned int n1, unsigned int n2)
 {
-	unsigned int i, j;
-	double **m = new_matrix(n1, n2);
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++) m[i][j] = 0.0;
-	return m;
+  unsigned int i, j;
+  double **m = new_matrix(n1, n2);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) m[i][j] = 0.0;
+  return m;
 }
 
 
@@ -112,19 +112,19 @@ double ** new_zero_matrix(unsigned int n1, unsigned int n2)
 
 double ** new_matrix(unsigned int n1, unsigned int n2)
 {
-	int i;
-	double **m;
-
-	if(n1 == 0 || n2 == 0) return NULL;
-
-	m = (double**) malloc(sizeof(double*) * n1);
-	assert(m);
-	m[0] = (double*) malloc(sizeof(double) * (n1*n2));
-	assert(m[0]);
-
-	for(i=1; i<n1; i++) m[i] = m[i-1] + n2;
-
-	return m;
+  int i;
+  double **m;
+  
+  if(n1 == 0 || n2 == 0) return NULL;
+  
+  m = (double**) malloc(sizeof(double*) * n1);
+  assert(m);
+  m[0] = (double*) malloc(sizeof(double) * (n1*n2));
+  assert(m[0]);
+  
+  for(i=1; i<n1; i++) m[i] = m[i-1] + n2;
+  
+  return m;
 }
 
 
@@ -135,16 +135,16 @@ double ** new_matrix(unsigned int n1, unsigned int n2)
 
 double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
 {
-	double **m;
+  double **m;
 
-	if(n1 <= 0 || n2 <= 0) {
-		assert(M == NULL);
-		return NULL;
-	}
-
-	m = new_matrix(n1, n2);
-	dup_matrix(m, M, n1, n2);
-	return m;
+  if(n1 <= 0 || n2 <= 0) {
+    assert(M == NULL);
+    return NULL;
+  }
+  
+  m = new_matrix(n1, n2);
+  dup_matrix(m, M, n1, n2);
+  return m;
 }
 
 
@@ -154,9 +154,9 @@ double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
 
 void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2)
 {
-	unsigned int i, j;
-	assert(M1 && M2);
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++) M1[i][j] = M2[i][j];
+  unsigned int i, j;
+  assert(M1 && M2);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) M1[i][j] = M2[i][j];
 }
 
 
@@ -167,15 +167,15 @@ void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2)
 
 void swap_matrix(double **M1, double **M2, unsigned int n1, unsigned int n2)
 {
-	unsigned int  i;
-	double *temp;
-	temp = M1[0];
-	M1[0] = M2[0];
-	M2[0] = temp;
-	for(i=1; i<n1; i++) {
-		M1[i] = M1[i-1] + n2;
-		M2[i] = M2[i-1] + n2;
-	}
+  unsigned int  i;
+  double *temp;
+  temp = M1[0];
+  M1[0] = M2[0];
+  M2[0] = temp;
+  for(i=1; i<n1; i++) {
+    M1[i] = M1[i-1] + n2;
+    M2[i] = M2[i-1] + n2;
+  }
 }
 
 
@@ -188,36 +188,36 @@ void swap_matrix(double **M1, double **M2, unsigned int n1, unsigned int n2)
 double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2, 
 		unsigned int n1_new, unsigned int n2_new)
 {
-	int i;
-	double **m;
-
-	assert(n1_new >= n1);
-	assert(n2_new >= n2);
-
-	if(n1_new <= 0 || n2_new <= 0) {
-		assert(M == NULL);
-		return NULL;
-	}
-
-	if(M == NULL) {
-		assert(n1 == 0 || n2 == 0);
-		return new_zero_matrix(n1_new, n2_new);
-	}
-
-	if(n2 == n2_new) {
-		m = (double**) malloc(sizeof(double*) * n1_new);
-		assert(m);
-		m[0] = realloc(M[0], sizeof(double) * n1_new * n2_new);
-		free(M);
-		assert(m[0]);
-		for(i=1; i<n1_new; i++) m[i] = m[i-1] + n2_new;
-		zerov(m[n1], (n1_new-n1)*n2_new);
-	} else {
-		m = new_zero_matrix(n1_new, n2_new);
-		dup_matrix(m, M, n1, n2);
-		delete_matrix(M);
-	}
-	return m;
+  int i;
+  double **m;
+  
+  assert(n1_new >= n1);
+  assert(n2_new >= n2);
+  
+  if(n1_new <= 0 || n2_new <= 0) {
+    assert(M == NULL);
+    return NULL;
+  }
+  
+  if(M == NULL) {
+    assert(n1 == 0 || n2 == 0);
+    return new_zero_matrix(n1_new, n2_new);
+  }
+  
+  if(n2 == n2_new) {
+    m = (double**) malloc(sizeof(double*) * n1_new);
+    assert(m);
+    m[0] = realloc(M[0], sizeof(double) * n1_new * n2_new);
+    free(M);
+    assert(m[0]);
+    for(i=1; i<n1_new; i++) m[i] = m[i-1] + n2_new;
+    zerov(m[n1], (n1_new-n1)*n2_new);
+  } else {
+    m = new_zero_matrix(n1_new, n2_new);
+    dup_matrix(m, M, n1, n2);
+    delete_matrix(M);
+  }
+  return m;
 }
 
 
@@ -229,10 +229,10 @@ double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2,
 double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2, 
 		double **rect, double normscale)
 {
-	double **m;
-	m = new_dup_matrix(M,n1, n2);
-	normalize(m, rect, n1, n2, normscale);
-	return m;
+  double **m;
+  m = new_dup_matrix(M,n1, n2);
+  normalize(m, rect, n1, n2, normscale);
+  return m;
 }
 
 
@@ -243,17 +243,17 @@ double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2,
 
 double ** new_t_matrix(double** M, unsigned int n1, unsigned int n2)
 {
-	int i,j;
-	double **m;
-
-	if(n1 <= 0 || n2 <= 0) {
-		assert(M == NULL);
-		return NULL;
-	}
-
-	m = new_matrix(n2, n1);
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++)  m[j][i] = M[i][j];
-	return m;
+  int i,j;
+  double **m;
+  
+  if(n1 <= 0 || n2 <= 0) {
+    assert(M == NULL);
+    return NULL;
+  }
+  
+  m = new_matrix(n2, n1);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++)  m[j][i] = M[i][j];
+  return m;
 }
 
 
@@ -263,10 +263,11 @@ double ** new_t_matrix(double** M, unsigned int n1, unsigned int n2)
 
 void delete_matrix(double** m)
 {
-	assert(*m);
-	free(*m);
-	assert(m);
-	free(m);
+  if(m == NULL) return;
+  assert(*m);
+  free(*m);
+  assert(m);
+  free(m);
 }
 
 
@@ -277,37 +278,36 @@ void delete_matrix(double** m)
 
 void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
 {
-	int i,j;
-	for(i=0; i<n; i++) {
-		for(j=0; j<col; j++) {
-			#ifdef DEBUG
-			if(j==col-1) myprintf(outfile, "%.20f\n", M[i][j]);
-			else myprintf(outfile, "%.20f ", M[i][j]);
-			#else
-			if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
-			else myprintf(outfile, "%g ", M[i][j]);
-			#endif
-		}
-	}
+  int i,j;
+  for(i=0; i<n; i++) {
+    for(j=0; j<col; j++) {
+#ifdef DEBUG
+      if(j==col-1) myprintf(outfile, "%.20f\n", M[i][j]);
+      else myprintf(outfile, "%.20f ", M[i][j]);
+#else
+      if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
+      else myprintf(outfile, "%g ", M[i][j]);
+#endif
+    }
+  }
 }
 
 
 /*
- * print the transpose of an
- * n x col matrix allocated as above out an opened outfile.
- * actually, this routine can print any double** 
+ * print the transpose of an n x col matrix allocated as above out an
+ * opened outfile.  actually, this routine can print any double**
  */
 
 void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile)
 {
-	int i,j;
-	assert(M);
-	for(i=0; i<col; i++) {
-		for(j=0; j<n; j++) {
-			if(j==n-1) myprintf(outfile, "%g\n", M[j][i]);
-			else myprintf(outfile, "%g ", M[j][i]);
-		}
-	}
+  int i,j;
+  assert(M);
+  for(i=0; i<col; i++) {
+    for(j=0; j<n; j++) {
+      if(j==n-1) myprintf(outfile, "%g\n", M[j][i]);
+      else myprintf(outfile, "%g ", M[j][i]);
+    }
+  }
 }
 
 
@@ -316,29 +316,31 @@ void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile)
  * M1 = M1 + M2
  */
 
-void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, unsigned int n2)
+void add_matrix(double a, double **M1, double b, double **M2, 
+		unsigned int n1, unsigned int n2)
 {
-	unsigned int i,j;
-	assert(n1 > 0 && n2 > 0);
-	assert(M1 && M2);
-	for(i=0; i<n1; i++)
-		for(j=0; j<n2; j++)
-			M1[i][j] = a*M1[i][j] + b*M2[i][j];
+  unsigned int i,j;
+  assert(n1 > 0 && n2 > 0);
+  assert(M1 && M2);
+  for(i=0; i<n1; i++)
+    for(j=0; j<n2; j++)
+      M1[i][j] = a*M1[i][j] + b*M2[i][j];
 }
 
 /*
  * add_p_matrix:
  *
- * add v[n1][n2] to V into the positions specified by p1[n1] and p2[n2]
+ * add v[n1][n2] to V into the positions specified by p1[n1] and
+ * p2[n2]
  */
 
 void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v, 
 		unsigned int n1, unsigned int n2)
 {
-	int i,j;
-	assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
-		V[p1[i]][p2[j]] = a*V[p1[i]][p2[j]] + b*v[i][j];
+  int i,j;
+  assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
+    V[p1[i]][p2[j]] = a*V[p1[i]][p2[j]] + b*v[i][j];
 }
 
 
@@ -348,14 +350,14 @@ void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v,
 
 void mean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2)
 {
-	unsigned int i,j;
-	assert(mean && M);
-	if(n1 <= 0 || n2 <= 0) {return;}
-	for(i=0; i<n2; i++) {
-		mean[i] = 0;
-		for(j=0; j<n1; j++) mean[i] += M[j][i];	
-		mean[i] = mean[i] / n1;
-	}
+  unsigned int i,j;
+  assert(mean && M);
+  if(n1 <= 0 || n2 <= 0) {return;}
+  for(i=0; i<n2; i++) {
+    mean[i] = 0;
+    for(j=0; j<n1; j++) mean[i] += M[j][i];	
+    mean[i] = mean[i] / n1;
+  }
 }
 
 
@@ -365,13 +367,13 @@ void mean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2)
 
 void mean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2)
 {
-	unsigned int i,j;
-	if(n1 <= 0 || n2 <= 0) {return;}
-	for(i=0; i<n1; i++) {
-		mean[i] = 0;
-		for(j=0; j<n2; j++) mean[i] += M[i][j];	
-		mean[i] = mean[i] / n2;
-	}
+  unsigned int i,j;
+  if(n1 <= 0 || n2 <= 0) {return;}
+  for(i=0; i<n1; i++) {
+    mean[i] = 0;
+    for(j=0; j<n2; j++) mean[i] += M[i][j];	
+    mean[i] = mean[i] / n2;
+  }
 }
 
 
@@ -383,18 +385,18 @@ void mean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2)
 void quantile_of_columns(double *Q, double **M, 
 	unsigned int n1, unsigned int n2, double q)
 {
-	unsigned int k,i,j;
-	double *Mc; /*[n1];*/
-	assert(q >=0 && q <=1);
-	Mc = new_vector(n1);
-	k = (unsigned int) n1*q;
-	for(i=0; i<n2; i++) {
-		for(j=0; j<n1; j++) Mc[j] = M[j][i];
-		/*Q[i] = select_k(k, n1, Mc);*/
-		/*Q[i] = kth_smallest(Mc, n1, k);*/
-		Q[i] = quick_select(Mc, n1, k);
-	}
-	free(Mc);
+  unsigned int k,i,j;
+  double *Mc; /*[n1];*/
+  assert(q >=0 && q <=1);
+  Mc = new_vector(n1);
+  k = (unsigned int) n1*q;
+  for(i=0; i<n2; i++) {
+    for(j=0; j<n1; j++) Mc[j] = M[j][i];
+    /*Q[i] = select_k(k, n1, Mc);*/
+    /*Q[i] = kth_smallest(Mc, n1, k);*/
+    Q[i] = quick_select(Mc, n1, k);
+  }
+  free(Mc);
 }
 
 
@@ -405,12 +407,12 @@ void quantile_of_columns(double *Q, double **M,
 
 double* ones(unsigned int n, double scale)
 {
-	double *o;
-	unsigned int i;
-	o = (double*) malloc(sizeof(double) * n);
-	assert(o);
-	for(i=0; i<n; i++) o[i] = scale;
-	return o;
+  double *o;
+  unsigned int i;
+  o = (double*) malloc(sizeof(double) * n);
+  assert(o);
+  for(i=0; i<n; i++) o[i] = scale;
+  return o;
 }
 
 
@@ -422,23 +424,23 @@ double* ones(unsigned int n, double scale)
 
 double* dseq(double from, double to, double by)
 {
-	unsigned int n,i;
-	double *s = NULL;
-
-	by = abs(by);
-
-	if(from <= to) n = (unsigned int) (to - from)/abs(by) + 1;
-	else n = (unsigned int) (from - to)/abs(by) + 1;
-
-	if( n == 0 ) return NULL;
-
-	s = (double*) malloc(sizeof(double) * n);
-	assert(s);
-	s[0] = from;
-	for(i=1; i<n; i++) {
-		s[i] = s[i-1] + by;
-	}
-	return s;
+  unsigned int n,i;
+  double *s = NULL;
+  
+  by = abs(by);
+  
+  if(from <= to) n = (unsigned int) (to - from)/abs(by) + 1;
+  else n = (unsigned int) (from - to)/abs(by) + 1;
+  
+  if( n == 0 ) return NULL;
+  
+  s = (double*) malloc(sizeof(double) * n);
+  assert(s);
+  s[0] = from;
+  for(i=1; i<n; i++) {
+    s[i] = s[i-1] + by;
+  }
+  return s;
 }
 
 
@@ -449,27 +451,27 @@ double* dseq(double from, double to, double by)
 
 int* iseq(double from, double to)
 {
-	unsigned int n,i;
-	int by;
-	int *s = NULL;
-
-	if(from <= to) {
-		n = (unsigned int) (to - from) + 1;
-		by = 1;
-	} else {
-		assert(from > to);
-		n = (unsigned int) (from - to) + 1;
-		by = -1;
-	}
-
-	if(n == 0) return NULL;
-
-	s = new_ivector(n);
-	s[0] = from;
-	for(i=1; i<n; i++) {
-		s[i] = s[i-1] + by;
-	}
-	return s;
+  unsigned int n,i;
+  int by;
+  int *s = NULL;
+  
+  if(from <= to) {
+    n = (unsigned int) (to - from) + 1;
+    by = 1;
+  } else {
+    assert(from > to);
+    n = (unsigned int) (from - to) + 1;
+    by = -1;
+  }
+  
+  if(n == 0) return NULL;
+  
+  s = new_ivector(n);
+  s[0] = from;
+  for(i=1; i<n; i++) {
+    s[i] = s[i-1] + by;
+  }
+  return s;
 }
 
 
@@ -481,191 +483,190 @@ int* iseq(double from, double to)
 
 int* find(double *V, unsigned int n, FIND_OP op, double val, unsigned int* len)
 {
-	unsigned int i,j;
-	int *tf;
-	int *found;
-
-	tf = new_ivector(n);
-
-	(*len) = 0;
-	switch (op) {
-		case GT:  
-			for(i=0; i<n; i++) {
-				if(V[i] >  val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case GEQ: 
-			for(i=0; i<n; i++) {
-				if(V[i] >= val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case EQ:  
-			for(i=0; i<n; i++) {
-				if(V[i] == val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case LEQ: 
-			for(i=0; i<n; i++) {
-				if(V[i] <= val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case LT:  
-			for(i=0; i<n; i++) {
-				if(V[i] <  val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case NE:  
-			for(i=0; i<n; i++) {
-				if(V[i] != val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-			default: puts("OP not supported"); exit(0);
-	}
-
-	if(*len == 0) found = NULL;
-	else {
-		found = new_ivector(*len);
-		for(i=0,j=0; i<n; i++) {
-			if(tf[i]) {
-				found[j] = i;
-				j++;
-			}
-		}
-	}
-
-	free(tf);
-	return found;
+  unsigned int i,j;
+  int *tf;
+  int *found;
+  
+  tf = new_ivector(n);
+  
+  (*len) = 0;
+  switch (op) {
+  case GT:  
+    for(i=0; i<n; i++) {
+      if(V[i] >  val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case GEQ: 
+    for(i=0; i<n; i++) {
+      if(V[i] >= val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case EQ:  
+    for(i=0; i<n; i++) {
+      if(V[i] == val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case LEQ: 
+    for(i=0; i<n; i++) {
+      if(V[i] <= val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case LT:  
+    for(i=0; i<n; i++) {
+      if(V[i] <  val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case NE:  
+    for(i=0; i<n; i++) {
+      if(V[i] != val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  default: puts("OP not supported"); exit(0);
+  }
+  
+  if(*len == 0) found = NULL;
+  else {
+    found = new_ivector(*len);
+    for(i=0,j=0; i<n; i++) {
+      if(tf[i]) {
+	found[j] = i;
+	j++;
+      }
+    }
+  }
+  
+  free(tf);
+  return found;
 }
 
 
 /*
  * return an integer of length (*len) wih indexes into V[][col] which
- * satisfy the relation "V op val" where op is one of 
- * LT(<) GT(>) EQ(==) LEQ(<=) GEQ(>=) NE(!=)
+ * satisfy the relation "V op val" where op is one of LT(<) GT(>)
+ * EQ(==) LEQ(<=) GEQ(>=) NE(!=)
  */
 
 int* find_col(double **V, unsigned int n, unsigned int var, 
 	FIND_OP op, double val, unsigned int* len)
 {
-	unsigned int i,j;
-	int *tf;
-	int *found;
-
-	tf = new_ivector(n);
-
-	(*len) = 0;
-	switch (op) {
-		case GT:  
-			for(i=0; i<n; i++) {
-				if(V[i][var] >  val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case GEQ: 
-			for(i=0; i<n; i++) {
-				if(V[i][var] >= val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case EQ:  
-			for(i=0; i<n; i++) {
-				if(V[i][var] == val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case LEQ: 
-			for(i=0; i<n; i++) {
-				if(V[i][var] <= val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case LT:  
-			for(i=0; i<n; i++) {
-				if(V[i][var] <  val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-		case NE:  
-			for(i=0; i<n; i++) {
-				if(V[i][var] != val) tf[i] = 1; 
-				else tf[i] = 0; 
-				if(tf[i] == 1) (*len)++;
-			}
-			break;
-			default: puts("OP not supported"); exit(0);
-	}
-
-	if(*len == 0) found = NULL;
-	else {
-		found = new_ivector(*len);
-		for(i=0,j=0; i<n; i++) {
-			if(tf[i]) {
-				found[j] = i;
-				j++;
-			}
-		}
-	}
-
-	free(tf);
-	return found;
+  unsigned int i,j;
+  int *tf;
+  int *found;
+  
+  tf = new_ivector(n);
+  
+  (*len) = 0;
+  switch (op) {
+  case GT:  
+    for(i=0; i<n; i++) {
+      if(V[i][var] >  val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case GEQ: 
+    for(i=0; i<n; i++) {
+      if(V[i][var] >= val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case EQ:  
+    for(i=0; i<n; i++) {
+      if(V[i][var] == val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case LEQ: 
+    for(i=0; i<n; i++) {
+      if(V[i][var] <= val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case LT:  
+    for(i=0; i<n; i++) {
+      if(V[i][var] <  val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  case NE:  
+    for(i=0; i<n; i++) {
+      if(V[i][var] != val) tf[i] = 1; 
+      else tf[i] = 0; 
+      if(tf[i] == 1) (*len)++;
+    }
+    break;
+  default: puts("OP not supported"); exit(0);
+  }
+  
+  if(*len == 0) found = NULL;
+  else {
+    found = new_ivector(*len);
+    for(i=0,j=0; i<n; i++) {
+      if(tf[i]) {
+	found[j] = i;
+	j++;
+      }
+    }
+  }
+  
+  free(tf);
+  return found;
 }
 
 
 /*
- * Returns the kth smallest value in the array arr[1..n]. 
- * The input array will be rearranged to have this value in location
- * arr[k] , with all smaller elements moved to arr[1..k-1]
- * (in arbitrary order) and all larger elements in
- * arr[k+1..n] (also in arbitrary order).
+ * Returns the kth smallest value in the array arr[1..n].  The input
+ * array will be rearranged to have this value in location arr[k] ,
+ * with all smaller elements moved to arr[1..k-1] (in arbitrary order)
+ * and all larger elements in arr[k+1..n] (also in arbitrary order).
  * (from Numerical Recipies in C)
  *
  * This Quickselect routine is based on the algorithm described in
- * "Numerical recipes in C", Second Edition,
- * Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
- * This code by Nicolas Devillard - 1998. Public domain.
+ * "Numerical recipes in C", Second Edition, Cambridge University
+ * Press, 1992, Section 8.5, ISBN 0-521-43108-5 This code by Nicolas
+ * Devillard - 1998. Public domain.
  */
 
 #define ELEM_SWAP(a,b) { register double t=(a);(a)=(b);(b)=t; }
 
 double quick_select(double arr[], int n, int k) 
 {
-    int low, high ;
-    int middle, ll, hh;
-
-    low = 0 ; high = n-1 ; 
-    for (;;) {
-        if (high <= low) /* One element only */
-            return arr[k] ;
-
-        if (high == low + 1) {  /* Two elements only */
-            if (arr[low] > arr[high])
-                ELEM_SWAP(arr[low], arr[high]) ;
-            return arr[k] ;
-        }
-
+  int low, high ;
+  int middle, ll, hh;
+  
+  low = 0 ; high = n-1 ; 
+  for (;;) {
+    if (high <= low) /* One element only */
+      return arr[k] ;
+    
+    if (high == low + 1) {  /* Two elements only */
+      if (arr[low] > arr[high])
+	ELEM_SWAP(arr[low], arr[high]) ;
+      return arr[k] ;
+    }
+    
     /* Find kth of low, middle and high items; swap into position low */
     middle = (low + high) / 2;
     if (arr[middle] > arr[high])    ELEM_SWAP(arr[middle], arr[high]) ;
     if (arr[low] > arr[high])       ELEM_SWAP(arr[low], arr[high]) ;
     if (arr[middle] > arr[low])     ELEM_SWAP(arr[middle], arr[low]) ;
-
+    
     /* Swap low item (now in position middle) into position (low+1) */
     ELEM_SWAP(arr[middle], arr[low+1]) ;
 
@@ -696,29 +697,27 @@ double quick_select(double arr[], int n, int k)
 
 double kth_smallest(double a[], int n, int k)
 {
-    int i,j,l,m ;
-    double x ;
-
-    l=0 ; m=n-1 ;
-    while (l<m) {
-        x=a[k] ;
-        i=l ;
-        j=m ;
-        do {
-            while (a[i]<x) i++ ;
-            while (x<a[j]) j-- ;
-            if (i<=j) {
-                ELEM_SWAP(a[i],a[j]) ;
-                i++ ; j-- ;
-            }
-        } while (i<=j) ;
-        if (j<k) l=i ;
-        if (k<i) m=j ;
-    }
-    return a[k] ;
+  int i,j,l,m ;
+  double x ;
+  
+  l=0 ; m=n-1 ;
+  while (l<m) {
+    x=a[k] ;
+    i=l ;
+    j=m ;
+    do {
+      while (a[i]<x) i++ ;
+      while (x<a[j]) j-- ;
+      if (i<=j) {
+	ELEM_SWAP(a[i],a[j]) ;
+	i++ ; j-- ;
+      }
+    } while (i<=j) ;
+    if (j<k) l=i ;
+    if (k<i) m=j ;
+  }
+  return a[k] ;
 }
-
-
 #undef ELEM_SWAP
 
 /* 
@@ -728,17 +727,17 @@ double kth_smallest(double a[], int n, int k)
 
 void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n)
 {
-	double *Mm;
-	FILE *MmOUT;
-	unsigned int i;
-
-	Mm = (double*) malloc(sizeof(double) * n);
-	mean_of_columns(Mm, M, T, n);
-	MmOUT = fopen(file_str, "w");
-	assert(MmOUT);
-	for(i=0; i<n; i++) myprintf(MmOUT, "%g\n", Mm[i]);
-	fclose(MmOUT);
-	free(Mm);
+  double *Mm;
+  FILE *MmOUT;
+  unsigned int i;
+  
+  Mm = (double*) malloc(sizeof(double) * n);
+  mean_of_columns(Mm, M, T, n);
+  MmOUT = fopen(file_str, "w");
+  assert(MmOUT);
+  for(i=0; i<n; i++) myprintf(MmOUT, "%g\n", Mm[i]);
+  fclose(MmOUT);
+  free(Mm);
 }
 
 
@@ -749,13 +748,13 @@ void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n)
 
 void vector_to_file(char* file_str, double* vector, unsigned int n)
 {
-	FILE* VOUT;
-	unsigned int i;
-
-	VOUT = fopen(file_str, "w");
-	assert(VOUT);
-	for(i=0; i<n; i++) myprintf(VOUT, "%g\n", vector[i]);
-	fclose(VOUT);
+  FILE* VOUT;
+  unsigned int i;
+  
+  VOUT = fopen(file_str, "w");
+  assert(VOUT);
+  for(i=0; i<n; i++) myprintf(VOUT, "%g\n", vector[i]);
+  fclose(VOUT);
 }
 
 
@@ -766,12 +765,12 @@ void vector_to_file(char* file_str, double* vector, unsigned int n)
 
 void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2)
 {
-	FILE* MOUT;
-
-	MOUT = fopen(file_str, "w");
-	assert(MOUT);
-	printMatrix(matrix, n1, n2, MOUT); 
-	fclose(MOUT);
+  FILE* MOUT;
+  
+  MOUT = fopen(file_str, "w");
+  assert(MOUT);
+  printMatrix(matrix, n1, n2, MOUT); 
+  fclose(MOUT);
 }
 
 
@@ -782,12 +781,12 @@ void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned i
 
 void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2)
 {
-	FILE* MOUT;
-
-	MOUT = fopen(file_str, "w");
-	assert(MOUT);
-	printMatrixT(matrix, n1, n2, MOUT); 
-	fclose(MOUT);
+  FILE* MOUT;
+  
+  MOUT = fopen(file_str, "w");
+  assert(MOUT);
+  printMatrixT(matrix, n1, n2, MOUT); 
+  fclose(MOUT);
 }
 
 
@@ -800,10 +799,10 @@ void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned
 void copy_p_matrix(double **V, int *p1, int *p2, double **v, 
 		unsigned int n1, unsigned int n2)
 {
-	int i,j;
-	assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
-	for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
-		V[p1[i]][p2[j]] = v[i][j];
+  int i,j;
+  assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
+    V[p1[i]][p2[j]] = v[i][j];
 }
 
 
@@ -813,15 +812,16 @@ void copy_p_matrix(double **V, int *p1, int *p2, double **v,
  * columns of the matrix M)
  */
 
-void qsummary(double *q, double *q1, double *median, double *q2, double **M, unsigned int T, unsigned int n)
+void qsummary(double *q, double *q1, double *median, double *q2, 
+	      double **M, unsigned int T, unsigned int n)
 {
-	unsigned int i;
-
-	if(n <= 0) return;
-	quantile_of_columns(q1, M, T, n, 0.05);
-	quantile_of_columns(median, M, T, n, 0.5);
-	quantile_of_columns(q2, M, T, n, 0.95);
-	for(i=0; i<n; i++) q[i] = q2[i]-q1[i];
+  unsigned int i;
+  
+  if(n <= 0) return;
+  quantile_of_columns(q1, M, T, n, 0.05);
+  quantile_of_columns(median, M, T, n, 0.5);
+  quantile_of_columns(q2, M, T, n, 0.95);
+  for(i=0; i<n; i++) q[i] = q2[i]-q1[i];
 }
 
 
@@ -831,85 +831,79 @@ void qsummary(double *q, double *q1, double *median, double *q2, double **M, uns
  * prediction.  when violated, replace with median
  */
 
-void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n)
+void check_means(double *mean, double *q1, double *median, 
+		 double *q2, unsigned int n)
 {
-	unsigned int i;
-	int replace = 0;
-	for(i=0; i<n; i++) {
-		if(mean[i] > q2[i] || mean[i] < q1[i]) {
-			myprintf(stdout, "replacing %g with (%g,%g,%g)\n", mean[i], q1[i], median[i], q2[i]);
-			mean[i] = median[i];
-			replace++;
-		}
-	}
-
-	/* let us know what happened */
-	if(replace > 0) 
-		myprintf(stdout, "NOTICE: %d predictive means replaced with medians\n", replace);
+  unsigned int i;
+  int replace = 0;
+  for(i=0; i<n; i++) {
+    if(mean[i] > q2[i] || mean[i] < q1[i]) {
+      myprintf(stdout, "replacing %g with (%g,%g,%g)\n", 
+	       mean[i], q1[i], median[i], q2[i]);
+      mean[i] = median[i];
+      replace++;
+    }
+  }
+  
+  /* let us know what happened */
+  if(replace > 0) 
+    myprintf(stdout, "NOTICE: %d predictive means replaced with medians\n", 
+	     replace);
 }
 
 
 /*
- * pass back the indices (through p) into the matrix X which 
- * lie within the boundaries described by rect;
- * return the number of true indices.
- * X is treated as n1 x n2, and p is an n1 (preallocated) array
+ * pass back the indices (through p) into the matrix X which lie
+ * within the boundaries described by rect; return the number of true
+ * indices.  X is treated as n1 x n2, and p is an n1 (preallocated)
+ * array
  */  
 
-unsigned int matrix_constrained(int *p, double **X, unsigned int n1, unsigned int n2, Rect *rect)
+unsigned int matrix_constrained(int *p, double **X, unsigned int n1, 
+				unsigned int n2, Rect *rect)
 {
-	unsigned int i,j, count;
-	count = 0;
-	/* printRect(stderr, rect->d, rect->boundary); */
-	for(i=0; i<n1; i++) {
-		p[i] = 1;
-		for(j=0; j<n2; j++) {
-			if(rect->opl[j] == GT) {
-				assert(rect->opr[j] == LEQ);
-				p[i] = (int) (X[i][j] > rect->boundary[0][j] && 
-						X[i][j] <= rect->boundary[1][j]);
-			}
-			else if(rect->opl[j] == GEQ) {
-				if(rect->opr[j] == LEQ)
-					p[i] = (int) (X[i][j] >= rect->boundary[0][j] && 
-						X[i][j] <= rect->boundary[1][j]);
-				else if(rect->opr[j] == LT)
-					p[i] = (int) (X[i][j] >= rect->boundary[0][j] && 
-						X[i][j] < rect->boundary[1][j]);
-				else assert(0);
-			}
-			else assert(0);
-			if(p[i] == 0) break;
-		}
-		if(p[i] == 1) {
-			count++;
-			/*myprintf(stderr, "\tX[%d,] = ", i);
-			for(j=0; j<n2; j++) myprintf(stderr, "%g ", X[i][j]);
-			myprintf(stderr, "\n"); */
-		} /*else {
-			myprintf(stderr, "X[%d,] = ", i);
-			for(j=0; j<n2; j++) myprintf(stderr, "%g ", X[i][j]);
-			myprintf(stderr, "\n");
-		} */
-
-	}
-	return count;
+  unsigned int i,j, count;
+  count = 0;
+  /* printRect(stderr, rect->d, rect->boundary); */
+  for(i=0; i<n1; i++) {
+    p[i] = 1;
+    for(j=0; j<n2; j++) {
+      if(rect->opl[j] == GT) {
+	assert(rect->opr[j] == LEQ);
+	p[i] = (int) (X[i][j] > rect->boundary[0][j] && 
+		      X[i][j] <= rect->boundary[1][j]);
+      }
+      else if(rect->opl[j] == GEQ) {
+	if(rect->opr[j] == LEQ)
+	  p[i] = (int) (X[i][j] >= rect->boundary[0][j] && 
+			X[i][j] <= rect->boundary[1][j]);
+	else if(rect->opr[j] == LT)
+	  p[i] = (int) (X[i][j] >= rect->boundary[0][j] && 
+			X[i][j] < rect->boundary[1][j]);
+	else assert(0);
+      }
+      else assert(0);
+      if(p[i] == 0) break;
+    }
+    if(p[i] == 1) count++;     
+  }
+  return count;
 }
 
 
 /*
- * create a new rectangle structure
- * without any of the fields filled in
+ * create a new rectangle structure without any of the fields filled
+ * in
  */
 
 Rect* new_rect(unsigned int d)
 {
-	Rect* rect = (Rect*) malloc(sizeof(struct rect));
-	rect->d = d;
-	rect->boundary = new_matrix(2, d);
-	rect->opl = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
-	rect->opr = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
-	return rect;
+  Rect* rect = (Rect*) malloc(sizeof(struct rect));
+  rect->d = d;
+  rect->boundary = new_matrix(2, d);
+  rect->opl = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
+  rect->opr = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
+  return rect;
 }
 
 
@@ -919,17 +913,17 @@ Rect* new_rect(unsigned int d)
 
 Rect* new_dup_rect(Rect* oldR)
 {
-	unsigned int i;
-	Rect* rect = (Rect*) malloc(sizeof(struct rect));
-	rect->d = oldR->d;
-	rect->boundary = new_dup_matrix(oldR->boundary, 2, oldR->d);
-	rect->opl = (FIND_OP *) malloc(sizeof(FIND_OP) * rect->d);
-	rect->opr = (FIND_OP *) malloc(sizeof(FIND_OP) * rect->d);
-	for(i=0; i<rect->d; i++) {
-		rect->opl[i] = oldR->opl[i];
-		rect->opr[i] = oldR->opr[i];
-	}
-	return rect;
+  unsigned int i;
+  Rect* rect = (Rect*) malloc(sizeof(struct rect));
+  rect->d = oldR->d;
+  rect->boundary = new_dup_matrix(oldR->boundary, 2, oldR->d);
+  rect->opl = (FIND_OP *) malloc(sizeof(FIND_OP) * rect->d);
+  rect->opr = (FIND_OP *) malloc(sizeof(FIND_OP) * rect->d);
+  for(i=0; i<rect->d; i++) {
+    rect->opl[i] = oldR->opl[i];
+    rect->opr[i] = oldR->opr[i];
+  }
+  return rect;
 }
 
 
@@ -940,13 +934,13 @@ Rect* new_dup_rect(Rect* oldR)
 
 double rect_area(Rect* rect)
 {
-	unsigned int i;
-	double area;
-
-	area = 1.0;
-	for(i=0; i<rect->d; i++)
-		area *= rect->boundary[1][i] - rect->boundary[0][i];
-	return area;
+  unsigned int i;
+  double area;
+  
+  area = 1.0;
+  for(i=0; i<rect->d; i++)
+    area *= rect->boundary[1][i] - rect->boundary[0][i];
+  return area;
 }
 
 
@@ -957,14 +951,15 @@ double rect_area(Rect* rect)
 
 void print_rect(Rect *r, FILE* outfile)
 {
-	unsigned int i;
-	myprintf(outfile, "# %d dim rect (area=%g) with boundary:\n", r->d, rect_area(r));
-	printMatrix(r->boundary, 2, r->d, outfile);
-	myprintf(outfile, "# opl and opr\n");
-	for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opl[i]);
-	myprintf(outfile, "\n");
-	for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opr[i]);
-	myprintf(outfile, "\n");
+  unsigned int i;
+  myprintf(outfile, "# %d dim rect (area=%g) with boundary:\n", 
+	   r->d, rect_area(r));
+  printMatrix(r->boundary, 2, r->d, outfile);
+  myprintf(outfile, "# opl and opr\n");
+  for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opl[i]);
+  myprintf(outfile, "\n");
+  for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opr[i]);
+  myprintf(outfile, "\n");
 }
 
 
@@ -975,10 +970,10 @@ void print_rect(Rect *r, FILE* outfile)
 
 void delete_rect(Rect *rect)
 {
-	delete_matrix(rect->boundary);
-	free(rect->opl);
-	free(rect->opr);
-	free(rect);
+  delete_matrix(rect->boundary);
+  free(rect->opl);
+  free(rect->opr);
+  free(rect);
 }
 
 
@@ -989,20 +984,20 @@ void delete_rect(Rect *rect)
 
 void normalize(double **X, double **rect, int N, int d, double normscale)
 {
-	int i, j;
-	double norm;
-	for(i=0; i<d; i++) {
-		norm = fabs(rect[1][i] - rect[0][i]);
-		if(norm == 0) norm = fabs(rect[0][i]);
-		for(j=0; j<N; j++) {
-			if(rect[0][i] < 0) 
-				X[j][i] = (X[j][i] + fabs(rect[0][i])) / norm;
-			else
-				X[j][i] = (X[j][i] - rect[0][i]) / norm;
-			X[j][i] = normscale * X[j][i];
-			assert(X[j][i] >=0 && X[j][i] <= normscale);
-		}
-	}
+  int i, j;
+  double norm;
+  for(i=0; i<d; i++) {
+    norm = fabs(rect[1][i] - rect[0][i]);
+    if(norm == 0) norm = fabs(rect[0][i]);
+    for(j=0; j<N; j++) {
+      if(rect[0][i] < 0) 
+	X[j][i] = (X[j][i] + fabs(rect[0][i])) / norm;
+      else
+	X[j][i] = (X[j][i] - rect[0][i]) / norm;
+      X[j][i] = normscale * X[j][i];
+      assert(X[j][i] >=0 && X[j][i] <= normscale);
+    }
+  }
 }
 
 
@@ -1013,16 +1008,16 @@ void normalize(double **X, double **rect, int N, int d, double normscale)
 
 void rect_unnorm(Rect* r, double **rect, double normscale)
 {
-	int i;
-	double norm;
-	for(i=0; i<r->d; i++) {
-		assert(r->boundary[0][i] >= 0 && r->boundary[1][i] <= normscale);
-		norm = fabs(rect[1][i] - rect[0][i]);
-		if(norm == 0) norm = fabs(rect[0][i]);
-		r->boundary[1][i] = normscale * r->boundary[1][i];
-		r->boundary[0][i] = rect[0][i] + norm * r->boundary[0][i];
-		r->boundary[1][i] = rect[1][i] - norm * (1.0 - r->boundary[1][i]);
-	}
+  int i;
+  double norm;
+  for(i=0; i<r->d; i++) {
+    assert(r->boundary[0][i] >= 0 && r->boundary[1][i] <= normscale);
+    norm = fabs(rect[1][i] - rect[0][i]);
+    if(norm == 0) norm = fabs(rect[0][i]);
+    r->boundary[1][i] = normscale * r->boundary[1][i];
+    r->boundary[0][i] = rect[0][i] + norm * r->boundary[0][i];
+    r->boundary[1][i] = rect[1][i] - norm * (1.0 - r->boundary[1][i]);
+  }
 }
 
 
@@ -1032,10 +1027,10 @@ void rect_unnorm(Rect* r, double **rect, double normscale)
 
 double* new_vector(unsigned int n)
 {
-	double *v;
-	if(n == 0) return NULL;
-	v = (double*) malloc(sizeof(double) * n);
-	return v;
+  double *v;
+  if(n == 0) return NULL;
+  v = (double*) malloc(sizeof(double) * n);
+  return v;
 }
 
 
@@ -1046,10 +1041,10 @@ double* new_vector(unsigned int n)
 
 double* new_zero_vector(unsigned int n)
 {
-	double *v;
-	v = new_vector(n);
-	zerov(v, n);
-	return v;
+  double *v;
+  v = new_vector(n);
+  zerov(v, n);
+  return v;
 }
 
 
@@ -1060,10 +1055,10 @@ double* new_zero_vector(unsigned int n)
 
 double* new_dup_vector(double* vold, unsigned int n)
 {
-	double *v;
-	v = new_vector(n);
-	dupv(v, vold, n);
-	return v;
+  double *v;
+  v = new_vector(n);
+  dupv(v, vold, n);
+  return v;
 }
 
 
@@ -1074,8 +1069,8 @@ double* new_dup_vector(double* vold, unsigned int n)
 
 void dupv(double *v, double* vold, unsigned int n)
 {
-	unsigned int i;
-	for(i=0; i<n; i++) v[i] = vold[i];
+  unsigned int i;
+  for(i=0; i<n; i++) v[i] = vold[i];
 }
 
 
@@ -1086,10 +1081,10 @@ void dupv(double *v, double* vold, unsigned int n)
 
 void swap_vector(double **v1, double **v2)
 {
-	double* temp;
-	temp = (double*) *v1;
-	*v1 = *v2;
-	*v2 = (double*) temp;
+  double* temp;
+  temp = (double*) *v1;
+  *v1 = *v2;
+  *v2 = (double*) temp;
 }
 
 
@@ -1100,8 +1095,8 @@ void swap_vector(double **v1, double **v2)
 
 void zerov(double*v, unsigned int n)
 {
-	unsigned int i;
-	for(i=0; i<n; i++) v[i] = 0;
+  unsigned int i;
+  for(i=0; i<n; i++) v[i] = 0;
 }
 
 
@@ -1112,9 +1107,9 @@ void zerov(double*v, unsigned int n)
 
 void scalev(double *v, unsigned int n, double scale)
 {
-	int i;
-	assert(v);
-	for(i=0; i<n; i++) v[i] = v[i]*scale;
+  int i;
+  assert(v);
+  for(i=0; i<n; i++) v[i] = v[i]*scale;
 }
 
 
@@ -1124,9 +1119,9 @@ void scalev(double *v, unsigned int n, double scale)
 
 void copy_p_vector(double *V, int *p, double *v, unsigned int n)
 {
-	int i;
-	assert(V); assert(p); assert(n > 0);
-	for(i=0; i<n; i++) V[p[i]] = v[i];
+  int i;
+  assert(V); assert(p); assert(n > 0);
+  for(i=0; i<n; i++) V[p[i]] = v[i];
 }
 
 
@@ -1136,9 +1131,9 @@ void copy_p_vector(double *V, int *p, double *v, unsigned int n)
 
 void copy_sub_vector(double *V, int *p, double *v, unsigned int n)
 {
-	int i;
-	assert(V); assert(p); assert(n > 0);
-	for(i=0; i<n; i++) V[i] = v[p[i]];
+  int i;
+  assert(V); assert(p); assert(n > 0);
+  for(i=0; i<n; i++) V[i] = v[p[i]];
 }
 
 
@@ -1148,10 +1143,11 @@ void copy_sub_vector(double *V, int *p, double *v, unsigned int n)
 
 double* new_sub_vector(int *p, double *v, unsigned int n)
 {
-	double *V = new_vector(n);
-	copy_sub_vector(V, p, v, n);
-	return V;
+  double *V = new_vector(n);
+  copy_sub_vector(V, p, v, n);
+  return V;
 }
+
 
 /*
  * add two vectors of the same size 
@@ -1160,10 +1156,11 @@ double* new_sub_vector(int *p, double *v, unsigned int n)
 
 void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
 {
-	assert(n > 0);
-	assert(v1 && v2);
-	add_matrix(a, &v1, b, &v2, 1, n);
+  assert(n > 0);
+  assert(v1 && v2);
+  add_matrix(a, &v1, b, &v2, 1, n);
 }
+
 
 /*
  * add_p_vector:
@@ -1173,9 +1170,9 @@ void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
 
 void add_p_vector(double a, double *V, int *p, double b, double *v, unsigned int n)
 {
-	int i = 0;
-	assert(V); assert(p);
-	add_p_matrix(a, &V, &i, p, b, &v, 1, n);
+  int i = 0;
+  assert(V); assert(p);
+  add_p_matrix(a, &V, &i, p, b, &v, 1, n);
 }
 
 
@@ -1185,9 +1182,9 @@ void add_p_vector(double a, double *V, int *p, double b, double *v, unsigned int
 
 void printVector(double *v, unsigned int n, FILE *outfile)
 {
-	unsigned int i;
-	for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
-	myprintf(outfile, "\n");
+  unsigned int i;
+  for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
+  myprintf(outfile, "\n");
 }
 
 
@@ -1199,45 +1196,44 @@ void printVector(double *v, unsigned int n, FILE *outfile)
 
 double min(double *v, unsigned int n, unsigned int *which)
 {
-	unsigned int i;
-	double min;
-	
-	*which = 0;
-	min = v[0];
-
-	for(i=1; i<n; i++) {
-		if(v[i] < min)  {
-			min = v[i];
-			*which = i;
-		}
-	}
-
-	return min;
+  unsigned int i;
+  double min;
+  
+  *which = 0;
+  min = v[0];
+  
+  for(i=1; i<n; i++) {
+    if(v[i] < min)  {
+      min = v[i];
+      *which = i;
+    }
+  }
+  
+  return min;
 }
 
 
 /*
- * return the maximum element in the vector.
- * pass back the index of the maximum through 
- * the which pointer
+ * return the maximum element in the vector.  pass back the index of
+ * the maximum through the which pointer
  */
 
 double max(double *v, unsigned int n, unsigned int *which)
 {
-	unsigned int i;
-	double max;
-	
-	*which = 0;
-	max = v[0];
-
-	for(i=1; i<n; i++) {
-		if(v[i] > max)  {
-			max = v[i];
-			*which = i;
-		}
-	}
-
-	return max;
+  unsigned int i;
+  double max;
+  
+  *which = 0;
+  max = v[0];
+  
+  for(i=1; i<n; i++) {
+    if(v[i] > max)  {
+      max = v[i];
+      *which = i;
+    }
+  }
+  
+  return max;
 }
 
 
@@ -1247,66 +1243,64 @@ double max(double *v, unsigned int n, unsigned int *which)
 
 int *new_ivector(unsigned int n)
 {
-	int *iv;
-	if(n == 0) return NULL;
-	iv = (int*)  malloc(sizeof(int) * n);
-	assert(iv);
-	return iv;
+  int *iv;
+  if(n == 0) return NULL;
+  iv = (int*)  malloc(sizeof(int) * n);
+  assert(iv);
+  return iv;
 }
 
 
 /*
- * duplicate the integer contents of iv 
- * of length n into the already allocated
- * vector iv_new, also of length n
+ * duplicate the integer contents of iv of length n into the already
+ * allocated vector iv_new, also of length n
  */
 
 void dupiv(int *iv_new, int *iv, unsigned int n)
 {
-	unsigned int i;
-	if(n > 0) assert(iv && iv_new);
-	for(i=0; i<n; i++) iv_new[i] = iv[i];
+  unsigned int i;
+  if(n > 0) assert(iv && iv_new);
+  for(i=0; i<n; i++) iv_new[i] = iv[i];
 }
 
 
 /*
- * allocate a new integer vector of length n
- * and copy the integer contents of iv into it
+ * allocate a new integer vector of length n and copy the integer
+ * contents of iv into it
  */
 
 int *new_dup_ivector(int *iv, unsigned int n)
 {
-	int* iv_new = new_ivector(n);
-	dupiv(iv_new, iv, n);
-	return iv_new;
+  int* iv_new = new_ivector(n);
+  dupiv(iv_new, iv, n);
+  return iv_new;
 }
 
 
 /*
- * create a new integer vector of length n,
- * fill it with ones, multiplied by the scale 
- * parameter-- for a vector of 5's, use scale=5
+ * create a new integer vector of length n, fill it with ones,
+ * multiplied by the scale parameter-- for a vector of 5's, use
+ * scale=5
  */
 
 int *new_ones_ivector(unsigned int n, int scale)
 {
-	int *iv = new_ivector(n);
-	iones(iv, n, scale);
-	return iv;
+  int *iv = new_ivector(n);
+  iones(iv, n, scale);
+  return iv;
 }
 
 
 /*
- * write n ones into iv (pre-allocated), and then
- * multiply by the scale parameter-- for a vector
- * of 5's, use scale=5
+ * write n ones into iv (pre-allocated), and then multiply by the
+ * scale parameter-- for a vector of 5's, use scale=5
  */
 
 void iones(int *iv, unsigned int n, int scale)
 {
-	unsigned int i;
-	if(n > 0) assert(iv);
-	for(i=0; i<n; i++) iv[i] = scale;
+  unsigned int i;
+  if(n > 0) assert(iv);
+  for(i=0; i<n; i++) iv[i] = scale;
 }	
 
 
@@ -1316,9 +1310,9 @@ void iones(int *iv, unsigned int n, int scale)
 
 void printIVector(int *iv, unsigned int n, FILE *outfile)
 {
-	unsigned int i;
-	for(i=0; i<n; i++) myprintf(outfile, "%d ", iv[i]);
-	myprintf(outfile, "\n");
+  unsigned int i;
+  for(i=0; i<n; i++) myprintf(outfile, "%d ", iv[i]);
+  myprintf(outfile, "\n");
 }
 
 
@@ -1329,13 +1323,13 @@ void printIVector(int *iv, unsigned int n, FILE *outfile)
 
 void ivector_to_file(char* file_str, int* vector, unsigned int n)
 {
-	FILE* VOUT;
-	unsigned int i;
-
-	VOUT = fopen(file_str, "w");
-	assert(VOUT);
-	for(i=0; i<n; i++) myprintf(VOUT, "%d\n", vector[i]);
-	fclose(VOUT);
+  FILE* VOUT;
+  unsigned int i;
+  
+  VOUT = fopen(file_str, "w");
+  assert(VOUT);
+  for(i=0; i<n; i++) myprintf(VOUT, "%d\n", vector[i]);
+  fclose(VOUT);
 }
 
 
@@ -1345,9 +1339,9 @@ void ivector_to_file(char* file_str, int* vector, unsigned int n)
 
 void copy_p_ivector(int *V, int *p, int *v, unsigned int n)
 {
-	int i;
-	assert(V); assert(p); assert(n > 0);
-	for(i=0; i<n; i++) V[p[i]] = v[i];
+  int i;
+  assert(V); assert(p); assert(n > 0);
+  for(i=0; i<n; i++) V[p[i]] = v[i];
 }
 
 
@@ -1357,9 +1351,9 @@ void copy_p_ivector(int *V, int *p, int *v, unsigned int n)
 
 void copy_sub_ivector(int *V, int *p, int *v, unsigned int n)
 {
-	int i;
-	assert(V); assert(p); assert(n > 0);
-	for(i=0; i<n; i++) V[i] = v[p[i]];
+  int i;
+  assert(V); assert(p); assert(n > 0);
+  for(i=0; i<n; i++) V[i] = v[p[i]];
 }
 
 
@@ -1369,9 +1363,9 @@ void copy_sub_ivector(int *V, int *p, int *v, unsigned int n)
 
 int* new_sub_ivector(int *p, int *v, unsigned int n)
 {
-	int *V = new_ivector(n);
-	copy_sub_ivector(V, p, v, n);
-	return V;
+  int *V = new_ivector(n);
+  copy_sub_ivector(V, p, v, n);
+  return V;
 }
 
 

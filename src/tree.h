@@ -180,7 +180,7 @@ class Tree
   void Outfile(FILE *file);
   
   /* seperating prediction from estimation */
-  void add_XX(double **X_pred, unsigned int n_pred, unsigned int d_new);
+  unsigned int add_XX(double **X_pred, unsigned int n_pred, unsigned int d_new);
   void new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned int d_new);
   unsigned int* dopt_from_XX(unsigned int N, void *state);
   

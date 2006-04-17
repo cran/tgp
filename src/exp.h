@@ -26,6 +26,7 @@
 #define __EXP_H__ 
 
 #include "corr.h"
+#include <fstream>
 
 class Exp_Prior;
 
@@ -88,6 +89,7 @@ class Exp_Prior : public Corr_Prior
   Exp_Prior(Corr_Prior *c);
   virtual ~Exp_Prior(void);
   virtual void read_double(double *dprior);
+  virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void Draw(Corr **corr, unsigned int howmany, void *state);
   virtual Corr_Prior* Dup(void);
   virtual Corr* newCorr(void);

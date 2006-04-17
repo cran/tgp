@@ -213,10 +213,9 @@ double **Mutil, **Mi;
 
 	#ifdef DEBUG
 	if(info != 0) {
-		error("offending matrix dumped into matrix.dump\n");
 		matrix_to_file("M.dump", M, n, n);
+		error("offending matrix dumped into matrix.dump");
 	}
-	assert(info == 0);
 	#endif
 
 	return info;

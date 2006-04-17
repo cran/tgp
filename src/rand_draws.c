@@ -32,9 +32,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <Rmath.h>
 #include <R.h>
-#include <Rmath.h>
+/*#include <Rmath.h> included bu R.h */
 #include "randomkit.h"
 
 /* for Windows and other OS's without drand support, i
@@ -72,8 +71,7 @@ unsigned long s;
    return (void*) state;
  }
  default:
-   error("RNG type not found\n");
-   exit(0);
+   error("RNG type not found");
  }
 }
 
@@ -99,8 +97,7 @@ void deleteRNGstate(void *state)
    free((unsigned short*) state);
    break;
  default:
-   error("RNG type not found\n");
-   exit(0);
+   error("RNG type not found");
  }
 }
 
@@ -129,8 +126,7 @@ void printRNGstate(void *state, FILE* outfile)
     }
     break;
   default: 
-   error("RNG type not found\n");
-   exit(0);
+   error("RNG type not found");
   }
 }
 
@@ -158,8 +154,7 @@ double runi(void *state)
     assert(state);
     return erand48(state);
   default: 
-    error("RNG type not found\n");
-    exit(0);
+    error("RNG type not found");
   }
 }
 

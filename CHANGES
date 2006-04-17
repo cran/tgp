@@ -1,4 +1,16 @@
+1.1-3: (16 Apr 2006)
+------
+
+Necessary changes in order to get read_ctrlfile to work
+for the command-line (non-R) interface to tgp, and other
+minor changes.
+
+Noticed bug for bcart and b0tau options due to bad T-
+matrix initialization -- fixed.
+
+
 1.1-2: (04 Mar 2006)
+------
 
 1. Beta version of Matern correllation function working
 (abiet a bit shakily)
@@ -6,6 +18,7 @@
 2. Tgp class and cleanup function now implemented in 
 order to let tgp be interrupted, and then clean up to
 avoid memory leaks "on.exit()"
+
 
 1.1-1: (26 Feb 2006)
 ------

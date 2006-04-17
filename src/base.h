@@ -119,7 +119,7 @@ class Base_Prior
   virtual ~Base_Prior(void);
   BASE_MODEL BaseModel(void);
 
-  // virtual void read_ctrlfile(std::ifstream* ctrlfile);
+  virtual void read_ctrlfile(std::ifstream* ctrlfile)=0;
   virtual void read_double(double *dparams)=0;
   virtual void Draw(Tree** leaves, unsigned int numLeaves, void *state)=0;
   virtual bool LLM(void)=0;

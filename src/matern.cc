@@ -39,9 +39,10 @@ extern "C"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <string.h>
-#include <string>
+//#include <string.h>
 #include <Rmath.h>
+#include <string>
+#include <fstream>
 using namespace std;
 
 #define BUFFMAX 256
@@ -160,7 +161,7 @@ void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
   
   double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
-  matern_dist_to_K(K, xxDISTx, d, nu, 0.0, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, nu, nug, n1, n2);
   delete_matrix(xxDISTx);
 }
 
@@ -211,10 +212,10 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
   else {
     Matern_Prior* ep = (Matern_Prior*) prior;
     success = 
-      d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
+      matern_d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
 		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
 		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
-		    nug, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
+			   nug, nu, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
 		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
   }
   
@@ -513,12 +514,56 @@ void Matern_Prior::read_double(double *dparams)
   if((int) dparams[0] == -1)
     { fix_d = true; /*myprintf(stdout, "fixing d prior\n");*/ }
   else {
+    fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, 
 				&(dparams[0]), "d lambda");
   }
   dparams += 4; /* reset */
+
+  /* read the fixed nu parameter */
   nu = dparams[0];
-  myprintf(stdout, "fixed nu %g \n", nu);
+  myprintf(stdout, "fixed nu=%g\n", nu);
+  dparams += 1; /* reset */
+}
+
+
+/*
+ * read_ctrlfile:
+ *
+ * read prior parameterization from a control file
+ */
+
+void Matern_Prior::read_ctrlfile(ifstream *ctrlfile)
+{
+  char line[BUFFMAX], line_copy[BUFFMAX];
+ 
+  /* read the parameters that have to do with the
+   * nugget first */
+  read_ctrlfile_nug(ctrlfile);
+
+  /* read the d parameter from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  d = atof(strtok(line, " \t\n#"));
+  myprintf(stdout, "starting d=%g\n", d);
+    
+  /* read d and nug-hierarchical parameters (mix of gammas) */
+  ctrlfile->getline(line, BUFFMAX);
+  get_mix_prior_params(d_alpha, d_beta, line, "d");
+
+  /* d hierarchical lambda prior parameters */
+  ctrlfile->getline(line, BUFFMAX);
+  strcpy(line_copy, line);
+  if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
+    { fix_d = true; myprintf(stdout, "fixing d prior\n"); }
+  else {
+    fix_d = false;
+    get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
+  }
+
+  /* read the (fixed) nu parameter */
+  ctrlfile->getline(line, BUFFMAX);
+  nu = atof(strtok(line, " \t\n#"));
+  myprintf(stdout, "fixed nu=%g\n", nu);
 }
 
 

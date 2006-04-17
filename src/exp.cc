@@ -41,6 +41,7 @@ extern "C"
 #include <assert.h>
 #include <string.h>
 #include <string>
+#include <fstream>
 using namespace std;
 
 #define BUFFMAX 256
@@ -470,7 +471,7 @@ Exp_Prior::~Exp_Prior(void)
 
 void Exp_Prior::read_double(double *dparams)
 {
-  /* read the parameters that have to to with the
+  /* read the parameters that have to do with the
    * nugget first */
   read_double_nug(dparams);
 
@@ -489,10 +490,46 @@ void Exp_Prior::read_double(double *dparams)
   if((int) dparams[0] == -1)
     { fix_d = true; /*myprintf(stdout, "fixing d prior\n");*/ }
   else {
+    fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, 
 				&(dparams[0]), "d lambda");
   }
   dparams += 4; /* reset */
+}
+
+
+/*
+ * read_ctrlfile:
+ *
+ * read prior parameterization from a control file
+ */
+
+void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
+{
+  char line[BUFFMAX], line_copy[BUFFMAX];
+  
+  /* read the parameters that have to do with the
+   * nugget first */
+  read_ctrlfile_nug(ctrlfile);
+
+  /* read the d parameter from the control file */
+  ctrlfile->getline(line, BUFFMAX);
+  d = atof(strtok(line, " \t\n#"));
+  myprintf(stdout, "starting d=%g\n", d);
+    
+  /* read d and nug-hierarchical parameters (mix of gammas) */
+  ctrlfile->getline(line, BUFFMAX);
+  get_mix_prior_params(d_alpha, d_beta, line, "d");
+
+  /* d hierarchical lambda prior parameters */
+  ctrlfile->getline(line, BUFFMAX);
+  strcpy(line_copy, line);
+  if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
+    { fix_d = true; myprintf(stdout, "fixing d prior\n"); }
+  else {
+    fix_d = false;
+    get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
+  }
 }
 
 

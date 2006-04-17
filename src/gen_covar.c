@@ -364,17 +364,18 @@ double d, nug, nu;
     else zero(K, n, m);
   } else {
     for(i=0; i<n; i++) {
-      for(j=0; j<m; j++) {
-      K[i][j] = nu*(log(DIST[i][j])-log(d));
-      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1));
-      K[i][j] = exp(K[i][j]-c);
+	for(j=0; j<m; j++) {
+	  if(DIST[i][j] == 0.0){ K[i][j] = 1.0 + nug; }
+	  else{
+	    K[i][j] = nu*(log(DIST[i][j])-log(d));
+	    K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0));
+	    K[i][j] = exp(K[i][j]-c);
 
-	if(isnan(K[i][j])) K[i][j] = 1.0;
+	    if(isnan(K[i][j]) ) K[i][j] = 1.0;
+	  }
+        }
       }
-    }
   }	
-  
-  if(nug > 0 && m == n) for(i=0; i<m; i++) {K[i][i] += nug;} 
 }
 
 
@@ -394,7 +395,7 @@ double d, nug, nu;
 {
   int i,j;
   double c = (nu-1.0)*log(2.0)+lgammafn(nu);
-
+ 
   assert(nug >= 0);
   if(d == 0.0) id(K, n);
   for(i=0; i<n; i++) {
@@ -402,7 +403,7 @@ double d, nug, nu;
     if(d == 0.0) continue;
     for(j=i+1; j<n; j++) {
       K[i][j] = nu*(log(DIST[i][j])-log(d));
-      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1));
+      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0));
       K[i][j] = exp(K[i][j]-c);
         
       if(isnan(K[i][j])) K[i][j] = 1.0;  

@@ -34,6 +34,6 @@ void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int 
 	double **FFrow, double **KKrow, double **xxKxx, unsigned int which_i);
 int predict_draw(unsigned int n, double *z, double *mean, double *s, 
 		 int err, void *state);
-void compute_ego(unsigned int n, double *ego, double *z, double *mean, double *s);
+void compute_ego(unsigned int n, unsigned int nn, double *ego, double *z, double *mean, double *s);
 
 #endif

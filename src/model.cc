@@ -80,7 +80,7 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
 #ifdef PARALLEL 
   parallel = true;
   if(RNG == CRAN && NUMTHREADS > 1)
-    warning("using thread unsafe unif_rand() with pthreads\n");
+    warning("using thread unsafe unif_rand() with pthreads");
 #else
   parallel = false;
 #endif
@@ -311,8 +311,11 @@ bool Model::modify_tree(void *state)
   case 2: /* prune */ return prune_tree(state);
   case 3: /* change */ return change_tree(state);
   case 4: /* swap */ return swap_tree(state);
-  default: myprintf(stderr, "action %d not supported", action); exit(0);
+  default: error("action %d not supported", action);
   }
+
+  /* should not reach here */
+  return 0;
 }
 
 
@@ -699,8 +702,7 @@ void Model::close_parallel_preds(void)
   for(unsigned int i=0; i<NUMTHREADS; i++) free(consumer[i]);
   free(consumer);
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("close_parallel_preds: not compiled for pthreads");
 #endif
 }
 
@@ -752,8 +754,7 @@ void Model::predict_producer(Tree *leaf, Preds *preds, int index, bool dnorm)
   num_produced++;
   PP->EnQueue((void*) largs);
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("predict_producer: not compiled for pthreads");
 #endif
 }
 
@@ -779,8 +780,7 @@ void Model::produce(void)
   pthread_mutex_unlock(l_mut);
   pthread_cond_signal(l_cond_nonempty);
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("produce: not compiled for pthreads");
 #endif
 }
 
@@ -850,8 +850,7 @@ void Model::predict_consumer(void)
   deleteRNGstate(state);	
   
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("predict_consumer: not compiled for pthreads");
 #endif
 }
 
@@ -891,8 +890,7 @@ void Model::consumer_finish(void)
     pthread_join(*consumer[i], NULL);
   }
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("consumer_finish: not compiled for pthreads");
 #endif
 }
 
@@ -912,8 +910,7 @@ void Model::consumer_start(void)
     assert(success == 0);
   }
 #else
-  error("not compiled for pthreads\n");
-  exit(0);
+  error("consumer_start: not compiled for pthreads");
 #endif
 }
 
@@ -946,7 +943,7 @@ void Model::wrap_up_predictions(void)
   pthread_mutex_unlock(l_mut);
   num_consumed = num_produced = 0;
 #else
-  error("not compiled for pthreads\n");
+  error("wrap_up_predictions: not compiled for pthreads");
 #endif
 }
 

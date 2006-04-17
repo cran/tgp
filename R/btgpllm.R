@@ -25,7 +25,7 @@
 "btgpllm" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.25,2,10),
          gamma=c(10,0.2,0.7), BTE=c(2000,7000,2), R=1, m0r1=FALSE,
-         linburn=FALSE, pred.n=TRUE, ds2x=FALSE, ego=FALSE)
+         linburn=FALSE, pred.n=TRUE, ds2x=FALSE, ego=FALSE, nu=0.5)
 {
   n <- dim(X)[1]
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
@@ -35,6 +35,7 @@ function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.25,2,10),
   params$corr <- corr
   params$tree <- tree
   params$gamma <- gamma
+  if(corr == "matern"){ params$nu <- nu }
   return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,pred.n,ds2x,ego))
 }
 

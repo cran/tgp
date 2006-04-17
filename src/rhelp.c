@@ -22,10 +22,13 @@
  ********************************************************************************/
 
 #include "rhelp.h"
+#ifdef RPRINT
 #include <R_ext/Print.h>
+#include <R.h>
+#endif
 #include <stdarg.h>
 #include <time.h>
-#include <R.h>
+#include <assert.h>
 
 /* 
  * myprintf:
@@ -59,45 +62,44 @@ void myprintf(FILE *outfile, char *str, ...)
  * printf style function that reports errors to stderr
  */
 
-void error(char *str, ...)
+void error(const char *str, ...)
 {
   va_list argp;
   va_start(argp, str);
   
   myprintf(stderr, "ERROR: ");
-
-  #ifdef RPRINT
-  REvprintf(str, argp);
-  #else
   vfprintf(stderr, str, argp);
-  #endif
-
+  
   va_end(argp);
   myflush(stderr);
+  
+  /* add a final newline */
+  myprintf(stderr, "\n");
+
+  /* kill the code */
+  assert(0);
 }
 
 
 /*
  * warning:
  *
- * printf style function that reports warningss to stderr
+ * printf style function that reports warnings to stderr
  */
 
-void warning(char *str, ...)
+void warning(const char *str, ...)
 {
   va_list argp;
   va_start(argp, str);
   
   myprintf(stderr, "WARNING: ");
-
-  #ifdef RPRINT
-  REvprintf(str, argp);
-  #else
   vfprintf(stderr, str, argp);
-  #endif
 
   va_end(argp);
   myflush(stderr);
+
+  /* add a final newline */
+  myprintf(stderr, "\n");
 }
 #endif
 
@@ -130,9 +132,9 @@ void myflush(FILE *outfile)
 
 time_t my_r_process_events(time_t itime)
 {
+#ifdef RPRINT  
   time_t ntime = time(NULL);
 
-#ifdef RPRINT  
   if(ntime - itime > 1) {
 #if  ( defined(HAVE_AQUA) || defined(Win32) )
     R_ProcessEvents();

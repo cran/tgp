@@ -26,7 +26,7 @@
 #define __PREDICT_LINEAR_H__
 
 int predict_full_linear(unsigned int n, unsigned int nn, unsigned int col, 
-			 double *z, double *zz, double **F, double **FF, double *bmu, 
+			double *z, double *zz, double *Z, double **F, double **FF, double *bmu, 
 			double s2, double  **Vb, double **Ds2xy, double *ego, 
 			 double nug, int err, void *state);
 int predict_full_noK(unsigned int n1, unsigned int n2, unsigned int col, double * zz, 

@@ -23,20 +23,20 @@ btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.25, 2, 10),
 	pred.n = TRUE, ds2x = FALSE, ego=FALSE)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
-	pred.n = TRUE, ds2x = FALSE, ego=FALSE)
+	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 0.5)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
 	m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE)
+        ego = FALSE, nu = 0.5)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), BTE = c(2000, 7000, 2), R = 1, 
 	m0r1 = FALSE, linburn = FALSE, pred.n = TRUE, 
-	ds2x = FALSE, ego = FALSE)
+	ds2x = FALSE, ego = FALSE, nu = 0.5)
 btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), gamma=c(10,0.2,0.7), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	linburn = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE)
+        ego = FALSE, nu = 0.5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -68,7 +68,8 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
-	family (\code{"expsep"}, default) }
+	family (\code{"expsep"}, default); the current version also supports 
+	the isotropic Matern (\code{"matern"}) as \dQuote{beta} functionality}
   \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and (E)very. Predictive
   	samples are saved every E MCMC rounds starting at round B, stopping at T. }
   \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds, default 1 is no restarts}
@@ -88,6 +89,8 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
     reduction in uncertainty calculations at the \code{XX} locations, which can be used
     for adaptive sampling; \code{FALSE} (default) skips this computation, resulting in
     a faster implementation}
+  \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for the Matern
+    correlation function; nu+0.5 times differentiable}
 }
 
 \details{

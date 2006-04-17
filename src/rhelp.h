@@ -2,15 +2,17 @@
 #define __RHELP_H__
 
 #include <stdio.h>
-#include <R_ext/Utils.h>
-#include <R.h>
 #include <time.h>
 
-#define RPRINT
+/* this is now covered by -D RPRINT flags in Makevars */
+/*#define RPRINT*/
 
 #ifndef RPRINT
-void warning(char *str, ...);
-void error(char *str, ...);
+void warning(const char *str, ...);
+void error(const char *str, ...);
+#else
+#include <R_ext/Utils.h>
+#include <R.h>
 #endif
 
 void R_FlushConsole(void); /* R < 2.3 does not have this in R.h (in Rinterface.h) */

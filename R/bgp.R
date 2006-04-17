@@ -25,7 +25,7 @@
 "bgp" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep",
          BTE=c(1000,4000,2), R=1, m0r1=FALSE,
-         pred.n=TRUE, ds2x=FALSE, ego=FALSE)
+         pred.n=TRUE, ds2x=FALSE, ego=FALSE, nu=0.5 )
 {
   n <- dim(X)[1]
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
@@ -35,6 +35,7 @@ function(X, Z, XX=NULL, bprior="bflat", corr="expsep",
   params$corr <- corr
   params$tree <- c(0,0,10)	# no tree
   params$gamma <- c(0,0.2,0.7)	# no llm
+  if(corr == "matern") params$nu <- nu
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,pred.n,ds2x,ego))
 }
 

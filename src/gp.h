@@ -130,6 +130,8 @@ class Gp_Prior : public Base_Prior
   double tau2_a0_lambda;	/* hierarchical tau2 inv-gamma alpha parameter */
   double tau2_g0_lambda;	/* hierarchical tau2 inv-gamma beta parameter */
   bool   fix_tau2;	        /* estimate hierarchical tau2 parameters or not */
+
+  void initT(void);
   
  public:
   
@@ -138,7 +140,7 @@ class Gp_Prior : public Base_Prior
   Gp_Prior(Base_Prior* prior);
   virtual ~Gp_Prior(void);
 
-  //virtual void read_ctrlfile(std::ifstream* ctrlfile);
+  virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void read_double(double *dparams);
   
   virtual void Draw(Tree** leaves, unsigned int numLeaves, void *state);
@@ -149,12 +151,13 @@ class Gp_Prior : public Base_Prior
   virtual Base* newBase(Model *model);
   virtual Base_Prior* Dup(void);
   
+  void InitT(void);
   void read_beta(char *line);
   void default_s2_priors(void);
   void default_s2_lambdas(void);
   void default_tau2_priors(void);
   void default_tau2_lambdas(void);
-
+  
   double s2Alpha(void);
   double s2Beta(void);
   double tau2Alpha(void);
