@@ -848,11 +848,15 @@ void ExpSep_Prior::Print(FILE *outfile)
   /* myprintf(outfile, "starting d=\n");
      printVector(d, col-1, outfile); */
 
-  /* range gamma prior */
-  for(unsigned int i=0; i<col-1; i++) {
-    myprintf(outfile, "d[a,b][%d]=[%g,%g],[%g,%g]\n", i,
+  /* range gamma prior, just print once */
+  myprintf(outfile, "d[a,b][0]=[%g,%g],[%g,%g]\n",
+	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][0]);
+
+  /* print many times, one for each dimension instead? */
+  /*for(unsigned int i=0; i<col-1; i++) {
+       myprintf(outfile, "d[a,b][%d]=[%g,%g],[%g,%g]\n", i,
 	     d_alpha[i][0], d_beta[i][0], d_alpha[i][1], d_beta[i][0]);
-  } 
+    }*/
  
   /* range gamma hyperprior */
   if(fix_d) myprintf(outfile, "d prior fixed\n");

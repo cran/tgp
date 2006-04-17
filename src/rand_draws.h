@@ -58,6 +58,7 @@ void propose_indices(int *di, double prob, void *state);
 void get_indices(int *i, double *parameter);
 unsigned int* rand_indices(unsigned int N, void* state);
 void* newRNGstate(unsigned long s);
+void* newRNGstate_rand(void *s);
 void deleteRNGstate(void *seed);
 void printRNGstate(void *state, FILE* outfile);
 #endif

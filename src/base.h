@@ -62,6 +62,7 @@ class Base
   double mean;		        /* mean of the Zs */
 
   FILE* OUTFILE;		/* where to print tree-specific info */
+  int verb;                /* printing level (0=none, ... , 3+=verbose) */
   
  public:
 

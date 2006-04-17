@@ -24,7 +24,8 @@
 
 "tgp" <-
 function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
-	linburn=FALSE, params=NULL, pred.n=TRUE, ds2x=FALSE, ego=FALSE)
+	linburn=FALSE, params=NULL, pred.n=TRUE, ds2x=FALSE, ego=FALSE,
+        verb=1)
 {
   # what to do if fatally interrupted?
   on.exit(tgp.cleanup())
@@ -60,10 +61,10 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
   
   ## might scale Z to mean of 0 range of 1
   if(m0r1) { Zm0r1 <- mean0.range1(Z); Z <- Zm0r1$X }
-  
+
+  # RNG seed
   state <- sample(seq(0,1000), 3)
-  ##state <- c(123,456,789)
-  ##print(params)
+
   ## run the C code
   ll <- .C("tgp", 
            state = as.integer(state),
@@ -77,6 +78,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
            R = as.integer(R),
            linburn = as.integer(linburn),
            dparams = as.double(dparams),
+           verb = as.integer(verb),
            Zp.mean = double(pred.n * n),
            ZZ.mean = double(nnprime),
            Zp.q = double(pred.n * n),

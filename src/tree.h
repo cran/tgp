@@ -70,7 +70,8 @@ class Tree
   unsigned int depth;	        /* depth of partition in tree */
    
   FILE* OUTFILE;		/* where to print tree-specific info */
-  
+  int verb;                /* printing level (0=none, ... , 3+=verbose); */
+
  private: /* functions */
    
   /* auxiliaty swap functions */
@@ -176,8 +177,8 @@ class Tree
   bool Singular(void);
   
   /* printing */
-  void printTree(FILE* outfile, double** rect, double scale, int root);
-  void Outfile(FILE *file);
+  void PrintTree(FILE* outfile, double** rect, double scale, int root);
+  void Outfile(FILE *file, int verb);
   
   /* seperating prediction from estimation */
   unsigned int add_XX(double **X_pred, unsigned int n_pred, unsigned int d_new);

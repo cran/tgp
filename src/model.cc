@@ -53,12 +53,11 @@ FILE *BETAFILE = NULL;
  */
 
 Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double *Z, 
-		double** rect, int Id, void *state_to_init_consumer)
+		double** rect, int Id, void *state)
 {
   this->params = new Params(params);
   base_prior = this->params->BasePrior();
-  base_prior->Print(stdout);
-	
+  	
   col = d+1;
   this->Id = Id;
   this->iface_rect = new_dup_matrix(rect, 2, d);
@@ -84,13 +83,14 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
 #else
   parallel = false;
 #endif
-  this->state_to_init_consumer = state_to_init_consumer;
+  this->state_to_init_consumer = newRNGstate_rand(state);
   if(parallel) { init_parallel_preds(); consumer_start(); }
   
   /* stuff for printing partitions and other to files */
   printparts = PRINTPARTS;
   PARTSFILE = NULL;
   OUTFILE = stdout;
+  verb = 2;
   
   /* initialization of the (main) tree part of the model */
   int *p = iseq(0,n-1);
@@ -129,6 +129,7 @@ Model::~Model(void)
   delete params;
   delete_posteriors(posteriors);
   if(linarea) delete_linarea();
+  deleteRNGstate(state_to_init_consumer);
 }
 
 
@@ -198,7 +199,8 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     base_prior->Draw(leaves, numLeaves, state);
     
     /* print progress meter */
-    if((r+1) % 1000 == 0 && r>0) printState(r+1, numLeaves, leaves);
+    if((r+1) % 1000 == 0 && r>0 && verb >= 1) 
+      PrintState(r+1, numLeaves, leaves);
     
     /* process full posterior, and calculate linear area */
     if(T>B) Posterior();
@@ -217,14 +219,13 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     /* periodically check R for interrupts and flush console 
        every five seconds */
     itime = my_r_process_events(itime);
-		      
   }
   
+  /* send a full set of leaves out for prediction */
   if(parallel && PP) produce();
   
-  /* dump some tree statistics to standard output */
+  /* dump some tree statistics to output files */
   if(T>B) {
-    printTreeStats(OUTFILE);
     if(PARTSFILE) fclose(PARTSFILE);
     else PrintBestPartitions();
     PARTSFILE = NULL;
@@ -446,9 +447,11 @@ void Model::cut_branch(void *state)
   if(len == 0) return;	
   unsigned int k = (unsigned int) sample_seq(0,len,state);
   if(k == len) 
-    myprintf(OUTFILE, "tree unchanged (no branches removed)\n");
+    if(verb >= 1) 
+      myprintf(OUTFILE, "tree unchanged (no branches removed)\n");
   else {
-    myprintf(OUTFILE, "removed %d leaves from the tree\n", nodes[k]->numLeaves());
+    if(verb >= 1) 
+      myprintf(OUTFILE, "removed %d leaves from the tree\n", nodes[k]->numLeaves());
     nodes[k]->cut_branch();
   }
   free(nodes);
@@ -465,9 +468,11 @@ void Model::cut_branch(void *state)
 void Model::cut_root(void)
 {
   if(t->isLeaf()) 
-    myprintf(OUTFILE, "removed 0 leaves from the tree\n");
+    if(verb >= 1)
+      myprintf(OUTFILE, "removed 0 leaves from the tree\n");
   else {
-    myprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
+    if(verb >= 1)
+      myprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
   }
   t->cut_branch();
 }
@@ -495,12 +500,12 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
 
 
 /*
- * printTreeStats:
+ * PrintTreeStats:
  * 
  * printing out tree operation stats
  */
 
-void Model::printTreeStats(FILE* outfile)
+void Model::PrintTreeStats(FILE* outfile)
 {
   if(grow_try > 0) myprintf(outfile, "Grow: %.4g%c, ", (double)grow/grow_try, '%');
   if(prune_try > 0) myprintf(outfile, "Prune: %.4g%c, ", (double)prune/prune_try, '%');
@@ -535,12 +540,12 @@ void Model::set_TreeRoot(Tree *t)
 
 
 /* 
- * printState:
+ * PrintState:
  * 
  * Print the state for the current round
  */
 
-void Model::printState(unsigned int r, unsigned int numLeaves, Tree** leaves)
+void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
 {
   
   /* print round information */
@@ -798,11 +803,8 @@ void Model::predict_consumer(void)
 #ifdef PARALLEL
   unsigned int nc = 0;
   
-  /* each consumer needs its on random state variable dor erand48 */
-  void *state = newRNGstate((unsigned long)
-			    (10000000*runi(this->state_to_init_consumer) +
-			     10000*runi(this->state_to_init_consumer) +
-			     100*runi(this->state_to_init_consumer)));
+  /* each consumer needs its on random state variable */
+  void *state = newRNGstate_rand(state_to_init_consumer);
   
   while(1) {
     
@@ -836,7 +838,7 @@ void Model::predict_consumer(void)
     /* take care of each leaf */
     while(!(LL->isEmpty())) {
       LArgs* l = (LArgs*) LL->DeQueue();
-      predict(l->leaf, l->preds, l->index, l->dnorm, state);
+      Predict(l->leaf, l->preds, l->index, l->dnorm, state);
       nc++;
       delete l->leaf;
       free(l);
@@ -934,8 +936,10 @@ void Model::wrap_up_predictions(void)
     if(tlist->Len() != tlen || diff != (int)num_produced-(int)num_consumed) {
       tlen = tlist->Len();
       diff = num_produced - num_consumed;
-      myprintf(OUTFILE, "waiting for (%d, %d) predictions\n", tlen, diff); 
-      myflush(OUTFILE); 
+      if(verb >= 1) {
+        myprintf(OUTFILE, "waiting for (%d, %d) predictions\n", tlen, diff); 
+        myflush(OUTFILE); 
+      }
     }
     pthread_mutex_unlock(l_mut);
     usleep(500000);
@@ -1066,8 +1070,9 @@ void Model::predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *stat
  * return file handle to model outfile
  */
 
-FILE* Model::Outfile(void)
+FILE* Model::Outfile(int *verb)
 {
+  *verb = this->verb;
   return OUTFILE;
 }
 
@@ -1078,10 +1083,11 @@ FILE* Model::Outfile(void)
  * set outfile handle
  */
 
-void Model::Outfile(FILE *file)
+void Model::Outfile(FILE *file, int verb)
 {
   OUTFILE = file;
-  t->Outfile(file);
+  this->verb = verb;
+  t->Outfile(file, verb);
 }
 
 
@@ -1133,11 +1139,11 @@ FILE* Model::OpenPartsfile(void)
  * print the tree in the R CART tree structure format
  */
 
-void Model::printTree(FILE* outfile)
+void Model::PrintTree(FILE* outfile)
 {
   assert(outfile);
   myprintf(outfile, "rows\t var\t n\t dev\t yval\t splits.cutleft splits.cutright\n");
-  this->t->printTree(outfile, iface_rect, NORMSCALE, 1);
+  this->t->PrintTree(outfile, iface_rect, NORMSCALE, 1);
 }
 
 
@@ -1241,7 +1247,7 @@ void register_posterior(Posteriors* posteriors, Tree* t, double post)
  * doesn't do anything if no posteriors were recorded
  */
 
-void Model::printPosteriors(void)
+void Model::PrintPosteriors(void)
 {
   char filestr[MEDBUFF];
   sprintf(filestr, "tree_m%d_posts.out", Id);
@@ -1257,7 +1263,7 @@ void Model::printPosteriors(void)
     sprintf(filestr, "tree_m%d_%d.out", Id, i+1);
     FILE *treefile = fopen(filestr, "w");
     myprintf(treefile, "rows\t var\t n\t dev\t yval\t splits.cutleft splits.cutright\n");
-    posteriors->trees[i]->printTree(treefile, iface_rect, NORMSCALE, 1);
+    posteriors->trees[i]->PrintTree(treefile, iface_rect, NORMSCALE, 1);
     fclose(treefile);
     myprintf(postsfile, "%d\t %g\n", posteriors->trees[i]->Height(), 
 	     posteriors->trees[i]->FullPosterior(t_alpha, t_beta));
@@ -1487,7 +1493,7 @@ void Model::Linburn(unsigned int B, void *state)
 
 void Model::Burnin(unsigned int B, void *state)
 {
-  myprintf(OUTFILE, "\nburn in:\n");
+  if(verb >= 1) myprintf(OUTFILE, "\nburn in:\n");
   rounds(NULL, B, B, state);
 }
 
@@ -1501,7 +1507,20 @@ void Model::Burnin(unsigned int B, void *state)
 
 void Model::Sample(Preds *preds, unsigned int R, void *state)
 {
-  myprintf(OUTFILE, "\nObtaining samples (nn=%d predictive locations):\n", preds->nn);
-  myflush(OUTFILE);
+  if(verb >= 1) 
+    myprintf(OUTFILE, "\nObtaining samples (nn=%d predictive locations):\n", preds->nn);
   rounds(preds, 0, R, state);
+}
+
+
+/*
+ * Print:
+ *
+ * Prints to OUTFILE, the current (prior) parameter settings for the
+ * model.
+ */
+
+void Model::Print(void)
+{
+  base_prior->Print(OUTFILE);
 }

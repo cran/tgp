@@ -17,26 +17,27 @@
 \usage{
 blm(X, Z, XX = NULL, bprior = "bflat", BTE = c(1000, 4000, 3), 
 	R = 1, m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego=FALSE)
+        ego = FALSE, verb = 1)
 btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.25, 2, 10), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	pred.n = TRUE, ds2x = FALSE, ego=FALSE)
+	pred.n = TRUE, ds2x = FALSE, ego=FALSE, verb = 1)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
-	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 0.5)
+	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 0.5,
+        verb = 1)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
 	m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5)
+        ego = FALSE, nu = 0.5, verb = 1)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), BTE = c(2000, 7000, 2), R = 1, 
 	m0r1 = FALSE, linburn = FALSE, pred.n = TRUE, 
-	ds2x = FALSE, ego = FALSE, nu = 0.5)
+	ds2x = FALSE, ego = FALSE, nu = 0.5, verb = 1)
 btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), gamma=c(10,0.2,0.7), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	linburn = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5)
+        ego = FALSE, nu = 0.5, verb = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -91,6 +92,10 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
     a faster implementation}
   \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for the Matern
     correlation function; nu+0.5 times differentiable}
+  \item{verb}{ Level of verbosity of R-console print statments: from 0
+    (none); 1 (default) which shows the \dQuote{progress meter}; 2
+    includes an echo of initialization parameters; up to 3 and 4 (max)
+    with more info about successful tree operations.}
 }
 
 \details{

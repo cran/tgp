@@ -55,6 +55,7 @@ unsigned long s;
  switch (RNG) {
  case CRAN: 
    if(getrngstate) GetRNGstate();
+   else warning("cannot generate multiple CRAN RNG states");
    getrngstate = 0;
    return NULL;
  case RK: {
@@ -76,6 +77,21 @@ unsigned long s;
 }
 
 
+/*
+ * newRNGstate_rand:
+ *
+ * randomly generate a new RNG state based on a random draw from the
+ * current state
+ */
+
+void* newRNGstate_rand(s)
+void *s;
+{
+  return(newRNGstate((unsigned long)
+		     (10000000*runi(s) + 10000*runi(s) + 100*runi(s))));
+}
+
+      
 /*
  * deleteRNGstate:
  *
@@ -117,7 +133,7 @@ void printRNGstate(void *state, FILE* outfile)
     break;
   case RK:
     assert(state);
-    myprintf(outfile, "RNG state RK generated with rk_seed\n");
+    myprintf(outfile, "RNG state RK using rk_seed\n");
     break;
   case ERAND: {
       unsigned short *s = (unsigned short *) state;
@@ -518,40 +534,39 @@ unsigned int n, nu;
 double **x, **S;
 void *state;
 {
-
-	/*double alphaT[n][nu], alpha[nu][n], cov[n][n];
-	double mu[n];*/
-	double **alphaT, **alpha, **cov;
-	double *mu;
-	int i;
-
-	zero(x, n, n);
-
-	/* draw from the multivariate normal */
-	cov = new_matrix(n,n);
-	alphaT = new_matrix(n,nu);
-	copyCovLower(cov, S, n, 1.0);
-	mu = (double*) malloc(sizeof(double) * n);
-	for(i=0; i<n; i++) mu[i] = 0;
-	mvnrnd_mult(*alphaT, mu, cov, n, nu, state);
-	delete_matrix(cov);
-	free(mu);
-
-	/* transpose alpha for row indexing */
-	alpha = new_t_matrix(alphaT, n, nu);
-	delete_matrix(alphaT);
-
-	/* x = alpha^T * alpha */
-    	linalg_dgemm(CblasNoTrans,CblasNoTrans,n,n,1,
-			1.0,&(alpha[0]),n,&(alpha[0]),1,0.0,x,n);
-
-	for(i=1; i<nu; i++) {
-		/* x += alpha^T * alpha */
-    		linalg_dgemm(CblasNoTrans,CblasNoTrans,n,n,1,
-				1.0,&(alpha[i]),n,&(alpha[i]),1,1.0,x,n);
-	}
-	delete_matrix(alpha);
-
+  /*double alphaT[n][nu], alpha[nu][n], cov[n][n];
+    double mu[n];*/
+  double **alphaT, **alpha, **cov;
+  double *mu;
+  int i;
+  
+  zero(x, n, n);
+  
+  /* draw from the multivariate normal */
+  cov = new_matrix(n,n);
+  alphaT = new_matrix(n,nu);
+  copyCovLower(cov, S, n, 1.0);
+  mu = (double*) malloc(sizeof(double) * n);
+  for(i=0; i<n; i++) mu[i] = 0;
+  mvnrnd_mult(*alphaT, mu, cov, n, nu, state);
+  delete_matrix(cov);
+  free(mu);
+  
+  /* transpose alpha for row indexing */
+  alpha = new_t_matrix(alphaT, n, nu);
+  delete_matrix(alphaT);
+  
+  /* x = alpha^T * alpha */
+  linalg_dgemm(CblasNoTrans,CblasNoTrans,n,n,1,
+	       1.0,&(alpha[0]),n,&(alpha[0]),1,0.0,x,n);
+  
+  for(i=1; i<nu; i++) {
+    /* x += alpha^T * alpha */
+    linalg_dgemm(CblasNoTrans,CblasNoTrans,n,n,1,
+		 1.0,&(alpha[i]),n,&(alpha[i]),1,1.0,x,n);
+  }
+  delete_matrix(alpha);
+  
 }
 
 
@@ -568,30 +583,30 @@ double *x_out, *X, *probs;
 unsigned int* x_indx;
 void *state;
 {
-	double pick;
-	int i, counter;
-	double *cumprob = new_vector(num_probs);
-
-	assert(num_probs > 0);
-	assert(n > 0);
-	assert(probs[0] >= 0);
-	cumprob[0] = probs[0];
-	for(i=1; i<num_probs; i++) {
-		assert(probs[i] >= 0);
-		cumprob[i] = cumprob[i-1] + probs[i];
-	}
-	if(cumprob[num_probs-1] < 1.0) cumprob[num_probs-1] = 1.0;
-
-	for(i=0; i<n; i++) {
-		counter = 0;
-		pick=runi(state);
-		while(cumprob[counter] < pick) {
-			counter = counter+1;
-		}
-		x_out[i] = X[counter];
-		x_indx[i] = counter;
-	}
-	free(cumprob);
+  double pick;
+  int i, counter;
+  double *cumprob = new_vector(num_probs);
+  
+  assert(num_probs > 0);
+  assert(n > 0);
+  assert(probs[0] >= 0);
+  cumprob[0] = probs[0];
+  for(i=1; i<num_probs; i++) {
+    assert(probs[i] >= 0);
+    cumprob[i] = cumprob[i-1] + probs[i];
+  }
+  if(cumprob[num_probs-1] < 1.0) cumprob[num_probs-1] = 1.0;
+  
+  for(i=0; i<n; i++) {
+    counter = 0;
+    pick=runi(state);
+    while(cumprob[counter] < pick) {
+      counter = counter+1;
+    }
+    x_out[i] = X[counter];
+    x_indx[i] = counter;
+  }
+  free(cumprob);
 }
 
 
@@ -608,30 +623,30 @@ double *probs;
 unsigned int *x_indx;
 void *state;
 {
-	double pick;
-	int i, counter;
-	double *cumprob = new_vector(num_probs);
-
-	assert(num_probs > 0);
-	assert(n > 0);
-	assert(probs[0] >= 0);
-	cumprob[0] = probs[0];
-	for(i=1; i<num_probs; i++) {
-		assert(probs[i] >= 0);
-		cumprob[i] = cumprob[i-1] + probs[i];
-	}
-	if(cumprob[num_probs-1] < 1.0) cumprob[num_probs-1] = 1.0;
-
-	for(i=0; i<n; i++) {
-		counter = 0;
-		pick=runi(state);
-		while(cumprob[counter] < pick) {
-			counter = counter+1;
-		}
-		x_out[i] = X[counter];
-		x_indx[i] = counter;
-	}
-	free(cumprob);
+  double pick;
+  int i, counter;
+  double *cumprob = new_vector(num_probs);
+  
+  assert(num_probs > 0);
+  assert(n > 0);
+  assert(probs[0] >= 0);
+  cumprob[0] = probs[0];
+  for(i=1; i<num_probs; i++) {
+    assert(probs[i] >= 0);
+    cumprob[i] = cumprob[i-1] + probs[i];
+  }
+  if(cumprob[num_probs-1] < 1.0) cumprob[num_probs-1] = 1.0;
+  
+  for(i=0; i<n; i++) {
+    counter = 0;
+    pick=runi(state);
+    while(cumprob[counter] < pick) {
+      counter = counter+1;
+    }
+    x_out[i] = X[counter];
+    x_indx[i] = counter;
+  }
+  free(cumprob);
 }
 
 
@@ -649,56 +664,56 @@ double *probs;
 unsigned int *x_indx;
 void *state;
 {
-	double *p, *p_old;
-	int *x, *x_old;
-	unsigned int *xi, *xi_old;
-	int i,j, out;
-	unsigned int indx;
-	double p_not;
-	
-	/* copy the X locations (and indices) and probs
-	 * to auxiliary arrays */
-	p = new_dup_vector( probs, num_probs);
-	x = new_dup_ivector(X, num_probs);
-	xi = (unsigned int*) iseq(0, num_probs-1);
-
-	/* take the first sample */
-	isample(&out, &indx, 1, num_probs, x, p, state);
-	x_out[0] = out;
-	x_indx[0] = indx;
-
-	/* pull one out and sample the next numprobs-i */
-	for(i=1; i<n; i++) {
-
-		/* swap to old, make space for new */
-		x_old = x; p_old = p; xi_old = xi;
-		p = new_vector(num_probs - i);
-		x = new_ivector(num_probs - i);
-		xi = (unsigned int *) new_ivector(num_probs - i);
-
-		/* copy most old (except drawn index) to new */
-		p_not = 1.0- p_old[indx];
-		for(j=0; j<(num_probs-i+1); j++) {
-			int k = j;
-			if(j == indx) continue;
-			else if(j > indx) k = j-1;
-			p[k] = p_old[j] / p_not;
-			x[k] = x_old[j];
-			xi[k] = xi_old[j];
-		}
-		free(x_old); free(p_old); free(xi_old);
-		
-		/* draw the ith sample */
-		isample(&out, &indx, 1, num_probs-i, x, p, state);
-		x_out[i] = out;
-		x_indx[i] = xi[indx];
-		assert(X[xi[indx]] == x_out[i]);
-	}
-
-	/* clean up */
-	free(p);
-	free(x);
-	free(xi);
+  double *p, *p_old;
+  int *x, *x_old;
+  unsigned int *xi, *xi_old;
+  int i,j, out;
+  unsigned int indx;
+  double p_not;
+  
+  /* copy the X locations (and indices) and probs
+   * to auxiliary arrays */
+  p = new_dup_vector( probs, num_probs);
+  x = new_dup_ivector(X, num_probs);
+  xi = (unsigned int*) iseq(0, num_probs-1);
+  
+  /* take the first sample */
+  isample(&out, &indx, 1, num_probs, x, p, state);
+  x_out[0] = out;
+  x_indx[0] = indx;
+  
+  /* pull one out and sample the next numprobs-i */
+  for(i=1; i<n; i++) {
+    
+    /* swap to old, make space for new */
+    x_old = x; p_old = p; xi_old = xi;
+    p = new_vector(num_probs - i);
+    x = new_ivector(num_probs - i);
+    xi = (unsigned int *) new_ivector(num_probs - i);
+    
+    /* copy most old (except drawn index) to new */
+    p_not = 1.0- p_old[indx];
+    for(j=0; j<(num_probs-i+1); j++) {
+      int k = j;
+      if(j == indx) continue;
+      else if(j > indx) k = j-1;
+      p[k] = p_old[j] / p_not;
+      x[k] = x_old[j];
+      xi[k] = xi_old[j];
+    }
+    free(x_old); free(p_old); free(xi_old);
+    
+    /* draw the ith sample */
+    isample(&out, &indx, 1, num_probs-i, x, p, state);
+    x_out[i] = out;
+    x_indx[i] = xi[indx];
+    assert(X[xi[indx]] == x_out[i]);
+  }
+  
+  /* clean up */
+  free(p);
+  free(x);
+  free(xi);
 }
 
 
@@ -711,19 +726,19 @@ void *state;
 
 int sample_seq(int from, int to, void *state)
 {
-	unsigned int len, indx;
-	int k_d;
-	int *one2len; 
-	double *probs;
-	if(from == to) return from;
-	len = abs(from-to)+1;
-	assert(from <= to);
-	one2len = iseq(from,to);
-	probs = ones(len, 1.0/len);
-	isample(&k_d, &indx, 1, len, one2len, probs, state);
-	free(one2len);
-	free(probs);
-	return (int) k_d;
+  unsigned int len, indx;
+  int k_d;
+  int *one2len; 
+  double *probs;
+  if(from == to) return from;
+  len = abs(from-to)+1;
+  assert(from <= to);
+  one2len = iseq(from,to);
+  probs = ones(len, 1.0/len);
+  isample(&k_d, &indx, 1, len, one2len, probs, state);
+  free(one2len);
+  free(probs);
+  return (int) k_d;
 }
 
 
@@ -742,53 +757,53 @@ int sample_seq(int from, int to, void *state)
 
 unsigned int rpoiso(float xm, void *state)
 {
-	/* NOT THREAD SAFE */
-	static double sq,alxm,g,oldm=(-1.0); /*oldm is a flag for whether xm has changed 
-					       since last call.*/ 
-	double em,t,y;
-
-	if (xm < 12.0) { /*Use direct method.*/
-
-		if (xm != oldm) {
-			oldm=xm;
-			g=exp(-xm); /* If xm is new, compute the exponential. */
-		}
-		em = -1;
-		t=1.0;
-		do { /* Instead of adding exponential deviates it is equivalent
-			to multiply uniform deviates. We never
-			actually have to take the log, merely compare
-			to the pre-computed exponential. */
-			++em;
-			t *= runi(state);
-		} while (t > g);
-
-	} else { /* Use rejection method. */
-
-		if (xm != oldm) { /*If xm has changed since the last call, then precompute
-					some functions that occur below.*/
-			oldm=xm;
-			sq=sqrt(2.0*xm);
-			alxm=log(xm);
-			g=xm*alxm-gammln(xm+1.0);
-		}
-		do {
-			do { /* y is a deviate from a Lorentzian comparison function. */
-				y=tan(M_PI*runi(state));
-				em=sq*y+xm; /* em is y, shifted and scaled. */
-			} while (em < 0.0); /* Reject if in regime of zero probability. */
-
-			em=floor(em); /* The trick for integer-valued distributions. */
-			t=0.9*(1.0+y*y)*exp(em*alxm-gammln(em+1.0)-g);
-
-			/* The ratio of the desired distribution to the comparison function; 
-			 * accept or reject by comparing to another uniform deviate. 
-			 * The factor 0.9 is chosen so that t never exceeds 1. */
-
-		} while (runi(state) > t);
-	}
-
-	return (unsigned int) em;
+  /* NOT THREAD SAFE */
+  static double sq,alxm,g,oldm=(-1.0); /*oldm is a flag for whether xm has changed 
+					 since last call.*/ 
+  double em,t,y;
+  
+  if (xm < 12.0) { /*Use direct method.*/
+    
+    if (xm != oldm) {
+      oldm=xm;
+      g=exp(-xm); /* If xm is new, compute the exponential. */
+    }
+    em = -1;
+    t=1.0;
+    do { /* Instead of adding exponential deviates it is equivalent
+	    to multiply uniform deviates. We never
+	    actually have to take the log, merely compare
+	    to the pre-computed exponential. */
+      ++em;
+      t *= runi(state);
+    } while (t > g);
+    
+  } else { /* Use rejection method. */
+    
+    if (xm != oldm) { /*If xm has changed since the last call, then precompute
+			some functions that occur below.*/
+      oldm=xm;
+      sq=sqrt(2.0*xm);
+      alxm=log(xm);
+      g=xm*alxm-gammln(xm+1.0);
+    }
+    do {
+      do { /* y is a deviate from a Lorentzian comparison function. */
+	y=tan(M_PI*runi(state));
+	em=sq*y+xm; /* em is y, shifted and scaled. */
+      } while (em < 0.0); /* Reject if in regime of zero probability. */
+      
+      em=floor(em); /* The trick for integer-valued distributions. */
+      t=0.9*(1.0+y*y)*exp(em*alxm-gammln(em+1.0)-g);
+      
+      /* The ratio of the desired distribution to the comparison function; 
+       * accept or reject by comparing to another uniform deviate. 
+       * The factor 0.9 is chosen so that t never exceeds 1. */
+      
+    } while (runi(state) > t);
+  }
+  
+  return (unsigned int) em;
 }
 
 
@@ -801,32 +816,32 @@ unsigned int rpoiso(float xm, void *state)
 
 double* compute_probs(double* criteria, unsigned int nn, double alpha)
 {
-	double *probs;
-	double sum;
-	unsigned int i;
-	probs = (double*) malloc(sizeof(double) * nn);
-	sum = 0;
-	for(i=0; i<nn; i++) sum += criteria[i];
-	for(i=0; i<nn; i++) probs[i] = criteria[i] / sum;
-
-	/* apply alhpa */
-	if(alpha == 2.0) {
-		sum = 0;
-		for(i=0; i<nn; i++) {
-			probs[i] *= probs[i];
-			sum += probs[i];
-		}
-		for(i=0; i<nn; i++) probs[i] /= sum;
-	} else if(alpha != 1.0) {
-		sum = 0;
-		for(i=0; i<nn; i++) {
-			probs[i] = pow(probs[i], alpha);
-			sum += probs[i];
-		}
-		for(i=0; i<nn; i++) probs[i] /= sum;
-	}
-
-	return probs;
+  double *probs;
+  double sum;
+  unsigned int i;
+  probs = (double*) malloc(sizeof(double) * nn);
+  sum = 0;
+  for(i=0; i<nn; i++) sum += criteria[i];
+  for(i=0; i<nn; i++) probs[i] = criteria[i] / sum;
+  
+  /* apply alhpa */
+  if(alpha == 2.0) {
+    sum = 0;
+    for(i=0; i<nn; i++) {
+      probs[i] *= probs[i];
+      sum += probs[i];
+    }
+    for(i=0; i<nn; i++) probs[i] /= sum;
+  } else if(alpha != 1.0) {
+    sum = 0;
+    for(i=0; i<nn; i++) {
+      probs[i] = pow(probs[i], alpha);
+      sum += probs[i];
+    }
+    for(i=0; i<nn; i++) probs[i] /= sum;
+  }
+  
+  return probs;
 }
 
 
@@ -839,9 +854,9 @@ double* compute_probs(double* criteria, unsigned int nn, double alpha)
 
 void propose_indices(int *i, double prob, void *state)
 {
-	double ii = runi(state);
-	if(ii <= prob) { i[0] = 0; i[1] = 1; } 
-	else { i[0] = 1; i[1] = 0; }
+  double ii = runi(state);
+  if(ii <= prob) { i[0] = 0; i[1] = 1; } 
+  else { i[0] = 1; i[1] = 0; }
 }
 
 
@@ -853,8 +868,8 @@ void propose_indices(int *i, double prob, void *state)
 
 void get_indices(int *i, double *parameter)
 {
-	if(parameter[0] > parameter[1]) { i[1] = 0; i[0] = 1; }
-	else { i[1] = 1; i[0] = 0; }
+  if(parameter[0] > parameter[1]) { i[1] = 0; i[0] = 1; }
+  else { i[1] = 1; i[0] = 0; }
 }
 
 
@@ -867,10 +882,10 @@ void get_indices(int *i, double *parameter)
 
 unsigned int* rand_indices(unsigned int N, void *state)
 {
-	int *o;
-	double *nall = new_vector(N);
-	runif_mult(nall, 0, 1, N, state);
-	o = order(nall, N);
-	free(nall);
-	return (unsigned int *) o;
+  int *o;
+  double *nall = new_vector(N);
+  runif_mult(nall, 0, 1, N, state);
+  o = order(nall, N);
+  free(nall);
+  return (unsigned int *) o;
 }
