@@ -58,7 +58,7 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
   this->prior = prior;
   pcopy = false;
 
-  OUTFILE = model->Outfile();
+  OUTFILE = model->Outfile(&verb);
 } 
 
 

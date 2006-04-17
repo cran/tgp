@@ -1,16 +1,41 @@
-This is a pre-release BETA version of the tgp R package.  It has been
-tested on Linux, FreeBSD, and OSX.  Installation from source under
-OSX-Tiger (10.4.x) is challenging (see
-http://wiki.urbanek.info/index.cgi?TigeR).  A pre-compiled binary is
-available upon request.
+This is the R-package: tgp.  
+
+It has been tested on Linux, FreeBSD, OSX, and Windows.  
+
+This README is a sub.  Please see the R-package documentation or 
+vignette for more information.  It should be possible to install 
+this source package via "R CMD INSTALL tgp", where "tgp" is this 
+directory, from "../".
+
+Below are some comments on compiling with support for pthreads,
+and linking with ATLAS, or other linear algebra library (different
+than the one already used by R).
+
+
+SUPPORT FOR PTHREADS
+--------------------
+
+1.) Add "-DPARALLEL" to PKG_CXXFLAGS of src/Makevars
+
+2.) You may need to add "-pthread" to PKG_LIBS of src/Makevars, 
+or whatever is needed by your compiler in order to correctly link
+code with pthreads functions.
+
 
 SUPPORT FOR ATLAS
+-----------------
 
 ATLAS is supported as an alternative to standard BLAS and LAPACK for
 fast, automatically tuned, linear algebra routines.  There are three
 easy steps to enable ATLAS support (assuming, of course, you have
 already installed it -- http://math-atlas.sourceforge.net) which need
 to be done before you install the package from source:
+
+Note that this is not the recommended method for getting fast linear
+algebra routines for tgp.  The best way to do this is to compile R
+with ATLAS (or other libraries) support.  See the R installation 
+manual: http://cran.r-project.org/doc/manuals/R-admin.html under
+A.2.2
 
 -- Begin ATLAS Instructions
 

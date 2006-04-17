@@ -53,6 +53,7 @@ class Params
   void get_T_params(double *alpha, double *beta, unsigned int* minpart);
   unsigned int T_minp(void);
   Base_Prior* BasePrior(void);
+  void Print(FILE *outfile);
 };
 
 void get_mix_prior_params(double *alpha, double *beta, char *line, char* which);

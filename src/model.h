@@ -74,9 +74,9 @@ typedef struct preds
 
 typedef struct posteriors
 {
-	unsigned int maxd;
-	double* posts;
-	Tree** trees;
+  unsigned int maxd;
+  double* posts;
+  Tree** trees;
 } Posteriors;
 
 
@@ -88,11 +88,11 @@ typedef struct posteriors
 
 typedef struct linarea
 {
-	unsigned int total;
-	unsigned int size;
-	double* ba;
-	double* la;
-	unsigned int *counts;
+  unsigned int total;
+  unsigned int size;
+  double* ba;
+  double* la;
+  unsigned int *counts;
 } Linarea;
 
 
@@ -101,12 +101,12 @@ typedef struct linarea
 
 typedef struct largs
 {
-	Tree* leaf;
-	Preds* preds;
-	int index;
-	bool dnorm;
-	Model *model;
-	bool tree_modify;
+  Tree* leaf;
+  Preds* preds;
+  int index;
+  bool dnorm;
+  Model *model;
+  bool tree_modify;
 } LArgs;
 
 
@@ -114,95 +114,105 @@ class Model
 {
   private:
 
+  unsigned int col;                     /* m_X dimensional input */
+  double **iface_rect;                  /* X-input bounding rectangle */        
+  int Id;                               /* identification number for this model */
+  
+  Params *params;		        /* hierarchical and initial parameters */
+  Base_Prior *base_prior;               /* base model (e.g., GP) prior module */
+  
+  Tree* t;		                /* root of the partition tree */
+  
+  /* for computing acceptance proportions of tree proposals */
+  int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
+  
+  bool parallel;			/* use pthreads or not */
+  void *state_to_init_consumer; 	/* to initialize consumer state variables */
+  List *PP;				/* producer wait queue (before producing to tlist) */
+#ifdef PARALLEL
+  pthread_t** consumer;			/* consumer thread handle */
+  pthread_mutex_t* l_mut;		/* locking the prediction list */
+  pthread_cond_t* l_cond_nonempty;  	/* cond variable signals nonempty list */
+  pthread_cond_t* l_cond_notfull;  	/* cond variable signals nonempty list */
+  List* tlist;				/* list of prediction leaves */
+  unsigned int num_consumed;
+  unsigned int num_produced;
+#endif
+  
+  bool printparts;			/* should the partition MC be output to a file ? */
+  FILE *PARTSFILE;			/* if so, what file? */
+  double partitions;			/* counter for the averave number of partitions */
+  FILE* OUTFILE;			/* file for MCMC status output */
+  int verb;                        /* printing level (0=none, ... , 3+=verbose) */
 
-	unsigned int col;
-	double **iface_rect;
-	int Id;
-
-	Params *params;		                /* hierarchical and initial parameters */
-	Base_Prior *base_prior;                 /* base model (e.g., GP) prior module */
-
-	Tree* t;		                /* root of the partition tree */
-
-	/* for computing acceptance proportions of tree proposals */
-	int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
-
-	bool parallel;				/* use pthreads or not */
-	void *state_to_init_consumer; 	        /* to initialize conumer state variables */
-	List *PP;				/* producer wait queue (before producing to tlist) */
-	#ifdef PARALLEL
-	pthread_t** consumer;			/* consumer thread handle */
-	pthread_mutex_t* l_mut;			/* locking the prediction list */
-	pthread_cond_t* l_cond_nonempty;  	/* cond variable signals nonempty list */
-	pthread_cond_t* l_cond_notfull;  	/* cond variable signals nonempty list */
-	List* tlist;				/* list of prediction leaves */
-	unsigned int num_consumed;
-	unsigned int num_produced;
-	#endif
-
-	bool printparts;			/* should the partition MC be output to a file ? */
-	FILE *PARTSFILE;			/* if so, what file? */
-	double partitions;			/* counter for the averave number of partitions */
-	FILE* OUTFILE;				/* file for MCMC status output */
-
-	Posteriors *posteriors;			/* for keeping track of the best tree posteriors */
-	bool linarea;				/* should the areas of the linear models be tabulated */
-	Linarea *lin_area;			/* if so, we need a pointer to the area structure */
-
-  public:
-	Model(Params *params, unsigned int d, double **X, unsigned int n, double *Z, 
-			double **rect, int Id, void *state_to_init_conumer);
-	~Model(void);
-	void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
-	void Linburn(unsigned int B, void *state);
-	void Burnin(unsigned int B, void *state);
-	void Sample(Preds *preds, unsigned int R, void *state);
-	bool modify_tree(void *state);
-	bool change_tree(void *state);
-	bool grow_tree(void *state);
-	bool swap_tree(void *state);
-	bool prune_tree(void *state);
-	void printTreeStats(FILE* outfile);
-	void set_TreeRoot(Tree *t);
-	Params* get_params(void);
-	Tree* get_TreeRoot(void);
-	void predict_master(Tree *leaf, Preds *preds, int index, void* state);
-	void Predict(Tree* leaf, Preds* preds, unsigned int index, bool dnorm, void *state);
-	Tree** CopyPartitions(unsigned int *numLeaves);
-	void predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *state);
-	void cut_branch(void *state);
-	void cut_root(void);
-	void new_data(double **X, unsigned int n, unsigned int d, double* Z, double **rect);
-
-	void init_parallel_preds(void);
-	void close_parallel_preds(void);
-	void predict_consumer(void);
-	void predict_producer(Tree *leaf, Preds* preds, int index, bool dnorm);
-	void consumer_finish(void);
-	void consumer_start(void);
-	void wrap_up_predictions(void);
-	void produce(void);
-
-	FILE* Outfile(void);
-	void Outfile(FILE *file);
-	double Partitions(void);
-	FILE* OpenPartsfile(void);
-	void PrintPartitions(FILE* PARTSFILE);
-	void PrintBestPartitions();
-	void printTree(FILE* outfile);
-	double Posterior(void);
-	void printState(unsigned int r, unsigned int numLeaves, Tree** leaves);
-	void printPosteriors(void);
-	Tree* maxPosteriors(void);
-
-	double Linear(void);
-	void ResetLinear(double gam);
-	void new_linarea(void);
-	void realloc_linarea(void);
-	void delete_linarea(void);
-	void process_linarea(unsigned int numLeaves, Tree** leaves);
-	void reset_linarea(void);
-	void print_linarea(void);
+  Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
+  bool linarea;				/* should the areas of the linear models be tabulated */
+  Linarea *lin_area;			/* if so, we need a pointer to the area structure */
+  
+ public:
+  
+  /* init and destruct */
+  Model(Params *params, unsigned int d, double **X, unsigned int n, double *Z, 
+	double **rect, int Id, void *state_to_init_conumer);
+  ~Model(void);
+  
+  /* MCMC */
+  void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
+  void Linburn(unsigned int B, void *state);
+  void Burnin(unsigned int B, void *state);
+  void Sample(Preds *preds, unsigned int R, void *state);
+  
+  /* tree operations and modifications */
+  bool modify_tree(void *state);
+  bool change_tree(void *state);
+  bool grow_tree(void *state);
+  bool swap_tree(void *state);
+  bool prune_tree(void *state);
+  void set_TreeRoot(Tree *t);
+  Params* get_params(void);
+  Tree* get_TreeRoot(void);
+  void predict_master(Tree *leaf, Preds *preds, int index, void* state);
+  void Predict(Tree* leaf, Preds* preds, unsigned int index, bool dnorm, void *state);
+  Tree** CopyPartitions(unsigned int *numLeaves);
+  void predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *state);
+  void cut_branch(void *state);
+  void cut_root(void);
+  void new_data(double **X, unsigned int n, unsigned int d, double* Z, double **rect);
+  
+  /* parallel prediction functions */
+  void init_parallel_preds(void);
+  void close_parallel_preds(void);
+  void predict_consumer(void);
+  void predict_producer(Tree *leaf, Preds* preds, int index, bool dnorm);
+  void consumer_finish(void);
+  void consumer_start(void);
+  void wrap_up_predictions(void);
+  void produce(void);
+  
+  /* printing functions */
+  FILE* Outfile(int* verb);
+  void Outfile(FILE *file, int verb);
+  double Partitions(void);
+  FILE* OpenPartsfile(void);
+  void PrintPartitions(FILE* PARTSFILE);
+  void PrintBestPartitions();
+  void PrintTree(FILE* outfile);
+  double Posterior(void);
+  void PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves);
+  void PrintPosteriors(void);
+  Tree* maxPosteriors(void);
+  void Print(void);
+  void PrintTreeStats(FILE* outfile);
+  
+  /* LLM functions */
+  double Linear(void);
+  void ResetLinear(double gam);
+  void new_linarea(void);
+  void realloc_linarea(void);
+  void delete_linarea(void);
+  void process_linarea(unsigned int numLeaves, Tree** leaves);
+  void reset_linarea(void);
+  void print_linarea(void);
 };
 
 

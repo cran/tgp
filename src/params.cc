@@ -110,8 +110,6 @@ void Params::read_double(double * dparams)
   t_alpha = dparams[0];
   t_beta = dparams[1];
   t_minpart = (unsigned int) dparams[2];
-  myprintf(stdout, "tree[alpha,beta,nmin]=[%g,%g,%d]\n", 
-     t_alpha, t_beta, t_minpart);
 
   /* later, replace this with a swich statement that picks the base model */
   prior = new Gp_Prior(col);
@@ -137,8 +135,6 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   t_beta = atof(strtok(NULL, " \t\n#"));
   t_minpart = atoi(strtok(NULL, " \t\n#"));
   assert(t_minpart > 1);
-  myprintf(stdout, "tree[alpha,beta,min]=[%g,%g,%d]\n", 
-	   t_alpha, t_beta, t_minpart);
 
   /* later, replace this with a swich statement that picks the base model */
   prior = new Gp_Prior(col);
@@ -218,4 +214,19 @@ void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta
 Base_Prior* Params::BasePrior(void)
 {
   return prior;
+}
+
+
+/* 
+ * Print:
+ *
+ * print the settings of the tree parameters -- these
+ * are currently the only parameters governed by the
+ * module
+ */
+
+void Params::Print(FILE *outfile)
+{
+  myprintf(outfile, "tree[alpha,beta,nmin]=[%g,%g,%d]\n", 
+	   t_alpha, t_beta, t_minpart);
 }

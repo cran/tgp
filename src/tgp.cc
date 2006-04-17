@@ -45,7 +45,7 @@ void *tgp_state = NULL;
 
 void tgp(int* state_in, 
 	 double *X_in, int *n_in, int *d_in, double *Z_in, double *XX_in, int *nn_in,
-	 int *BTE, int* R_in, int* linburn_in, double *params_in,
+	 int *BTE, int* R_in, int* linburn_in, double *params_in, int *printlev_in,
 	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_q_out, double *ZZ_q_out,
 	 double *Zp_q1_out, double *Zp_median_out, double *Zp_q2_out,
 	 double *ZZ_q1_out, double *ZZ_median_out, double *ZZ_q2_out,
@@ -56,14 +56,12 @@ void tgp(int* state_in,
   /* create the RNG state */
   void *tgp_state = 
     newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + state_in[2]));
-  myprintf(stdout, "\n");
-  // printRNGstate(state, stdout);
 
   /* copy the input parameters to the tgp class object where all the MCMC 
      work gets done */
   tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE[0], BTE[1], BTE[2], *R_in, 
 		 *linburn_in, (bool) (Zp_mean_out!=NULL), (bool) (Ds2x_out!=NULL), 
-		 (bool) (ego_out != NULL), X_in, Z_in, XX_in, params_in);
+		 (bool) (ego_out != NULL), X_in, Z_in, XX_in, params_in, *printlev_in);
 
   /* maybe print the booleans and betas out to a file */
   if(bprint) { 
@@ -82,14 +80,18 @@ void tgp(int* state_in,
   delete tgpm; tgpm = NULL;
   
   /* close the beta summary files */
-#ifdef BPRINT
-  fclose(BFILE); BFILE = NULL;
-  fclose(BETAFILE);  BETAFILE = NULL;
-#endif
+
+  if(bprint) {
+    fclose(BFILE); BFILE = NULL;
+    fclose(BETAFILE);  BETAFILE = NULL;
+  }
 
   /* destroy the RNG */
   deleteRNGstate(tgp_state);
   tgp_state = NULL;
+
+  /* free blank line before returning to R prompt */
+  if(*printlev_in >= 1) myprintf(stdout, "\n");
 }
 
 
@@ -103,7 +105,7 @@ void tgp(int* state_in,
 
 Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linburn, 
 	 bool pred_n, bool delta_s2, bool ego, double *X, double *Z, double *XX, 
-	 double *dparams)
+	 double *dparams, int verb)
 {
   itime = time(NULL);
 	
@@ -130,6 +132,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linb
   this->pred_n = pred_n;
   this->delta_s2 = delta_s2;
   this->ego = ego;
+  this->verb = verb;
 
   /* copy X from input */
   this->X = new_matrix(n, d);
@@ -185,27 +188,18 @@ Tgp::~Tgp(void)
 
 void Tgp::Init(void)
 {
-  /* DEBUG: print the input parameters */
-  myprintf(stdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
-	   n, d, nn, B, T, E, R, linburn);
-  
-  /* print predictive statistic types */
-  if(pred_n || delta_s2 || ego) myprintf(stdout, "preds:");
-  if(pred_n) myprintf(stdout, " data");
-  if(delta_s2) myprintf(stdout, " ALC");
-  if(ego) myprintf(stdout, " EGO");
-  if(pred_n || delta_s2 || ego) myprintf(stdout, "\n");
-  myflush(stdout);
-  
-  /* get and print the rectangle */
+  /* get  the rectangle */
   rect = getXdataRect(X, n, d, XX, nn);
   
   /* construct the new model */
   model = new Model(params, d, X, n, Z, rect, 0, state);
-  model->Outfile(stdout);
+  model->Outfile(stdout, verb);
   
   /* structure for accumulating predictive information */
   cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), delta_s2, ego, E);
+
+  /* print the parameters of this module */
+  if(verb >= 2) Print(stdout);
 }  
 
 
@@ -229,25 +223,30 @@ void Tgp::Rounds(void)
     /* do model rounds 1 thru B (burn in) */
     model->Burnin(B, state);
 	
-    /* do the MCMC rounds 1,...,T with B for burn in */
+    /* do the MCMC rounds B,...,T */
     preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, delta_s2, ego, E);
     model->Sample(preds, T-B, state);
+
+    /* print tree statistics */
+    if(verb >= 1) model->PrintTreeStats(stdout);
 
     /* accumulate predictive information */
     import_preds(cumpreds, preds->R * i, preds);		
     delete_preds(preds); preds = NULL;
 
     /* done with this repetition; prune the tree all the way back */
-    myprintf(stdout, "\nfinished repetition %d of %d\n", i+1, R);
-    model->cut_root();
+    if(R > 1) {
+      myprintf(stdout, "finished repetition %d of %d\n", i+1, R);
+      model->cut_root();
+    }
   }
 
   /* cap of the printing */
-  myflush(stdout);
+  if(verb >= 1) myflush(stdout);
 
   /* these might not do anything, if they're turned off */
   model->print_linarea();
-  model->printPosteriors();
+  model->PrintPosteriors();
 }
 
 
@@ -341,4 +340,37 @@ double ** getXdataRect(double **X, unsigned int n, unsigned int d, double **XX, 
   delete_matrix(Xall);
   
   return rect;
+}
+
+
+/* 
+ * Print:
+ *
+ * print the settings of the parameters used by this module:
+ * which basically summarize the data and MCMC-related inputs
+ * followed by a call to the model Print function
+ */
+
+void Tgp::Print(FILE *outfile)
+{
+  myprintf(stdout, "\n");
+
+  /* DEBUG: print the input parameters */
+  myprintf(stdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
+	   n, d, nn, B, T, E, R, linburn);
+
+  /* print the random number generator state */
+  printRNGstate(state, stdout);
+
+  /* print predictive statistic types */
+  if(pred_n || delta_s2 || ego) myprintf(stdout, "preds:");
+  if(pred_n) myprintf(stdout, " data");
+  if(delta_s2) myprintf(stdout, " ALC");
+  if(ego) myprintf(stdout, " EGO");
+  if(pred_n || delta_s2 || ego) myprintf(stdout, "\n");
+  myflush(stdout);
+
+  /* print the model, uses the internal model 
+     printing variable OUTFILE */
+  model->Print();
 }

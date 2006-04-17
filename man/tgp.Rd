@@ -15,7 +15,7 @@
 \usage{
 tgp(X, Z, XX = NULL, BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE,
 	linburn = FALSE, params = NULL, pred.n = TRUE,
-        ds2x = FALSE, ego = FALSE)
+        ds2x = FALSE, ego = FALSE, verb = 1)
 }
 
 \arguments{
@@ -44,7 +44,11 @@ tgp(X, Z, XX = NULL, BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE,
     reduction in uncertainty calculations at the \code{XX} locations, which can be used
     for adaptive sampling; \code{FALSE} (default) skips this computation, resulting in
     a faster implementation}
-}
+  \item{verb}{ Level of verbosity of R-console print statments: from 0
+    (none); 1 (default) which shows the \dQuote{progress meter}; 2
+    includes an echo of initialization parameters; up to 3 and 4 (max)
+    with more info about successful tree operations.}
+  }
 
 \details{
 }

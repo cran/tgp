@@ -45,7 +45,7 @@ class Tgp
   unsigned int T;        /* total number of MCMC rounds (including burn-in) */
   unsigned int E;        /* sample from posterior (E)very somany rounds */
   unsigned int R;        /* number of times to (Re-) start over (>=1) */
-  int verb;         /* indicates the verbosity of print statements */
+  int print_lev;         /* indicates the verbosity of print statements */
 
   bool linburn;          /* initialize with treed LM before burn in? */
   bool pred_n;           /* sample from posterior predictive at data locs? */
@@ -68,7 +68,7 @@ class Tgp
 
   Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linburn, 
       bool pred_n, bool delta_s2, bool ego, double *X, double *Z, double *XX, 
-      double *dparams, int verb);
+      double *dparams, int print_lev);
   ~Tgp(void);
   void Rounds(void);
   void GetStats(double *Zp_mean, double *ZZ_mean, double *Zp_q, double *ZZ_q,

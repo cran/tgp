@@ -83,7 +83,8 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
   /* changepoint (split) variables */
   var = 0; val = 0;
 
-  OUTFILE = model->Outfile();
+  /* output file for progress printing, and printing level */
+  OUTFILE = model->Outfile(&verb);
 
   /* create the GP model */
   Base_Prior *prior = model->get_params()->BasePrior();
@@ -314,7 +315,7 @@ void Tree::delete_XX(void)
 
 void Tree::Predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, bool err, void *state)
 {
-  if(!n) myprintf(stderr, "n = %d\n", n);
+  if(!n) warning("n = %d\n", n);
   assert(isLeaf() && n);
   if(Zpred == NULL && nn == 0) return;
 
@@ -777,8 +778,9 @@ bool Tree::swap(void *state)
   
   if(parent->var == var) {
     bool success =  rotate(state);
-    /*if(success) myprintf(OUTFILE, "**ROTATE** @depth %d, var=%d, val=%g\n", 
-      depth, var, val);*/
+    if(success && verb >= 3) 
+      myprintf(OUTFILE, "**ROTATE** @depth %d, var=%d, val=%g\n", 
+	       depth, var, val);
     return success;
   }
   
@@ -816,7 +818,8 @@ bool Tree::swap(void *state)
   
   /* accept or reject? */
   if(runi(state) <= alpha) {
-    /*myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
+    /* if(verb >= 1) 
+      myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
       depth, var, val, parent->var, parent->val);*/
     if(oldPRC) delete oldPRC;
     if(oldPRC) delete oldPLC;
@@ -874,9 +877,10 @@ bool Tree::change(void *state)
   if(runi(state) <= alpha) { /* accept */
     if(oldLC) delete oldLC;
     if(oldRC) delete oldRC;
-    /*myprintf(OUTFILE, "**CHANGE** @depth %d, var=%d, val=%g->%g: n=(%d,%d)\n", 
-      depth, var, old_val, val, leftChild->n, rightChild->n);*/
-    if(tree_op == CPRUNE)
+    if(tree_op == CHANGE && verb >= 4) 
+      myprintf(OUTFILE, "**CHANGE** @depth %d, var=%d, val=%g->%g: n=(%d,%d)\n", 
+	       depth, var, old_val, val, leftChild->n, rightChild->n);
+    else if(tree_op == CPRUNE && verb >= 1)
       myprintf(OUTFILE, "**CPRUNE** @depth %d, var=%d, val=%g->%g: n=(%d,%d)\n", 
 	       depth, var, old_val, val, leftChild->n, rightChild->n);
     return true;
@@ -1065,7 +1069,7 @@ bool Tree::prune(double ratio, void *state)
   
   /* accept or reject? */
   if(runi(state) <= alpha) {
-    myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var, val);
+    if(verb >= 1) myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var, val);
     delete leftChild; 
     delete rightChild;
     leftChild = rightChild = NULL;
@@ -1121,8 +1125,9 @@ bool Tree::grow(double ratio, void *state)
     ret_val =  false;
   } else {
     Clear();
-    myprintf(OUTFILE, "**GROW** @depth %d: [%d,%g], n=(%d,%d)\n", 
-	  	     depth, var, val, leftChild->n, rightChild->n);
+    if(verb >= 1) 
+      myprintf(OUTFILE, "**GROW** @depth %d: [%d,%g], n=(%d,%d)\n", 
+	       depth, var, val, leftChild->n, rightChild->n);
   }
   return ret_val;
 }
@@ -1500,14 +1505,14 @@ Tree** Tree::buildTreeList(unsigned int len)
 
 
 /*
- * printTree:
+ * PrintTree:
  * 
  * print the tree out to the file in depth first order
  * -- the R CART tree structure format
  *  rect and scale are for unnnormalization of split point
  */
 
-void Tree::printTree(FILE* outfile, double** rect, double scale, int root)
+void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root)
 {
   if(isLeaf()) myprintf(outfile, "%d\t <leaf>\t", root);
   else myprintf(outfile, "%d\t %d\t ", root, var);
@@ -1522,8 +1527,8 @@ void Tree::printTree(FILE* outfile, double** rect, double scale, int root)
   vn = (rect[1][var] - rect[0][var])*vn + rect[0][var];
   
   myprintf(outfile, "\"<%-5g\"\t \">%-5g\"\t\n", vn, vn);
-  leftChild->printTree(outfile, rect, scale, 2*root);
-  rightChild->printTree(outfile, rect, scale, 2*root+1);
+  leftChild->PrintTree(outfile, rect, scale, 2*root);
+  rightChild->PrintTree(outfile, rect, scale, 2*root+1);
 }
 
 
@@ -1687,11 +1692,12 @@ void Tree::cut_branch(void)
  * set outfile handle
  */
 
-void Tree::Outfile(FILE *file)
+void Tree::Outfile(FILE *file, int verb)
 {
   OUTFILE = file;
-  if(leftChild) leftChild->Outfile(file);
-  if(rightChild) rightChild->Outfile(file);
+  this->verb = verb;
+  if(leftChild) leftChild->Outfile(file, verb);
+  if(rightChild) rightChild->Outfile(file, verb);
 }
 
 
