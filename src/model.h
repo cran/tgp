@@ -143,7 +143,7 @@ class Model
   FILE *PARTSFILE;			/* if so, what file? */
   double partitions;			/* counter for the averave number of partitions */
   FILE* OUTFILE;			/* file for MCMC status output */
-  int verb;                        /* printing level (0=none, ... , 3+=verbose) */
+  int verb;                             /* printing level (0=none, ... , 3+=verbose) */
 
   Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
   bool linarea;				/* should the areas of the linear models be tabulated */
@@ -152,9 +152,9 @@ class Model
  public:
   
   /* init and destruct */
-  Model(Params *params, unsigned int d, double **X, unsigned int n, double *Z, 
-	double **rect, int Id, void *state_to_init_conumer);
+  Model(Params *params, unsigned int d, double **rect, int Id, void *state_to_init_conumer);
   ~Model(void);
+  void Init(double **X, unsigned int d, unsigned int n, double *Z);
   
   /* MCMC */
   void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
