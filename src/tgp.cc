@@ -192,7 +192,8 @@ void Tgp::Init(void)
   rect = getXdataRect(X, n, d, XX, nn);
   
   /* construct the new model */
-  model = new Model(params, d, X, n, Z, rect, 0, state);
+  model = new Model(params, d, rect, 0, state);
+  model->Init(X, n, d, Z);
   model->Outfile(stdout, verb);
   
   /* structure for accumulating predictive information */

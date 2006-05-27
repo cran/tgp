@@ -97,8 +97,8 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
  * Tree:
  * 
  * duplication constructor function only copies information about X (not XX)
- * then generates XX stuf from rect, and params any "new" variables are also 
- * set to NULL values
+ * then generates XX stuff from rect, and params.  Any "new" variables are i
+ * also set to NULL values
  */
 
 Tree::Tree(const Tree *told)
@@ -125,7 +125,7 @@ Tree::Tree(const Tree *told)
   assert(told->Z); 	Z = new_dup_vector(told->Z, n);
   assert(told->p);	p = new_dup_ivector(told->p, n); 
   
-  /* copy the core GP model 
+  /* copy the core GP model: 
    * must pass in the new X and Z values because they 
    * are stored as pointers in the GP module */
 
@@ -392,7 +392,6 @@ bool Tree::isRoot(void)
   if(parent == NULL) return true;
   else return false;
 }
-
 
 
 /*
@@ -1078,7 +1077,6 @@ bool Tree::prune(double ratio, void *state)
   } else {
     return false;
   }
-  
 }
 
 
@@ -1131,6 +1129,7 @@ bool Tree::grow(double ratio, void *state)
   }
   return ret_val;
 }
+
 
 /*
  * grow_children:
@@ -1207,8 +1206,7 @@ int Tree::part_child(FIND_OP op, double ***Xc, int **pnew, unsigned int *plen,
 
 
 /*
- * gro
-w_child:
+ * grow_child:
  * 
  * based on current val and var variables, create the corresponding 
  * leftChild partition returns the number of points in the grown region

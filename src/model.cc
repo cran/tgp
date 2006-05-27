@@ -52,8 +52,7 @@ FILE *BETAFILE = NULL;
  * the usual constructor function
  */
 
-Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double *Z, 
-		double** rect, int Id, void *state)
+Model::Model(Params* params, unsigned int d, double** rect, int Id, void *state)
 {
   this->params = new Params(params);
   base_prior = this->params->BasePrior();
@@ -61,19 +60,6 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
   col = d+1;
   this->Id = Id;
   this->iface_rect = new_dup_matrix(rect, 2, d);
-
-  /* copy input and predictive data; and NORMALIZE */
-  double **Xc = new_normd_matrix(X,n,d,rect,NORMSCALE);
-  double *Zc = new_dup_vector(Z, n);
-	
-  /* compute rectangle */
-  Rect* newRect = new_rect(d);
-  for(unsigned int i=0; i<d; i++) {
-    newRect->boundary[0][i] = 0.0;
-    newRect->boundary[1][i] = NORMSCALE;
-    newRect->opl[i] = GEQ;
-    newRect->opr[i] = LEQ;
-  }
 
   /* parallel prediction implementation ? */
 #ifdef PARALLEL 
@@ -83,6 +69,7 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
 #else
   parallel = false;
 #endif
+  PP = NULL;
   this->state_to_init_consumer = newRNGstate_rand(state);
   if(parallel) { init_parallel_preds(); consumer_start(); }
   
@@ -92,15 +79,6 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
   OUTFILE = stdout;
   verb = 2;
   
-  /* initialization of the (main) tree part of the model */
-  int *p = iseq(0,n-1);
-  t = new Tree(Xc, p, n, d, Zc, newRect, NULL, this);  
-  
-  /* get it ready to go: note that these are out here on purporse; 
-   * don't move them inside the Tree constructor */
-  t->Update();
-  t->Compute();
-    
   /* initialize tree operation statistics */
   swap = prune = change = grow = swap_try = change_try = grow_try = prune_try = 0;
   
@@ -109,6 +87,50 @@ Model::Model(Params* params, unsigned int d, double **X, unsigned int n, double 
   linarea = LINAREA;
   lin_area = NULL;
   if(linarea) new_linarea();
+
+  /* make null tree, and then call Model::Init() to make a new
+   * one so that when we pass "this" model to tree, it won't be
+   * only partially allocated */
+  t = NULL;
+}
+
+
+/*
+ * Init:
+ *
+ * this function exists because we need to create the new tree
+ * "t" by passing it a pointer to "this" model.  But we can't pass
+ * it the "this" pointer until its done constructing, i.e., after
+ * Model::Model() finishes.  So this function has all of the stuff
+ * that used to be at the end of Model::Model.  It should always be
+ * called immediately after Model::Model()
+ */
+
+void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
+{
+  assert(d == col-1);
+
+  /* copy input and predictive data; and NORMALIZE */
+  double **Xc = new_normd_matrix(X,n,d,iface_rect,NORMSCALE);
+  double *Zc = new_dup_vector(Z, n);
+
+  /* compute rectangle */
+  Rect* newRect = new_rect(d);
+  for(unsigned int i=0; i<d; i++) {
+    newRect->boundary[0][i] = 0.0;
+    newRect->boundary[1][i] = NORMSCALE;
+    newRect->opl[i] = GEQ;
+    newRect->opr[i] = LEQ;
+  }
+
+  /* initialization of the (main) tree part of the model */
+  int *p = iseq(0,n-1);
+  t = new Tree(Xc, p, n, d, Zc, newRect, NULL, this);  
+  
+  /* get it ready to go: note that these are out here on purporse; 
+   * don't move them inside the Tree constructor */
+  t->Update();
+  t->Compute();
 }
 
 
@@ -127,7 +149,7 @@ Model::~Model(void)
   delete_matrix(iface_rect);
   delete t;
   delete params;
-  delete_posteriors(posteriors);
+  if(posteriors) delete_posteriors(posteriors);
   if(linarea) delete_linarea();
   deleteRNGstate(state_to_init_consumer);
 }
@@ -735,7 +757,7 @@ void Model::init_parallel_preds(void)
     consumer[i] = (pthread_t*) malloc(sizeof(pthread_t));
   num_consumed = num_produced = 0;
 #else
-  error("not compiled for pthreads\n");
+  error("init_parallel_preds: not compiled for pthreads\n");
   exit(0);
 #endif
 }
@@ -845,11 +867,8 @@ void Model::predict_consumer(void)
     }
     
     delete LL;
-    if(entry == NULL) return;
+    if(entry == NULL) { deleteRNGstate(state); return; }
   }
-  
-  /* free up ior put back RNG state */
-  deleteRNGstate(state);	
   
 #else
   error("predict_consumer: not compiled for pthreads");
