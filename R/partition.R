@@ -22,21 +22,12 @@
 #*******************************************************************************
 
 
-"tgp.plot.parts.1d" <-
-function(parts, lwd=2)
+"partition" <-
+function(X, out)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
-  }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
+	m <- which.max(out$posts$lpost)
+	tree <- out$trees[[m]]
+
+	return(tgp.partition(X, tree, 1))
 }
 

@@ -22,21 +22,22 @@
 #*******************************************************************************
 
 
-"tgp.plot.parts.1d" <-
-function(parts, lwd=2)
+"check.slice" <- 
+function(slice, dim, locs)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
+  ## check to make sure the slice requested is valid
+  numfix <- dim-2;
+  if(length(slice$x) != numfix && length(slice$x) == length(slice$z)) {
+    print(locs)
+    stop(paste("must fix", numfix, "variables, each at one of the above locations\n"))
   }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
-}
 
+  ## check to make sure enough dimensions have been fixed
+  d <- setdiff(seq(1:dim), slice$x)
+  if(length(d) != 2) 
+    stop(paste(length(d)-2, "more dimensions need to be fixed\n", sep=""))
+
+  ## will stop if the slice is not ok,
+  ## otherwise returns the remaining (unfixed) dimensions
+  return(d)
+}

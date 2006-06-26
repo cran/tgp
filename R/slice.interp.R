@@ -45,8 +45,7 @@ function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, method="loess", gridlen=40,
   # try to use akima, if specified
   if(method == "akima") {
     if(require(akima) == FALSE) {
-      cat("ERROR: library(akima) required for 2-d plotting\n");
-      cat("ERROR: defaulting to loess interpolation\n");
+      warning("library(akima) required for 2-d plotting\ndefaulting to loess interpolation\n");
     } else {
       return(interp.old(x,y,z, duplicate="mean",
                         xo=seq(min(x), max(x), length=gridlen),

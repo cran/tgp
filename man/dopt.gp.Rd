@@ -50,19 +50,9 @@ dopt.gp(nn, X, Xcand)
 }
 
 \references{
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
-\emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
-
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
-\emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
-submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
-
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+  Chaloner, K. and Verdinelli, I. (1995).
+  \emph{Bayesian experimental design: A review.}
+  Statist. Sci., 10, (pp. 273--304).
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
@@ -73,12 +63,10 @@ warnings.  If \code{nn > dim(Xcand)[1]} then a non-fatal warning is displayed
 and execution commences with \code{nn = dim(Xcand)[1]}
 
 In the current version there is no progress indicator.  You will
-have to be patient.  Creating D-optimal designs is no speedy task.
+have to be patient.  Creating D-optimal designs is no speedy task
+}
 
-This function is still considered experimental. 
-(Pardon the pun.)}
-
-\seealso{ \code{\link{tgp.design}}, \code{\link{dopt.gp}}}
+\seealso{ \code{\link{tgp.design}}, \code{\link{lhs}}}
 
 \examples{
 #

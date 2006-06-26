@@ -22,21 +22,38 @@
 #*******************************************************************************
 
 
-"tgp.plot.parts.1d" <-
-function(parts, lwd=2)
+"mapT" <-
+function(out, proj=NULL, slice=NULL, add=FALSE, lwd=2)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
-  }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
+  ## simple for 1-d data, projection plot
+  if(out$d == 1) { proj <- 1; slice <- NULL }
+  
+  ## otherwise, many options for >= 2-d data
+
+  if(out$d > 2 && !is.null(slice)) { # slice plot
+      
+    ## will call stop() if something is wrong with the slice
+    d <- check.slice(slice, out$d, getlocs(out$X))
+    
+    ## plot the parts
+    tgp.plot.parts.2d(out$parts, d, slice);
+    
+  } else { # projection plot
+
+    ## will call stop() if something is wrong with the proj
+    proj <- check.proj(proj)
+    
+    ## 1-d projection
+    if(length(proj) == 1) {
+      if(add == FALSE) plot(out$X[,proj], out$Z)
+      tgp.plot.parts.1d(out$parts[,proj], lwd=lwd)
+
+    } else {
+    
+      ## 2-d projection
+      if(add == FALSE) plot(out$X[,proj])
+      tgp.plot.parts.2d(out$parts[,proj], lwd=lwd)
+    }
   }
 }
 

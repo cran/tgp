@@ -25,31 +25,29 @@
 "tgp.trees" <-
 function(out, which=NULL, main=NULL, ...)
 {
-	if(require(maptree) == FALSE) {
-		cat("ERROR: library(maptree) required for tree plotting\n");
-		return();
-	}
-
-	if(is.null(which)) which <- 1:length(out$trees)
-
-	howmany <- length(which)
-	
-	if(howmany > 1) {
-		h <- howmany
-		if(sum(out$posts$height == 1) >= 1) { h <- h - 1; }
-		rows <- floor(sqrt(h)); cols <- floor(h / rows)
-		while(rows * cols < h) cols <- cols + 1
-		par(mfrow=c(rows, cols), bty="n")
-	} else par(mfrow=c(1,1), bty="n")
-
-	names <- names(out$X)
-	if(is.null(names)) {
-		for(i in 1:out$d) { names <- c(names, paste("x", i, sep="")) }
-	}
-	
-	for(j in 1:howmany) { 
-		if(is.null(out$trees[[which[j]]])) next;
-		tgp.plot.tree(out$trees[[which[j]]], names, out$posts[j,], main=main, ...); 
-	}
+  if(require(maptree) == FALSE)
+    stop("library(maptree) required for tree plotting\n");
+  
+  if(is.null(which)) which <- 1:length(out$trees)
+  
+  howmany <- length(which)
+  
+  if(howmany > 1) {
+    h <- howmany
+    if(sum(out$posts$height == 1) >= 1) { h <- h - 1; }
+    rows <- floor(sqrt(h)); cols <- floor(h / rows)
+    while(rows * cols < h) cols <- cols + 1
+    par(mfrow=c(rows, cols), bty="n")
+  } else par(mfrow=c(1,1), bty="n")
+  
+  names <- names(out$X)
+  if(is.null(names)) {
+    for(i in 1:out$d) { names <- c(names, paste("x", i, sep="")) }
+  }
+  
+  for(j in 1:howmany) { 
+    if(is.null(out$trees[[which[j]]])) next;
+    tgp.plot.tree(out$trees[[which[j]]], names, out$posts[j,], main=main, ...); 
+  }
 }
 

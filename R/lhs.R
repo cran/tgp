@@ -22,21 +22,30 @@
 #*******************************************************************************
 
 
-"tgp.plot.parts.1d" <-
-function(parts, lwd=2)
+"lhs" <-
+function(n, rect)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
-  }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
+  if(n == 0) return(NULL)
+
+  ## get and check the rectangle dimensions
+  if(is.null(dim(rect))) { ncol <- length(rect); d <- 1 }
+  else { ncol <- dim(rect)[2]; d <- dim(rect)[1] }
+  if(ncol != 2) stop("dim(rect)[2] must be 2")
+  
+  ## choose a random state for the C code
+  state <- sample(seq(0,1000), 3)
+
+  ## run the C code
+  ll <- .C("lh_sample", 
+           state = as.integer(state),
+           n = as.integer(n),
+           d = as.integer(d),
+           rect = as.double(rect), # no need to transpose
+           s = double(n*d),
+           PACKAGE="tgp"
+           )
+  
+  ## just return the samples
+  return(t(matrix(ll$s, nrow=d)))
 }
 

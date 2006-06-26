@@ -27,15 +27,10 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
 	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, pc="pc",
         method="loess", gridlen=40, span=0.1, ...)
 {
-  # determine which projections to make
-  #if(is.null(proj) && dim(out$X)[2] == 2) proj <- c(1,2)
-  #else
-  if(is.null(proj)) proj <- c(1,2)
-  if(length(proj) > 2) {
-    stop(paste("ERROR: length(proj) = ", length(proj), "should be <= 2\n"))
-  }
+  ## will call stop() if something is wrong with the proj
+  proj <- check.proj(proj)
 
-  # deal with axis labels
+    # deal with axis labels
   if(is.null(xlab)) xlab <- names(out$X)[proj[1]]
   if(is.null(ylab)) ylab <- names(out$X)[proj[2]]
   if(is.null(zlab)) zlab <- out$response
@@ -114,6 +109,6 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
       if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
     }
-  } else { cat(paste("ERROR:", pc, "not a valid plot option\n")) }
+  } else { stop(paste(pc, "not a valid plot option\n")) }
 }
 

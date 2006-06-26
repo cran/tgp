@@ -1,4 +1,18 @@
+1.1-6 (26 Jun 2006)
+-----
+
+Added Latin Hypercube design function
+
+Added "mapT" function for stand-alone plotting of MAP
+partitions via projection and slice.  Fixed bug in
+"tgp.plot.slice" in the process
+
+Also now calling "tgp.get.partitions" by the shorter
+name "partition"
+
+
 1.1-5 (27 May 2006)
+-----
 
 Fixed memory leak with RNG state in predict_consumer
 
