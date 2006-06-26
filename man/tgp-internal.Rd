@@ -22,6 +22,8 @@
 \alias{mean0.range1}
 \alias{undo.mean0.range1}
 \alias{check.matrix}
+\alias{check.slice}
+\alias{check.proj}
 \alias{getlocs}
 \alias{print.tgp}
 %% </LIST>

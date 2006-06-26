@@ -27,7 +27,7 @@ tgp.design(howmany, Xcand, out)
 \details{
   This function partitions \code{Xcand} and \code{out$X} based on
   the MAP tree (obtained on \code{"tgp"}-class \code{out} with
-  \code{\link{tgp.get.partitions}}) and calls
+  \code{\link{partition}}) and calls
   \code{\link{dopt.gp}} in order to obtain a D-optimal design under
   independent stationary Gaussian processes models defined in each
   region.  The aim is to obtain a design where new points from \code{Xcand}
@@ -79,7 +79,7 @@ The example below is also part of \code{vignette("tgp")}
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}}, \code{\link{plot.tgp}}, 
-	\code{\link{dopt.gp}}, \code{\link{tgp.get.partitions}}}
+	\code{\link{dopt.gp}}, \code{\link{lhs}}, \code{\link{partition}}}
 
 \examples{
 #

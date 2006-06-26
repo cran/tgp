@@ -25,8 +25,8 @@
 "tgp.design" <-
 function(howmany, Xcand, out)
 {
-	Xcand.parts <- tgp.get.partitions(Xcand, out)
-	X.parts <- tgp.get.partitions(out$X, out)
+	Xcand.parts <- partition(Xcand, out)
+	X.parts <- partition(out$X, out)
 
 	XX <- NULL
 

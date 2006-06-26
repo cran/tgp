@@ -31,7 +31,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
     supported, e.g., \code{proj = c(2)} would show the second variable
     projection. For 3-d data or higher, \code{proj=NULL} defaults to
     \code{proj = c(1,2)} which plots a 2-d projection for the first two
-    variables.  Projections have priority over the slices---
+    variables.  Slices have priority over the projectsions---
     see next argument (\code{slice})--- when non-null arguments are
     provided for both.}
   \item{slice}{\code{list} object with \code{x} and \code{z} fields, which
@@ -125,7 +125,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 
 \seealso{ \code{\link[base]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
 	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}},
-	\code{\link{tgp.trees}}, \code{\link[akima]{interp}},
+	\code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link[akima]{interp}},
 	\code{\link[base]{loess}}}
 
 \keyword{ hplot }

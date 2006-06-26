@@ -26,7 +26,7 @@
 function(X, tree, i)
 {
 	# error or leaf node
-	if(dim(X)[1] == 0) { cat("ERROR, dim=0 X\n"); return(NULL); }
+	if(dim(X)[1] == 0) { stop("dim=0 X\n") }
 	if(tree$var[i] == "<leaf>") return(list(X));
 
 	# gather the appropriate operations from the ith tree node

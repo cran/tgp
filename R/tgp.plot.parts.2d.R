@@ -23,7 +23,8 @@
 
 
 "tgp.plot.parts.2d" <-
-function(parts, dx=c(1,2), what=NULL, trans=matrix(c(1,0,0,1), nrow=2), col=NULL)
+function(parts, dx=c(1,2), what=NULL, trans=matrix(c(1,0,0,1), nrow=2),
+         col=NULL, lwd=3)
 {
   if(length(what) > 0) {
     indices <- c()
@@ -48,8 +49,8 @@ function(parts, dx=c(1,2), what=NULL, trans=matrix(c(1,0,0,1), nrow=2), col=NULL
     x <- c(a, b, b, a, a);
     y <- c(c, c, d, d, c);
     xy <- as.matrix(cbind(x,y)) %*% trans
-    if(is.null(col)) { lines(xy, col=j, lty=j, lwd=2); }
-    else { lines(xy, col=col, lty=1, lwd=3); }
+    if(is.null(col)) { lines(xy, col=j, lty=j, lwd=lwd); }
+    else { lines(xy, col=col, lty=1, lwd=lwd); }
     j <- j+1
   }
 }

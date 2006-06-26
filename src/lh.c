@@ -49,6 +49,8 @@ typedef struct rank
 
 
 /*
+ * rect_sample_lh:
+ *
  * returns a unidorm sample of (n) points
  * within a regular (dim)-dimensional cube.
  * (n*dim matrix returned)
@@ -69,6 +71,42 @@ double** rect_sample(int dim, int n, void *state)
 
 
 /*
+ * lh_sample:
+ *
+ * this function is the R-gateway to LH sampling
+ * it simply calls rect_sample_lh with the appropriately
+ * transformed inputs, and copied outputs
+ */
+
+void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
+	       double *s_out)
+{
+  void *state;
+  double **rect, **s;
+
+   /* create the RNG state */
+  state = newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + 
+				       state_in[2]));
+  
+  /* allocate and copy the input-space rectangle */
+  rect = new_matrix(2, *dim_in);
+  dupv(rect[0], rect_in, 2*(*dim_in));
+  /* printMatrix(rect, 2, *dim_in, stdout); */
+
+  /* get the latin hypercube sample */
+  s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
+  dupv(s_out, s[0], (*n_in)*(*dim_in));
+  
+  /* clean up */
+  delete_matrix(rect);
+  deleteRNGstate(state);
+  delete_matrix(s);
+}
+
+
+/*
+ * rect_sample_lh:
+ *
  * returns a (uniform) latin hypercube sample of (n) points
  * within a regular (dim)-dimensional cube.
  */
@@ -85,17 +123,10 @@ double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 	if(n == 0) return NULL;
 	z = e = s = NULL;
 
-	/*
-	 * get initial sample
-	 */
- 
+	/* get initial sample */
 	s = rect_sample(dim, n, state);
 
-
-	/*
-	 * get ranks
-	 */
-
+	/* get ranks */
 	r = (int**) malloc(sizeof(int*) * dim);
 	for(i=0; i<dim; i++) {
 		sr = (Rank**) malloc(sizeof(Rank*) * n);
@@ -108,10 +139,7 @@ double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 		
 		qsort((void*)sr, n, sizeof(Rank*), compareRank);
 		
-		/*
-		 * assign ranks
-		 */
-		
+		/* assign ranks	*/
 		for(j=0; j<n; j++) {
 			r[i][sr[j]->r] = j+1;
 			free(sr[j]);
@@ -119,33 +147,20 @@ double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 		free(sr);
 	}
 
-
-	/*
-	 * Draw random variates
-	 */
-
-
+	/* Draw random variates */
 	if(er) e = rect_sample(dim, n, state);
 
-
-	/*
-	 * Obtain latin hypercube sample
-	 */
-
+	/* Obtain latin hypercube sample */
 	z = new_matrix(dim,n);
 	for(i=0; i<dim; i++) {
 		for(j=0; j<n; j++) {
 			if(er) z[i][j] = (r[i][j] - e[i][j]) / n;
-			else z[i][j] = (double)r[i][j]  / n;
+			else z[i][j] = (double)r[i][j] / n;
 		}
 		free(r[i]);
 	}
 
-
-	/*
-	 * Wrap up
-	 */
-
+	/* Wrap up */
 	free(r);
 	delete_matrix(s);
 	if(er) delete_matrix(e);
@@ -160,6 +175,8 @@ double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 
 
 /*
+ * compareRank:
+ *
  * comparison function for ranking
  */
 
@@ -173,6 +190,8 @@ int compareRank(const void* a, const void* b)
 
 
 /*
+ * compareDouble:
+ *
  * comparison function double sorting ranking
  */
 
@@ -186,6 +205,8 @@ int compareDouble(const void* a, const void* b)
 
 
 /*
+ * rect_scale:
+ *
  * shift/scale a draws from a unit cube into 
  * the specified rectangle
  */ 
@@ -205,6 +226,8 @@ void rect_scale(double** z, int d, int n, double** rect)
 
 
 /*
+ * readRect:
+ *
  * return the rectangle (argv[2]) and its dimension (d)
  * giving a 2xd double array
  */
@@ -217,10 +240,7 @@ double** readRect(char* rect, unsigned int* d)
 
 	dim = commas = 0;
 
-
-	/*
-	 * count the number of ";" to get the dimension;
-	 */
+	/* count the number of ";" to get the dimension */
 
 	for(i=0; rect[i] != '\0'; i++) {
 	 	if(rect[i] == ';' || rect[i] == '[' || rect[i] == ']') dim++;
@@ -231,22 +251,13 @@ double** readRect(char* rect, unsigned int* d)
 	}
 	dim--;
 
-	/*
-	 * check final dimensions
-	 */
-
+	/* check final dimensions */
 	if(dim <= 0) errorBadRect();
 
-	/*
-	 * allocate rectangle matrix
-	 */
-
+	/* allocate rectangle matrix */
 	r = (double**) new_matrix(2,dim);
 
-	/*
-	 * copy rect into d
-	 */
-
+	/* copy rect into d */
 	if(!(ss = (char*) strtok(rect, " \t[,"))) errorBadRect();
 	r[0][0] = atof(ss);
 	if(!(ss = (char*) strtok(NULL, " \t;]"))) errorBadRect();
@@ -266,6 +277,8 @@ double** readRect(char* rect, unsigned int* d)
 
 
 /*
+ * printRect:
+ *
  * print 2xd double rectangle to (FILE* outfile)
  */
 
@@ -282,6 +295,8 @@ void printRect(FILE* outfile, int d, double** rect)
 
 
 /*
+ * errorBadRect:
+ *
  * Bad rectangle (argv[2]) error message
  * uses printUsage();;
  */
@@ -293,6 +308,8 @@ void errorBadRect(void)
 
 
 /*
+ * sortDouble:
+ *
  * sort an array of doubles
  */
 
@@ -303,6 +320,8 @@ void sortDouble(double *s, unsigned int n)
 
 
 /*
+ * order:
+ *
  * obtain the integer order of the indices of s
  * from least to greatest.  the returned indices o
  * applied to s, (e.g. s[o]) would resort in a sorted list
@@ -337,6 +356,8 @@ int* order(double *s, unsigned int n)
 
 
 /*
+ * rank:
+ *
  * obtain the integer rank of the elemts of s
  */
 

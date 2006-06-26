@@ -22,21 +22,15 @@
 #*******************************************************************************
 
 
-"tgp.plot.parts.1d" <-
-function(parts, lwd=2)
+"check.proj" <- 
+function(proj)
 {
-  j <- 3
-  if(is.null(dim(parts))) dp <- length(parts)
-  else {
-    dp <- dim(parts)[1]
-    parts <- parts[,1]
-  }
-  is <- seq(2, dp, by=4)
-  m <- max(parts[is])
-  for(i in is) {
-    if(parts[i] == m) next;
-    abline(v=parts[i], col=j, lty=j, lwd=lwd);
-    j <- j + 1
-  }
+  if(is.null(proj)) proj <- c(1,2)
+    if(length(proj) > 2) {
+      stop(paste("length(proj) = ", length(proj), "should be <= 2\n"))
+    }
+  
+  ## will stop if the proj is not ok,
+  ## otherwise returns the (possibly modified) proj
+  return(proj)
 }
-

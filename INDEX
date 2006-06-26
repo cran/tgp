@@ -7,11 +7,11 @@ btgpllm			Bayesian treed Gaussian process with jumps to the LLM
 dopt.gp                 Sequential D-Optimal Design for a Stationary Gaussian Process
 exp2d                   2-d Exponential Data, for examples
 exp2d.rand              Randomly subsampled 2-d Exponential Data, for examples
-friedman.1.data         First Friedman dataset, for examples
-interp.loess		Loess interpolation onto a uniform grid for 2-d plotting
+friedman.1.data		First Friedman dataset, for examples
+mapT			Plot the MAP partition, or add one to an existing plot
+partition      		Partition data according to the MAP tree
 plot.tgp                Plotting for Treed Gaussian Process Models
 tgp                     Generic interface to treed Gaussian process models
 tgp.default.params      Default Treed Gaussian Process Model Parameters
 tgp.design              Sequential Treed D-Optimal Design for Treed Gaussian Process Models
-tgp.get.partitions      Get partition of data from maximum a' posteriori tree
-tgp.trees               Plot MAP Treed Gaussian Process Models
+tgp.trees               Plot MAP Tree for each height encountered by the Markov Chain

@@ -1,7 +1,7 @@
 \name{tgp.trees}
 \alias{tgp.trees}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ Plot MAP Treed Gaussian Process Models }
+
+\title{ Plot the MAP Tree for each height encountered by the Markov Chain} 
 \description{
   Plot the maximum a' posteriori (MAP) tree as a function of
   tree height, and show the log posterior probabilities for 
@@ -47,7 +47,7 @@ under \dQuote{See Also}, below}
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}},
-	\code{\link{plot.tgp}}, \code{vignette("tgp")}}
+	\code{\link{plot.tgp}}, \code{\link{mapT}}, \code{vignette("tgp")}}
 
 \keyword{ hplot }
 \keyword{ tree }
