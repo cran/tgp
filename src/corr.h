@@ -35,11 +35,13 @@ extern "C"
 
 //#define PRINTNUG
 #define REJECTMAX 1000
-typedef enum CORR_MODEL {EXP=701, EXPSEP=702, MATERN=703} CORR_MODEL;
+typedef enum CORR_MODEL 
+  {EXP=701, EXPSEP=702, MATERN=703, MREXP=704, MREXPSEP=705, MRMATERN=706} CORR_MODEL;
 
 class Model;  /* not including model.h */
 class Corr_Prior;
-class Gp_Prior;
+class Base_Prior;
+
 
 /*
  * CLASS for the generic implementation of a correlation
@@ -52,8 +54,8 @@ class Corr
 
  protected:
 
-  Gp_Prior *gp_prior;   /* Gaussian Process prior module */
-  Corr_Prior *prior;    /* generic prior parameterization for nugget */
+  Base_Prior *base_prior;/* Base (eg Gp) prior module */
+  Corr_Prior *prior;     /* generic prior parameterization for nugget */
 
   unsigned int col;	/* # of columns in the design matrix X, plus 1 */
   unsigned int n;	/* number of input data points-- rows in the design matrix */
@@ -78,7 +80,7 @@ class Corr
   
  public:
 
-  Corr(unsigned int col, Gp_Prior* gp_prior);
+  Corr(unsigned int col, Base_Prior* base_prior);
   virtual ~Corr(void);
   virtual Corr& operator=(const Corr &c)=0;
   virtual int Draw(unsigned int n, double **F, double **X, double *Z,double *lambda, 
@@ -93,14 +95,16 @@ class Corr
   virtual double log_Prior(void)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void ToggleLinear(void)=0;
-  
+  virtual bool DrawNug(unsigned int n, double **X,  double **F, double *Z,
+		       double *lambda, double **bmu, 
+		       double **Vb, double tau2, void *state)=0;
+  virtual double* Trace(unsigned int *len)=0;
+
   unsigned int N();
   double get_delta_nug(Corr* c1, Corr* c2, void *state);
   void propose_new_nug(Corr* c1, Corr* c2, void *state);
   void CombineNug(Corr *c1, Corr *c2, void *state);
   void SplitNug(Corr *c1, Corr *c2, void *state);
-  bool DrawNug(unsigned int n, double **F, double *Z, double *lambda, double **bmu, 
-	       double **Vb, double tau2, void *state);
   void swap_new(double **Vb, double **bmu, double *lambda);
   void allocate_new(unsigned int n);
   void Invert(unsigned int n);
@@ -138,7 +142,7 @@ class Corr_Prior
  protected:
 
   CORR_MODEL corr_model;	/* indicator for type of correllation model */
-  Gp_Prior *gp_prior;           /* prior for the Gp model */
+  Base_Prior *base_prior;       /* prior for the base (eg Gp) model */
   unsigned int col;
   double gamlin[3];	        /* gamma for the linear pdf */
 
@@ -155,6 +159,8 @@ class Corr_Prior
   virtual Corr* newCorr(void)=0;
   virtual void Print(FILE *outfile)=0;
   virtual Corr_Prior* Dup(void)=0;
+  virtual Base_Prior* BasePrior(void)=0;
+  virtual void SetBasePrior(Base_Prior *base_prior)=0;
 
   void read_double_nug(double *dprior);
   void read_ctrlfile_nug(std::ifstream* ctrlfile);
@@ -172,8 +178,8 @@ class Corr_Prior
   bool LLM(void);
   double ForceLinear(void);
   void ResetLinear(double gam);
-  Gp_Prior* GpPrior(void);
-  void SetGpPrior(Gp_Prior *gp_prior);
+ 
+
   void PrintNug(FILE *outfile);
 };
 

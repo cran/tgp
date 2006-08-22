@@ -34,7 +34,7 @@ extern "C"
 #include "corr.h"
 #include "params.h"
 #include "model.h"
-#include "exp.h"
+#include "mr_exp.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -48,21 +48,22 @@ using namespace std;
 #define PWR 2.0
 
 /*
- * Exp:
+ * MrExp:
  * 
  * constructor function
  */
 
-Exp::Exp(unsigned int col, Base_Prior *base_prior)
+MrExp::MrExp(unsigned int col, Base_Prior *base_prior)
   : Corr(col, base_prior)
 {
-  assert(base_prior->BaseModel() == GP);
-  prior = ((Gp_Prior*) base_prior)->CorrPrior();
+  assert(base_prior->BaseModel() == MR_GP);
+  prior = ((MrGp_Prior*) base_prior)->CorrPrior();
   assert(prior);
   nug = prior->Nug();
+  dim = col-1;
 
-  assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == EXP);
-  d = ((Exp_Prior*) prior)->D();
+  assert(((MrGp_Prior*) base_prior)->CorrPrior()->CorrModel() == MREXP);
+  d = ((MrExp_Prior*) prior)->D();
   xDISTx = NULL;
   nd = 0;
   dreject = 0;
@@ -70,24 +71,25 @@ Exp::Exp(unsigned int col, Base_Prior *base_prior)
 
 
 /*
- * Exp (assignment operator):
+ * MrExp (assignment operator):
  * 
  * used to assign the parameters of one correlation
  * function to anothers.  Both correlation functions
  * must already have been allocated.
  */
 
-Corr& Exp::operator=(const Corr &c)
+Corr& MrExp::operator=(const Corr &c)
 {
-  Exp *e = (Exp*) &c;
+  MrExp *e = (MrExp*) &c;
   
   log_det_K = e->log_det_K;
   linear = e->linear;
+  dim = e->dim;
   d = e->d;
   nug = e->nug;
   dreject = e->dreject;
-  assert(prior->CorrModel() == EXP);
-  assert(prior == ((Gp_Prior*) base_prior)->CorrPrior());
+  assert(prior->CorrModel() == MREXP);
+  assert(prior == ((MrGp_Prior*) base_prior)->CorrPrior());
   
   /* copy the covariance matrices */
   Cov(e);
@@ -97,12 +99,12 @@ Corr& Exp::operator=(const Corr &c)
 
 
 /* 
- * ~Exp:
+ * ~MrExp:
  * 
  * destructor
  */
 
-Exp::~Exp(void)
+MrExp::~MrExp(void)
 {
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
@@ -116,18 +118,16 @@ Exp::~Exp(void)
  * return true if the correlation matrix has changed; false otherwise
  */
 
-bool Exp::DrawNug(unsigned int n, double **X, double **F, 
-		  double *Z, double *lambda, 
+bool MrExp::DrawNug(unsigned int n, double **X, 
+		    double **F, double *Z, double *lambda, 
 		   double **bmu, double **Vb, double tau2, void *state)
 {
   bool success = false;
-  Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
+  MrGp_Prior *gp_prior = (MrGp_Prior*) base_prior;
 
   /* allocate K_new, Ki_new, Kchol_new */
   if(! linear) assert(n == this->n);
   
-  /* randomly reject 1/2 the time, to avoid having to do lots of matrix
-     inversions -- as the nug mixes better than d already */
   if(runi(state) > 0.5) return false;
   
   /* make the draw */
@@ -143,13 +143,14 @@ bool Exp::DrawNug(unsigned int n, double **X, double **F,
   return success;
 }
 
+
 /*
  * Update: (symmetric)
  * 
  * compute correlation matrix K
  */
 
-void Exp::Update(unsigned int n, double **X)
+void MrExp::Update(unsigned int n, double **X)
 {
   if(linear) return;
   assert(this->n == n);
@@ -158,9 +159,10 @@ void Exp::Update(unsigned int n, double **X)
     xDISTx = new_matrix(n, n);
     nd = n;
   }
-  dist_symm(xDISTx, col-1, X, n, PWR);
+  double **Xc = new_shift_matrix(X, n, dim+1);
+  dist_symm(xDISTx, dim, Xc, n, PWR);
   dist_to_K_symm(K, xDISTx, d, nug, n);
-  //delete_matrix(xDISTx);
+  delete_matrix(Xc);
 }
 
 
@@ -171,12 +173,14 @@ void Exp::Update(unsigned int n, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n, double **K, double **X)
+void MrExp::Update(unsigned int n, double **K, double **X)
 {
   double ** xDISTx = new_matrix(n, n);
-  dist_symm(xDISTx, col-1, X, n, PWR);
+  double **Xc = new_shift_matrix(X, n, dim+1);
+  dist_symm(xDISTx, dim, Xc, n, PWR);
   dist_to_K_symm(K, xDISTx, d, nug, n);
   delete_matrix(xDISTx);
+  delete_matrix(Xc);
 }
 
 
@@ -187,12 +191,16 @@ void Exp::Update(unsigned int n, double **K, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
+void MrExp::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
 {
   double **xxDISTx = new_matrix(n2, n1);
-  dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
+  double **XXc = new_shift_matrix(XX, n1, dim+1);
+  double **Xc = new_shift_matrix(X, n2, dim+1);
+  dist(xxDISTx, dim, XXc, n1, Xc, n2, PWR);
   dist_to_K(K, xxDISTx, d, 0.0, n1, n2);
   delete_matrix(xxDISTx);
+  delete_matrix(XXc);
+  delete_matrix(Xc);
 }
 
 
@@ -204,7 +212,7 @@ void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, doubl
  * has changed; otherwise returns false
  */
 
-int Exp::Draw(unsigned int n, double **F, double **X, double *Z, 
+int MrExp::Draw(unsigned int n, double **F, double **X, double *Z, 
 	      double *lambda, double **bmu, double **Vb, double tau2, 
 	      void *state)
 {
@@ -212,8 +220,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   bool lin_new;
   double q_fwd , q_bak, d_new;
 
-  /* sometimes skip this Draw for linear models for speed,
-   and only draw the nugget */
+  /* sometimes skip this Draw for linear models for speed */
   if(linear && runi(state) > 0.5) return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
 
   /* proppose linear or not */
@@ -225,7 +232,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
     else lin_new = false;
   }
 
-  /* if not linear then compute new distances */
+  /* if not linear than compute new distances */
   /* allocate K_new, Ki_new, Kchol_new */
   if(! lin_new) {
     if(!xDISTx || nd != n)  {
@@ -233,17 +240,18 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
       xDISTx = new_matrix(n, n);
       nd = n;
     }
-    dist_symm(xDISTx, col-1, X, n, PWR);
+    double **Xc = new_shift_matrix(X, n, dim+1);
+    dist_symm(xDISTx, dim, Xc, n, PWR);
     allocate_new(n); 
     assert(n == this->n);
+    delete_matrix(Xc);
   }
   
   /* d; rebuilding K, Ki, and marginal params, if necessary */
   if(prior->Linear()) d_new = d;
   else {
-    Exp_Prior* ep = (Exp_Prior*) prior;
-    Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
-
+    MrExp_Prior* ep = (MrExp_Prior*) prior;
+    MrGp_Prior *gp_prior = (MrGp_Prior*) base_prior;
     success = 
       d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
 		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
@@ -276,9 +284,9 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
  * and choose one for "this" correlation function
  */
 
-void Exp::Combine(Corr *c1, Corr *c2, void *state)
+void MrExp::Combine(Corr *c1, Corr *c2, void *state)
 {
-  get_delta_d((Exp*)c1, (Exp*)c2, state);
+  get_delta_d((MrExp*)c1, (MrExp*)c2, state);
   CombineNug(c1, c2, state);
 }
 
@@ -291,9 +299,9 @@ void Exp::Combine(Corr *c1, Corr *c2, void *state)
  * for two (new) correlation functions
  */
 
-void Exp::Split(Corr *c1, Corr *c2, void *state)
+void MrExp::Split(Corr *c1, Corr *c2, void *state)
 {
-  propose_new_d((Exp*) c1, (Exp*) c2, state);
+  propose_new_d((MrExp*) c1, (MrExp*) c2, state);
   SplitNug(c1, c2, state);
 }
 
@@ -304,7 +312,7 @@ void Exp::Split(Corr *c1, Corr *c2, void *state)
  * compute d from two ds (used in prune)
  */
 
-void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
+void MrExp::get_delta_d(MrExp* c1, MrExp* c2, void *state)
 {
   double dch[2];
   int ii[2];
@@ -323,11 +331,11 @@ void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
  * new children partitions. 
  */
 
-void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
+void MrExp::propose_new_d(MrExp* c1, MrExp* c2, void *state)
 {
   int i[2];
   double dnew[2];
-  Exp_Prior *ep = (Exp_Prior*) prior;
+  MrExp_Prior *ep = (MrExp_Prior*) prior;
   propose_indices(i, 0.5, state);
   dnew[i[0]] = d;
   if(prior->Linear()) dnew[i[1]] = d;
@@ -346,7 +354,7 @@ void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
  * of the (parameters of) correlation function
  */
 
-char* Exp::State(void)
+char* MrExp::State(void)
 {
   char buffer[BUFFMAX];
 #ifdef PRINTNUG
@@ -376,7 +384,7 @@ char* Exp::State(void)
  * return 1 if linear, 0 otherwise
  */
 
-unsigned int Exp::sum_b(void)
+unsigned int MrExp::sum_b(void)
 {
   if(linear) return 1;
   else return 0;
@@ -390,7 +398,7 @@ unsigned int Exp::sum_b(void)
  * make not linear
  */
 
-void Exp::ToggleLinear(void)
+void MrExp::ToggleLinear(void)
 {
   if(linear) {
     linear = false;
@@ -406,7 +414,7 @@ void Exp::ToggleLinear(void)
  * return the range parameter
  */
 
-double Exp::D(void)
+double MrExp::D(void)
 {
   return d;
 }
@@ -419,10 +427,10 @@ double Exp::D(void)
  * the correlation function (e.g. d and nug)
  */
 
-double Exp::log_Prior(void)
+double MrExp::log_Prior(void)
 {
   double prob = ((Corr*)this)->log_NugPrior();
-  prob += ((Exp_Prior*) prior)->log_Prior(d, linear);
+  prob += ((MrExp_Prior*) prior)->log_Prior(d, linear);
   return prob;
 }
 
@@ -431,17 +439,13 @@ double Exp::log_Prior(void)
  * Trace:
  *
  * return the current values of the parameters
- * to this correlation function: nug, d, then linear
+ * to this correlation function
  */
 
-double* Exp::Trace(unsigned int* len)
+double* MrExp::Trace(unsigned int* len)
 {
-  *len = 3;
-  double *trace = new_vector(*len);
-  trace[0] = nug;
-  trace[1] = d;
-  trace[2] = (double) !linear;
-  return trace;
+  *len = 0;
+  return NULL;
 }
 
 
@@ -452,23 +456,23 @@ double* Exp::Trace(unsigned int* len)
  * function with this module governing its prior parameterization
  */
 
-Corr* Exp_Prior::newCorr(void)
+Corr* MrExp_Prior::newCorr(void)
 {
-  return new Exp(col, base_prior);
+  return new MrExp(col, base_prior);
 }
 
 
 /*
- * Exp_Prior:
+ * MrExp_Prior:
  * 
  * constructor for the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(unsigned int col) : Corr_Prior(col)
+MrExp_Prior::MrExp_Prior(unsigned int col) : Corr_Prior(col)
 {
   corr_model = EXP;
-
+  dim = col-1;
   /* defaults */ 
   d = 0.5;
   default_d_priors();
@@ -483,26 +487,27 @@ Exp_Prior::Exp_Prior(unsigned int col) : Corr_Prior(col)
  * power family
  */
 
-Corr_Prior* Exp_Prior::Dup(void)
+Corr_Prior* MrExp_Prior::Dup(void)
 {
-  return new Exp_Prior(this);
+  return new MrExp_Prior(this);
 }
 
 
 /*
- * Exp_Prior (new duplicate)
+ * MrExp_Prior (new duplicate)
  *
  * duplicating constructor for the prior distribution for 
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
+MrExp_Prior::MrExp_Prior(Corr_Prior *c) : Corr_Prior(c)
 {
-  Exp_Prior *e = (Exp_Prior*) c;
+  MrExp_Prior *e = (MrExp_Prior*) c;
   assert(e->corr_model == EXP);
   corr_model = e->corr_model;
   dupv(gamlin, e->gamlin, 3);
   d = e->d;
+  dim = e->dim;
   fix_d = e->fix_d;
   dupv(d_alpha, e->d_alpha, 2);
   dupv(d_beta, e->d_beta, 2);
@@ -511,13 +516,13 @@ Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
 }
 
 /*
- * ~Exp_Prior:
+ * ~MrExp_Prior:
  *
  * destructor the the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::~Exp_Prior(void)
+MrExp_Prior::~MrExp_Prior(void)
 {
 }
 
@@ -529,7 +534,7 @@ Exp_Prior::~Exp_Prior(void)
  * passed in from R
  */
 
-void Exp_Prior::read_double(double *dparams)
+void MrExp_Prior::read_double(double *dparams)
 {
   /* read the parameters that have to do with the
    * nugget first */
@@ -564,7 +569,7 @@ void Exp_Prior::read_double(double *dparams)
  * read prior parameterization from a control file
  */
 
-void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
+void MrExp_Prior::read_ctrlfile(ifstream *ctrlfile)
 {
   char line[BUFFMAX], line_copy[BUFFMAX];
   
@@ -600,7 +605,7 @@ void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
  * to default values
  */
 
-void Exp_Prior::default_d_priors(void)
+void MrExp_Prior::default_d_priors(void)
 {
   d_alpha[0] = 1.0;
   d_beta[0] = 20.0;
@@ -616,7 +621,7 @@ void Exp_Prior::default_d_priors(void)
  * to default values
  */
 
-void Exp_Prior::default_d_lambdas(void)
+void MrExp_Prior::default_d_lambdas(void)
 {
   d_alpha_lambda[0] = 1.0;
   d_beta_lambda[0] = 10.0;
@@ -634,7 +639,7 @@ void Exp_Prior::default_d_lambdas(void)
  * for the exponential correllation function 
  */
 
-double Exp_Prior::D(void)
+double MrExp_Prior::D(void)
 {
   return d;
 }
@@ -647,7 +652,7 @@ double Exp_Prior::D(void)
  * distribution prior for the range parameter
  */
 
-double* Exp_Prior::DAlpha(void)
+double* MrExp_Prior::DAlpha(void)
 {
   return d_alpha;
 }
@@ -660,7 +665,7 @@ double* Exp_Prior::DAlpha(void)
  * distribution prior for the range parameter
  */
 
-double* Exp_Prior::DBeta(void)
+double* MrExp_Prior::DBeta(void)
 {
   return d_beta;
 }
@@ -669,16 +674,16 @@ double* Exp_Prior::DBeta(void)
 /*
  * Draw:
  * 
- * draws for the hierarchical priors for the Exp
+ * draws for the hierarchical priors for the MrExp
  * correlation function which are
  * contained in the params module
  */
 
-void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
+void MrExp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
 {
   if(!fix_d) {
     double *d = new_vector(howmany);
-    for(unsigned int i=0; i<howmany; i++) d[i] = ((Exp*)(corr[i]))->D();
+    for(unsigned int i=0; i<howmany; i++) d[i] = ((MrExp*)(corr[i]))->D();
     mixture_priors_draw(d_alpha, d_beta, d, howmany, d_alpha_lambda, 
 			d_beta_lambda, state);
     free(d);
@@ -696,7 +701,7 @@ void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
  * the correlation function (e.g. d and nug)
  */
 
-double Exp_Prior::log_Prior(double d, bool linear)
+double MrExp_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
   if(gamlin[0] < 0) return prob;
@@ -714,7 +719,7 @@ double Exp_Prior::log_Prior(double d, bool linear)
  * return the prior for the Base (eg Gp) model
  */
 
-Base_Prior* Exp_Prior::BasePrior(void)
+Base_Prior* MrExp_Prior::BasePrior(void)
 {
   return base_prior;
 }
@@ -726,10 +731,11 @@ Base_Prior* Exp_Prior::BasePrior(void)
  * set the base_prior field
  */
 
-void Exp_Prior::SetBasePrior(Base_Prior *base_prior)
+void MrExp_Prior::SetBasePrior(Base_Prior *base_prior)
 {
   this->base_prior = base_prior;
 }
+
 
 /*
  * Print:
@@ -738,7 +744,7 @@ void Exp_Prior::SetBasePrior(Base_Prior *base_prior)
  * to a file 
  */
 
-void Exp_Prior::Print(FILE *outfile)
+void MrExp_Prior::Print(FILE *outfile)
 {
   myprintf(stdout, "corr prior: isotropic power\n");
 

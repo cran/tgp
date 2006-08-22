@@ -27,21 +27,17 @@
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
-\emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01. 
 
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
-
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \note{This data is used in the examples of the functions listed above in
 the \dQuote{See Also} section via the \code{\link{exp2d.rand}} function}
 
-\seealso{ \code{\{link{exp2d.rand}}, \code{\link{tgp}},
+\seealso{ \code{\link{exp2d.rand}}, \code{\link{tgp}},
   \code{\link{bgpllm}}, \code{\link{btlm}},
   \code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
   \code{\link{bgp}}}

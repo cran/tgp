@@ -35,12 +35,12 @@ extern "C"
 #include "lik_post.h"
 }
 #include "params.h"
-#include "exp.h"
-#include "exp_sep.h"
-#include "matern.h"
+#include "mr_exp.h"
+#include "mr_exp_sep.h"
+#include "mr_matern.h"
 #include "tree.h"
 #include "model.h"
-#include "gp.h"
+#include "mr_gp.h"
 #include "base.h"
 
 #include <stdlib.h>
@@ -51,74 +51,79 @@ using namespace std;
 #include <string.h>
 
 
-class Gp_Prior;
+class MrGp_Prior;
 
 
 /*
- * Gp: 
+ * MrGp: 
  *
- * constructor for the base Gp model;
+ * constructor for the base MrGp model;
  * most things are set to null values
  */
 
-Gp::Gp(unsigned int d, Base_Prior *prior, Model *model) : Base(d, prior, model)
+MrGp::MrGp(unsigned int d, Base_Prior *prior, Model *model) : Base(d, prior, model)
 {
   /* data size */
   this->n = 0;
   this->d = d;
-  col = d+1;
+  this->col = 2*d;
+ 
   nn = 0;
 
   /* null everything */
   F = FF = xxKx = xxKxx = NULL;
   Z = NULL;
-
+  
+  
   corr = NULL;
   b = new_zero_vector(this->col);
   Vb = new_id_matrix(this->col);
   bmu = new_zero_vector(this->col);
   bmle = new_zero_vector(this->col);
   lambda = 0;
+  r = ((MrGp_Prior*) prior)->R();
 } 
 
 
 /*
- * Gp:
+ * MrGp:
  * 
  * duplication constructor; params any "new" variables are also 
  * set to NULL values
  */
 
-Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
+MrGp::MrGp(double **X, double *Z, Base *old) : Base(X, Z, old)
 {
-  assert(old->BaseModel() == GP);
-  Gp* gp_old = (Gp*) old;
-  col = gp_old->col;
+  assert(old->BaseModel() == MR_GP);
+  MrGp* mrgp_old = (MrGp*) old;
+  col = mrgp_old->col;
+  d = mrgp_old->d;
   /* F; copied from tree -- this should prolly be regenerated from scratch */
-  if(gp_old->F) F = new_dup_matrix(gp_old->F, col, n);
+  if(mrgp_old->F) F = new_dup_matrix(mrgp_old->F, col, n);
   else F =  NULL;
 
-  /* gp/linear parameters */
-  lambda = gp_old->lambda;
-  s2 = gp_old->s2; 		
-  tau2 = gp_old->tau2;
+  /* mrgp/linear parameters */
+  lambda = mrgp_old->lambda;
+  r = mrgp_old->r;
+  s2 = mrgp_old->s2; 		
+  tau2 = mrgp_old->tau2;
 
   /* beta parameters */
-  assert(gp_old->Vb); 	Vb = new_dup_matrix(gp_old->Vb, col, col);
-  assert(gp_old->bmu);	bmu = new_dup_vector(gp_old->bmu, col);
-  assert(gp_old->bmle);	bmle = new_dup_vector(gp_old->bmle, col);
-  assert(gp_old->b);	b = new_dup_vector(gp_old->b, col);
+  assert(mrgp_old->Vb); 	Vb = new_dup_matrix(mrgp_old->Vb, col, col);
+  assert(mrgp_old->bmu);	bmu = new_dup_vector(mrgp_old->bmu, col);
+  assert(mrgp_old->bmle);	bmle = new_dup_vector(mrgp_old->bmle, col);
+  assert(mrgp_old->b);	b = new_dup_vector(mrgp_old->b, col);
   
   /* correllation prior parameters are duplicated above 
      in Base(X, Z, old) */
-  corr_prior = ((Gp_Prior*)prior)->CorrPrior();
+  corr_prior = ((MrGp_Prior*) prior)->CorrPrior();
       
   /* correlation function; not using a corr->Dup() function
    * no as not to re-duplicate the correlation function 
    * prior -- so generate a new one from the copied
    * prior and then use the copy constructor */
   corr = corr_prior->newCorr();
-  *corr = *(gp_old->corr);
+  *corr = *(mrgp_old->corr);
   
   /* things that must be NULL */
   FF = xxKx = xxKxx = NULL;
@@ -128,7 +133,7 @@ Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
 /*
  * Dup:
  * 
- * create a new Gp base model from an old one; cannot use old->X 
+ * create a new MrGp base model from an old one; cannot use old->X 
  * and old->Z becuase they are pointers to the old copy of the 
  * treed partition from which this function is likely to have been
  * called.
@@ -137,19 +142,19 @@ Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
  * without knowing what it is.
  */
 
-Base* Gp::Dup(double **X, double *Z)
+Base* MrGp::Dup(double **X, double *Z)
 {
-  return new Gp(X, Z, this);
+  return new MrGp(X, Z, this);
 }
 
 
 /*
- * ~Gp:
+ * ~MrGp:
  *
- * destructor function for the base Gp model
+ * destructor function for the base MrGp model
  */
 
-Gp::~Gp(void)
+MrGp::~MrGp(void)
 {
   Clear();
   ClearPred();  
@@ -169,9 +174,9 @@ Gp::~Gp(void)
  * tree partion
  */
 
-void Gp::Init(void)
+void MrGp::Init(void)
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* partition parameters */
   dupv(b, p->B(), col);
@@ -204,7 +209,7 @@ void Gp::Init(void)
  * delete the current partition
  */
 
-void Gp::Clear(void)
+void MrGp::Clear(void)
 {
   if(F) delete_matrix(F);
   X = F = NULL;
@@ -221,7 +226,7 @@ void Gp::Clear(void)
  * partition (usually used after a prune)
  */
 
-void Gp::ClearPred(void)
+void MrGp::ClearPred(void)
 {
   if(xxKx) delete_matrix(xxKx);
   if(xxKxx) delete_matrix(xxKxx);
@@ -239,10 +244,10 @@ void Gp::ClearPred(void)
  * the current parameter settings
  */
 
-void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
+void MrGp::Update(double **X, unsigned int n, unsigned int d, double *Z)
 {
   /*checks */
-  assert(this->col = d+1);
+  assert(this->col == 2*d);
   assert(X && Z);
   if(F == NULL) assert(this->n == 0 && this->X == NULL && this->Z == NULL);
   else assert(this->n == n && this->X == X && this->Z == Z);
@@ -258,7 +263,7 @@ void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
 
   corr->Update(n, X);
   corr->Invert(n);
-  if(((Gp_Prior*)prior)->BetaPrior() == BMLE) 
+  if(((MrGp_Prior*)prior)->BetaPrior() == BMLE) 
     mle_beta(bmle, n, col, F, Z);
   mean_of_rows(&mean, &Z, 1, n);
 }
@@ -271,13 +276,13 @@ void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
  * (leaf) node based on the current parameter settings
  */
 
-void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy)
+void MrGp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy)
 {
   assert(this->XX == NULL);
   if(XX == NULL) { assert(nn == 0); return; }
   this->XX = XX;
   this->nn = nn;
-  assert(this->col == d+1);
+  assert(this->col == 2*d);
   
   assert(!FF && !xxKx);
   FF = new_matrix(this->col,nn);
@@ -304,9 +309,9 @@ void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy
  * where appropriate)
  */
 
-bool Gp::Draw(void *state)
+bool MrGp::Draw(void *state)
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* s2 */
   if(p->BetaPrior() == BFLAT) 
@@ -316,7 +321,7 @@ bool Gp::Draw(void *state)
 
   /* if beta draw is bad, just use mean, then zeros */
   unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
-  if(info != 0) b[0] = mean; 
+  if(!info) b[0] = mean; 
   
   /* correlation function */
   int success, i;
@@ -354,7 +359,7 @@ bool Gp::Draw(void *state)
  * correct sizes
  */
 
-void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
+void MrGp::Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
 		 double **ds2xy, double *ego, bool err, void *state)
 {
   assert(this->n == n);
@@ -362,16 +367,21 @@ void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
  
   unsigned int warn = 0;
 
-  /* try to make some predictions, but first: choose LLM or Gp */
+  /* try to make some predictions, but first: choose LLM or MrGp */
   if(corr->Linear())  {
     /* under the limiting linear */
     predict_full_linear(n, nn, col, z, zz, Z, F, FF, bmu, s2, Vb, ds2xy, ego,
 			corr->Nug(), err, state);
   } else {
-    /* full Gp prediction */
-    warn = predict_full(n, nn, col, z, zz, ds2xy, ego, Z, F, corr->get_K(), 
-			corr->get_Ki(), ((Gp_Prior*)prior)->get_T(), tau2, FF, 
-			xxKx, xxKxx, bmu, s2, corr->Nug(), err, state);
+    /* full MrGp prediction */
+    warn = mr_predict_full(n, nn, col, z, zz, ds2xy, ego, 
+			   Z, X, F, corr->get_K(), 
+			   corr->get_Ki(), ((MrGp_Prior*)prior)->get_T(), tau2,
+			   XX, FF, xxKx, xxKxx, bmu, s2, corr->Nug(),
+			   ((MrExpSep*)corr)->Nugfine(), 
+			   ((MrExpSep*)corr)->R(),
+			   ((MrExpSep*)corr)->Delta(),
+			   err, state);
   }
   
   /* print warnings if there were any */
@@ -385,14 +395,14 @@ void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
  * match the high-level linear parameters
  */
 
-void Gp::Match(Base* old)
+void MrGp::Match(Base* old)
 {
-  assert(old->BaseModel() == GP);
-  Gp* gp_old = (Gp*) old;
-  *corr = *(gp_old->corr);
-  dupv(b, gp_old->b, col);
-  s2 = gp_old->s2;
-  tau2 = gp_old->tau2;
+  assert(old->BaseModel() == MR_GP);
+  MrGp* mrgp_old = (MrGp*) old;
+  *corr = *(mrgp_old->corr);
+  dupv(b, mrgp_old->b, col);
+  s2 = mrgp_old->s2;
+  tau2 = mrgp_old->tau2;
 }
 
 
@@ -400,17 +410,17 @@ void Gp::Match(Base* old)
  * Combine:
  *
  * used by the tree prune operation.  Combine the relevant parameters
- * of two child Gps into this (the parent) Gp
+ * of two child MrGps into this (the parent) MrGp
  */
 
-void Gp::Combine(Base *l, Base *r, void *state)
+void MrGp::Combine(Base *l, Base *r, void *state)
 {
-  assert(l->BaseModel() == GP);
-  assert(r->BaseModel() == GP);
-  Gp* l_gp = (Gp*) l;
-  Gp* r_gp = (Gp*) r;
-  corr->Combine(l_gp->corr, r_gp->corr, state);
-  tau2 = combine_tau2(l_gp->tau2, r_gp->tau2, state);
+  assert(l->BaseModel() == MR_GP);
+  assert(r->BaseModel() == MR_GP);
+  MrGp* l_mrgp = (MrGp*) l;
+  MrGp* r_mrgp = (MrGp*) r;
+  corr->Combine(l_mrgp->corr, r_mrgp->corr, state);
+  tau2 = combine_tau2(l_mrgp->tau2, r_mrgp->tau2, state);
 }
 
 
@@ -418,21 +428,21 @@ void Gp::Combine(Base *l, Base *r, void *state)
  * Split:
  *
  * used by the tree grow operation.  Split the relevant parameters
- * of parent Gp into two (left & right) children Gps
+ * of parent MrGp into two (left & right) children MrGps
  */
 
-void Gp::Split(Base *l, Base *r, void *state)
+void MrGp::Split(Base *l, Base *r, void *state)
 {  
   double tau2_new[2];
-  assert(l->BaseModel() == GP);
-  assert(r->BaseModel() == GP);
-  Gp *l_gp = (Gp*) l;
-  Gp *r_gp = (Gp*) r;
-  corr->Split(l_gp->corr, r_gp->corr, state);  
+  assert(l->BaseModel() == MR_GP);
+  assert(r->BaseModel() == MR_GP);
+  MrGp *l_mrgp = (MrGp*) l;
+  MrGp *r_mrgp = (MrGp*) r;
+  corr->Split(l_mrgp->corr, r_mrgp->corr, state);  
   /* new tau2 parameters for the leaves */
   split_tau2(tau2_new, state);
-  l_gp->tau2 = tau2_new[0];
-  r_gp->tau2 = tau2_new[1];
+  l_mrgp->tau2 = tau2_new[0];
+  r_mrgp->tau2 = tau2_new[1];
 }
 
 
@@ -442,10 +452,10 @@ void Gp::Split(Base *l, Base *r, void *state)
  * propose new tau2 parameters for possible new children partitions. 
  */
 
-void Gp::split_tau2(double *tau2_new, void *state)
+void MrGp::split_tau2(double *tau2_new, void *state)
 {
   int i[2];
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
   /* make the larger partition more likely to get the smaller d */
   propose_indices(i, 0.5, state);
   tau2_new[i[0]] = tau2;
@@ -463,7 +473,7 @@ void Gp::split_tau2(double *tau2_new, void *state)
  * combine left and right childs tau2 into a single tau2
  */
 
-double combine_tau2(double l_tau2, double r_tau2, void *state)
+double mr_combine_tau2(double l_tau2, double r_tau2, void *state)
 {
   double tau2ch[2];
 
@@ -481,11 +491,11 @@ double combine_tau2(double l_tau2, double r_tau2, void *state)
  * computes the marginalized likelihood/posterior for this (leaf) node
  */
 
-double Gp::Posterior(void)
+double MrGp::Posterior(void)
 {
   assert(F != NULL);
    
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* the main posterior for the correlation function */
   double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
@@ -506,12 +516,12 @@ double Gp::Posterior(void)
  * this Gaussian Process model
  */
 
-double Gp::FullPosterior(void)
+double MrGp::FullPosterior(void)
 {
   double post = Posterior() + corr->log_Prior();
   /* add in prior for tau2 */
   double ptau2;
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
   invgampdf_log_gelman(&ptau2, &tau2, p->tau2Alpha()/2, p->tau2Beta()/2, 1);
   post += ptau2;
   return post;
@@ -523,23 +533,23 @@ double Gp::FullPosterior(void)
  * 
  * compute marginal parameters: Vb, b, and lambda
  * how this is done depents on whether or not this is a
- * linear model or a Gp, and then also depends on the beta
+ * linear model or a MrGp, and then also depends on the beta
  * prior model.
  */
 
-void Gp::Compute()
+void MrGp::Compute()
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
 
-  double *b0 = ((Gp_Prior*)p)->get_b0();;
-  double** Ti = ((Gp_Prior*)p)->get_Ti();
+  double *b0 = ((MrGp_Prior*)p)->get_b0();;
+  double** Ti = ((MrGp_Prior*)p)->get_Ti();
   
   /* sanity check for a valid partition */
   assert(F);
   
   /* get the right b0  depending on the beta prior */
   
-  switch(((Gp_Prior*)prior)->BetaPrior()) {
+  switch(((MrGp_Prior*)prior)->BetaPrior()) {
   case BMLE: dupv(b0, bmle, col); break;
   case BFLAT: assert(b0[0] == 0.0 && Ti[0][0] == 0.0 && tau2 == 1.0); break;
   case BCART: assert(b0[0] == 0.0 && Ti[0][0] == 1.0 && tau2 == p->Tau2()); break;
@@ -563,7 +573,7 @@ void Gp::Compute()
  * be return by reference, and return a pointer to b
  */
 
-double* Gp::all_params(double *s2, double *tau2, Corr **corr)
+double* MrGp::all_params(double *s2, double *tau2, Corr **corr)
 {
   *s2 = this->s2;
   *tau2 = this->tau2;
@@ -577,7 +587,7 @@ double* Gp::all_params(double *s2, double *tau2, Corr **corr)
  * returns the beta vector parameter
  */
 
-double* Gp::get_b(void)
+double* MrGp::get_b(void)
 {
   return b;
 }
@@ -589,7 +599,7 @@ double* Gp::get_b(void)
  * return a pointer to the correlleation structure
  */
 
-Corr* Gp::get_Corr(void)
+Corr* MrGp::get_Corr(void)
 {
   return corr;
 }
@@ -602,14 +612,14 @@ Corr* Gp::get_Corr(void)
  * print everything intertesting about the current tree node to a file
  */
 
-void Gp::printFullNode(void)
+void MrGp::printFullNode(void)
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
 
-  assert(X); matrix_to_file("X_debug.out", X, n, col-1);
+  assert(X); matrix_to_file("X_debug.out", X, n, d);
   assert(F); matrix_to_file("F_debug.out", F, col, n);
   assert(Z); vector_to_file("Z_debug.out", Z, n);
-  if(XX) matrix_to_file("XX_debug.out", XX, nn, col-1);
+  if(XX) matrix_to_file("XX_debug.out", XX, nn, d);
   if(FF) matrix_to_file("FF_debug.out", FF, col, n);
   if(xxKx) matrix_to_file("xxKx_debug.out", xxKx, n, nn);
   if(xxKxx) matrix_to_file("xxKxx_debug.out", xxKxx, nn, nn);
@@ -628,7 +638,7 @@ void Gp::printFullNode(void)
  * return some notion of variance for this gaussian process
  */
 
-double Gp::Var(void)
+double MrGp::Var(void)
 {
   return s2;
 }
@@ -638,16 +648,32 @@ double Gp::Var(void)
  * 
  * F is just a column of ones and then the X (design matrix)
  *
- * X[n][col], F[col][n]
+ * X[n][d], F[col][n]
  */
 
-void Gp::X_to_F(unsigned int n, double **X, double **F)
-
+void MrGp::X_to_F(unsigned int n, double **X, double **F)
 {
 	unsigned int i,j;
 	for(i=0; i<n; i++) {
-		F[0][i] = 1;
-		for(j=1; j<col; j++) F[j][i] = X[i][j-1];
+	  /* Bobby: this 0.99 stuff is wierd */
+		if(X[i][0] >.99 ){
+			F[0][i] = r;
+			F[d][i] = 1.0;
+			}
+		else {
+			F[0][i] = 1.0;
+			F[d][i] = 0.0;
+			}
+		for(j=1; j<d; j++){
+		  if(X[i][0] > .99 ) {
+			F[j][i] = r*X[i][j];
+			F[j+d][i] = X[i][j];
+			}
+		  else {
+			F[j][i] = X[i][j];
+			F[j+d][i] = 0.0;
+			}
+		}
 	}
 }
 
@@ -659,51 +685,27 @@ void Gp::X_to_F(unsigned int n, double **X, double **F)
  * the underlying correllation function 
  */
 
-double* Gp::Trace(unsigned int* len)
+double* MrGp::Trace(unsigned int* len)
 {
-  /* first get the correllation function parameters */
-  unsigned int clen;
-  double *c = corr->Trace(&clen);
-
-  /* calculate and allocate the new trace, 
-     which will include the corr trace */
-  *len = col + 2;
-  double* trace = new_vector(clen + *len);
-
-  /* copy sigma^2 and tau^2 */
-  trace[0] = s2;
-  trace[1] = tau2;
-
-  /* then copy beta */
-  dupv(&(trace[2]), b, col);
-
-  /* then copy in the corr trace */
-  dupv(&(trace[*len]), c, clen);
-
-  /* new combined length, and free c */
-  *len += clen;
-  if(c) free(c);
-  else assert(clen == 0);
-  
-  return trace;
+  *len = 0;
+  return NULL;
 }
 
 
 /*
- * Gp_Prior:
+ * MrGp_Prior:
  * 
  * the usual constructor function
  */
 
-Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
+MrGp_Prior::MrGp_Prior(unsigned int d) : Base_Prior(d)
 {
-  base_model = GP;
-  col = d+1;
-
+  base_model = MR_GP;
+  col = 2*d;
   /*
    * the rest of the parameters will be read in
-   * from the control file (Gp_Prior::read_ctrlfile), or
-   * from a double vector passed from R (Gp_Prior::read_double)
+   * from the control file (MrGp_Prior::read_ctrlfile), or
+   * from a double vector passed from R (MrGp_Prior::read_double)
    */
   
   corr_prior = NULL;
@@ -713,6 +715,7 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
   b = new_zero_vector(col);
   s2 = 1.0;		/* variance parammer */
   tau2 = 1.0;		/* linear variance parammer */
+  r = 1.0;
     
   default_s2_priors();	        /* set s2_a0 and s2_g0 */
   default_s2_lambdas();	        /* set s2_a0_lambda and s2_g0_lambda */
@@ -758,7 +761,7 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
  * consider getting rid of this later.
  */
 
-void Gp_Prior::InitT(void)
+void MrGp_Prior::InitT(void)
 {
   assert(Ti && T && Tchol);
   if(beta_prior == BFLAT) {
@@ -776,33 +779,35 @@ void Gp_Prior::InitT(void)
 /*
  * Dup:
  *
- * duplicate the Gp_Prior, and set the corr prior properly
+ * duplicate the MrGp_Prior, and set the corr prior properly
  */
 
-Base_Prior* Gp_Prior::Dup(void)
+Base_Prior* MrGp_Prior::Dup(void)
 {
-  Gp_Prior *prior = new Gp_Prior(this);
+  MrGp_Prior *prior = new MrGp_Prior(this);
   prior->CorrPrior()->SetBasePrior(prior);
   return prior;
 }
 
 
 /* 
- * Gp_Prior:
+ * MrGp_Prior:
  * 
  * duplication constructor function
  */
 
-Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
+MrGp_Prior::MrGp_Prior(Base_Prior *prior) : Base_Prior(prior)
 {
   assert(prior);
-  assert(prior->BaseModel() == GP);
+  assert(prior->BaseModel() == MR_GP);
   
   
-  Gp_Prior *p = (Gp_Prior*) prior;
-  d = p->d;
+  MrGp_Prior *p = (MrGp_Prior*) prior;
+
   /* generic and tree parameters */
+  d = p->d;
   col = p->col;
+  r = p->r;
 
   /* linear parameters */
   beta_prior = p->beta_prior;  
@@ -841,12 +846,12 @@ Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
 
 
 /*
- * ~Gp_Prior:
+ * ~MrGp_Prior:
  * 
  * the usual destructor, nothing fancy 
  */
 
-Gp_Prior::~Gp_Prior(void)
+MrGp_Prior::~MrGp_Prior(void)
 {
   free(b);
   free(mu);
@@ -867,7 +872,7 @@ Gp_Prior::~Gp_Prior(void)
  * for use with communication with R
  */
 
-void Gp_Prior::read_double(double * dparams)
+void MrGp_Prior::read_double(double * dparams)
 {
  
  /* read the beta linear prior model */
@@ -934,23 +939,24 @@ void Gp_Prior::read_double(double * dparams)
 
   /* read the corr model */
   switch ((int) dparams[0]) {
-  case 0: corr_prior = new Exp_Prior(col);
+  case 0: corr_prior = new MrExp_Prior(col);
     //myprintf(stdout, "correlation: isotropic power exponential\n");
     break;
-  case 1: corr_prior = new ExpSep_Prior(col);
+  case 1: corr_prior = new MrExpSep_Prior(col);
     //myprintf(stdout, "correlation: separable power exponential\n");
     break;
-  case 2: corr_prior = new Matern_Prior(col);
+  case 2: corr_prior = new MrMatern_Prior(col);
     //myprintf(stdout, "correlation: isotropic matern\n");
     break;
   default: error("bad corr model %d", (int)dparams[0]);
   }
 
-  /* set the gp_prior for this corr_prior */
+  /* set the mrgp_prior for this corr_prior */
   corr_prior->SetBasePrior(this);
 
   /* read the rest of the parameters into the corr prior module */
   corr_prior->read_double(&(dparams[1]));
+
 }
 
 
@@ -960,7 +966,7 @@ void Gp_Prior::read_double(double * dparams)
  * takes params from a control file
  */
 
-void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
+void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
 {
   char line[BUFFMAX], line_copy[BUFFMAX];
 
@@ -1047,19 +1053,20 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* EXP, EXPSEP or MATERN */
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "expsep", 6)) {
-    corr_prior = new ExpSep_Prior(col);
+    corr_prior = new MrExpSep_Prior(col);
     // myprintf(stdout, "correlation: separable power exponential\n");
-  } else if(!strncmp(line, "exp", 3)) {
-    corr_prior = new Exp_Prior(col);
+  }/* else if(!strncmp(line, "exp", 3)) {
+    corr_prior = new MrExp_Prior(col);
     // myprintf(stdout, "correlation: isotropic power exponential\n");
   } else if(!strncmp(line, "matern", 6)) {
-    corr_prior = new Matern_Prior(col);
+    corr_prior = new MrMatern_Prior(col);
     // myprintf(stdout, "correlation: isotropic matern\n");
-  } else {
+    } */
+  else {
     error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }
 
-  /* set the gp_prior for this corr_prior */
+  /* set the mrgp_prior for this corr_prior */
   corr_prior->SetBasePrior(this);
 
   /* read the rest of the parameters into the corr prior module */
@@ -1074,7 +1081,7 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
  * to default values
  */
 
-void Gp_Prior::default_s2_priors(void)
+void MrGp_Prior::default_s2_priors(void)
 {
   s2_a0 = 5; 
   s2_g0 = 10;
@@ -1088,7 +1095,7 @@ void Gp_Prior::default_s2_priors(void)
  * to default values
  */
 
-void Gp_Prior::default_tau2_priors(void)
+void MrGp_Prior::default_tau2_priors(void)
 {
   tau2_a0 = 5; 
   tau2_g0 = 10;
@@ -1103,7 +1110,7 @@ void Gp_Prior::default_tau2_priors(void)
  * to default values
  */
 
-void Gp_Prior::default_tau2_lambdas(void)
+void MrGp_Prior::default_tau2_lambdas(void)
 {
   tau2_a0_lambda = 0.2;
   tau2_g0_lambda = 10;
@@ -1118,7 +1125,7 @@ void Gp_Prior::default_tau2_lambdas(void)
  * to default values
  */
 
-void Gp_Prior::default_s2_lambdas(void)
+void MrGp_Prior::default_s2_lambdas(void)
 {
   s2_a0_lambda = 0.2;
   s2_g0_lambda = 10;
@@ -1133,7 +1140,7 @@ void Gp_Prior::default_s2_lambdas(void)
  * save it for later use
  */
 
-void Gp_Prior::read_beta(char *line)
+void MrGp_Prior::read_beta(char *line)
 {
   b[0] = atof(strtok(line, " \t\n#"));
   for(unsigned int i=1; i<col; i++) {
@@ -1155,7 +1162,7 @@ void Gp_Prior::read_beta(char *line)
  * return the current beta prior model indicator
  */
 
-BETA_PRIOR Gp_Prior::BetaPrior(void)
+BETA_PRIOR MrGp_Prior::BetaPrior(void)
 {
   return beta_prior;
 }
@@ -1164,10 +1171,10 @@ BETA_PRIOR Gp_Prior::BetaPrior(void)
 /*
  * CorrPrior:
  *
- * return the prior module for the gp correlation function
+ * return the prior module for the mrgp correlation function
  */
 
-Corr_Prior* Gp_Prior::CorrPrior(void)
+Corr_Prior* MrGp_Prior::CorrPrior(void)
 {
   return corr_prior;
 }
@@ -1179,7 +1186,7 @@ Corr_Prior* Gp_Prior::CorrPrior(void)
  * return the alpha parameter to the Gamma(alpha, beta) prior for s2
  */
 
-double Gp_Prior::s2Alpha(void)
+double MrGp_Prior::s2Alpha(void)
 {
   return s2_a0;
 }
@@ -1190,7 +1197,7 @@ double Gp_Prior::s2Alpha(void)
  * return the beta parameter to the Gamma(alpha, beta) prior for s2
  */
 
-double Gp_Prior::s2Beta(void)
+double MrGp_Prior::s2Beta(void)
 {
   return s2_g0;
 }
@@ -1202,7 +1209,7 @@ double Gp_Prior::s2Beta(void)
  * return the alpha parameter to the Gamma(alpha, beta) prior for tau2
  */
 
-double Gp_Prior::tau2Alpha(void)
+double MrGp_Prior::tau2Alpha(void)
 {
   return tau2_a0;
 }
@@ -1213,7 +1220,7 @@ double Gp_Prior::tau2Alpha(void)
  * return the beta parameter to the Gamma(alpha, beta) prior for tu2
  */
 
-double Gp_Prior::tau2Beta(void)
+double MrGp_Prior::tau2Beta(void)
 {
   return tau2_g0;
 }
@@ -1225,7 +1232,7 @@ double Gp_Prior::tau2Beta(void)
  * return the starting beta linear model vector
  */
 
-double *Gp_Prior::B(void)
+double* MrGp_Prior::B(void)
 {
   return b;
 }
@@ -1237,7 +1244,7 @@ double *Gp_Prior::B(void)
  * return the starting s2 variance parameter 
  */
 
-double Gp_Prior::S2(void)
+double MrGp_Prior::S2(void)
 {
   return s2;
 }
@@ -1249,11 +1256,21 @@ double Gp_Prior::S2(void)
  * return the starting tau2 LM variance parameter
  */
 
-double Gp_Prior::Tau2(void)
+double MrGp_Prior::Tau2(void)
 {
   return tau2;
 }
 
+/*
+ * R:
+ * 
+ * return the autocorrelation between fidelities, r
+ *
+ */
+double MrGp_Prior::R(void)
+{
+  return r;
+}
 
 /*
  * LLM:
@@ -1262,7 +1279,7 @@ double Gp_Prior::Tau2(void)
  * correlation prior
  */
 
-bool Gp_Prior::LLM(void)
+bool MrGp_Prior::LLM(void)
 {
   return corr_prior->LLM();
 }
@@ -1275,20 +1292,20 @@ bool Gp_Prior::LLM(void)
  * the limiting linear model.
  */
 
-double Gp_Prior::ForceLinear(void)
+double MrGp_Prior::ForceLinear(void)
 {
   return corr_prior->ForceLinear();
 }
 
 
 /*
- * Gp:
+ * MrGp:
  * 
  * un-force the LLM by resetting the gamma (gamlin[0])
  * parameter to the specified value
  */
 
-void Gp_Prior::ResetLinear(double gam)
+void MrGp_Prior::ResetLinear(double gam)
 {
   corr_prior->ResetLinear(gam);
 }
@@ -1301,7 +1318,7 @@ void Gp_Prior::ResetLinear(double gam)
  * process parameterizaton, including correlation subprior
  */
 
-void Gp_Prior::Print(FILE* outfile)
+void MrGp_Prior::Print(FILE* outfile)
 {
   /* beta prior */
   switch (beta_prior) {
@@ -1346,7 +1363,7 @@ void Gp_Prior::Print(FILE* outfile)
  * Also prints the state based on round r
  */
 
-void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
+void MrGp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 {
 	double **b, **bmle, *s2, *tau2;
 	Corr **corr;
@@ -1361,7 +1378,7 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 	/* collect bmle parameters from the leaves */
 	if(beta_prior == BMLE)
 	  for(unsigned int i=0; i<numLeaves; i++)
-	    dupv(bmle[i], ((Gp*)(leaves[i]->GetBase()))->Bmle(), col);
+	    dupv(bmle[i], ((MrGp*)(leaves[i]->GetBase()))->Bmle(), col);
 	
 	/* draw hierarchical parameters */
 	if(beta_prior == B0 || beta_prior == BMLE) { 
@@ -1390,7 +1407,7 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
  * for Beta prior
  */
 
-double** Gp_Prior::get_Ti(void)
+double** MrGp_Prior::get_Ti(void)
 {
 	return Ti;
 }
@@ -1402,7 +1419,7 @@ double** Gp_Prior::get_Ti(void)
  * return T: covariance matrix for the Beta prior
  */
 
-double** Gp_Prior::get_T(void)
+double** MrGp_Prior::get_T(void)
 {
 	return T;
 }
@@ -1414,7 +1431,7 @@ double** Gp_Prior::get_T(void)
  * return b0: prior mean for Beta
  */
 
-double* Gp_Prior::get_b0(void)
+double* MrGp_Prior::get_b0(void)
 {
 	return b0;
 }
@@ -1425,10 +1442,10 @@ double* Gp_Prior::get_b0(void)
  * ToggleLinear:
  *
  * Toggle the entire partition into and out of 
- * linear mode.  If linear, make Gp.  If Gp, make linear.
+ * linear mode.  If linear, make MrGp.  If MrGp, make linear.
  */
 
-void Gp::ToggleLinear(void)
+void MrGp::ToggleLinear(void)
 {
   corr->ToggleLinear();
   Update(X, n, col, Z);
@@ -1443,7 +1460,7 @@ void Gp::ToggleLinear(void)
  * false otherwise
  */
 
-bool Gp::Linear(void)
+bool MrGp::Linear(void)
 {
   return corr->Linear();
 }
@@ -1455,7 +1472,7 @@ bool Gp::Linear(void)
  * return the count of the dimensions under the LLM
  */
 
-unsigned int Gp::sum_b(void)
+unsigned int MrGp::sum_b(void)
 {
   return corr->sum_b();
 }
@@ -1467,7 +1484,7 @@ unsigned int Gp::sum_b(void)
  * return ML estimate for beta
  */
 
-double* Gp::Bmle(void)
+double* MrGp::Bmle(void)
 {
   return bmle;
 }
@@ -1476,11 +1493,11 @@ double* Gp::Bmle(void)
 /*
  * State:
  *
- * return some Gp state information (corr state information
+ * return some MrGp state information (corr state information
  * in particular, for printing in the main meta model
  */
 
-char* Gp::State(void)
+char* MrGp::State(void)
 {
   assert(corr);
   return(corr->State());
@@ -1494,7 +1511,7 @@ char* Gp::State(void)
  * values at each leaf (of numLeaves) of the tree
  */
 
-void allocate_leaf_params(unsigned int col, double ***b, double **s2, 
+void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, 
 			  double **tau2, Corr ***corr, Tree **leaves, unsigned int numLeaves)
 {
   *b = new_matrix(numLeaves, col);
@@ -1504,8 +1521,8 @@ void allocate_leaf_params(unsigned int col, double ***b, double **s2,
 
   /* collect parameters from the leaves */
   for(unsigned int i=0; i<numLeaves; i++) {
-    Gp* gp = (Gp*) (leaves[i]->GetBase());
-    dupv((*b)[i], gp->all_params(&((*s2)[i]), &((*tau2)[i]), &((*corr)[i])), col);
+    MrGp* mrgp = (MrGp*) (leaves[i]->GetBase());
+    dupv((*b)[i], mrgp->all_params(&((*s2)[i]), &((*tau2)[i]), &((*corr)[i])), col);
   }
 }
 
@@ -1517,7 +1534,7 @@ void allocate_leaf_params(unsigned int col, double ***b, double **s2,
  * values at each leaf of numLeaves
  */
 
-void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
+void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
 {
   delete_matrix(b); 
   free(s2); 
@@ -1529,11 +1546,26 @@ void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
 /*
  * newBase:
  *
- * generate a new Gp base model whose
+ * generate a new MrGp base model whose
  * parameters have priors from the from this class
  */
 
-Base* Gp_Prior::newBase(Model *model)
+Base* MrGp_Prior::newBase(Model *model)
 {
-  return new Gp(col-1, (Base_Prior*) this, model);
+  return new MrGp(d, (Base_Prior*) this, model);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

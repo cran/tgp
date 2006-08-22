@@ -17,12 +17,16 @@
   Output is a \code{list} with entries:
 
     \item{X}{2-d \code{data.frame} with \code{n1 + n2} input locations}
-    \item{Z}{Numeric vector describing the responses (with noise) at the \code{X} input locations}
-    \item{Ztrue}{Numeric vector describing the true responses (without noise) at the \code{X} input locations}
-    \item{XX}{2-d \code{data.frame} containing the remaining \code{441 - (n1 + n2)} 
-    input locations}
-    \item{ZZ}{Numeric vector describing the responses (with noise) at the \code{XX} predictive locations}
-    \item{ZZtrue}{Numeric vector describing the responses (without noise) at the \code{XX} predictive locations}
+    \item{Z}{Numeric vector describing the responses (with noise) at the
+      \code{X} input locations}
+    \item{Ztrue}{Numeric vector describing the true responses (without
+      noise) at the \code{X} input locations}
+    \item{XX}{2-d \code{data.frame} containing the remaining
+      \code{441 - (n1 + n2)} input locations}
+    \item{ZZ}{Numeric vector describing the responses (with noise) at
+      the \code{XX} predictive locations}
+    \item{ZZtrue}{Numeric vector describing the responses (without
+      noise) at the \code{XX} predictive locations}
 }
 \details{
 	Data is subsampled without replacement from \code{data(\link{exp2d})}.
@@ -34,15 +38,11 @@
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
-\emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01.
 
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
-
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \note{This data is used in the examples of the functions

@@ -38,8 +38,6 @@ extern "C"
 #include "base.h"
 #include "model.h"
 #include "params.h"
-#include "exp.h"
-#include "exp_sep.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
@@ -63,7 +61,7 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
 
   /* data size */
   this->n = n;
-  this->col = d+1;
+  this->d = d;
 
   /* data storage */
   this->X = X; 
@@ -104,7 +102,7 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
 Tree::Tree(const Tree *told)
 {
   /* simple non-pointer copies */
-  col = told->col;
+  d = told->d;
   n = told->n;
   
   /* tree parameters */
@@ -121,7 +119,7 @@ Tree::Tree(const Tree *told)
   
   /* data */
   assert(told->rect); 	rect = new_dup_rect(told->rect);
-  assert(told->X); 	X = new_dup_matrix(told->X,n,col-1);
+  assert(told->X); 	X = new_dup_matrix(told->X,n,d);
   assert(told->Z); 	Z = new_dup_vector(told->Z, n);
   assert(told->p);	p = new_dup_ivector(told->p, n); 
   
@@ -173,9 +171,9 @@ Tree::~Tree(void)
  * via matrix_constrained
  */
 
-unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col_pred)
+unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int d_pred)
 {
-  assert(col_pred == col);
+  assert(d_pred == d);
   assert(isLeaf());
   
   /* do not recompute XX if it has already been computed */
@@ -186,12 +184,12 @@ unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col
   }
   
   int *p_pred = new_ivector(n_pred);
-  nn = matrix_constrained(p_pred, X_pred, n_pred, col-1, rect);
-  XX = new_matrix(nn, col-1);
+  nn = matrix_constrained(p_pred, X_pred, n_pred, d, rect);
+  XX = new_matrix(nn, d);
   pp = new_ivector(nn);
   unsigned int k=0;
   for(unsigned int i=0; i<n_pred; i++)
-    if(p_pred[i]) { pp[k] = i; dupv(XX[k], X_pred[i], col-1); k++; }
+    if(p_pred[i]) { pp[k] = i; dupv(XX[k], X_pred[i], d); k++; }
   free(p_pred);
 
   return nn;
@@ -207,7 +205,7 @@ unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int col
 
 void Tree::new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned int d_new)
 {
-  assert(d_new+1 == col);
+  assert(d_new == d);
   assert(isLeaf());
 
   /* delete X if it has already been computed */
@@ -217,16 +215,16 @@ void Tree::new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned in
   base->Clear();
   
   int *p_new = new_ivector(n_new);
-  n = matrix_constrained(p_new, X_new, n_new, col-1, rect);
+  n = matrix_constrained(p_new, X_new, n_new, d, rect);
   assert(n > 0);
-  X = new_matrix(n, col-1);
+  X = new_matrix(n, d);
   Z = new_vector(n);
   p = new_ivector(n);
   unsigned int k=0;
   for(unsigned int i=0; i<n_new; i++) {
     if(p_new[i]) { 
       p[k] = i; 
-      dupv(X[k], X_new[i], col-1); 
+      dupv(X[k], X_new[i], d); 
       Z[k] = Z_new[i];
       k++; 
     }
@@ -250,7 +248,7 @@ void Tree::new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned in
 void Tree::new_data(double **X_new, unsigned int n_new, unsigned int d_new, 
 		double *Z_new, int *p_new)
 {
-  assert(d_new == col-1);
+  assert(d_new == d);
   delete_matrix(X);
   free(Z); free(p);
   Clear();
@@ -320,7 +318,7 @@ void Tree::Predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, bool 
   if(Zpred == NULL && nn == 0) return;
 
   /* set the partition */
-  if(nn > 0) base->UpdatePred(XX, nn, col, Ds2xy);
+  if(nn > 0) base->UpdatePred(XX, nn, d, Ds2xy);
 
   /* ready the storage for predictions */
     double *z, *zz, **ds2xy, *ego;
@@ -1097,7 +1095,15 @@ bool Tree::grow(double ratio, void *state)
   assert(isLeaf());	
   
   /* propose the next tree, by choosing the split point */
-  var = sample_seq(0, col-2, state);
+  switch(base->BaseModel()){
+  case GP: var = sample_seq(0, d-1, state);
+    break;
+  case MR_GP: var = sample_seq(1, d-1, state);
+    break;
+  default: error("bad base model in tree:grow, default to GP");
+    var = sample_seq(0, d-1, state);
+  }
+  
   val = propose_split(&q_fwd, state);
   pStar_log = 0.0 - log((double) (model->get_TreeRoot())->n);
   
@@ -1105,6 +1111,7 @@ bool Tree::grow(double ratio, void *state)
   success = grow_children();
   if(!success) return false;
   
+ 
   /* propose new correlation paramers for the new leaves */
   base->Split(leftChild->base, rightChild->base, state);
 
@@ -1112,8 +1119,11 @@ bool Tree::grow(double ratio, void *state)
   pk = leftChild->Posterior() + rightChild->Posterior();
   pklast = this->Posterior();
   alpha = ratio*exp(pk-pklast+pStar_log)/q_fwd;
+
   if(alpha > 1) alpha = 1;
   
+ 
+
   /* accept or reject? */
   bool ret_val = true;
   if(runi(state) > alpha) {
@@ -1174,10 +1184,10 @@ int Tree::part_child(FIND_OP op, double ***Xc, int **pnew, unsigned int *plen,
   if(*plen == 0) return 0;
   
   /* partition the data and predictive locations */
-  *Xc = new_matrix(*plen,col-1);
+  *Xc = new_matrix(*plen,d);
   *Zc = new_vector(*plen); 
   *pnew = new_ivector(*plen);
-  for(i=0; i<col-1; i++) for(j=0; j<*plen; j++) (*Xc)[j][i] = X[pchild[j]][i];
+  for(i=0; i<d; i++) for(j=0; j<*plen; j++) (*Xc)[j][i] = X[pchild[j]][i];
   for(j=0; j<*plen; j++) {
     (*Zc)[j] = Z[pchild[j]];
     (*pnew)[j] = p[pchild[j]];
@@ -1185,8 +1195,8 @@ int Tree::part_child(FIND_OP op, double ***Xc, int **pnew, unsigned int *plen,
   if(pchild) free(pchild); 
   
   /* record the boundary of this partition */
-  *newRect = new_rect(col-1);
-  for(unsigned int i=0; i<col-1; i++) {
+  *newRect = new_rect(d);
+  for(unsigned int i=0; i<d; i++) {
     (*newRect)->boundary[0][i] = rect->boundary[0][i];
     (*newRect)->boundary[1][i] = rect->boundary[1][i];
     (*newRect)->opl[i] = rect->opl[i];
@@ -1227,7 +1237,7 @@ unsigned int Tree::grow_child(Tree** child, FIND_OP op)
   if(success == 0) return success;
   
   /* grow the Child */
-  (*child) = new Tree(Xc, pnew, plen, col-1, Zc, newRect, this, model);
+  (*child) = new Tree(Xc, pnew, plen, d, Zc, newRect, this, model);
   return plen;
 }
 
@@ -1541,13 +1551,13 @@ unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
   assert(N <= nn);
   assert(XX);
   int *fi = new_ivector(N); 
-  double ** Xboth = new_matrix(N+n, col-1);
-  // dopt(Xboth, fi, X, XX, col-1, n, nn, N, d, nug, state);
-  dopt(Xboth, fi, X, XX, col-1, n, nn, N, DOPT_D(col-1), DOPT_NUG(), state);
+  double ** Xboth = new_matrix(N+n, d);
+  // dopt(Xboth, fi, X, XX, d, n, nn, N, d, nug, state);
+  dopt(Xboth, fi, X, XX, d, n, nn, N, DOPT_D(d), DOPT_NUG(), state);
   unsigned int *fi_ret = new_uivector(N); 
   for(unsigned int i=0; i<N; i++) {
     fi_ret[i] = pp[fi[i]-1];
-    for(unsigned int j=0; j<col-1; j++)
+    for(unsigned int j=0; j<d; j++)
       assert(Xboth[n+i][j] == XX[fi[i]-1][j]);
   }
   free(fi);
@@ -1573,15 +1583,17 @@ bool Tree::wellSized(void)
 /*
  * Singular:
  * 
- * return true if this node has a valid design matrix (X)
- * determined by checking that none of the rows of X
- * have the same value
+ * return true return true iff X has a column
+ * with all the same value.
  */
 
 bool Tree::Singular(void)
 {
   assert(X);
-  for(unsigned int i=0; i<col-1; i++) {
+  unsigned int mn=0;
+  if(base->BaseModel()==MR_GP) mn=1;
+
+  for(unsigned int i=mn; i<d; i++) {
     double f = X[0][i];
     unsigned int j = 0;
     for(j=1; j<n; j++) if(f != X[j][i]) break;
@@ -1747,7 +1759,7 @@ double Tree::FullPosterior(double alpha, double beta)
 
 void Tree::Update(void)
 {
-  base->Update(X, n, col, Z);
+  base->Update(X, n, d, Z);
 }
 
 
@@ -1853,9 +1865,9 @@ Base* Tree::GetBase(void)
  
 
 /*
- * posterior:
+ * Posterior:
  *
- * check to make sure the model (e.g. GP) is up to date
+ * check to make sure the model (e.g., GP) is up to date
  * -- has correct data size --, if not then Update it,
  * and then copute the posterior pdf
  */
@@ -1869,4 +1881,34 @@ double Tree::Posterior(void)
   } else assert(basen == n);
 
   return base->Posterior();
+}
+
+
+/*
+ * Trace:
+ *
+ * gathers trace statistics from the Base model
+ * and writes them out to the specified file
+ */
+
+void Tree::Trace(unsigned int index, FILE* XXTRACEFILE)
+{
+  double *trace;
+  unsigned int len;
+  
+  /* sanity checks */
+  assert(XXTRACEFILE);
+  if(!pp) return;
+
+  /* get the trace */
+  trace = base->Trace(&len);
+
+  /* write to the XX trace file */
+  for(unsigned int i=0; i<nn; i++) {
+    myprintf(XXTRACEFILE, "%d %d ", pp[i]+1, index+1);
+    printVector(trace, len, XXTRACEFILE);
+  }
+
+  /* discard the trace */
+  if(trace) free(trace);
 }

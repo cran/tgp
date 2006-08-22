@@ -27,15 +27,38 @@
 {
   .C("tgp_cleanup", PACKAGE = "tgp")
   
-  ## gather information about partitions
-  if(file.exists(paste("./", "parts_1.out", sep=""))) {
-    cat("INTERRUPT: removed parts_1.out\n")
-    unlink("parts_1.out")
+  if(file.exists(paste("./", "best_parts_1.out", sep=""))) {
+    cat("INTERRUPT: removed best_parts_1.out\n")
+    unlink("best_parts_1.out")
   } 
   
-  ## gather information about MAP trees as a function of height
   if(file.exists(paste("./", "tree_m0_posts.out", sep=""))) {
     cat("INTERRUPT: removed tree_m0_posts.out\n")
     unlink("tree_m0_posts.out")
   }
+
+  if(file.exists(paste("./", "trace_parts_1.out", sep=""))) {
+    cat("INTERRUPT: removed trace_parts_1.out\n")
+    unlink("trace_parts_1.out")
+  } 
+
+  if(file.exists(paste("./", "trace_post_1.out", sep=""))) {
+    cat("INTERRUPT: removed trace_post_1.out\n")
+    unlink("trace_post_1.out")
+  } 
+
+  if(file.exists(paste("./", "trace_linarea_1.out", sep=""))) {
+    cat("INTERRUPT: removed trace_linarea_1.out\n")
+    unlink("trace_linarea_1.out")
+  } 
+
+  if(file.exists(paste("./", "trace_XX_1.out", sep=""))) {
+    cat("INTERRUPT: removed trace_XX_1.out\n")
+    unlink("trace_XX_1.out")
+  } 
+
+  if(file.exists(paste("./", "trace_ZZ_1.out", sep=""))) {
+    cat("INTERRUPT: removed trace_ZZ_1.out\n")
+    unlink("trace_ZZ_1.out")
+  } 
  }

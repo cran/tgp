@@ -17,27 +17,29 @@
 \usage{
 blm(X, Z, XX = NULL, bprior = "bflat", BTE = c(1000, 4000, 3), 
 	R = 1, m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, verb = 1)
+        ego = FALSE, traces = FALSE, verb = 1)
 btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.25, 2, 10), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	pred.n = TRUE, ds2x = FALSE, ego=FALSE, verb = 1)
+	pred.n = TRUE, ds2x = FALSE, ego=FALSE, traces = FALSE,
+        verb = 1)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
 	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 0.5,
-        verb = 1)
+        traces = FALSE, verb = 1)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
 	m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5, verb = 1)
+        ego = FALSE, nu = 0.5, traces = FALSE, verb = 1)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), BTE = c(2000, 7000, 2), R = 1, 
 	m0r1 = FALSE, linburn = FALSE, pred.n = TRUE, 
-	ds2x = FALSE, ego = FALSE, nu = 0.5, verb = 1)
+	ds2x = FALSE, ego = FALSE, nu = 0.5, traces = FALSE,
+        verb = 1)
 btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), gamma=c(10,0.2,0.7), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	linburn = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5, verb = 1)
+        ego = FALSE, nu = 0.5, traces = FALSE, verb = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -66,36 +68,43 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
 	\code{t1 + t2 <= 1} specifies
 	\deqn{p(b|d)=t_1 +
-	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
+	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}
+	{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
 	the isotropic Matern (\code{"matern"}) as \dQuote{beta} functionality}
-  \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and (E)very. Predictive
-  	samples are saved every E MCMC rounds starting at round B, stopping at T. }
-  \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds, default 1 is no restarts}
-  \item{m0r1}{If \code{TRUE} the responses \code{Z} are scaled to have a mean of
+  \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and
+    (E)very. Predictive samples are saved every E MCMC rounds starting
+    at round B, stopping at T. }
+  \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds,
+    default \code{R=1} is no restarts}
+  \item{m0r1}{If \code{TRUE} the responses \code{Z} will be scaled to have a mean of
   	zero and a range of 1; default is \code{FALSE}}
   \item{linburn}{If \code{TRUE} initializes MCMC with \code{B} (additional) 
   	rounds of Bayesian Linear CART (\code{btlm}); default is \code{FALSE} }
       \item{pred.n}{\code{TRUE} (default) value results in prediction at
 	the inputs \code{X}; \code{FALSE} 
   	skips prediction at \code{X} resulting in a faster implementation}
-  \item{ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn) computation of expected
-  	reduction in uncertainty calculations at the \code{X} locations, which can be used
-	for adaptive sampling; \code{FALSE} (default) skips this computation, resulting in
+  \item{ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
+    computation of expected reduction in uncertainty calculations at the
+    \code{X} locations, which can be used for adaptive sampling;
+    \code{FALSE} (default) skips this computation, resulting in
 	a faster implementation}
   \item{ego}{ \code{TRUE} results in EGO (Expected Global Optimization)
     computation of expected information about the location of the minimum
-    reduction in uncertainty calculations at the \code{XX} locations, which can be used
-    for adaptive sampling; \code{FALSE} (default) skips this computation, resulting in
-    a faster implementation}
-  \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for the Matern
-    correlation function; nu+0.5 times differentiable}
+    reduction in uncertainty calculations at the \code{XX} locations,
+    which can be used for adaptive sampling; \code{FALSE} (default)
+    skips this computation, resulting in a faster implementation}
+  \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for
+    the Matern correlation function; nu+0.5 times differentiable}
+  \item{traces}{ \code{TRUE} results in a saving of samples from the
+    posterior distribution for most of the parameters in the model.  The
+    default is \code{FALSE} for speed/storage reasons. See note below }
   \item{verb}{ Level of verbosity of R-console print statments: from 0
     (none); 1 (default) which shows the \dQuote{progress meter}; 2
     includes an echo of initialization parameters; up to 3 and 4 (max)
-    with more info about successful tree operations.}
+    with more info about successful tree operations}
 }
 
 \details{
@@ -120,6 +129,8 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   GP category functions take the \code{corr} argument; and LLM category functions take the
   \code{gamma} argument.  Non-tree class functions omit the \code{parts}
   and \code{trees} outputs, see below
+  
+  Please see \code{vignette("tgp")} for detailed illustration
 }
 
 \value{
@@ -153,31 +164,34 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{ZZ.q2}{Vector of 95\% predictive quantiles at \code{XX} locations}
   \item{ZZ.q}{Vector of quantile norms \code{ZZ.q2-ZZ.q1}, used by the 
   	Active Learning--MacKay (ALM) adaptive sampling algorithm}
-  \item{Ds2x}{If argument \code{ds2x=TRUE}, this vector contains ALC statistics for \code{XX}
-    locations}
-  \item{ego}{If argument \code{ego=TRUE}, this vector contains EGO  statistics for \code{XX}
-    locations}
+  \item{Ds2x}{If argument \code{ds2x=TRUE}, this vector contains ALC
+    statistics for \code{XX} locations}
+  \item{ego}{If argument \code{ego=TRUE}, this vector contains EGO
+    statistics for \code{XX} locations}
   \item{response}{Name of response \code{Z} if supplied by \code{data.frame} 
   	in argument, or "z" if none provided}
 
   \item{parts}{Internal representation of the regions depicted by partitions of
   	the maximum a' posteriori (MAP) tree}
-  \item{trees}{\code{list} of trees (\pkg{maptree} representation) which were MAP as a function
-  	of each tree height sampled between MCMC rounds \code{B} and \code{T}}
+  \item{trees}{\code{list} of trees (\pkg{maptree} representation) which
+	were MAP as a function
+  	of each tree height sampled between MCMC rounds \code{B} and
+  	\code{T}}
+  \item{traces}{If input argument \code{traces=TRUE}, this is
+	\code{list} containing traces of most of the model
+    parameters and posterior predictive distributions at input locations
+    \code{XX}.  Otherwise the entry is \code{FALSE}.  See note below}
+  \item{verb}{Input argument: verbosity level}
 }
 
 \references{
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
-\emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01.
 
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
-\emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
-submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Adaptive design of supercomputer experiments.}
+Available as UCSC Technical Report ams2006-02.
 
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
@@ -188,7 +202,7 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu} }
@@ -207,7 +221,17 @@ button in the \R-GUI.  When this happens, interrupt messages will
 indicate which required cleanup measures completed before returning
 control to \R.
 
-Please see \code{vignette("tgp")} for detailed illustration.
+Regarding \code{traces=TRUE}: Samples from the posterior will be
+collected for all parameters in the model, except those of the
+hierarchical priors, e.g., \code{b0}, etc.  Traces for some parameters
+are stored in memory, others in files. GP parameters are collected
+with reference to the locations in \code{XX}, resulting
+\code{nn=dim{XX}[2]} traces of \code{d,g,s2,tau2}, etc.  Therefore, it
+is recommended that \code{nn} is chosen to be a small, representative,
+set of input locations.  Besides GP parameters, traces are saved for
+the tree partitions, areas under the LLM, log posterior (as a function
+of tree height), and samples \code{ZZ} from the posterior predictive
+distribution at \code{XX}
 }
 
 \seealso{  \code{\link{tgp}}, \code{\link{plot.tgp}},

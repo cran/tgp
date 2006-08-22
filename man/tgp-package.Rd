@@ -5,8 +5,8 @@
 The Treed Gaussian Process Model Package
 }
 \description{
-A Bayesian nonstationary nonparametric regression package implementing an array of models
-	of varying flexibility and complexity.
+A Bayesian nonstationary nonparametric regression and design package 
+	implementing an array of models of varying flexibility and complexity.
 }
 \details{
 This package implements Bayesian nonparametric and nonstationary regression
@@ -26,7 +26,15 @@ For a complete list of functions, use \code{library(help="tgp")}.
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01. 
+
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Adaptive design of supercomputer experiments.}
+Available as UCSC Technical Report ams2006-02. 
+
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 

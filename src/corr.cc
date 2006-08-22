@@ -47,7 +47,7 @@ using namespace std;
  * the usual constructor function
  */
 
-Corr::Corr(unsigned int col, Gp_Prior *gp_prior)
+Corr::Corr(unsigned int col, Base_Prior *base_prior)
 {
   this->col = col;
   n = 0;
@@ -59,13 +59,10 @@ Corr::Corr(unsigned int col, Gp_Prior *gp_prior)
   log_det_K = log_det_K_new = 0.0;
   
   /* set priors */
-  assert(gp_prior);
-  this->gp_prior = gp_prior;
-  prior = gp_prior->CorrPrior();
-  assert(prior);
+  assert(base_prior);
+  this->base_prior = base_prior;
+ 
 
-  /* set parameters */
-  nug = prior->Nug();
 }
 
 
@@ -157,6 +154,7 @@ void Corr::allocate_new(unsigned int n)
 
 void Corr::Invert(unsigned int n)
 {
+
   if(! linear) {
     assert(n == this->n);
     inverse_chol(K, Ki, Kchol, n);
@@ -205,38 +203,6 @@ void Corr::deallocate_new(void)
 double Corr::Nug(void)
 {
   return nug;
-}
-
-
-/* 
- * DrawNug:
- * 
- * draw for the nugget; 
- * rebuilding K, Ki, and marginal params, if necessary 
- * return true if the correlation matrix has changed; false otherwise
- */
-
-bool Corr::DrawNug(unsigned int n, double **F, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, void *state)
-{
-  bool success = false;
-
-  /* allocate K_new, Ki_new, Kchol_new */
-  if(! linear) assert(n == this->n);
-  
-  if(runi(state) > 0.5) return false;
-  
-  /* make the draw */
-  double nug_new = 
-    nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
-		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
-		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), prior->NugBeta(), 
-		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
-  
-  /* did we accept the draw? */
-  if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
-  
-  return success;
 }
 
 
@@ -400,7 +366,7 @@ void Corr::printCorr(unsigned int n)
 Corr_Prior::Corr_Prior(const unsigned int col)
 {
   this->col = col;
-  gp_prior = NULL;
+  base_prior = NULL;
   
   gamlin[0] = 10;		/* gamma for the linear pdf */
   gamlin[1] = 0.2;	        /* min prob for the linear pdf */
@@ -428,7 +394,7 @@ Corr_Prior::Corr_Prior(Corr_Prior *c)
   dupv(nug_beta, c->nug_beta, 2); 
   dupv(nug_alpha_lambda, c->nug_alpha_lambda, 2); 
   dupv(nug_beta_lambda, c->nug_beta_lambda, 2);
-  gp_prior = NULL;
+  base_prior = NULL;
 }
 
 /*
@@ -735,30 +701,6 @@ void Corr_Prior::ResetLinear(double gam)
 double* Corr_Prior::GamLin(void)
 {
   return gamlin;
-}
-
-
-/* 
- * GpPrior:
- *
- * return the prior for the Gp model
- */
-
-Gp_Prior* Corr_Prior::GpPrior(void)
-{
-  return gp_prior;
-}
-
-
-/*
- * SetGpPrior:
- *
- * set the gp_prior field
- */
-
-void Corr_Prior::SetGpPrior(Gp_Prior *gp_prior)
-{
-  this->gp_prior = gp_prior;
 }
 
 

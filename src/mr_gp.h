@@ -22,8 +22,8 @@
  ********************************************************************************/
 
 
-#ifndef __GP_H__
-#define __GP_H__ 
+#ifndef __MR_GP_H__
+#define __MR_GP_H__ 
 
 #include <fstream>
 #include "corr.h"
@@ -34,16 +34,17 @@ class Tree;
 
 #define BUFFMAX 256
 
-typedef enum BETA_PRIOR {B0=801, BMLE=802, BFLAT=803, BCART=804, B0TAU=805} BETA_PRIOR;
+// These are already defined in GP.h
+//  typedef enum BETA_PRIOR {B0=801, BMLE=802, BFLAT=803, BCART=804, B0TAU=805} BETA_PRIOR;
 
 
-class Gp : public Base
+class MrGp : public Base
 {
  private:
-
+ 
   double **F;		        /* col x n, matrix (1,X) */
   double **FF;		        /* col x nn, matrix (1,XX) */
-  unsigned int col;	        
+  unsigned int col;
 
   double **xxKx;		/* nn x n, cross covariance between XX and X */
   double **xxKxx;		/* nn x nn, cross covariance between XX and XX */
@@ -58,14 +59,15 @@ class Gp : public Base
   
   double **Vb;		        /* variance of Gibbs beta step */
   double *bmu;		        /* mean of gibbs beta step */
-  double *bmle;		        /* linear coefficients mle w/o Gp */
+  double *bmle;		        /* linear coefficients mle w/o MrGp */
    
+  double r;		        /*correlation between fidelities */
   double lambda;		/* parameter in marginalized beta */
   
  public:
-  Gp(unsigned int d, Base_Prior *prior, Model *model);
-  Gp(double **X, double *Z, Base *gp_old);
-  virtual ~Gp(void);
+  MrGp(unsigned int d, Base_Prior *prior, Model *model);
+  MrGp(double **X, double *Z, Base *mrgp_old);
+  virtual ~MrGp(void);
   virtual Base* Dup(double **X, double *Z); 
   virtual void Clear(void);
   virtual void ClearPred(void);
@@ -75,9 +77,9 @@ class Gp : public Base
   virtual bool Draw(void *state);
   virtual void Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
 		       double **ds2xy, double *ego, bool err, void *state);
-  virtual void Match(Base* gp_old);
-  virtual void Combine(Base *l_gp, Base *r_gp, void *state);
-  virtual void Split(Base *l_gp, Base *r_gp, void *state);
+  virtual void Match(Base* mrgp_old);
+  virtual void Combine(Base *l_mrgp, Base *r_mrgp, void *state);
+  virtual void Split(Base *l_mrgp, Base *r_mrgp, void *state);
   virtual double Posterior(void);
   virtual void Compute(void);
   virtual void ToggleLinear(void);
@@ -88,7 +90,7 @@ class Gp : public Base
   virtual char* State(void);
   virtual unsigned int sum_b(void);
   virtual void Init(void);
-  virtual void X_to_F(unsigned int n, double **X, double **F);
+  virtual void X_to_F(unsigned int n, double **X, double **F);  
   virtual double* Trace(unsigned int* len);
 
   double* get_b(void);
@@ -98,10 +100,10 @@ class Gp : public Base
   Corr *get_Corr(void);
 };
 
-double combine_tau2(double l_tau2, double r_tau2, void *state);
+double mr_combine_tau2(double l_tau2, double r_tau2, void *state);
 
 
-class Gp_Prior : public Base_Prior
+class MrGp_Prior : public Base_Prior
 {
  private:
 
@@ -112,6 +114,7 @@ class Gp_Prior : public Base_Prior
   double *b;		        /* col, regression coefficients */
   double s2;		        /* variance parameter */
   double tau2;		        /* linear variance parameter */
+  double r;
 
   double *b0;		        /* hierarchical non-tree parameter b0 */
   double **Ti;		        /* hierearical non-tree parameter Ti */
@@ -134,15 +137,15 @@ class Gp_Prior : public Base_Prior
   double tau2_a0_lambda;	/* hierarchical tau2 inv-gamma alpha parameter */
   double tau2_g0_lambda;	/* hierarchical tau2 inv-gamma beta parameter */
   bool   fix_tau2;	        /* estimate hierarchical tau2 parameters or not */
-
+  
   void initT(void);
   
  public:
   
   /* start public functions */
-  Gp_Prior(unsigned int d);
-  Gp_Prior(Base_Prior* prior);
-  virtual ~Gp_Prior(void);
+  MrGp_Prior(unsigned int d);
+  MrGp_Prior(Base_Prior* prior);
+  virtual ~MrGp_Prior(void);
 
   virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void read_double(double *dparams);
@@ -172,13 +175,14 @@ class Gp_Prior : public Base_Prior
   double** get_T(void);
   double** get_Ti(void);
   double* get_b0(void);
+  double R(void);
 
   Corr_Prior* CorrPrior(void);
   BETA_PRIOR BetaPrior(void);
 };
 
-void allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2,
+void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2,
 			  Corr ***corr, Tree **leaves, unsigned int numLeaves);
-void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
+void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
 
 #endif

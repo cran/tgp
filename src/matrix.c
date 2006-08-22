@@ -147,6 +147,26 @@ double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
   return m;
 }
 
+/*
+ * create a new n1 x (n2-1) matrix which is allocated like
+ * an n1*(n2-1) array, and copy M[n1][2:n2] into it.
+ */
+
+double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2)
+{
+  double **m;
+  unsigned int i, j;
+  if(n1 <= 0 || n2 <= 1) {
+    assert(M == NULL);
+    return NULL;
+  }
+  m = new_matrix(n1, (n2-1));
+  /* printMatrix(M, n1, n2, stdout); */
+  for(i=0; i<n1; i++) for(j=0; j<(n2-1); j++) m[i][j] = M[i][j+1];
+  /* printMatrix(m, n1, (n2-1), stdout); */
+  return m;
+}
+
 
 /*
  * copy M2 to M1

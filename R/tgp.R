@@ -24,8 +24,8 @@
 
 "tgp" <-
 function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
-	linburn=FALSE, params=NULL, pred.n=TRUE, ds2x=FALSE, ego=FALSE,
-        verb=1)
+	linburn=FALSE, params=NULL, pred.n=TRUE, ds2x=FALSE,
+        ego=FALSE, traces=FALSE, verb=1)
 {
   # what to do if fatally interrupted?
   on.exit(tgp.cleanup())
@@ -46,16 +46,29 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
     nn <- dim(XX)[1]; nnprime <- nn 
     if(dim(XX)[2] != d) stop("mismatched column dimension of X and XX");
   }
-  
+
+  ## check that trace is true or false)
+  if(length(traces) != 1 ||
+     (traces != TRUE && traces != FALSE))
+    stop("traces should be TRUE or FALSE")
+  else if(traces) {
+    if(3*(10+d)*(BTE[2]-BTE[1])*R*(nn+1)/BTE[3] > 1e+7)
+      warning(paste("for memory/storage reasons, ",
+                    "traces not recommended when\n",
+                    "\t 3*(10+d)*(BTE[2]-BTE[1])*R*(nn+1)/BTE[3]=",
+                    3*(10+d)*(BTE[2]-BTE[1])*R*(nn+1)/BTE[3], " > 1e+7.\n",
+                    "\t Try reducing dim(XX)[1]", sep=""), immediate.=TRUE)
+  }
+
   ## check the sanity of input arguments
   if(nn > 0 && sum(dim(XX)) > 0 && dim(XX)[2] != d) stop("XX has bad dimensions")
   if(length(Z) != n) stop("Z does not have length == dim(Z)[1]")
-  if(BTE[1] < 0 || BTE[2] <= 0 || BTE[1] >= BTE[2]) stop("bad B and T args")
-  if(BTE[3] <= 0 || BTE[3] >= BTE[2]) stop("bad E arg")
+  if(BTE[1] < 0 || BTE[2] <= 0 || BTE[1] >= BTE[2]) stop("bad B and T: must have 0<=B<T")
+  if(BTE[3] <= 0 || BTE[2]-BTE[1] < BTE[3]) stop("bad E arg: must have T-B>=E")
   if(R < 0) stop("R must be positive")
   
   ## deal with params
-  if(is.null(params)) params <- tgp.default.params()
+  if(is.null(params)) params <- tgp.default.params(d+1)
   dparams <- tgp.check.params(params, d+1);
   if(is.null(dparams)) stop("Bad Parameter List")
   
@@ -74,6 +87,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
            Z = as.double(Z),
            XX = as.double(t(XX)),
            nn = as.integer(nn),
+           traces = as.integer(traces),
            BTE = as.integer(BTE),
            R = as.integer(R),
            linburn = as.integer(linburn),
@@ -126,15 +140,55 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
   if(ego == FALSE) { ll$ego <- NULL; }
   
   ## gather information about partitions
-  if(file.exists(paste("./", "parts_1.out", sep=""))) {
-    ll$parts <- read.table("parts_1.out")
-    unlink("parts_1.out")
+  if(file.exists(paste("./", "best_parts_1.out", sep=""))) {
+    ll$parts <- read.table("best_parts_1.out")
+    unlink("best_parts_1.out")
   } else { ll$parts <- NULL }
   
   ## gather information about MAP trees as a function of height
   ll$trees <- tgp.get.trees()
   ll$posts <- read.table("tree_m0_posts.out", header=TRUE)
   unlink("tree_m0_posts.out")
+
+  ## read the traces in the output files, and then delete them
+  if(traces) {
+    ll$traces <- list()
+    if(verb >= 1) cat("Gathering traces\n")
+
+    ## read the parameter traces for each XX location
+    ll$traces$XX <- tgp.read.traces(nn, d, params$corr, verb)
+
+    ## read trace of linear area calulations
+    if(file.exists(paste("./", "trace_linarea_1.out", sep=""))) {
+       ll$traces$linarea <- read.table("trace_linarea_1.out", header=TRUE)
+       unlink("trace_linarea_1.out")
+       if(verb >= 1) cat("  linarea done\n")
+     }
+
+    ## read full trace of partitions
+    if(file.exists(paste("./", "trace_parts_1.out", sep=""))) {
+      ll$traces$parts <- read.table("trace_parts_1.out")
+      unlink("trace_parts_1.out")
+      if(verb >= 1) cat("  parts done\n")
+    }
+
+    ## read the posteriors as a function of height
+    if(file.exists(paste("./", "trace_post_1.out", sep=""))) {
+      ll$traces$posts <- read.table("trace_post_1.out", header=TRUE)
+      unlink("trace_post_1.out")
+      if(verb >= 1) cat("  posts done\n")
+    }
+
+    ## predictions at XX locations
+    if(file.exists(paste("./", "trace_ZZ_1.out", sep="")) && nn>0) {
+      ll$traces$ZZ <- read.table("trace_ZZ_1.out", header=TRUE)
+      names(ll$traces$ZZ) <- paste("XX", 1:nn, sep="")
+      unlink("trace_ZZ_1.out")
+      if(verb >= 1) cat("  ZZ done\n")
+    }
+
+    class(ll$traces) <- "tgptraces"
+  }
   
   ## store params
   ll$params <- params
@@ -144,8 +198,8 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
     ll$Z <- undo.mean0.range1(ll$Z,Zm0r1$undo)
     ll$Zp.mean <- undo.mean0.range1(ll$Zp.mean,Zm0r1$undo)
     ll$ZZ.mean <- undo.mean0.range1(ll$ZZ.mean,Zm0r1$undo)
-    ll$Zp.q <- undo.mean0.range1(ll$Zp.q,Zm0r1$undo)
-    ll$ZZ.q <- undo.mean0.range1(ll$ZZ.q,Zm0r1$undo)
+    ll$Zp.q <- undo.mean0.range1(ll$Zp.q,Zm0r1$undo, nomean=TRUE)
+    ll$ZZ.q <- undo.mean0.range1(ll$ZZ.q,Zm0r1$undo, nomean=TRUE)
     ll$Zp.q1 <- undo.mean0.range1(ll$Zp.q1,Zm0r1$undo)
     ll$Zp.median <- undo.mean0.range1(ll$Zp.median,Zm0r1$undo)
     ll$Zp.q2 <- undo.mean0.range1(ll$Zp.q2,Zm0r1$undo)

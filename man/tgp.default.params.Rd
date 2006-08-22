@@ -8,11 +8,14 @@
   modeling
 }
 \usage{
-tgp.default.params(d)
+tgp.default.params(col, base = "gp")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{d}{ number of input dimensions \code{dim(X)[2]} }
+  \item{col}{ number of input dimensions \code{dim(X)[2]} plus 1 }
+  \item{base}{ Base model to be used.  Right now, the only supported
+    option is the default, \code{base = "gp"}.  Future versions of
+    this package will support other base models.}
 }
 
 \value{
@@ -71,19 +74,11 @@ tgp.default.params(d)
 
 
 \references{
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
-\emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01. 
 
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
-\emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
-submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
-
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

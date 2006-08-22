@@ -41,11 +41,12 @@ class Tgp
   unsigned int n;        /* n inputs (number of rows in X) */
   unsigned int d;        /* d covariates (number of cols in X) */
   unsigned int nn;       /* number of predictive locations (rows in XX) */
+  bool trace;            /* indicates whether traces for XX should be sent to files */
   unsigned int B;        /* number of burn-in rounds */
   unsigned int T;        /* total number of MCMC rounds (including burn-in) */
   unsigned int E;        /* sample from posterior (E)very somany rounds */
   unsigned int R;        /* number of times to (Re-) start over (>=1) */
-  int verb;         /* indicates the verbosity of print statements */
+  int verb;              /* indicates the verbosity of print statements */
 
   bool linburn;          /* initialize with treed LM before burn in? */
   bool pred_n;           /* sample from posterior predictive at data locs? */
@@ -66,9 +67,9 @@ class Tgp
 
  public:
 
-  Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linburn, 
-      bool pred_n, bool delta_s2, bool ego, double *X, double *Z, double *XX, 
-      double *dparams, int verb);
+  Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
+      int linburn, bool pred_n, bool delta_s2, bool ego, double *X, double *Z, 
+      double *XX, double *dparams, bool trace, int verb);
   ~Tgp(void);
   void Rounds(void);
   void GetStats(double *Zp_mean, double *ZZ_mean, double *Zp_q, double *ZZ_q,

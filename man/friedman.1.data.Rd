@@ -36,15 +36,15 @@ Friedman, J. H. (1991).
 \emph{Multivariate adaptive regression splines.}
 \dQuote{Annals of Statistics}, \bold{19}, No. 1, 1--67.
 
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01. 
 
 Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

@@ -54,11 +54,16 @@ using namespace std;
  * constructor function
  */
 
-Matern::Matern(unsigned int col, Gp_Prior *gp_prior)
-  : Corr(col, gp_prior)
+Matern::Matern(unsigned int col, Base_Prior *base_prior)
+  : Corr(col, base_prior)
 {
+  assert(base_prior->BaseModel() == GP);
+  prior = ((Gp_Prior*) base_prior)->CorrPrior();
+  assert(prior);
+  nug = prior->Nug();
+
   nu = ((Matern_Prior*) prior)->NU();
-  assert(gp_prior->CorrPrior()->CorrModel() == MATERN);
+  assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == MATERN);
   d = ((Matern_Prior*) prior)->D();
   xDISTx = NULL;
   nd = 0;
@@ -87,7 +92,7 @@ Corr& Matern::operator=(const Corr &c)
   nug = e->nug;
   dreject = e->dreject;
   assert(prior->CorrModel() == MATERN);
-  assert(prior == gp_prior->CorrPrior());
+  assert(prior == ((Gp_Prior*) base_prior)->CorrPrior());
   
   /* copy the covariance matrices */
   Cov(e);
@@ -106,6 +111,39 @@ Matern::~Matern(void)
 {
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
+}
+
+/* 
+ * DrawNug:
+ * 
+ * draw for the nugget; 
+ * rebuilding K, Ki, and marginal params, if necessary 
+ * return true if the correlation matrix has changed; false otherwise
+ */
+
+bool Matern::DrawNug(unsigned int n, double **X,
+		     double **F, double *Z, double *lambda, 
+		   double **bmu, double **Vb, double tau2, void *state)
+{
+  bool success = false;
+  Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
+
+  /* allocate K_new, Ki_new, Kchol_new */
+  if(! linear) assert(n == this->n);
+  
+  if(runi(state) > 0.5) return false;
+  
+  /* make the draw */
+  double nug_new = 
+    nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
+		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
+		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), prior->NugBeta(), 
+		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
+  
+  /* did we accept the draw? */
+  if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
+  
+  return success;
 }
 
 
@@ -183,7 +221,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
   double q_fwd , q_bak, d_new;
 
   /* sometimes skip this Draw for linear models for speed */
-  if(linear && runi(state) > 0.5) return DrawNug(n, F, Z, lambda, bmu, Vb, tau2, state);
+  if(linear && runi(state) > 0.5) return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
 
   /* proppose linear or not */
   if(prior->Linear()) lin_new = true;
@@ -210,6 +248,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
   /* d; rebuilding K, Ki, and marginal params, if necessary */
   if(prior->Linear()) d_new = d;
   else {
+    Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
     Matern_Prior* ep = (Matern_Prior*) prior;
     success = 
       matern_d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
@@ -228,7 +267,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
   else if(success == 0) dreject++;
   
   /* draw nugget */
-  bool changed = DrawNug(n, F, Z, lambda, bmu, Vb, tau2, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
   success = success || changed;
   
   return success;
@@ -406,6 +445,20 @@ double Matern::log_Prior(void)
 }
 
 
+/* 
+ * Trace:
+ *
+ * return the current values of the parameters
+ * to this correlation function
+ */
+
+double* Matern::Trace(unsigned int* len)
+{
+  *len = 0;
+  return NULL;
+}
+
+
 /*
  * newCorr:
  *
@@ -415,7 +468,7 @@ double Matern::log_Prior(void)
 
 Corr* Matern_Prior::newCorr(void)
 {
-  return new Matern(col, gp_prior);
+  return new Matern(col, base_prior);
 }
 
 
@@ -694,6 +747,28 @@ double Matern_Prior::log_Prior(double d, bool linear)
   return prob;
 }
 
+/* 
+ * BasePrior:
+ *
+ * return the prior for the Base (eg Gp) model
+ */
+
+Base_Prior* Matern_Prior::BasePrior(void)
+{
+  return base_prior;
+}
+
+
+/*
+ * SetBasePrior:
+ *
+ * set the base_prior field
+ */
+
+void Matern_Prior::SetBasePrior(Base_Prior *base_prior)
+{
+  this->base_prior = base_prior;
+}
 
 /*
  * Print:

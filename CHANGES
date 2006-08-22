@@ -1,3 +1,22 @@
+1.1-7 (23 Aug 2006)
+-----
+
+Added the ability to get traces of all parameters,
+except the hierarchical ones
+
+Fixed bug to undo.m0r1 so that quantile differences
+don't have the mean subtracted out twice
+
+Changes to allow "..." arguments to mapT, and plotting
+of 2-d slices of input locations
+
+Minor fix to do params->Print() within model->Print().
+
+Begin addition of mr_tgp, by Matt Taddy.  When these
+changes are complete, we should be moving to version
+2.0
+
+
 1.1-6 (26 Jun 2006)
 -----
 

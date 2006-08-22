@@ -95,7 +95,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 \author{Robert B. Gramacy  \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \note{ 	This plotting function is provided with the intention that it 

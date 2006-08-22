@@ -45,29 +45,24 @@ void *tgp_state = NULL;
 
 void tgp(int* state_in, 
 	 double *X_in, int *n_in, int *d_in, double *Z_in, double *XX_in, int *nn_in,
-	 int *BTE, int* R_in, int* linburn_in, double *params_in, int *printlev_in,
-	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_q_out, double *ZZ_q_out,
-	 double *Zp_q1_out, double *Zp_median_out, double *Zp_q2_out,
+	 int *trace_in, int *BTE_in, int* R_in, int* linburn_in, double *params_in, 
+	 int *verb_in, double *Zp_mean_out, double *ZZ_mean_out, double *Zp_q_out, 
+	 double *ZZ_q_out, double *Zp_q1_out, double *Zp_median_out, double *Zp_q2_out,
 	 double *ZZ_q1_out, double *ZZ_median_out, double *ZZ_q2_out,
 	 double *Ds2x_out, double *ego_out)
 {
-  BFILE = BETAFILE = NULL;
 
   /* create the RNG state */
-  void *tgp_state = 
+  tgp_state = 
     newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + state_in[2]));
 
   /* copy the input parameters to the tgp class object where all the MCMC 
      work gets done */
-  tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE[0], BTE[1], BTE[2], *R_in, 
+  tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in,
+		 BTE_in[0], BTE_in[1], BTE_in[2], *R_in, 
 		 *linburn_in, (bool) (Zp_mean_out!=NULL), (bool) (Ds2x_out!=NULL), 
-		 (bool) (ego_out != NULL), X_in, Z_in, XX_in, params_in, *printlev_in);
-
-  /* maybe print the booleans and betas out to a file */
-  if(bprint) { 
-    BFILE = fopen("b.out", "w");
-    BETAFILE = fopen("beta.out", "w");
-  }
+		 (bool) (ego_out != NULL), X_in, Z_in, XX_in, params_in, 
+		 (bool) *trace_in, *verb_in);
 
   /* tgp MCMC rounds are done here */
   tgpm->Rounds();
@@ -79,19 +74,12 @@ void tgp(int* state_in,
   /* delete the tgp model */
   delete tgpm; tgpm = NULL;
   
-  /* close the beta summary files */
-
-  if(bprint) {
-    fclose(BFILE); BFILE = NULL;
-    fclose(BETAFILE);  BETAFILE = NULL;
-  }
-
   /* destroy the RNG */
   deleteRNGstate(tgp_state);
   tgp_state = NULL;
 
   /* free blank line before returning to R prompt */
-  if(*printlev_in >= 1) myprintf(stdout, "\n");
+  if(*verb_in >= 1) myprintf(stdout, "\n");
 }
 
 
@@ -103,9 +91,9 @@ void tgp(int* state_in,
  * function in order to get everything ready for MCMC rounds.
  */
 
-Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linburn, 
-	 bool pred_n, bool delta_s2, bool ego, double *X, double *Z, double *XX, 
-	 double *dparams, int verb)
+  Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, 
+	   int R, int linburn, bool pred_n, bool delta_s2, bool ego, double *X, 
+	   double *Z, double *XX, double *dparams, bool trace, int verb)
 {
   itime = time(NULL);
 	
@@ -132,6 +120,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linb
   this->pred_n = pred_n;
   this->delta_s2 = delta_s2;
   this->ego = ego;
+  this->trace = trace;
   this->verb = verb;
 
   /* copy X from input */
@@ -150,6 +139,8 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linb
   if((int) dparams[0] != -1) params->read_double(dparams);
   else myprintf(stdout, "Using default params.\n");
 
+
+
   Init();
 }
 
@@ -157,7 +148,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, int linb
 /*
  * ~Tgp: (destructor)
  *
- * typical destructur function.  Checks to see if the class objects
+ * typical destructor function.  Checks to see if the class objects
  * are NULL first becuase this might be called from within 
  * tgp_cleanup if tgp was interrupted during computation
  */
@@ -169,11 +160,10 @@ Tgp::~Tgp(void)
   if(params) { delete params; params = NULL; }
   if(XX) { delete_matrix(XX);  XX = NULL; }
   if(Z) { free(Z); Z = NULL; }
-  
-  /* clean up */
   if(rect) { delete_matrix(rect); rect = NULL; }
   if(X) { delete_matrix(X); X = NULL; }
   if(cumpreds) { delete_preds(cumpreds); }
+  if(preds) { delete_preds(preds); }
 }
 
 
@@ -190,14 +180,16 @@ void Tgp::Init(void)
 {
   /* get  the rectangle */
   rect = getXdataRect(X, n, d, XX, nn);
-  
+
   /* construct the new model */
-  model = new Model(params, d, rect, 0, state);
+  model = new Model(params, d, rect, 0, trace, state);
   model->Init(X, n, d, Z);
   model->Outfile(stdout, verb);
   
   /* structure for accumulating predictive information */
   cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), delta_s2, ego, E);
+  if(params->BasePrior()->BaseModel() == MR_GP)
+    { for(unsigned int i=0; i<nn; i++) cumpreds->XX[i][0] = XX[i][0]; }
 
   /* print the parameters of this module */
   if(verb >= 2) Print(stdout);
@@ -205,7 +197,7 @@ void Tgp::Init(void)
 
 
 /*
- * Rounds:
+ * Rounds: 
  *
  * Actually do the MCMC for sampling from the posterior of the tgp model
  * based on the parameterization given to the Tgp constructor.  
@@ -248,6 +240,10 @@ void Tgp::Rounds(void)
   /* these might not do anything, if they're turned off */
   model->print_linarea();
   model->PrintPosteriors();
+
+  /* write the ZZ predictive data out to a file */
+  if(trace)
+    matrix_to_file("trace_ZZ_1.out", cumpreds->ZZ, cumpreds->R, nn);
 }
 
 
@@ -264,19 +260,30 @@ void Tgp::GetStats(double *Zp_mean, double *ZZ_mean, double *Zp_q, double *ZZ_q,
 {
   itime = my_r_process_events(itime);
 
-  if(pred_n) { /* calculate means and quantiles */
+  /* calculate means and quantiles */
+  if(pred_n) {
     mean_of_columns(Zp_mean, cumpreds->Zp, cumpreds->R, n);
     qsummary(Zp_q, Zp_q1, Zp_median, Zp_q2, cumpreds->Zp, cumpreds->R, n);
   }
-  if(nn > 0) { /* predictive data locations (XX) */
+
+  /* means and wuantiles at predictive data locations (XX) */
+  if(nn > 0) { 
     mean_of_columns(ZZ_mean, cumpreds->ZZ, cumpreds->R, nn);
     qsummary(ZZ_q, ZZ_q1, ZZ_median, ZZ_q2, cumpreds->ZZ, cumpreds->R, cumpreds->nn);
-    /* warning: this makes a permanent change to cumpreds->Ds2xy, should change this! */
+    
+    /* expected retucduction in squared error */
+    /* warning: this makes a permanent change to cumpreds->Ds2xy, 
+                should change this! */
     if(cumpreds->Ds2xy) norm_Ds2xy(cumpreds->Ds2xy, cumpreds->R, cumpreds->nn);
+   
+    /* expected reduction in squared error,
+       averaged over the Y locations */
     if(delta_s2) {
       assert(cumpreds->Ds2xy);
       mean_of_rows(Ds2x, cumpreds->Ds2xy, nn, nn);
     }
+
+    /* expected global optimum (minima) */
     if(ego) {
       scalev(cumpreds->ego, cumpreds->nn, 1.0/cumpreds->R);
       dupv(ego, cumpreds->ego, nn);
@@ -306,17 +313,6 @@ void tgp_cleanup(void)
     deleteRNGstate(tgp_state);
     tgp_state = NULL;
     myprintf(stderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
-  }
-
-  if(BFILE) {
-    fclose(BFILE);
-    BFILE = NULL;
-    myprintf(stderr, "INTERRUPT: tgp BFILE leaked, is now destroyed\n");
-  }
-  if(BETAFILE) {
-    fclose(BETAFILE);
-    BETAFILE = NULL;
-    myprintf(stderr, "INTERRUPT: tgp BETAFILE leaked, is now destroyed\n");
   }
 }
 

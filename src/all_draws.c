@@ -435,7 +435,7 @@ void *state;
 }
 
 
-/*
+/* 
  * tau2_draw:
  * 
  * draws from tau^2 given the rest of the parameters
@@ -696,13 +696,13 @@ void *state;
 	if(runi(state)<0.5) {
 		gamma_mult_gelman(&draw, alpha[0], beta[0], 1, state);
 		if(draw == 0) {
-			draw = alpha[0]/(beta[0]*beta[0]);
+			draw = alpha[0]/beta[0];
 			warning("bad Gamma draw, using mean");
 		}
 	} else {
 		gamma_mult_gelman(&draw, alpha[1], beta[1], 1, state);
 		if(draw == 0) {
-			draw = alpha[1]/(beta[1]*beta[1]);
+			draw = alpha[1]/beta[1];
 			warning("bad Gamma draw, using mean");
 		}
 	}
@@ -1015,7 +1015,7 @@ void *state;
 }
 
 /*
- * d_draw_margin:
+ * matern d_draw_margin:
  * 
  * draws for d given the rest of the parameters
  * except b and s2 marginalized out
@@ -1075,6 +1075,7 @@ void *state;
 	else return 0;
 }
 
+
 /*
  * nug_draw_margin:
  * 
@@ -1132,6 +1133,82 @@ void *state;
 		if(runi(state) > alpha) return nuglast;
 		else return nug;
 	}
+}
+
+/*
+ * mr_nug_draw_margin:
+ * 
+ * draws for nug given the rest of the parameters
+ * except b and s2 marginalized out
+ *
+ * F[col][n], K[n][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col],
+ * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
+ */
+
+double* mr_nug_draw_margin(n, col, nug, nugfine,
+        X, F, Z, K, log_det_K, lambda, Vb, 
+	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
+	b0, Ti, T, tau2, nug_alpha, nug_beta, nugf_alpha, nugf_beta,
+	r, delta, a0, g0, linear, state)
+unsigned int n, col;
+double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new, **X;
+double *b0, *Z, *log_det_K_new; 
+double nug_alpha[2], nug_beta[2], nugf_alpha[2], nugf_beta[2];
+double nug, nugfine, a0, g0, lambda, tau2, log_det_K, r, delta;
+double *lambda_new, *bmu_new;
+void *state;
+{
+  double q_fwd, q_bak, q_fwdf, q_bakf, pnug, pnuglast, alpha;
+	unsigned int i;
+	unsigned int m = 0;
+	double* newnugs = new_vector(2);
+      
+	/* propose new d, and compute proposal probability */
+	newnugs[0] = nug_draw(nug, &q_fwd, &q_bak, state);
+	newnugs[1] = nug_draw(nugfine, &q_fwdf, &q_bakf, state);
+
+	
+	/* new covariace matrix based on new nug */
+	if(linear) {
+		*log_det_K_new = 0.0;
+		for(i=0; i<n; i++){
+			if(X[i][0]==1) *log_det_K_new += log(r*r + delta + nugfine);
+			else *log_det_K_new += log(1.0 + nug);
+		}
+		*lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
+				F, Z, Ti, tau2, b0, nug);
+	} else  {
+		dup_matrix(K_new, K, n, n);
+		for(i=0; i<n; i++){
+		  if(X[i][0]==1) K_new[i][i] += (newnugs[1] - nugfine);
+		  else K_new[i][i] += (newnugs[0] - nug);
+		}
+		inverse_chol(K_new, Ki_new, Kchol_new, n);
+		*log_det_K_new = log_determinant_chol(Kchol_new, n);
+		*lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
+				F, Z, Ki_new, Ti, tau2, b0);
+	}
+
+	if(T[0][0] == 0) m = col;
+
+	/* posteriors */
+	pnug = nug_prior_pdf(newnugs[0], nug_alpha, nug_beta);
+	pnug += nug_prior_pdf(newnugs[1], nugf_alpha, nugf_beta);
+	pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+	pnuglast = nug_prior_pdf(nug, nug_alpha, nug_beta);
+	pnuglast += nug_prior_pdf(nugfine, nugf_alpha, nugf_beta);
+	pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+
+	/* accept or reject */
+	alpha = exp(pnug - pnuglast)*(q_bak*q_bakf)/(q_fwd*q_fwdf);
+	
+	if(runi(state) > alpha){
+	  /* printf("nugs %g %g\n",nug, nugfine); */
+	  /*printVector(newnugs, 2, stdout); */
+	    newnugs[0] = nug;
+	    newnugs[1] = nugfine;
+	  }
+	  return newnugs;
 }
 
 
