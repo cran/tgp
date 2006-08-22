@@ -8,7 +8,7 @@
   projections and slices of trees can be plotted as specified
 }
 \usage{
-mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2)
+mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2, ...)
 }
 
 \arguments{
@@ -39,6 +39,7 @@ mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2)
 	\code{out$X} along with the partitions (default \code{add = FALSE})}
   \item{lwd}{ Plotting argument specifying the width of the lines used
   	to depict the partitions}
+  \item{...}{ Additional arguments to \code{plot} used when \code{add = FALSE}}
 }
 
 \value{
@@ -49,7 +50,7 @@ mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2)
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
 
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \note{

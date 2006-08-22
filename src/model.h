@@ -31,18 +31,12 @@
 
 #define NORMSCALE 1.0
 
-#define LINAREA false		/* should the areas of the linear models be printed to a file */
-#define PRINTPARTS false	/* should partitions be logged to a file ? */
 /*#define PARALLEL*/ 		/* should prediction be done with pthreads */
 #define NUMTHREADS 2		/* number of pthreads for prediction */
 #define QUEUEMAX 100		/* maximum queue size for partitions on which to predict */
 #define PPMAX 100		/* maximum partitions accumulated before sent to queue */
 
-extern FILE* STDOUT;		/* file to print stdout to */
-extern bool bprint;		/* should the booleans and betas be printed ? */
-extern FILE *BFILE;		/* if so, to what file for the booleans */
-extern FILE *BETAFILE;		/* if so, to what file for the betas */
-
+extern FILE* STDOUT;	        /* file to print stdout to */
 
 /*
  * useful structure for passing the storage of
@@ -57,13 +51,10 @@ typedef struct preds
   unsigned int d;	/* number of covariates */
   unsigned int R;	/* number of rounds in preds */
   unsigned int mult;	/* number of rounds per prediction */
-   double **ZZ;		/* predictions at candidates XX */
+  double **ZZ;		/* predictions at candidates XX */
   double **Zp;		/* predictions at inputs X */
   double *ego;          /* expected global optimizatoin */
   double **Ds2xy;	/* delta-sigma calculation for XX */
-  double **xxKx;	/* candidate to data correllations for d-opt */
-  double **xxKxx;	/* candidate to candidate correllations for d-opt */
-  double **xKx;		/* data to data correllations for d-opt */
 } Preds;
 
 
@@ -114,7 +105,7 @@ class Model
 {
   private:
 
-  unsigned int col;                     /* m_X dimensional input */
+  unsigned int d;                       /* X input dimension  */
   double **iface_rect;                  /* X-input bounding rectangle */        
   int Id;                               /* identification number for this model */
   
@@ -135,24 +126,27 @@ class Model
   pthread_cond_t* l_cond_nonempty;  	/* cond variable signals nonempty list */
   pthread_cond_t* l_cond_notfull;  	/* cond variable signals nonempty list */
   List* tlist;				/* list of prediction leaves */
-  unsigned int num_consumed;
-  unsigned int num_produced;
+  unsigned int num_consumed;            /* number of consumed leaves total */
+  unsigned int num_produced;            /* number of produced leaves total */
+  pthread_mutex_t* l_trace_mut;         /* locking the XX_trace file */
 #endif
   
-  bool printparts;			/* should the partition MC be output to a file ? */
-  FILE *PARTSFILE;			/* if so, what file? */
+  FILE *PARTSFILE;			/* what file to write partitions to */
+  FILE *POSTTRACEFILE;			/* what file to write posterior traces to */
+  FILE *XXTRACEFILE;                    /* files for writing traces to for each XX */
   double partitions;			/* counter for the averave number of partitions */
   FILE* OUTFILE;			/* file for MCMC status output */
   int verb;                             /* printing level (0=none, ... , 3+=verbose) */
+  bool trace;                           /* should a trace of the MC be written to files? */
 
   Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
-  bool linarea;				/* should the areas of the linear models be tabulated */
   Linarea *lin_area;			/* if so, we need a pointer to the area structure */
   
  public:
   
   /* init and destruct */
-  Model(Params *params, unsigned int d, double **rect, int Id, void *state_to_init_conumer);
+  Model(Params *params, unsigned int d, double **rect, int Id, bool trace,
+	void *state_to_init_conumer);
   ~Model(void);
   void Init(double **X, unsigned int d, unsigned int n, double *Z);
   
@@ -193,8 +187,8 @@ class Model
   FILE* Outfile(int* verb);
   void Outfile(FILE *file, int verb);
   double Partitions(void);
-  FILE* OpenPartsfile(void);
-  void PrintPartitions(FILE* PARTSFILE);
+  FILE* OpenFile(char *prefix, char *type);
+  void PrintPartitions(void);
   void PrintBestPartitions();
   void PrintTree(FILE* outfile);
   double Posterior(void);
@@ -213,6 +207,9 @@ class Model
   void process_linarea(unsigned int numLeaves, Tree** leaves);
   void reset_linarea(void);
   void print_linarea(void);
+
+  /* recording traces of Base parameters for XX in leaves */
+  void Trace(Tree *leaf, unsigned int index);
 };
 
 

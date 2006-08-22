@@ -53,13 +53,18 @@ using namespace std;
  * constructor function
  */
 
-ExpSep::ExpSep(unsigned int col, Gp_Prior *gp_prior)
-  : Corr(col, gp_prior)
+ExpSep::ExpSep(unsigned int col, Base_Prior *base_prior)
+  : Corr(col, base_prior)
 {
+  assert(base_prior->BaseModel() == GP);
+  prior = ((Gp_Prior*) base_prior)->CorrPrior();
+  assert(prior);
+  nug = prior->Nug();
+
   d = new_dup_vector(((ExpSep_Prior*)prior)->D(), col-1);
   b = new_ones_ivector(col-1, 1);
   pb = new_zero_vector(col-1);
-  assert(gp_prior->CorrPrior()->CorrModel() == EXPSEP);
+  assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == EXPSEP);
   d_eff = new_dup_vector(d, col-1);
   dreject = 0;
 }
@@ -85,7 +90,7 @@ Corr& ExpSep::operator=(const Corr &c)
   dupiv(b, e->b, col-1);
   nug = e->nug;
   dreject = e->dreject;
-  assert(prior == gp_prior->CorrPrior());
+  assert(prior == ((Gp_Prior*) base_prior)->CorrPrior());
 
   /* copy the covariance matrices */
   Cov(e);
@@ -108,6 +113,38 @@ ExpSep::~ExpSep(void)
   free(d_eff);
 }
 
+/* 
+ * DrawNug:
+ * 
+ * draw for the nugget; 
+ * rebuilding K, Ki, and marginal params, if necessary 
+ * return true if the correlation matrix has changed; false otherwise
+ */
+
+bool ExpSep::DrawNug(unsigned int n, double **X, 
+		     double **F, double *Z, double *lambda, 
+		   double **bmu, double **Vb, double tau2, void *state)
+{
+  bool success = false;
+  Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
+
+  /* allocate K_new, Ki_new, Kchol_new */
+  if(! linear) assert(n == this->n);
+  
+  if(runi(state) > 0.5) return false;
+  
+  /* make the draw */
+  double nug_new = 
+    nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
+		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
+		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), prior->NugBeta(), 
+		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
+  
+  /* did we accept the draw? */
+  if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
+  
+  return success;
+}
 
 /*
  * Update: (symmetric)
@@ -165,9 +202,6 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
 			   double *q_fwd, double *q_bak, void *state)
 {
   *q_bak = *q_fwd = 1.0;
-  
-  /* maybe print the booleans out to a file */
-  if(bprint) printIVector(b, col-1, BFILE); 
   
   /* copy old values */
   dupv(d_new, d, col-1);
@@ -242,13 +276,15 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   double q_fwd, q_bak;
   
   ExpSep_Prior* ep = (ExpSep_Prior*) prior;
+  Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
+
 
   double *d_new = NULL;
   int *b_new = NULL;
   double *pb_new = NULL;
   
   /* sometimes skip this Draw for linear models for speed */
-  if(linear && runi(state) > 0.5) return DrawNug(n, F, Z, lambda, bmu, Vb, tau2, state);
+  if(linear && runi(state) > 0.5) return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
 
   /* propose linear or not */
   if(prior->Linear()) lin_new = true;
@@ -308,7 +344,7 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nugget */
-  bool changed = DrawNug(n, F, Z, lambda, bmu, Vb, tau2, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
   success = success || changed;
   
   return success;
@@ -505,6 +541,36 @@ void ExpSep::ToggleLinear(void)
 double* ExpSep::D(void)
 {
   return d;
+}
+
+
+/* 
+ * Trace:
+ *
+ * return the current values of the parameters
+ * to this correlation function
+ */
+
+double* ExpSep::Trace(unsigned int* len)
+{
+  /* calculate the length of the trace vector, and allocate */
+  *len = 1 + 2*(col-1);
+  double *trace = new_vector(*len);
+
+  /* copy the nugget */
+  trace[0] = nug;
+  
+  /* copy the d-vector of range parameters */
+  dupv(&(trace[1]), d, col-1);
+
+  /* copy the booleans */
+  for(unsigned int i=0; i<col-1; i++) {
+    /* when forcing the linear model, it is possible
+       that some/all of the bs are nonzero */
+    if(linear) trace[1+col-1+i] = 0;
+    else trace[1+col-1+i] = (double) b[i];
+  }
+  return(trace);
 }
 
 
@@ -769,7 +835,7 @@ void ExpSep_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
 
 Corr* ExpSep_Prior::newCorr(void)
 {
-  return new ExpSep(col, gp_prior);
+  return new ExpSep(col, base_prior);
 }
 
 
@@ -829,6 +895,28 @@ void ExpSep_Prior::DPrior_rand(double *d_new, void *state)
     d_new[j] = d_prior_rand(d_alpha[j], d_beta[j], state);
 }
 
+/* 
+ * BasePrior:
+ *
+ * return the prior for the Base (eg Gp) model
+ */
+
+Base_Prior* ExpSep_Prior::BasePrior(void)
+{
+  return base_prior;
+}
+
+
+/*
+ * SetBasePrior:
+ *
+ * set the base_prior field
+ */
+
+void ExpSep_Prior::SetBasePrior(Base_Prior *base_prior)
+{
+  this->base_prior = base_prior;
+}
 
 /*
  * Print:

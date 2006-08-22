@@ -28,6 +28,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
         method="loess", gridlen=40, span=0.1, ...)
 {
   ## will call stop() if something is wrong with the proj
+  
   proj <- check.proj(proj)
 
     # deal with axis labels
@@ -40,7 +41,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
   X <- rbind(as.matrix(out$X), out$XX)[,proj]
   if(is.null(dim(X))) { nX <- length(X); dX <- 1 }
   else { nX <- dim(X)[1]; dX <- dim(X)[2] }
-  p <- seq(1,nX)
+    p <- seq(1,nX)
   Z.mean <- c(out$Zp.mean, out$ZZ.mean)
   
   # for ALC and EGO plotting
@@ -65,12 +66,13 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
   if(dX == 1) { # 1-d projections
     if(layout == "both" || layout == "surf") {
       plot(out$X[,proj], out$Z, xlab=xlab, ylab=zlab, main=smain, ...)
+           
+
       points(out$XX[,proj], out$ZZ.mean, pch=20, cex=0.5, ...)
       Zb.q1 <- c(out$Zp.q1, out$ZZ.q1)
       Zb.q2 <- c(out$Zp.q2, out$ZZ.q2)
       r <- range(X)
       segments(x0=X, y0=Zb.q1, x1=X, y1=Zb.q2, col=2)
-      
       # plot partitions
       if(pparts & !is.null(out$parts) ) { tgp.plot.parts.1d(out$parts[,proj]) }
     }

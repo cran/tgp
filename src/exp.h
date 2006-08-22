@@ -46,7 +46,7 @@ class Exp : public Corr
  
  public:
 
-  Exp(unsigned int col, Gp_Prior *gp_prior);
+  Exp(unsigned int col, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~Exp(void);
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
@@ -60,6 +60,12 @@ class Exp : public Corr
   virtual double log_Prior(void);
   virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
+  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
+		       double *lambda, double **bmu, 
+		       double **Vb, double tau2, void *state);
+  virtual double* Trace(unsigned int* len);
+  
+
   void get_delta_d(Exp* c1, Exp* c2, void *state);
   void propose_new_d(Exp* c1, Exp* c2, void *state);
   double D(void);
@@ -94,6 +100,9 @@ class Exp_Prior : public Corr_Prior
   virtual Corr_Prior* Dup(void);
   virtual Corr* newCorr(void);
   virtual void Print(FILE *outfile);
+  virtual Base_Prior* BasePrior(void);
+  virtual void SetBasePrior(Base_Prior *base_prior);
+
 
   double D(void);
   double* DAlpha(void);

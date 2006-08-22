@@ -40,11 +40,6 @@ extern "C"
 #define DNORM true
 #define MEDBUFF 256
 
-/* stuff for printing booleans and betas out to a file */
-bool bprint = false;
-FILE *BFILE = NULL;
-FILE *BETAFILE = NULL;
-
 
 /*
  * Model:
@@ -52,12 +47,12 @@ FILE *BETAFILE = NULL;
  * the usual constructor function
  */
 
-Model::Model(Params* params, unsigned int d, double** rect, int Id, void *state)
+Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace, void *state)
 {
   this->params = new Params(params);
   base_prior = this->params->BasePrior();
   	
-  col = d+1;
+  this->d=d;
   this->Id = Id;
   this->iface_rect = new_dup_matrix(rect, 2, d);
 
@@ -73,20 +68,45 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, void *state)
   this->state_to_init_consumer = newRNGstate_rand(state);
   if(parallel) { init_parallel_preds(); consumer_start(); }
   
-  /* stuff for printing partitions and other to files */
-  printparts = PRINTPARTS;
-  PARTSFILE = NULL;
+  /* stuff to do with printing */
   OUTFILE = stdout;
   verb = 2;
+  this->trace = trace;
+
+  /* for keeping track of the average number of partitions */
+  partitions = 0;
+
+  /* null initializations for trace files and data structures*/
+  PARTSFILE = XXTRACEFILE = POSTTRACEFILE = NULL;
+  lin_area = NULL;
+
+  /* open files for recording traces */
+  if(trace) {
+
+    /* asynchronous writing to files by multiple threads is problematic */
+    if(parallel) {
+      warning("traces in parallel version of tgp not recommended\n");
+    }
+
+    /* stuff for printing partitions and other to files */
+    PARTSFILE = OpenFile("trace", "parts");
+
+    /* allocate the trace files for printing posteriors*/
+    POSTTRACEFILE = OpenFile("trace", "post");
+    myprintf(POSTTRACEFILE, "height lpost\n");
+
+    /* trace of GP parameters for each XX input location */
+    XXTRACEFILE = OpenFile("trace", "XX");
+  
+    /* traces of aread under the LLM */
+    new_linarea();
+  }
   
   /* initialize tree operation statistics */
   swap = prune = change = grow = swap_try = change_try = grow_try = prune_try = 0;
   
-  /* init best tree posteriors and the areas under the LLM */
+  /* init best tree posteriors */
   posteriors = new_posteriors();
-  linarea = LINAREA;
-  lin_area = NULL;
-  if(linarea) new_linarea();
 
   /* make null tree, and then call Model::Init() to make a new
    * one so that when we pass "this" model to tree, it won't be
@@ -108,10 +128,15 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, void *state)
 
 void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
 {
-  assert(d == col-1);
+  assert(d == this->d);
 
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,iface_rect,NORMSCALE);
+  if(base_prior->BaseModel() == MR_GP) { 
+    for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
+    // printMatrix(Xc, n, d, stdout);
+    }
+
   double *Zc = new_dup_vector(Z, n);
 
   /* compute rectangle */
@@ -121,7 +146,7 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
     newRect->boundary[1][i] = NORMSCALE;
     newRect->opl[i] = GEQ;
     newRect->opr[i] = LEQ;
-  }
+  }  
 
   /* initialization of the (main) tree part of the model */
   int *p = iseq(0,n-1);
@@ -142,15 +167,33 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
 
 Model::~Model(void)
 {
+  /* close down parallel prediction */
   if(parallel) {
     consumer_finish();
     close_parallel_preds();
   }
+
+  /* delete the tree model & params */
   delete_matrix(iface_rect);
   delete t;
   delete params;
+
+  /* delete linarea and posterior */
   if(posteriors) delete_posteriors(posteriors);
-  if(linarea) delete_linarea();
+  if(trace) delete_linarea();
+
+  /* clean up partsfile */
+  if(PARTSFILE) fclose(PARTSFILE);
+  PARTSFILE = NULL;
+
+  /* clean up post trace file */
+  if(POSTTRACEFILE) fclose(POSTTRACEFILE);
+  POSTTRACEFILE = NULL;
+
+  /* clean up trace files */
+  if(XXTRACEFILE) fclose(XXTRACEFILE);
+  XXTRACEFILE = NULL;
+
   deleteRNGstate(state_to_init_consumer);
 }
 
@@ -166,13 +209,16 @@ Model::~Model(void)
 void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
 {
   /* check for well-allocated preds module */
-  if(T>B) { assert(preds); assert((T-B) / preds->R == preds->mult); }
+  if(T>B) { 
+    assert(preds); 
+    assert(T-B >= preds->mult);
+    assert((T-B) / preds->R == preds->mult);
+  }
   
   unsigned int numLeaves = 1;
   
-  FILE* PARTSFILE = NULL;
-  if(printparts && T > B) PARTSFILE = OpenPartsfile();
-  partitions = 0;
+  /* TRACE NOTE: this should be moved out of this function, because
+     it could get called multiple times in a single run */
   
   /* zero-out the Delta-sigma matrix */
   if(preds) {
@@ -225,21 +271,28 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
       PrintState(r+1, numLeaves, leaves);
     
     /* process full posterior, and calculate linear area */
-    if(T>B) Posterior();
-    if(linarea && T>B) process_linarea(numLeaves, leaves);
+    if(T>B && (r-B) % preds->mult == 0) {
+
+      /* keep track of MAP */
+      Posterior();
+      
+      /* keeping track of the average number of partitions */
+      double m = ((double)(r-B)) / preds->mult;
+      partitions = (m*partitions + numLeaves)/(m+1);
+
+      /* save the traces? */
+      if(trace) {
+	process_linarea(numLeaves, leaves);
     
-    /* get the leaves of the tree (the partitions) */
-    if(r>=(int)B) {
-      partitions = ((r-B)*partitions + numLeaves)/(r-B+1);
-      if((r+1)%4 == 0 && treemod && partitions > 1) 
-	PrintPartitions(PARTSFILE);
+	/* get the leaves of the tree (the partitions) */
+	PrintPartitions();
+      }
     }
     
     /* clean up the garbage */
     free(leaves); 
 
-    /* periodically check R for interrupts and flush console 
-       every five seconds */
+    /* periodically check R for interrupts and flush console every second */
     itime = my_r_process_events(itime);
   }
   
@@ -247,11 +300,7 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   if(parallel && PP) produce();
   
   /* dump some tree statistics to output files */
-  if(T>B) {
-    if(PARTSFILE) fclose(PARTSFILE);
-    else PrintBestPartitions();
-    PARTSFILE = NULL;
-  }
+  if(T>B) PrintBestPartitions();
   
   if(parallel) wrap_up_predictions(); 
 }
@@ -268,11 +317,15 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
 
 void Model::predict_master(Tree *leaf, Preds *preds, int index, void* state)
 {
+  /* only predict every E = preds->mult */
   if(index < 0) return;
   if(index % preds->mult != 0) return;
+
+  /* calculate r index into preds matrices */
   unsigned int r = index/preds->mult;
-  if(r >= preds->R) return;
+  assert(r < preds->R); /* if-statement should never be true: if(r >= preds->R) return; */
   
+  /* choose parallel or serial prediction */
   if(parallel) predict_producer(leaf, preds, r, DNORM);
   else predict_xx(leaf, preds, r, DNORM, state);
 }
@@ -283,16 +336,23 @@ void Model::predict_master(Tree *leaf, Preds *preds, int index, void* state)
  * 
  * predict at one of the leaves of the tree.
  * this was made into a function in order to help simplify 
- * the rounds() function.
+ * the rounds() function.  Also, now fascilitates paramter
+ * traces for the GPs which govern the XX locations.
  */
 
 void Model::Predict(Tree* leaf, Preds* preds, unsigned int index, 
 		bool dnorm, void *state)
 {
+  /* these declarations just make for shorter function arguments below */
   double ** ZZ = preds->ZZ; 
   double ** Zp = preds->Zp; 
   double ** Ds2xy = preds->Ds2xy;
   double *ego = preds->ego;
+
+  /* this is probably the best place for gathering traces about XX */
+  if(ZZ) Trace(leaf, index); /* checks if trace=TRUE inside Trace */
+
+  /* here is where the actual prediction happens */
   if(ZZ && Zp) leaf->Predict(ZZ[index], Zp[index], Ds2xy, ego, dnorm, state);
   else if(Zp) leaf->Predict(NULL, Zp[index], Ds2xy, ego, dnorm, state);
   else if(ZZ) leaf->Predict(ZZ[index], NULL, Ds2xy, ego, dnorm, state);
@@ -468,10 +528,10 @@ void Model::cut_branch(void *state)
   Tree** nodes = t->internalsList(&len);	
   if(len == 0) return;	
   unsigned int k = (unsigned int) sample_seq(0,len,state);
-  if(k == len) 
+  if(k == len) { 
     if(verb >= 1) 
       myprintf(OUTFILE, "tree unchanged (no branches removed)\n");
-  else {
+  } else {
     if(verb >= 1) 
       myprintf(OUTFILE, "removed %d leaves from the tree\n", nodes[k]->numLeaves());
     nodes[k]->cut_branch();
@@ -489,11 +549,11 @@ void Model::cut_branch(void *state)
 
 void Model::cut_root(void)
 {
-  if(t->isLeaf()) 
+  if(t->isLeaf()) {
     if(verb >= 1)
       myprintf(OUTFILE, "removed 0 leaves from the tree\n");
-  else {
-    if(verb >= 1)
+  } else {
+    if(verb >= 1) 
       myprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
   }
   t->cut_branch();
@@ -511,6 +571,11 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
 {
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,rect,NORMSCALE);
+  if(base_prior->BaseModel() == MR_GP) { 
+    for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
+    printMatrix(Xc, n, d, stdout); 
+  }
+
   double *Zc = new_dup_vector(Z, n); 
   int *p = iseq(0,n-1);
   t->new_data(Xc, n, d, Zc, p);
@@ -579,12 +644,14 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   myprintf(OUTFILE, "r=%d corr=", r);
 #endif
   
+  /* print the (correllation) state (d-values and maybe nugget values) */
   for(unsigned int i=0; i<numLeaves; i++) {
     char *state = leaves[i]->State();
     myprintf(OUTFILE, "%s ", state);
     free(state);
   }
   
+  /* a delimeter */
   myprintf(OUTFILE, ": ");
   
   /* print maximum posterior prob tree height */
@@ -592,9 +659,10 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   if(maxt) myprintf(OUTFILE, "mh=%d ", maxt->Height());
   
   /* print partition sizes */
-  myprintf(OUTFILE, "n = ");
-  for(unsigned int i=0; i<numLeaves; i++)
+  myprintf(OUTFILE, "n=(");
+  for(unsigned int i=0; i<numLeaves-1; i++)
     myprintf(OUTFILE, "%d ", leaves[i]->getN());
+  myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
   
   /* cap off the printing */
   myprintf(OUTFILE, "\n");
@@ -718,16 +786,32 @@ void delete_preds(Preds* preds)
 void Model::close_parallel_preds(void)
 {
 #ifdef PARALLEL
+
+  /* close and free the consumers */
+  for(unsigned int i=0; i<NUMTHREADS; i++) free(consumer[i]);
+  free(consumer);
+
+  /* close locks and condition variables */
   pthread_mutex_destroy(l_mut);
   free(l_mut);
   pthread_cond_destroy(l_cond_nonempty);
   pthread_cond_destroy(l_cond_notfull);
   free(l_cond_nonempty);
   free(l_cond_notfull);
+
+  /* close down lock for synchronizing printing of XX traces */
+  pthread_mutex_destroy(l_trace_mut);
+  free(l_trace_mut);
+
+  LArgs* l;
+  /* empty and then free the tlist */
+  while(l = (LArgs*) tlist->DeQueue()) { delete l->leaf; free(l); } 
   delete tlist; tlist = NULL;
+
+  /* empty then free the PP list */
+  while(l = (LArgs*) PP->DeQueue()) { delete l->leaf; free(l); } 
   delete PP; PP = NULL;
-  for(unsigned int i=0; i<NUMTHREADS; i++) free(consumer[i]);
-  free(consumer);
+
 #else
   error("close_parallel_preds: not compiled for pthreads");
 #endif
@@ -744,6 +828,7 @@ void Model::close_parallel_preds(void)
 void Model::init_parallel_preds(void)
 {
 #ifdef PARALLEL
+  /* initialize everything for parallel prediction */
   l_mut = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
   l_cond_nonempty = (pthread_cond_t*) malloc(sizeof(pthread_cond_t));
   l_cond_notfull = (pthread_cond_t*) malloc(sizeof(pthread_cond_t));
@@ -752,10 +837,17 @@ void Model::init_parallel_preds(void)
   pthread_cond_init(l_cond_notfull, NULL);
   tlist = new List();  assert(tlist);
   PP = new List();  assert(PP);
+  
+  /* initialize lock for synchronizing printing of XX traces */
+  l_trace_mut = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(l_trace_mut, NULL);
+
+  /* allocate consumers */
   consumer = (pthread_t**) malloc(sizeof(pthread_t*) * NUMTHREADS);
   for(unsigned int i=0; i<NUMTHREADS; i++)
     consumer[i] = (pthread_t*) malloc(sizeof(pthread_t));
   num_consumed = num_produced = 0;
+  
 #else
   error("init_parallel_preds: not compiled for pthreads\n");
   exit(0);
@@ -775,7 +867,7 @@ void Model::predict_producer(Tree *leaf, Preds *preds, int index, bool dnorm)
 {
 #ifdef PARALLEL
   Tree *newleaf = new Tree(leaf);
-  newleaf->add_XX(preds->XX, preds->nn,col);
+  newleaf->add_XX(preds->XX, preds->nn, d);
   LArgs *largs = (LArgs*) malloc(sizeof(struct largs));
   fill_larg(largs, newleaf, preds, index, dnorm);
   num_produced++;
@@ -837,6 +929,7 @@ void Model::predict_consumer(void)
     assert(num_consumed <= num_produced);
     nc = 0;
     
+    /* wait for the tlist to get populated with leaves */
     while (tlist->isEmpty()) pthread_cond_wait (l_cond_nonempty, l_mut);
     
     /* dequeue half of the waiting leaves into LL */
@@ -844,6 +937,8 @@ void Model::predict_consumer(void)
     List* LL = new List();
     void *entry = NULL;
     unsigned int i;
+
+    /* dequeue a calculated portion of the remaing leaves */
     for(i=0; i<ceil(((double)len)/NUMTHREADS); i++) {
       assert(!tlist->isEmpty());
       entry = tlist->DeQueue();
@@ -866,7 +961,10 @@ void Model::predict_consumer(void)
       free(l);
     }
     
+    /* this list should be empty */
     delete LL;
+
+    /* if the final list entry was NULL, then this thread is done */
     if(entry == NULL) { deleteRNGstate(state); return; }
   }
   
@@ -1019,12 +1117,11 @@ Tree** Model::CopyPartitions(unsigned int *numLeaves)
 
 void Model::PrintBestPartitions()
 {
-  assert(!PARTSFILE);
+  FILE *BESTPARTS;
   Tree *maxt = maxPosteriors();
-  PARTSFILE = OpenPartsfile();
-  print_parts(PARTSFILE, maxt, iface_rect);
-  fclose(PARTSFILE);
-  PARTSFILE = NULL;
+  BESTPARTS = OpenFile("best", "parts");
+  print_parts(BESTPARTS, maxt, iface_rect);
+  fclose(BESTPARTS);
 }
 
 
@@ -1058,7 +1155,7 @@ void print_parts(FILE *PARTSFILE, Tree *t, double** iface_rect)
  * (i.e. the partitions)
  */
 
-void Model::PrintPartitions(FILE* PARTSFILE)
+void Model::PrintPartitions(void)
 {
   if(!PARTSFILE) return;
   print_parts(PARTSFILE, t, iface_rect);
@@ -1072,14 +1169,11 @@ void Model::PrintPartitions(FILE* PARTSFILE)
  * before adding XX to it, and then predicts
  */
 
-void Model::predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *state)
+void Model::predict_xx(Tree* leaf, Preds* preds, int index, bool dnorm, void *state)
 {
-  //Tree* leaf = new Tree(ll, false);
-  Tree* leaf = ll;
-  leaf->add_XX(preds->XX, preds->nn, col);
+  leaf->add_XX(preds->XX, preds->nn, d);
   if(index >= 0) Predict(leaf, preds, index, dnorm, state);
   leaf->delete_XX();
-  //delete leaf;
 }
 
 
@@ -1138,18 +1232,18 @@ void norm_Ds2xy(double **Ds2xy, unsigned int R, unsigned int nn)
 
 
 /*
- * OpenPartsfile:
+ * OpenFile:
  * 
- * open a the partitions file for writing
+ * open a the file named prefix_trace_Id+1.out
  */
 
-FILE* Model::OpenPartsfile(void)
+FILE* Model::OpenFile(char *prefix, char *type)
 {
   char outfile_str[BUFFMAX];
-  sprintf(outfile_str, "parts_%d.out", Id+1);
-  FILE* PARTSFILE = fopen(outfile_str, "w");
-  assert(PARTSFILE);
-  return PARTSFILE;
+  sprintf(outfile_str, "%s_%s_%d.out", prefix, type, Id+1);
+  FILE* OFILE = fopen(outfile_str, "w");
+  assert(OFILE);
+  return OFILE;
 }
 
 /*
@@ -1182,6 +1276,13 @@ double Model::Posterior(void)
   params->get_T_params(&t_alpha, &t_beta, &t_minpart);
   double full_post = t->FullPosterior(t_alpha, t_beta);
   register_posterior(posteriors, t, full_post);
+
+  /* record the (log) posterior as a function of height */
+  if(trace) {
+    assert(POSTTRACEFILE);
+    myprintf(POSTTRACEFILE, "%d %g\n", t->Height(), full_post);
+  }
+  
   return full_post;
 }
 
@@ -1231,13 +1332,13 @@ void delete_posteriors(Posteriors* posteriors)
  *
  * if the posterior for the tree *t is the current largest
  * seen (for its height), then save it in the Posteriors
- * data structure
+ * data structure.
  */
 
 void register_posterior(Posteriors* posteriors, Tree* t, double post)
 {
   unsigned int height = t->Height();
-  
+
   /* reallocate necessary memory */
   if(height > posteriors->maxd) {
     posteriors->posts = (double*) realloc(posteriors->posts, sizeof(double) * height);
@@ -1401,7 +1502,7 @@ void Model::realloc_linarea(void)
 
 
 /*
- * deleta_linarea:
+ * delete_linarea:
  *
  * free the linarea data structure and
  * all of its fields
@@ -1463,7 +1564,7 @@ void Model::process_linarea(unsigned int numLeaves, Tree** leaves)
 
 
 /*
- * print_linarea:
+ * print_linarea
  *
  * print linarea stats to the outfile
  * doesn't do anything if linarea is false
@@ -1471,10 +1572,9 @@ void Model::process_linarea(unsigned int numLeaves, Tree** leaves)
 
 void Model::print_linarea(void)
 {
-  if(!linarea) return;
+  if(!trace) return;
   char filestr[MEDBUFF];
-  sprintf(filestr, "linarea_%d.out", Id);
-  FILE *outfile = fopen(filestr, "w");
+  FILE *outfile = OpenFile("trace", "linarea");
   myprintf(outfile, "count\t la ba\n");
   for(unsigned int i=0; i<lin_area->size; i++) {
     myprintf(outfile, "%d\t %g %g\n", 
@@ -1526,8 +1626,12 @@ void Model::Burnin(unsigned int B, void *state)
 
 void Model::Sample(Preds *preds, unsigned int R, void *state)
 {
-  if(verb >= 1) 
-    myprintf(OUTFILE, "\nObtaining samples (nn=%d predictive locations):\n", preds->nn);
+  if(verb >= 1) {
+    myprintf(OUTFILE, "\nObtaining samples (nn=%d pred locs):", preds->nn);
+    if(trace) myprintf(OUTFILE, " [with param traces]");
+    myprintf(OUTFILE, "\n");
+  }
+		       
   rounds(preds, 0, R, state);
 }
 
@@ -1542,4 +1646,34 @@ void Model::Sample(Preds *preds, unsigned int R, void *state)
 void Model::Print(void)
 {
   base_prior->Print(OUTFILE);
+}
+
+
+/*
+ * Trace:
+ *
+ * Dump Base model trace information to XXTRACEFILE
+ * for those XX which are in this leaf 
+ */
+
+void Model::Trace(Tree *leaf, unsigned int index)
+{
+  /* don't do anything if there's nothing to do */
+  if(!trace) return;
+
+  /* need to lock if we're using pthreads */
+  /* because there is only one XX_TRACE_FILE */
+#ifdef PARALLEL
+  assert(parallel);
+  pthread_mutex_lock(l_trace_mut);
+#endif
+
+  /* actual printing of trace for a tree leaf */
+  leaf->Trace(index, XXTRACEFILE);
+
+  /* unlock */
+#ifdef PARALLEL
+  pthread_mutex_unlock(l_trace_mut);
+#endif
+
 }

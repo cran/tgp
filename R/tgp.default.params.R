@@ -23,13 +23,15 @@
 
 
 "tgp.default.params" <-
-function(d)
+function(col, base="gp")
 {
+  if(base == "mrgp") col=2*(col-1)
   params<-
     list(
+         base=base,
          tree=c(0.25,2,10),		# tree prior params <alpha> and <beta>
          bprior="bflat",		# linear prior (b0, bmle, bflat, bcart or b0tau)
-         beta=rep(0,d), 		# start vals beta (length = col = dim + 1)
+         beta=rep(0,col), 		# start vals beta (length = col = dim + 1)
          start=c(1.0,1.0), 	        # start vals for s2, and tau2
          s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>
          s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
@@ -41,6 +43,8 @@ function(d)
          nug.lam="fixed",		# nug hierarch gamma-mix prior params (or "fixed")
          gamma=c(10,0.2,0.7),		# gamma linear pdf parameter
          d.p=c(1.0,20.0,10.0,10.0),	# d gamma-mix prior params (initial values)
+         delta.p=c(),
+	   nugf.p=c(),
          d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
          nu=0.5                         # matern correlation smoothing parameter
          )

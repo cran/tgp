@@ -53,6 +53,7 @@ double ** new_zero_matrix(unsigned int n1, unsigned int n2);
 double ** new_matrix(unsigned int m, unsigned int n);
 double ** new_t_matrix(double** M, unsigned int n1_old, unsigned int n2_old);
 double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2);
+double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2);
 void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2);
 void swap_matrix(double **M1, double **M2, unsigned int n1, unsigned int n2);
 double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2, 

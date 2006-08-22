@@ -321,26 +321,6 @@ double *b, *x;
 }
 
 
-/*
- * X_to_F:
- * 
- * F is just a column of ones and then the X (design matrix)
- *
- * X[n][col], F[col][n]
- */
-
-void X_to_F(n, col, X, F)
-unsigned int n, col;
-double **X, **F;
-{
-	unsigned int i,j;
-	for(i=0; i<n; i++) {
-		F[0][i] = 1;
-		for(j=1; j<col; j++) F[j][i] = X[i][j-1];
-	}
-}
-
-
 
 /*
  * Matern dist_to_K:

@@ -89,6 +89,32 @@ double ss2, nug;
 	}
 }
 
+/*
+ * used by the predict_full funtion below to fill
+ * zmean and zs [n1] with predicted mean and var values 
+ * based on the input coded in terms of 
+ * Frow,FW,W,xxKx,KpFWF,KpFWFi,b,ss2,nug,KiZmFb
+ *
+ * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
+ */
+
+void mr_predict_data(zmean,zs,n1,col,X,FFrow,K,b,ss2,nug,nugfine,KiZmFb)
+unsigned int n1, col;
+double *b, *KiZmFb, *zmean, *zs;
+double **FFrow, **K, **X;
+double ss2, nug, nugfine;
+{
+	int i;
+
+	/* for each point at which we want a prediction */
+	for(i=0; i<n1; i++) {
+		zmean[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
+		if(X[i][0]==1) zs[i] = sqrt(ss2*nugfine);
+		else zs[i] = sqrt(ss2*nug);
+
+	}
+}
+
 
 /*
  * compute one row of the Ds2xy (of size n2) matrix
@@ -155,11 +181,11 @@ double **FW, **FFrow, **KKrow, **xxKxx;
  * KpFWFi[n1][n1], W[col][col];
  */
 
-double predictive_var(n1, col, Q, rhs, Wf, s2cor, ss2, k, f, FW, W, tau2, KpFWFi, nug)
+double predictive_var(n1, col, var, Q, rhs, Wf, s2cor, ss2, k, f, FW, W, tau2, KpFWFi, nug)
 unsigned int n1, col;
 double *Q, *rhs, *Wf, *k, *f, *s2cor;
 double **FW, **KpFWFi, **W;
-double nug, ss2, tau2;
+double nug, ss2, var, tau2;
 {
 	double s2, kappa, fWf, last;
 
@@ -186,7 +212,7 @@ double nug, ss2, tau2;
 	/* finish off the variance */
 	/* Var[Z(x)] = s2*[1 + nug + fWf - Q (K + FWF)^{-1} Q] */
 	/* Var[Z(x)] = s2*[kappa - Q C^{-1} Q] */
-	kappa = 1.0 + nug + tau2*fWf;
+	kappa = var + tau2*fWf;
 	*s2cor = kappa - last;
 	s2 = ss2*(*s2cor);
 		
@@ -246,6 +272,48 @@ double ss2, nug, tau2;
 	free(rhs); free(Wf); free(Q);
 }
 
+/*
+ * used by the mr_predict_full funtion below to fill
+ * zmean and zs [n2] with predicted mean and var values 
+ * based on the input coded in terms of 
+ * FF,FW,W,xxKx,KpFWF,KpFWFi,b,ss2,nug,KiZmFb
+ *
+ * does not call delta_sigma2, so it also has fewer arguments
+ *
+ * b[col], KiZmFb[n1], z[n2], FFrow[n2][col], KKrow[n2][n1], 
+ * KpFWFi[n1][n1], FW[col][n1], W[col][col];
+ */
+
+void mr_predict_no_delta(zmean,zs,n1,n2,col,XX,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
+			 nug,nugfine,r,delta,KiZmFb)
+unsigned int n1, n2, col;
+double *b, *KiZmFb, *zmean, *zs;
+double **FFrow, **KKrow, **KpFWFi, **FW, **W, **XX;
+double ss2, nug, nugfine, r, delta, tau2;
+{
+	int i;
+	double s2cor, var;
+	/*double Q[n1], rhs[n1], Wf[col];*/
+	double *Q, *rhs, *Wf;
+
+	/* zero stuff out before starting the for-loop */
+	rhs = new_zero_vector(n1);
+	Wf = new_zero_vector(col);
+	Q = new_vector(n1);
+
+	/* for each point at which we want a prediction */
+	for(i=0; i<n2; i++) {
+
+		/* predictive mean and variance */
+		zmean[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
+		if(XX[i][0]==1) var = r*r + delta + nugfine;
+		else var = 1.0 + nug;
+		zs[i] = sqrt(predictive_var(n1, col, var, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
+					    FFrow[i], FW, W, tau2, KpFWFi, nug));
+	}
+
+	free(rhs); free(Wf); free(Q);
+}
 
 
 /*
@@ -260,7 +328,8 @@ double ss2, nug, tau2;
  * KpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta(zmean,zs,n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,nug,KiZmFb)
+void predict_no_delta(zmean,zs,n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
+		      nug,KiZmFb)
 unsigned int n1, n2, col;
 double *b, *KiZmFb, *zmean, *zs;
 double **FFrow, **KKrow, **KpFWFi, **FW, **W;
@@ -281,7 +350,7 @@ double ss2, nug, tau2;
 
 		/* predictive mean and variance */
 		zmean[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
-		zs[i] = sqrt(predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
+		zs[i] = sqrt(predictive_var(n1, col, 1.0+nug, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
 					    FFrow[i], FW, W, tau2, KpFWFi, nug));
 	}
 
@@ -292,7 +361,7 @@ double ss2, nug, tau2;
 /*
  * computes stuff that has only to do with the input data
  * used by the predict funtions that loop over the predictive
- * locations
+ * location
  *
  * F[col][n1], W[col][col], K[n1][n1], Ki[n1][n1], FW[col][n1], 
  * KpFWFi[n1][n1], KiZmFb[n1], Z[n1], b[col];
@@ -378,7 +447,7 @@ int err;
 
 
 /*
- * predicts at the fiven data locations (X (n1 x col): F, K, Ki) and the NEW 
+ * predicts at the given data locations (X (n1 x col): F, K, Ki) and the NEW 
  * predictive locations (XX (n2 x col): FF, KK) given the current values of the
  * parameters b, s2, d, nug
  * returns the number of warnings
@@ -464,6 +533,104 @@ void *state;
 
 	return warn;
 }
+
+
+/*
+ * predicts at the given data locations (X (n1 x col): F, K, Ki) and the NEW 
+ * predictive locations (XX (n2 x col): FF, KK) given the current values of the
+ * parameters b, s2, d, nug
+ * returns the number of warnings
+ */
+
+int mr_predict_full(n1, n2, col, z, zz, Ds2xy, ego, Z, X, F, K, Ki, W, tau2, XX, FF, 
+		    xxKx, xxKxx, b, ss2, nug, nugfine, r, delta, err, state)
+unsigned int n1, n2, col;
+int err;
+double *zz, *z, *Z, *b, *ego;
+double **X, **F, **K, **Ki, **W, **XX, **FF, **xxKx, **xxKxx, **Ds2xy;
+double ss2, nug, nugfine, r, delta, tau2;
+void *state;
+{
+	/*double KiZmFb[n1]; 
+	double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], Frow[n1][col];*/
+        double *KiZmFb, *zmean, *zs;
+	double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
+	int i, warn;
+	
+	/* sanity check */
+	if(!(z || zz)) { assert(n2 == 0); return 0; }
+	assert(K && Ki && F && Z && W);
+
+	/* init */
+	FW = new_matrix(col, n1);
+	KpFWFi = new_matrix(n1, n1);
+	KiZmFb = new_vector(n1);
+	predict_help(n1,col,b,F,Z,W,tau2,K,Ki,FW,KpFWFi,KiZmFb);
+
+	warn = 0;
+	if(zz) { 
+	/* predicting and Delta-sigming at the predictive locations */
+
+		assert(FF && xxKx);
+		
+		/* allocate mean and s2 data */
+		zmean = new_vector(n2);
+		zs = new_vector(n2);
+
+		/* transpose the FF and KK matrices */
+		KKrow = new_t_matrix(xxKx, n1, n2);
+		FFrow = new_t_matrix(FF, col, n2);
+		
+		if(Ds2xy) { 
+		/* yes, compute Delta-sigma for all pairs of new locations */
+			assert(xxKxx);
+			predict_delta(zmean,zs,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
+				      KKrow,xxKxx,KpFWFi,b,ss2,nug,KiZmFb);
+		} else { 
+		/* just predict, don't compute Delta-sigma */
+			assert(xxKxx == NULL);
+			mr_predict_no_delta(zmean,zs,n1,n2,col,XX, FFrow,FW,W,tau2,KKrow,
+					    KpFWFi,b,ss2,nug,nugfine,r,delta,KiZmFb);
+		}
+		delete_matrix(KKrow); delete_matrix(FFrow);
+		
+		/* draw from the posterior predictive distribution */
+		warn += predict_draw(n2, zz, zmean, zs, err, state);
+		if(ego) compute_ego(n1, n2, ego, Z, zmean, zs);
+		free(zmean); free(zs);
+	}
+	if(z) {
+	        /* allocate mean and s2 data */
+	        zmean = new_vector(n1);
+		zs = new_vector(n1);
+	  
+	        /* predicting at the data locations */
+	        for(i=0; i<n1; i++){ 
+		  if(X[i][0]==1) K[i][i] -= nugfine;
+		  else  K[i][i] -= nug;
+		}
+ 
+		Frow = new_t_matrix(F, col, n1);
+		mr_predict_data(zmean,zs,n1,col,X,Frow,K,b,ss2,nug,nugfine,KiZmFb,err,state);
+		delete_matrix(Frow);
+	      for(i=0; i<n1; i++){ 
+		  if(X[i][0]==1) K[i][i] += nugfine;
+		  else  K[i][i] += nug;
+		}
+
+		/* draw from the posterior predictive distribution */
+		warn += predict_draw(n1, z, zmean, zs, err, state);
+		free(zmean); free(zs);
+	}
+
+	delete_matrix(FW);
+	delete_matrix(KpFWFi);
+	free(KiZmFb);
+
+	return warn;
+}
+
+
 
 
 /*

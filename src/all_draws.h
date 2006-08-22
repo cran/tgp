@@ -76,12 +76,21 @@ int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlas
 		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
 		double **T, double tau2, double nug, double nu, double pRatio, double *d_alpha,
 	        double *d_beta, double a0, double g0, int lin, void *state);
+
 double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, double **F, double *Z, 
 		double **K, double log_det_K, double lambda, double **Vb, 
 		double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
 		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
 		double **T, double tau2, double *nug_alpha, double *nug_beta, double a0, 
 		double g0, int linear, void *state);
+double* mr_nug_draw_margin(unsigned int n, unsigned int col, double nug,
+			  double nugfine, double **X, double **F, double *Z, 
+		double **K, double log_det_K, double lambda, double **Vb, 
+		double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
+		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
+		double **T, double tau2, double *nug_alpha, double *nug_beta,
+		double *nugf_alpha, double *nugf_beta, double r, double delta,
+		double a0, double g0, int linear, void *state);
 void sigma2_prior_draw(double *a0, double *g0, double *s2, unsigned int n, double a0_lambda, 
 		double g0_lambda, void *state);
 double tau2_draw(unsigned int col, double **Ti, double s2, double *b, double *b0, double alpha0, 

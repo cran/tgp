@@ -50,7 +50,7 @@ class Tree
    
   unsigned int n;		/* number of input data locations */
   unsigned int nn;	        /* number of predictive input data locations */
-  unsigned int col;	        /* dimension of the input data, +1 */
+  unsigned int d;			 /* dimension of the input data */ 
   double **X;		        /* n x (col-1), data: spatial locations */
   int *p;			/* n, indices into original data */
   double *Z;		        /* n, f(X) */
@@ -114,7 +114,7 @@ class Tree
  public:
   
   /* constructor, destructor and misc partition initialization */
-  Tree(double **X, int *p, unsigned int n, unsigned int col, double *Z, 
+  Tree(double **X, int *p, unsigned int n, unsigned int d, double *Z, 
        Rect* rect, Tree* parent, Model* model);
   Tree(const Tree *oldt);
   void init(void);
@@ -168,8 +168,7 @@ class Tree
   Tree** buildTreeList(unsigned int len);
   unsigned int numPrunable(void);
   unsigned int numLeaves(void);
-
-  
+ 
   /* size checks */
   double Area(void);
   bool wellSized(void);
@@ -187,6 +186,9 @@ class Tree
   
   /* computing the full posterior of the tree */
   double FullPosterior(double alpha, double beta);
+
+  /* gathering traces of parameters */
+  void Trace(unsigned int index, FILE* XXTRACEFILE);
 };
 
 #endif

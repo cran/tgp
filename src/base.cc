@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <string.h>
 
-class GP_Prior;
+//class GP_Prior;
 
 class Base_Prior;
 
@@ -46,10 +46,11 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
 {
   /* data size */
   this->n = 0;
-  this->col = d+1;
+  this->d = d;
   nn = 0;
 
   /* null everything */
+
   X = XX = NULL;
   Z = NULL;
   mean = 0;
@@ -72,7 +73,8 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
 Base::Base(double **X, double *Z, Base *old)
 {
   /* simple non-pointer copies */
-  col = old->col;
+  
+  d = old->d;
   n = old->n;
  
   /* pointers to data */
@@ -142,9 +144,9 @@ BASE_MODEL Base::BaseModel(void)
  * the usual constructor function
  */
 
-Base_Prior::Base_Prior(unsigned int col)
+Base_Prior::Base_Prior(unsigned int d)
 {
-  this->col = col;
+  this->d = d;
 }
 
 
@@ -160,7 +162,7 @@ Base_Prior::Base_Prior(Base_Prior *p)
   base_model = p->base_model;
 
   /* generic and tree parameters */
-  col = p->col;   
+  d = p->d;   
 }
 
 

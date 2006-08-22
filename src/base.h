@@ -32,7 +32,7 @@ extern "C"
 #include <fstream>
 using namespace std;
 
-typedef enum BASE_MODEL {GP=901} BASE_MODEL;
+typedef enum BASE_MODEL {GP=901, MR_GP=902} BASE_MODEL;
 
 class Model;
 class Tree;
@@ -52,7 +52,7 @@ class Base
   bool pcopy;                   /* is this a private copy of the prior? */
   Base_Prior *prior;            /* Base (Gaussian Process) prior module */
   
-  unsigned int col;	        /* # of columns in the design matrix X, plus 1 */
+  unsigned int d;	              /* X of input variables */
   unsigned int n;	        /* number of input data points-- rows in the design matrix */
   unsigned int nn;	        /* number of predictive input data locations */
 
@@ -74,8 +74,8 @@ class Base
   virtual Base* Dup(double **X, double *Z)=0;  
   virtual void Clear(void)=0;
   virtual void ClearPred(void)=0;
-  virtual void Update(double **X, unsigned int n, unsigned int col, double *Z)=0;
-  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int col, 
+  virtual void Update(double **X, unsigned int n, unsigned int d, double *Z)=0;
+  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, 
 			  double **Ds2xy)=0; 
   virtual bool Draw(void *state)=0;
   virtual void Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
@@ -93,7 +93,8 @@ class Base
   virtual char* State(void)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void Init(void)=0;
-  
+  virtual void X_to_F(unsigned int n, double **X, double **F)=0;  
+  virtual double* Trace(unsigned int* len)=0;
   unsigned int N(void);
 };
 
@@ -109,13 +110,14 @@ class Base_Prior
 
  protected:
   
-  unsigned int col;	        /* dimenstion of the data + 1 for intercept */
+  unsigned int d;	        /* col dimension of the data */
   BASE_MODEL base_model;	/* indicator for type of model (e.g., GP) */
+
   
  public:
 
   /* start public functions */
-  Base_Prior(unsigned int col);
+  Base_Prior(unsigned int d);
   Base_Prior(Base_Prior* prior);
   virtual ~Base_Prior(void);
   BASE_MODEL BaseModel(void);

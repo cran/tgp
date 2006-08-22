@@ -23,7 +23,7 @@
 
 
 "mapT" <-
-function(out, proj=NULL, slice=NULL, add=FALSE, lwd=2)
+function(out, proj=NULL, slice=NULL, add=FALSE, lwd=2, ...)
 {
   ## simple for 1-d data, projection plot
   if(out$d == 1) { proj <- 1; slice <- NULL }
@@ -45,13 +45,13 @@ function(out, proj=NULL, slice=NULL, add=FALSE, lwd=2)
     
     ## 1-d projection
     if(length(proj) == 1) {
-      if(add == FALSE) plot(out$X[,proj], out$Z)
+      if(add == FALSE) plot(out$X[,proj], out$Z, ...)
       tgp.plot.parts.1d(out$parts[,proj], lwd=lwd)
 
     } else {
     
       ## 2-d projection
-      if(add == FALSE) plot(out$X[,proj])
+      if(add == FALSE) plot(out$X[,proj], ...)
       tgp.plot.parts.2d(out$parts[,proj], lwd=lwd)
     }
   }

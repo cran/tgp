@@ -23,11 +23,11 @@
 
 
 "tgp.check.params" <-
-function(params, d)
+function(params, col)
 {
 	if(is.null(params)) return(matrix(-1));
-	if(length(params) != 16) {
-		cat(paste("Number of params should be 16, you have", length(params), "\n"));
+	if(length(params) != 19) {
+		cat(paste("Number of params should be 19 you have", length(params), "\n"));
 		return(NULL)
 	}
         
@@ -37,12 +37,18 @@ function(params, d)
 			length(params$tree), "\n"));
 		return(NULL)
 	}
-	if(params$tree[3] < d-1) {
+	if(params$tree[3] < col-1) {
 		cat(paste("tree minpart", params$tree[3], 
-			"should be greater than d", d-1, "\n"));
+			"should be greater than d", col-1, "\n"));
 		return(NULL)
 	}
-	p <- as.numeric(params$tree)
+        
+        if(params$base == "gp") { base <- 0; }
+        else if(params$base == "mrgp"){ base <- 1; }
+        else { cat(paste("params$base =", params$bprior, "not valid\n"));
+               base <- 0; }
+        
+	p <- c(base, as.numeric(params$tree))
 
 	# beta linear prior model
 	if(params$bprior == "b0") { p <- c(p, 0); }
@@ -53,8 +59,13 @@ function(params, d)
 	else { cat(paste("params$bprior =", params$bprior, "not valid\n")); return(NULL); }
 
         # initial settings of beta linear prior parameters
-	if(length(params$beta) != d) {
-		cat(paste("length of params$beta should be", d, "you have", 
+	if(length(params$beta) != col && base==0) {
+		cat(paste("length of params$beta should be", col, "you have", 
+			length(params$beta), "\n"));
+		return(NULL)
+	}
+        if(length(params$beta) != (2*(col-1)) && base==1) {
+		cat(paste("length of params$beta should be", col-1, "you have", 
 			length(params$beta), "\n"));
 		return(NULL)
 	}
@@ -103,6 +114,11 @@ function(params, d)
 	else p <- c(p, as.numeric(params$tau2.lam))
         
 	# correllation model
+	if(params$corr != "expsep" && params$base=="mrgp"){
+		cat(paste("Sorry, corr=", params$corr,"is not yet supported with mr_tgp. 
+	Switching to ExpSep corr."))
+		params$corr <- "expsep"
+	}
 	if(params$corr == "exp") { p <- c(p, 0); }
 	else if(params$corr == "expsep") { p <- c(p, 1); }
         else if(params$corr == "matern") { p <- c(p, 2); }
@@ -143,12 +159,33 @@ function(params, d)
 	p <- c(p, as.numeric(params$gamma))
 
         # mixture of gamma (initial) prior parameters for range parameter d
-	if(length(params$d.p) != 4) {
+	if(length(params$d.p) != 4 && params$base == "gp") {
 		cat(paste("length of params$d.p should be 4 you have", 
 			length(params$d.p),"\n"));
 		return(NULL)
 	}
+	if(length(params$d.p) != 8 && params$base == "mrgp") {
+		cat(paste("length of params$d.p should be 8 you have", 
+			length(params$d.p),"\n"));
+		return(NULL)
+	}
+	
 	p <- c(p, as.numeric(params$d.p))
+
+      if(length(params$delta.p) != 4 && params$base == "mrgp") {
+		cat(paste("length of params$delta.p should be 4 you have", 
+			length(params$delta.p),"\n"));
+		return(NULL)
+	}
+      if(params$base == "mrgp") p<- c(p, as.numeric(params$delta.p))
+
+      if(length(params$nugf.p) != 4 && params$base == "mrgp") {
+		cat(paste("length of params$delta.p should be 4 you have", 
+			length(params$delta.p),"\n"));
+		return(NULL)
+	}
+      if(params$base == "mrgp") p<- c(p, as.numeric(params$nugf.p))
+
 
 	# hierarchical prior params for range d (exponentials) or "fixed"
 	if(length(params$d.lam) != 4 && params$d.lam[1] != "fixed") {

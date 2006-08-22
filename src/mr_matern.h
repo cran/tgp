@@ -22,21 +22,23 @@
  ********************************************************************************/
 
 
-#ifndef __MATERN_H__
-#define __MATERN_H__ 
+#ifndef __MR_MATERN_H__
+#define __MR_MATERN_H__ 
 
 #include "corr.h"
 
-class Matern_Prior;
+class MrMatern_Prior;
 
 /*
  * CLASS for the implementation of the matern
  *  family of correlation functions 
  */
 
-class Matern : public Corr
+class MrMatern : public Corr
 {
  private:
+  unsigned int dim;		/* the true input dimension (dim[X]-1) */
+
   double nu;           /* matern smoothing parameter */
 
   double d;		/* kernel correlation range parameter */
@@ -46,9 +48,9 @@ class Matern : public Corr
  
  public:
 
-  Matern(unsigned int col, Base_Prior *base_prior);
+  MrMatern(unsigned int col, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
-  virtual ~Matern(void);
+  virtual ~MrMatern(void);
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
@@ -60,13 +62,14 @@ class Matern : public Corr
   virtual double log_Prior(void);
   virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
-  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
+  virtual bool DrawNug(unsigned int n, double **X,
+		       double **F, double *Z,
 		       double *lambda, double **bmu, 
 		       double **Vb, double tau2, void *state);
   virtual double* Trace(unsigned int* len);
 
-  void get_delta_d(Matern* c1, Matern* c2, void *state);
-  void propose_new_d(Matern* c1, Matern* c2, void *state);
+  void get_delta_d(MrMatern* c1, MrMatern* c2, void *state);
+  void propose_new_d(MrMatern* c1, MrMatern* c2, void *state);
   double D(void);
   double NU(void);
 };
@@ -77,10 +80,10 @@ class Matern : public Corr
  * power family of correlation functions
  */
 
-class Matern_Prior : public Corr_Prior
+class MrMatern_Prior : public Corr_Prior
 {
  private:
-
+  unsigned int dim;		/* the true input dimension (dim[X]-1) */
   double nu;           /* matern smoothing parameter */
 
   double d;
@@ -93,9 +96,9 @@ class Matern_Prior : public Corr_Prior
   
  public:
 
-  Matern_Prior(unsigned int col);
-  Matern_Prior(Corr_Prior *c);
-  virtual ~Matern_Prior(void);
+  MrMatern_Prior(unsigned int col);
+  MrMatern_Prior(Corr_Prior *c);
+  virtual ~MrMatern_Prior(void);
   virtual void read_double(double *dprior);
   virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void Draw(Corr **corr, unsigned int howmany, void *state);

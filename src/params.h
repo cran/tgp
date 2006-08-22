@@ -27,6 +27,7 @@
 
 #include <fstream>
 #include "gp.h"
+#include "mr_gp.h"
 #include "base.h"
 
 //#define BUFFMAX 256
@@ -34,8 +35,8 @@
 class Params
 {
  private:
-
-  unsigned int col;	/* dimenstion of the data + 1 for intercept */
+  unsigned int d;  	/* dimenstion of the data */
+  unsigned int col;	/* dimenstion of the design matrix */
   double t_alpha;		/* tree prior parameter alpha */
   double t_beta;  	/* tree prior parameter beta */
   unsigned int t_minpart; /* tree prior parameter minpart, smallest partition */

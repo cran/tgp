@@ -23,14 +23,14 @@
 
 
 "undo.mean0.range1" <- 
-function(X.m, undo)
+function(X.m, undo, nomean=FALSE)
 {
 	if(is.null(X.m)) return(NULL)
 	else if(is.null(dim(X.m))) X <- matrix(X.m, ncol=1)
 	else X <- X.m
 
 	for(i in 1:(dim(X)[2])) {
-		X[,i] <- X[,i] + undo$amean[i]
+		if(!nomean) X[,i] <- X[,i] + undo$amean[i]
 		X[,i] <- X[,i]*(undo$max[i] - undo$min[i])
 	}
 	if(is.null(dim(X.m))) X.m <- as.vector(X)

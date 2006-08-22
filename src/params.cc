@@ -29,6 +29,7 @@ extern "C"
 }
 #include "params.h"
 #include "gp.h"
+#include "mr_gp.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -45,6 +46,7 @@ using namespace std;
 
 Params::Params(unsigned int dim)
 {
+  d = dim;
   col = dim+1;
 
   /*
@@ -70,17 +72,32 @@ Params::Params(unsigned int dim)
 Params::Params(Params *params)
 {
   /* generic and tree parameters */
+  d = params->d;
   col = params->col;
+
+  if(params->prior->BaseModel() == MR_GP) assert(col=d);
   t_alpha = params->t_alpha;
   t_beta = params->t_beta;
   t_minpart = params->t_minpart;
   
   assert(params->prior);
   
-  /* later, this should be replaced with a switch statement
-     which picks the prior model */
-  prior = new Gp_Prior(params->prior);
-  ((Gp_Prior*)prior)->CorrPrior()->SetGpPrior((Gp_Prior*)prior);
+  switch( params->prior->BaseModel() ) {
+  case GP: 
+    prior = new Gp_Prior(params->prior);
+    ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);
+    break;
+  case MR_GP:
+    prior = new MrGp_Prior(params->prior);
+    ((MrGp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);
+    break;
+  default: 
+    error("bad base model, default to GP"); 
+    prior = new Gp_Prior(params->prior);
+    ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);    
+    break;
+  }
+  
 }
 
 
@@ -106,16 +123,27 @@ Params::~Params(void)
 void Params::read_double(double * dparams)
 {
  
-  /* read tree prior values */
-  t_alpha = dparams[0];
-  t_beta = dparams[1];
-  t_minpart = (unsigned int) dparams[2];
+  switch ((int) dparams[0]) {
+  case 0: prior = new Gp_Prior(d);
+    col = d+1;
+    break;
+  case 1: prior = new MrGp_Prior(d);
+    col = d;
+    break;
+  default: error("bad base model %d, default to GP", (int)dparams[0]);
+    prior = new Gp_Prior(d);
+    col = d+1;
+  }
 
-  /* later, replace this with a swich statement that picks the base model */
-  prior = new Gp_Prior(col);
+  /* read tree prior values */
+  t_alpha = dparams[1];
+  t_beta = dparams[2];
+  t_minpart = (unsigned int) dparams[3];
+
+ 
 
   /* read the rest of the parameters into the corr prior module */
-  prior->read_double(&(dparams[3]));
+  prior->read_double(&(dparams[4]));
 }
 
 
@@ -129,6 +157,20 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 {
   char line[BUFFMAX];
 
+  ctrlfile->getline(line, BUFFMAX);
+  int p = (int) atof(strtok(line, " \t\n#"));
+  switch (p) {
+  case 0: prior = new Gp_Prior(d);
+    col = d+1;
+    break;
+  case 1: prior = new MrGp_Prior(d);
+    col = d;
+    break;
+  default: error("bad base model %d, default to GP", p);
+    prior = new Gp_Prior(d);
+    col = d+1;
+  }
+
   /* read the tree-parameters (alpha, beta) from the control file */
   ctrlfile->getline(line, BUFFMAX);
   t_alpha = atof(strtok(line, " \t\n#"));
@@ -136,8 +178,10 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   t_minpart = atoi(strtok(NULL, " \t\n#"));
   assert(t_minpart > 1);
 
-  /* later, replace this with a swich statement that picks the base model */
-  prior = new Gp_Prior(col);
+  /* prints the tree prior parameter settings */
+  Print(stdout);
+
+
 
   /* read the rest of the parameters into the corr prior module */
   prior->read_ctrlfile(ctrlfile);
@@ -185,7 +229,7 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, char* which)
 	assert((beta[1] = atof(strtok(NULL, " \t\n#"))) > 0);
 	/* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	   which, alpha[0], beta[0], alpha[1], beta[1]); */
-}
+} 
 
 
 /*

@@ -43,19 +43,19 @@ tgp.design(howmany, Xcand, out)
 }
 
 \references{
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Bayesian treed Gaussian process models.}
+Available as UCSC Technical Report ams2006-01. 
+
+Gramacy, R. B., Lee, H. K. H. (2006).
+\emph{Adaptive design of supercomputer experiments.}
+Available as UCSC Technical Report ams2006-02. 
+
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
 \emph{Parameter space exploration with Gaussian process trees.} 
 ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2005).
-\emph{Adaptive Exploration of Computer Experiment Parameter Spaces.}
-submitted to \emph{JCGS}, available as UCSC Technical Report ams2005-16
-
-Gramacy, R. B. \& Lee, H. K. H. (2005).
-\emph{Gaussian Processes and Limiting Linear Models.}
-available as UCSC Technical Report ams2005-17
-
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.php}
+\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
