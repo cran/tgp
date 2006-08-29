@@ -301,7 +301,8 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   
   /* dump some tree statistics to output files */
   if(T>B) PrintBestPartitions();
-  
+
+  /* wait for final predictions to finish */
   if(parallel) wrap_up_predictions(); 
 }
 
@@ -965,7 +966,17 @@ void Model::predict_consumer(void)
     delete LL;
 
     /* if the final list entry was NULL, then this thread is done */
-    if(entry == NULL) { deleteRNGstate(state); return; }
+    if(entry == NULL) { 
+
+      /* make sure to update the num consumed */
+      pthread_mutex_lock(l_mut);
+      num_consumed += nc;
+      pthread_mutex_unlock(l_mut);
+
+      /* delete random number generator state for this thread */
+      deleteRNGstate(state); 
+      return; 
+    }
   }
   
 #else

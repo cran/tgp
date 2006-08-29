@@ -37,7 +37,10 @@ class Matern_Prior;
 class Matern : public Corr
 {
  private:
-  double nu;           /* matern smoothing parameter */
+  double nu;            /* matern smoothing parameter */
+
+  double *bk;           /* vector of len floor(nu)+1 for K_bessel */
+  long nb;              /* floor(nu)+1 */
 
   double d;		/* kernel correlation range parameter */
   double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */

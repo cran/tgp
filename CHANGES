@@ -1,3 +1,15 @@
+1.1-8 (29 Aug 2006)
+-----
+
+Added trace capability for Matern corr family
+
+Fixed bug that num_consumed is not updated on final
+NULL read from tlist
+
+Using new log_bessel_k() function to bypass allocs of 
+floor(nu)+1 double each time bessel_k() was called
+
+
 1.1-7 (23 Aug 2006)
 -----
 

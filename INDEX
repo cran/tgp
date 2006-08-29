@@ -8,6 +8,7 @@ dopt.gp                 Sequential D-Optimal Design for a Stationary Gaussian Pr
 exp2d                   2-d Exponential Data, for examples
 exp2d.rand              Randomly subsampled 2-d Exponential Data, for examples
 friedman.1.data		First Friedman dataset, for examples
+lhs			Latin Hypercube sampling
 mapT			Plot the MAP partition, or add one to an existing plot
 partition      		Partition data according to the MAP tree
 plot.tgp                Plotting for Treed Gaussian Process Models
