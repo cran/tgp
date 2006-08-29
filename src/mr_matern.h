@@ -37,9 +37,12 @@ class MrMatern_Prior;
 class MrMatern : public Corr
 {
  private:
-  unsigned int dim;		/* the true input dimension (dim[X]-1) */
+  unsigned int dim;	/* the true input dimension (dim[X]-1) */
 
-  double nu;           /* matern smoothing parameter */
+  double nu;            /* matern smoothing parameter */
+
+  double *bk;           /* vector of len floor(nu)+1 for K_bessel */
+  long nb;              /* floor(nu)+1 */
 
   double d;		/* kernel correlation range parameter */
   double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */

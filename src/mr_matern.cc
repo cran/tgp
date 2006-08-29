@@ -63,6 +63,11 @@ MrMatern::MrMatern(unsigned int col, Base_Prior *base_prior)
   nug = prior->Nug();
   dim = col-1;
   nu = ((MrMatern_Prior*) prior)->NU();
+
+  /* allocate vector for K_bessel */
+  nb = (long) floor(nu)+1;
+  bk = new_vector(nb);
+
   assert(((MrGp_Prior*) base_prior)->CorrPrior()->CorrModel() == MRMATERN);
   d = ((MrMatern_Prior*) prior)->D();
   xDISTx = NULL;
@@ -83,8 +88,15 @@ Corr& MrMatern::operator=(const Corr &c)
 {
   MrMatern *e = (MrMatern*) &c;
   
-  
   nu = e->nu;
+
+  /* allocate a new bk if nb has changed */
+  if(floor(nu)+1 != nb) {
+    free(bk);
+    nb = (long) floor(nu)+1;
+    bk = new_vector(nb);
+  }
+
   dim = e->dim;
   log_det_K = e->log_det_K;
   linear = e->linear;
@@ -109,6 +121,7 @@ Corr& MrMatern::operator=(const Corr &c)
 
 MrMatern::~MrMatern(void)
 {
+  if(bk) free(bk);
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
 }
@@ -165,7 +178,7 @@ void MrMatern::Update(unsigned int n, double **X)
   }
   double **Xc = new_shift_matrix(X, n, dim+1);
   dist_symm(xDISTx, dim, Xc, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
   delete_matrix(Xc);
   //delete_matrix(xDISTx);
 }
@@ -184,7 +197,7 @@ void MrMatern::Update(unsigned int n, double **K, double **X)
   double ** xDISTx = new_matrix(n, n);
   double **Xc = new_shift_matrix(X, n, dim+1);
   dist_symm(xDISTx, dim, Xc, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
   delete_matrix(xDISTx);
   delete_matrix(Xc);
 }
@@ -204,7 +217,7 @@ void MrMatern::Update(unsigned int n1, unsigned int n2, double **K, double **X, 
   double **Xc = new_shift_matrix(X, n2, dim+1);
   double **XXc = new_shift_matrix(XX, n1, dim+1);
   dist(xxDISTx, dim, XXc, n1, Xc, n2, PWR);
-  matern_dist_to_K(K, xxDISTx, d, nu, nug, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, nu, bk, nb, nug, n1, n2);
   delete_matrix(xxDISTx);
   delete_matrix(Xc);
   delete_matrix(XXc);
@@ -262,10 +275,10 @@ int MrMatern::Draw(unsigned int n, double **F, double **X, double *Z,
 
     success = 
       matern_d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
-		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
-		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
-			   nug, nu, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
-		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
+			   Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
+			   gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
+			   nug, nu, bk, nb, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
+			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
   }
   
   /* did we accept the new draw? */
@@ -276,6 +289,9 @@ int MrMatern::Draw(unsigned int n, double **F, double **X, double *Z,
   } else if(success == -1) return success;
   else if(success == 0) dreject++;
   
+  /* abort if we have had too many rejections */
+  if(dreject >= REJECTMAX) return -2;
+
   /* draw nugget */
   bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
   success = success || changed;

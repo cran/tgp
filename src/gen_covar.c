@@ -30,7 +30,8 @@
 #include "matrix.h"
 #include "linalg.h"
 #include "gen_covar.h"
-
+#include "rhelp.h"
+#include "bessel_k.h"
 
 #define DEBUG
 
@@ -331,14 +332,18 @@ double *b, *x;
  * K[n][m], DIST[n][m]
  */
 
-void matern_dist_to_K(K, DIST, d, nu, nug, m, n)
+void matern_dist_to_K(K, DIST, d, nu, bk, nb, nug, m, n)
 unsigned int m,n;
-double **K, **DIST;
+double **K, **DIST, *bk;
 double d, nug, nu;
+long nb;
 {
   int i,j;
-  double c = (nu-1.0)*log(2.0)+lgammafn(nu);
-  
+  double c;
+   
+  /* stuff for K_bessel */
+  c = (nu-1.0)*M_LN2+lgammafn(nu);
+
   if(d == 0.0) {
     if(m == n && nug > 0) id(K, n);
     else zero(K, n, m);
@@ -348,14 +353,20 @@ double d, nug, nu;
 	  if(DIST[i][j] == 0.0){ K[i][j] = 1.0 + nug; }
 	  else{
 	    K[i][j] = nu*(log(DIST[i][j])-log(d));
-	    K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0));
-	    K[i][j] = exp(K[i][j]-c);
+	    
+	    /* bessel calculation */
+	    /* K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0)); */
+	    K[i][j] += log_bessel_k(DIST[i][j]/d, nu, 1.0, bk, nb);
 
+	    K[i][j] = exp(K[i][j]-c);
 	    if(isnan(K[i][j]) ) K[i][j] = 1.0;
 	  }
         }
       }
-  }	
+  }
+  
+  /* add in nugget on diagonal if this is a square matrix */
+  if(nug > 0 && m == n) for(i=0; i<m; i++) K[i][i] += nug; 	
 }
 
 
@@ -368,13 +379,17 @@ double d, nug, nu;
  * K[n][n], DIST[n][n]
  */
 
-void matern_dist_to_K_symm(K, DIST, d, nu, nug, n)
+void matern_dist_to_K_symm(K, DIST, d, nu, bk, nb, nug, n)
 unsigned int n;
-double **K, **DIST;
+double **K, **DIST, *bk;
 double d, nug, nu;
+long nb;
 {
   int i,j;
-  double c = (nu-1.0)*log(2.0)+lgammafn(nu);
+  double c;
+
+  /* stuff for K_bessel */
+  c = (nu-1.0)*M_LN2+lgammafn(nu);
  
   assert(nug >= 0);
   if(d == 0.0) id(K, n);
@@ -383,17 +398,14 @@ double d, nug, nu;
     if(d == 0.0) continue;
     for(j=i+1; j<n; j++) {
       K[i][j] = nu*(log(DIST[i][j])-log(d));
-      K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0));
-      K[i][j] = exp(K[i][j]-c);
-        
-      if(isnan(K[i][j])) K[i][j] = 1.0;  
+      
+      /* bessel calculation */
+      /* K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0)); */
+      K[i][j] += log_bessel_k(DIST[i][j]/d, nu, 1.0, bk, nb);
 
+      K[i][j] = exp(K[i][j]-c);
+      if(isnan(K[i][j])) K[i][j] = 1.0;  
       K[j][i] = K[i][j];
     }
   }
 }
-
-
-
-
-

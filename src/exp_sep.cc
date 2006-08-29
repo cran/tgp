@@ -341,6 +341,8 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   if(success == -1) return success;
   else if(success == 0) dreject++;
   else dreject = 0;
+
+  /* abort if we have had too many rejections */
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nugget */

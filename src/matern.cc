@@ -57,13 +57,27 @@ using namespace std;
 Matern::Matern(unsigned int col, Base_Prior *base_prior)
   : Corr(col, base_prior)
 {
+
+  /* sanity checks */
   assert(base_prior->BaseModel() == GP);
+  assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == MATERN);
+
+  /* set the prior */
   prior = ((Gp_Prior*) base_prior)->CorrPrior();
   assert(prior);
+
+  /* get default nugget for starters */
   nug = prior->Nug();
 
+  /* get defualt nu for starters, and assert that it is positive */
   nu = ((Matern_Prior*) prior)->NU();
-  assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == MATERN);
+  assert(nu > 0);
+
+  /* allocate vector for K_bessel */
+  nb = (long) floor(nu)+1;
+  bk = new_vector(nb);
+
+  /* set up stuff for the range parameter */
   d = ((Matern_Prior*) prior)->D();
   xDISTx = NULL;
   nd = 0;
@@ -83,14 +97,28 @@ Corr& Matern::operator=(const Corr &c)
 {
   Matern *e = (Matern*) &c;
   
-  
+  /* copy nu parameter */
   nu = e->nu;
 
+  /* allocate a new bk if nb has changed */
+  if(floor(nu)+1 != nb) {
+    free(bk);
+    nb = (long) floor(nu)+1;
+    bk = new_vector(nb);
+  }
+
+  /* copy "global" correllation stuff */
   log_det_K = e->log_det_K;
   linear = e->linear;
+
+  /* copy stuff for range parameter; don't copy nd */
   d = e->d;
-  nug = e->nug;
   dreject = e->dreject;
+
+  /* copy nugget */
+  nug = e->nug;
+
+  /* sanity checks */
   assert(prior->CorrModel() == MATERN);
   assert(prior == ((Gp_Prior*) base_prior)->CorrPrior());
   
@@ -109,6 +137,7 @@ Corr& Matern::operator=(const Corr &c)
 
 Matern::~Matern(void)
 {
+  if(bk) free(bk);
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
 }
@@ -165,7 +194,7 @@ void Matern::Update(unsigned int n, double **X)
     nd = n;
   }
   dist_symm(xDISTx, col-1, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
   //delete_matrix(xDISTx);
 }
 
@@ -182,7 +211,7 @@ void Matern::Update(unsigned int n, double **K, double **X)
    
   double ** xDISTx = new_matrix(n, n);
   dist_symm(xDISTx, col-1, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
   delete_matrix(xDISTx);
 }
 
@@ -199,7 +228,7 @@ void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
   
   double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
-  matern_dist_to_K(K, xxDISTx, d, nu, nug, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, nu, bk, nb, nug, n1, n2);
   delete_matrix(xxDISTx);
 }
 
@@ -244,7 +273,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
     allocate_new(n); 
     assert(n == this->n);
   }
-  
+
   /* d; rebuilding K, Ki, and marginal params, if necessary */
   if(prior->Linear()) d_new = d;
   else {
@@ -252,10 +281,10 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
     Matern_Prior* ep = (Matern_Prior*) prior;
     success = 
       matern_d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
-		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
-		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
-			   nug, nu, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
-		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
+			   Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
+			   gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
+			   nug, nu, bk, nb, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
+			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
   }
   
   /* did we accept the new draw? */
@@ -265,11 +294,15 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
     dreject = 0;
   } else if(success == -1) return success;
   else if(success == 0) dreject++;
+
+  /* abort if we have had too many rejections */
+  if(dreject >= REJECTMAX) return -2;
   
   /* draw nugget */
   bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
   success = success || changed;
   
+  /* return true if anything has changed about the corr matrix */
   return success;
 }
 
@@ -454,8 +487,12 @@ double Matern::log_Prior(void)
 
 double* Matern::Trace(unsigned int* len)
 {
-  *len = 0;
-  return NULL;
+  *len = 3;
+  double *trace = new_vector(*len);
+  trace[0] = nug;
+  trace[1] = d;
+  trace[2] = (double) !linear;
+  return trace;
 }
 
 
@@ -554,7 +591,7 @@ void Matern_Prior::read_double(double *dparams)
 
   /* starting value for the range parameter */
   d = dparams[1];
-  myprintf(stdout, "starting range=%g\n", d);
+  // myprintf(stdout, "starting range=%g\n", d);
 
   /* reset dparams to start after the nugget gamlin params */
   dparams += 13;
@@ -575,7 +612,7 @@ void Matern_Prior::read_double(double *dparams)
 
   /* read the fixed nu parameter */
   nu = dparams[0];
-  myprintf(stdout, "fixed nu=%g\n", nu);
+  // myprintf(stdout, "fixed nu=%g\n", nu);
   dparams += 1; /* reset */
 }
 
@@ -786,6 +823,9 @@ void Matern_Prior::Print(FILE *outfile)
 
   /* range parameter */
   // myprintf(outfile, "starting d=%g\n", d);
+
+  /* nu, smoothness parameter */
+  myprintf(stdout, "fixed nu=%g\n", nu);
 
   /* range gamma prior */
   myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n", 

@@ -268,6 +268,9 @@ int MrExp::Draw(unsigned int n, double **F, double **X, double *Z,
   } else if(success == -1) return success;
   else if(success == 0) dreject++;
   
+  /* abort if we have had too many rejections */
+  if(dreject >= REJECTMAX) return -2;
+
   /* draw nugget */
   bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
   success = success || changed;
