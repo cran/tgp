@@ -47,7 +47,8 @@ extern "C"
  * the usual constructor function
  */
 
-Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace, void *state)
+Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace, 
+	     void *state)
 {
   this->params = new Params(params);
   base_prior = this->params->BasePrior();
@@ -299,9 +300,6 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   /* send a full set of leaves out for prediction */
   if(parallel && PP) produce();
   
-  /* dump some tree statistics to output files */
-  if(T>B) PrintBestPartitions();
-
   /* wait for final predictions to finish */
   if(parallel) wrap_up_predictions(); 
 }
@@ -642,7 +640,7 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
     myprintf(OUTFILE, "(r,l)=(%d,%d) d=", r, num_produced - num_consumed);
   else myprintf(OUTFILE, "r=%d d=", r);
 #else
-  myprintf(OUTFILE, "r=%d corr=", r);
+  myprintf(OUTFILE, "r=%d d=", r);
 #endif
   
   /* print the (correllation) state (d-values and maybe nugget values) */
@@ -660,10 +658,12 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   if(maxt) myprintf(OUTFILE, "mh=%d ", maxt->Height());
   
   /* print partition sizes */
-  myprintf(OUTFILE, "n=(");
+  if(numLeaves > 1) myprintf(OUTFILE, "n=(");
+  else myprintf(OUTFILE, "n=");
   for(unsigned int i=0; i<numLeaves-1; i++)
     myprintf(OUTFILE, "%d ", leaves[i]->getN());
-  myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
+  if(numLeaves > 1) myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
+  else myprintf(OUTFILE, "%d", leaves[numLeaves-1]->getN());
   
   /* cap off the printing */
   myprintf(OUTFILE, "\n");
@@ -806,11 +806,11 @@ void Model::close_parallel_preds(void)
 
   LArgs* l;
   /* empty and then free the tlist */
-  while(l = (LArgs*) tlist->DeQueue()) { delete l->leaf; free(l); } 
+  while((l = (LArgs*) tlist->DeQueue())) { delete l->leaf; free(l); } 
   delete tlist; tlist = NULL;
 
   /* empty then free the PP list */
-  while(l = (LArgs*) PP->DeQueue()) { delete l->leaf; free(l); } 
+  while((l = (LArgs*) PP->DeQueue())) { delete l->leaf; free(l); } 
   delete PP; PP = NULL;
 
 #else
@@ -1584,7 +1584,6 @@ void Model::process_linarea(unsigned int numLeaves, Tree** leaves)
 void Model::print_linarea(void)
 {
   if(!trace) return;
-  char filestr[MEDBUFF];
   FILE *outfile = OpenFile("trace", "linarea");
   myprintf(outfile, "count\t la ba\n");
   for(unsigned int i=0; i<lin_area->size; i++) {

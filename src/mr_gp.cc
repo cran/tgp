@@ -321,7 +321,7 @@ bool MrGp::Draw(void *state)
 
   /* if beta draw is bad, just use mean, then zeros */
   unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
-  if(!info) b[0] = mean; 
+  if(info != 0) b[0] = mean; 
   
   /* correlation function */
   int success, i;

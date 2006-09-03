@@ -25,7 +25,7 @@
 "btgpllm" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.25,2,10),
          gamma=c(10,0.2,0.7), BTE=c(2000,7000,2), R=1, m0r1=FALSE,
-         linburn=FALSE, pred.n=TRUE, ds2x=FALSE, ego=FALSE, nu=0.5,
+         linburn=FALSE, pred.n=TRUE, ds2x=FALSE, ego=FALSE, nu=1.5,
          traces=FALSE, verb=1)
 {
   n <- dim(X)[1]

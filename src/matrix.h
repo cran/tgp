@@ -106,6 +106,7 @@ void scalev(double *v, unsigned int n, double scale);
 int* new_ivector(unsigned int n);
 int* new_dup_ivector(int *iv, unsigned int n);
 void dupiv(int *iv_new, int *iv, unsigned int n);
+void swap_ivector(int **v1, int **v2);
 int *new_ones_ivector(unsigned int n, int scale);
 void iones(int *iv, unsigned int n, int scale);
 void printIVector(int *iv, unsigned int n, FILE *outfile);

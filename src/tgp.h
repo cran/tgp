@@ -76,6 +76,7 @@ class Tgp
 		double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *ego);
   void Print(FILE *outfile);
+  int Verb(void);
 };
 
 

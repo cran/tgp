@@ -26,6 +26,7 @@
  */
 
 #include <assert.h>
+#include <R_ext/Arith.h>
 #include <Rmath.h>
 #include <math.h>
 #include "rhelp.h"
@@ -202,10 +203,12 @@ void K_bessel(double *x, double *alpha, long *nb,
     if (*nb > 0 && (0. <= nu && nu < 1.) && (1 <= *ize && *ize <= 2)) {
 	if(ex <= 0 || (*ize == 1 && ex > xmax_BESS_K)) {
 	    if(ex <= 0) {
-		
-		ML_ERROR(ME_RANGE, "K_bessel");
-		for(i=0; i < *nb; i++)
-		    bk[i] = R_PosInf;
+#ifdef DEBUG
+	      /* this was giving problems on the motorcycle data */
+	      ML_ERROR(ME_RANGE, "K_bessel");
+#endif
+	      for(i=0; i < *nb; i++)
+		bk[i] = R_PosInf;
 	    } else /* would only have underflow */
 		for(i=0; i < *nb; i++)
 		    bk[i] = 0.;

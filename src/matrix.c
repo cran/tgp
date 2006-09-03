@@ -107,7 +107,7 @@ double ** new_zero_matrix(unsigned int n1, unsigned int n2)
 
 /*
  * create a new n1 x n2 matrix which is allocated like
- * and n1*n2 array, but can be alloced with [][]
+ * and n1*n2 array, but can be referenced as a 2-d array
  */
 
 double ** new_matrix(unsigned int n1, unsigned int n2)
@@ -1281,6 +1281,20 @@ void dupiv(int *iv_new, int *iv, unsigned int n)
   unsigned int i;
   if(n > 0) assert(iv && iv_new);
   for(i=0; i<n; i++) iv_new[i] = iv[i];
+}
+
+
+/*
+ * swaps the pointer of v2 to v1, and vice-versa
+ * (avoids copying via dupv)
+ */
+
+void swap_ivector(int **v1, int **v2)
+{
+  int* temp;
+  temp = (int*) *v1;
+  *v1 = *v2;
+  *v2 = (int*) temp;
 }
 
 

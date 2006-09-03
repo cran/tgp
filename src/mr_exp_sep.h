@@ -39,11 +39,11 @@ class MrExpSep : public Corr
 {
  private:
   unsigned int nin;		/* the true input dimension (dim[X]-1) */
-  double *d;		/* kernel correlation width parameter */
-  int *b;		/* dimension-wize linearization */
-  double *d_eff;	/* dimension-wize linearization */
-  double *pb;		/* prob of dimension-wize linearization */
-  unsigned int dreject; /* d rejection counter */
+  double *d;		        /* kernel correlation width parameter */
+  int *b;		        /* dimension-wize linearization */
+  double *d_eff;	        /* dimension-wize linearization */
+  double *pb;		        /* prob of dimension-wize linearization */
+  unsigned int dreject;         /* d rejection counter */
   double r;                     /* autoregression coefficient */
   double delta;                 /* fine variance discount factor */
   double nugfine;               /* observation nugget for fine level proc */

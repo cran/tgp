@@ -25,6 +25,8 @@
 "lhs" <-
 function(n, rect)
 {
+  ## sanity checks
+  if(n < 0) stop(paste("n should be positive, you have", n))
   if(n == 0) return(NULL)
 
   ## get and check the rectangle dimensions

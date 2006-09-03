@@ -28,7 +28,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
         ego=FALSE, traces=FALSE, verb=1)
 {
   # what to do if fatally interrupted?
-  on.exit(tgp.cleanup())
+  on.exit(tgp.cleanup(verb))
   
   ## get names
   Xnames <- names(X)
@@ -48,8 +48,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
   }
 
   ## check that trace is true or false)
-  if(length(traces) != 1 ||
-     (traces != TRUE && traces != FALSE))
+  if(length(traces) != 1 || !is.logical(traces))
     stop("traces should be TRUE or FALSE")
   else if(traces) {
     if(3*(10+d)*(BTE[2]-BTE[1])*R*(nn+1)/BTE[3] > 1e+7)
@@ -59,6 +58,12 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
                     3*(10+d)*(BTE[2]-BTE[1])*R*(nn+1)/BTE[3], " > 1e+7.\n",
                     "\t Try reducing dim(XX)[1]", sep=""), immediate.=TRUE)
   }
+
+  ## check that ego and Ds2x is true or false
+  if(length(ds2x) != 1 || !is.logical(ds2x))
+    stop("ds2x should be TRUE or FALSE")
+  if(length(ego) != 1 || !is.logical(ego))
+    stop("ego should be TRUE or FALSE")
 
   ## check the sanity of input arguments
   if(nn > 0 && sum(dim(XX)) > 0 && dim(XX)[2] != d) stop("XX has bad dimensions")
