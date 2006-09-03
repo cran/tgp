@@ -79,7 +79,7 @@ void tgp(int* state_in,
   tgp_state = NULL;
 
   /* free blank line before returning to R prompt */
-  if(*verb_in >= 1) myprintf(stdout, "\n");
+  // if(*verb_in >= 1) myprintf(stdout, "\n");
 }
 
 
@@ -138,8 +138,6 @@ void tgp(int* state_in,
   params = new Params(d);
   if((int) dparams[0] != -1) params->read_double(dparams);
   else myprintf(stdout, "Using default params.\n");
-
-
 
   Init();
 }
@@ -237,9 +235,14 @@ void Tgp::Rounds(void)
   /* cap of the printing */
   if(verb >= 1) myflush(stdout);
 
-  /* these might not do anything, if they're turned off */
-  model->print_linarea();
+  /* print the rectangle of the MAP partition */
+  model->PrintBestPartitions();   
+
+  /* print the splits of the best tree for each height */
   model->PrintPosteriors();
+
+  /* this should only happen if trace==TRUE */
+  model->print_linarea();
 
   /* write the ZZ predictive data out to a file */
   if(trace)
@@ -271,7 +274,7 @@ void Tgp::GetStats(double *Zp_mean, double *ZZ_mean, double *Zp_q, double *ZZ_q,
     mean_of_columns(ZZ_mean, cumpreds->ZZ, cumpreds->R, nn);
     qsummary(ZZ_q, ZZ_q1, ZZ_median, ZZ_q2, cumpreds->ZZ, cumpreds->R, cumpreds->nn);
     
-    /* expected retucduction in squared error */
+    /* expected retuduction in squared error */
     /* warning: this makes a permanent change to cumpreds->Ds2xy, 
                 should change this! */
     if(cumpreds->Ds2xy) norm_Ds2xy(cumpreds->Ds2xy, cumpreds->R, cumpreds->nn);
@@ -303,16 +306,20 @@ void Tgp::GetStats(double *Zp_mean, double *ZZ_mean, double *Zp_q, double *ZZ_q,
 
 void tgp_cleanup(void)
 {
-  if(tgpm) { 
-    delete tgpm; 
-    tgpm = NULL; 
-    myprintf(stderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
-  }
-
+  /* free the RNG state */
   if(tgp_state) {
     deleteRNGstate(tgp_state);
     tgp_state = NULL;
-    myprintf(stderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
+    if(tgpm->Verb() >= 1) 
+      myprintf(stderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
+  }
+
+  /* free tgp model */
+  if(tgpm) { 
+    if(tgpm->Verb() >= 1)
+      myprintf(stderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
+    delete tgpm; 
+    tgpm = NULL; 
   }
 }
 
@@ -370,4 +377,16 @@ void Tgp::Print(FILE *outfile)
   /* print the model, uses the internal model 
      printing variable OUTFILE */
   model->Print();
+}
+
+
+/*
+ * Verb:
+ *
+ * returns the verbosity level 
+ */
+
+int Tgp::Verb(void)
+{
+  return verb;
 }

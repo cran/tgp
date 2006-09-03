@@ -65,11 +65,11 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
   As mentioned above, the default \code{span = 0.1} parameter is 
   signifigantly smaller that the default \code{\link[stats]{loess}} setting.
    This asserts a tacit assumption that
-      the input is densly packed and that the variance in the data is be small.  
+      the input is densly packed and that the noise in \code{z}'s is small.  
       Such should be the case when the data are output from a \pkg{tgp} regression --
       this function was designed specifically for this situation.
       For data that is random or sparce, simply choose higher setting,
-    e.g., the default \code{\link[stats]{interp}} setting of \code{span =
+    e.g., the default \code{\link[stats]{loess}} setting of \code{span =
   0.75}, or a more intermediate setting of \code{span = 0.5} as in the example below}
 }
 

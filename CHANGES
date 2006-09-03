@@ -1,3 +1,20 @@
+1.1-9 (03 Sept 2006)
+-----
+
+Many comments added in predict[_linear].c and exp_sep.cc
+
+Fixed ds2x (predict_linear) memory leak
+
+Fixed Matern bug -- now using correct pwr=1 distance
+computation; added comments to gen_covar.c
+
+Compilation warnings addressed in update of compat-
+ibility with C/C++ adaptive sampling (as) code
+
+Not getting BestPartitions from Tgp instead of at the
+end of Model::Rounds
+
+
 1.1-8 (29 Aug 2006)
 -----
 

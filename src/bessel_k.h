@@ -34,7 +34,7 @@ void K_bessel(double *x, double *alpha, long *nb,
 #define MATHLIB_WARNING(fmt,x)         warning(fmt,x)
 #define ML_UNDERFLOW    (DBL_MIN * DBL_MIN)
 #define ML_VALID(x)     (!ISNAN(x))
-                                                                                                  
+                                                                                           
 #define ME_NONE         0
 /*      no error */
 #define ME_DOMAIN       1
@@ -47,34 +47,25 @@ void K_bessel(double *x, double *alpha, long *nb,
 /*      does not have "full" precision */
 #define ME_UNDERFLOW    16
 /*      and underflow occured (important for IEEE)*/
-                                                                                                  
+
 #define ML_ERR_return_NAN { ML_ERROR(ME_DOMAIN, ""); return ML_NAN; }
-                                                                                                  
+
 /* For a long time prior to R 2.3.0 ML_ERROR did nothing.
    We don't report ME_DOMAIN errors as the callers collect ML_NANs into
    a single warning.
  */
+
 #define ML_ERROR(x, s) { \
-   if(x > ME_DOMAIN) { \
-       char *msg = ""; \
-       switch(x) { \
-       case ME_DOMAIN: \
-           msg = "argument out of domain in '%s'\n"; \
-           break; \
-       case ME_RANGE: \
-           msg = "value out of range in '%s'\n"; \
-           break; \
-       case ME_NOCONV: \
-           msg = "convergence failed in '%s'\n"; \
-           break; \
-       case ME_PRECISION: \
-           msg = "full precision was not achieved in '%s'\n"; \
-           break; \
-       case ME_UNDERFLOW: \
-           msg = "underflow occurred in '%s'\n"; \
-           break; \
-       } \
-       MATHLIB_WARNING(msg, s); \
-   } \
+    if(x > ME_DOMAIN) {	 \
+      char *msg = ""; \
+      switch(x) { \
+      case ME_DOMAIN: msg = "argument out of domain in '%s'\n"; break; \
+      case ME_RANGE: msg = "value out of range in '%s'\n"; break; \
+      case ME_NOCONV: msg = "convergence failed in '%s'\n"; break; \
+      d ME_PRECISION: msg = "full precision was not achieved in '%s'\n"; break; \
+      case ME_UNDERFLOW: msg = "underflow occurred in '%s'\n"; break; \
+      } \
+      MATHLIB_WARNING(msg, s); \
+    } \
 }
-                                                                                                 
+  

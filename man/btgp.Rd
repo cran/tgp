@@ -24,22 +24,22 @@ btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.25, 2, 10),
         verb = 1)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
-	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 0.5,
+	pred.n = TRUE, ds2x = FALSE, ego = FALSE, nu = 1.5,
         traces = FALSE, verb = 1)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
 	m0r1 = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5, traces = FALSE, verb = 1)
+        ego = FALSE, nu = 1.5, traces = FALSE, verb = 1)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), BTE = c(2000, 7000, 2), R = 1, 
 	m0r1 = FALSE, linburn = FALSE, pred.n = TRUE, 
-	ds2x = FALSE, ego = FALSE, nu = 0.5, traces = FALSE,
+	ds2x = FALSE, ego = FALSE, nu = 1.5, traces = FALSE,
         verb = 1)
 btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.25, 2, 10), gamma=c(10,0.2,0.7), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	linburn = FALSE, pred.n = TRUE, ds2x = FALSE,
-        ego = FALSE, nu = 0.5, traces = FALSE, verb = 1)
+        ego = FALSE, nu = 1.5, traces = FALSE, verb = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

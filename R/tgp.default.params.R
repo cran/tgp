@@ -26,7 +26,8 @@
 function(col, base="gp")
 {
   if(base == "mrgp") col=2*(col-1)
-  params<-
+
+  params <-
     list(
          base=base,
          tree=c(0.25,2,10),		# tree prior params <alpha> and <beta>
@@ -43,11 +44,19 @@ function(col, base="gp")
          nug.lam="fixed",		# nug hierarch gamma-mix prior params (or "fixed")
          gamma=c(10,0.2,0.7),		# gamma linear pdf parameter
          d.p=c(1.0,20.0,10.0,10.0),	# d gamma-mix prior params (initial values)
-         delta.p=c(),
-	   nugf.p=c(),
+         delta.p=c(),                   # delta parameter for high fidelity variance
+         nugf.p=c(),                    # residual process nugget gamma-mix prior params
          d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
-         nu=0.5                         # matern correlation smoothing parameter
+         nu=c()                         # matern correlation smoothing parameter
          )
+  
+ if(base == "mrgp"){
+   mrd.p <- c(1,100,1,20)               # add in the gamma-mix params for the residual process
+   params$d.p =c(params$d.p, mrd.p) 
+   params$delta.p=c(2,2,2,2)
+   params$nugf.p=c(1,20,1,1)
+ }
+  
   return(params)
 }
 
