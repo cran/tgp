@@ -9,7 +9,7 @@
   candidates
 }
 \usage{
-dopt.gp(nn, X, Xcand)
+dopt.gp(nn, X=NULL, Xcand)
 }
 
 \arguments{

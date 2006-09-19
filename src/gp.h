@@ -114,6 +114,8 @@ class Gp_Prior : public Base_Prior
   double tau2;		        /* linear variance parameter */
 
   double *b0;		        /* hierarchical non-tree parameter b0 */
+  
+  /* (the T matrix is called W in the paper) */
   double **Ti;		        /* hierearical non-tree parameter Ti */
   double **T;		        /* inverse of Ti */
   double **Tchol;		/* for help in T=inv(Ti) */
@@ -122,6 +124,7 @@ class Gp_Prior : public Base_Prior
   double **Ci;		        /* prior covariance for b0 */
   unsigned int rho;	        /* prior df for T */
   double **V;		        /* prior covariance for T */
+  double **rhoVi;               /* (rho*V)^(-1) for Ti pdf calculation */
 
   double s2_a0;		        /* s2 prior alpha parameter */
   double s2_g0;		        /* s2 prior beta parameter */
@@ -154,7 +157,8 @@ class Gp_Prior : public Base_Prior
   virtual void Print(FILE* outfile);
   virtual Base* newBase(Model *model);
   virtual Base_Prior* Dup(void);
-  
+  virtual double log_HierPrior(void);
+
   void InitT(void);
   void read_beta(char *line);
   void default_s2_priors(void);
@@ -177,8 +181,9 @@ class Gp_Prior : public Base_Prior
   BETA_PRIOR BetaPrior(void);
 };
 
-void allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2,
-			  Corr ***corr, Tree **leaves, unsigned int numLeaves);
+void allocate_leaf_params(unsigned int col, double ***b, double **s2, 
+			  double **tau2, Corr ***corr, Tree **leaves, 
+			  unsigned int numLeaves);
 void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
 
 #endif

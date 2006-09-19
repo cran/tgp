@@ -32,11 +32,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <R.h>
-/*#include <Rmath.h> included bu R.h */
+#include <Rmath.h>
 #include "randomkit.h"
 
-/* for Windows and other OS's without drand support, i
+/* for Windows and other OS's without drand support,
  * so the compiler won't warn */
 double erand48(unsigned short xseed[3]); 
 
@@ -65,10 +64,10 @@ unsigned long s;
  }
  case ERAND: {
    unsigned short *state = (unsigned short*) new_uivector(3);
-   state[0] = s / 100000;
-   s = s % 100000;
-   state[1] = s / 100;
-   state[2] = s % 100;
+   state[0] = s / 1000000;
+   s = s % 1000000;
+   state[1] = s / 1000;
+   state[2] = s % 1000;
    return (void*) state;
  }
  default:
@@ -87,8 +86,31 @@ unsigned long s;
 void* newRNGstate_rand(s)
 void *s;
 {
-  return(newRNGstate((unsigned long)
-		     (10000000*runi(s) + 10000*runi(s) + 100*runi(s))));
+  unsigned long lstate;
+  int state[3];
+  state[0] = 100*runi(s);
+  state[1] = 100*runi(s);
+  state[2] = 100*runi(s);
+  lstate = three2lstate(state);
+  return(newRNGstate(lstate));
+}
+
+
+/*
+ * three2lstate:
+ *
+ * given three integers (positive) , turning it into
+ * a long-state for the RNG seed
+ */
+
+unsigned long three2lstate(int *state)
+{
+  unsigned long lstate;
+  assert(state[0] >= 0);
+  assert(state[1] >= 0);
+  assert(state[2] >= 0);
+  lstate = state[0] * 1000000 + state[1] * 1000 + state[2];
+  return(lstate);
 }
 
       
@@ -432,7 +454,7 @@ double rgamma_wb(double alpha, double beta, void *state)
 
 
 /*
- * ionv_gamma_mult_gelman:
+ * inv_gamma_mult_gelman:
  * 
  * GELMAN PARAMATERIZATION; cases draws from a inv-gamma 
  * distribution with parameters alpha and beta
@@ -540,6 +562,10 @@ void *state;
   double *mu;
   int i;
   
+  /* sanity checks */
+  assert(n > 0);
+  assert(nu > n);
+
   zero(x, n, n);
   
   /* draw from the multivariate normal */
@@ -573,8 +599,7 @@ void *state;
 /*
  * dsample:
  * 
- * sample by a discrete probability distribution
- * by Bobby & Angela, returns doubles
+ * sample by a discrete probability distribution; returns doubles
  */
 
 void dsample(x_out, x_indx, n, num_probs, X, probs, state)
@@ -785,7 +810,7 @@ unsigned int rpoiso(float xm, void *state)
       oldm=xm;
       sq=sqrt(2.0*xm);
       alxm=log(xm);
-      g=xm*alxm-gammln(xm+1.0);
+      g=xm*alxm-lgammafn(xm+1.0);
     }
     do {
       do { /* y is a deviate from a Lorentzian comparison function. */
@@ -794,7 +819,7 @@ unsigned int rpoiso(float xm, void *state)
       } while (em < 0.0); /* Reject if in regime of zero probability. */
       
       em=floor(em); /* The trick for integer-valued distributions. */
-      t=0.9*(1.0+y*y)*exp(em*alxm-gammln(em+1.0)-g);
+      t=0.9*(1.0+y*y)*exp(em*alxm-lgammafn(em+1.0)-g);
       
       /* The ratio of the desired distribution to the comparison function; 
        * accept or reject by comparing to another uniform deviate. 
@@ -884,7 +909,7 @@ unsigned int* rand_indices(unsigned int N, void *state)
 {
   int *o;
   double *nall = new_vector(N);
-  runif_mult(nall, 0, 1, N, state);
+  runif_mult(nall, 0.0, 1.0, N, state);
   o = order(nall, N);
   free(nall);
   return (unsigned int *) o;

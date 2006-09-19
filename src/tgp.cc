@@ -53,8 +53,8 @@ void tgp(int* state_in,
 {
 
   /* create the RNG state */
-  tgp_state = 
-    newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + state_in[2]));
+  unsigned int lstate = three2lstate(state_in);
+  tgp_state = newRNGstate(lstate);
 
   /* copy the input parameters to the tgp class object where all the MCMC 
      work gets done */

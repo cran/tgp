@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <Rmath.h>
 
 #define PWR 2.0
-#define LOG_2_PI 1.83787706640935
 
 /* #define DEBUG */
 
@@ -53,45 +53,45 @@ unsigned int n,col;
 double **T, **Vb;
 double a0, g0, tau2, lambda, log_detK;
 {
-	double log_detVB, log_detT, one, two, p;
-	unsigned int m = 0;
+  double log_detVB, log_detT, one, two, p;
+  unsigned int m = 0;
+  
+  /* log det Vb */
+  log_detVB = log_determinant_dup(Vb, col);
+  
+  /* determine if design matrix is collinear */
+  if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
+    /*warning("degenerate design matrix"); */
+    return 0.0-1e300*1e300;
+  }
 
-	/* log det Vb */
-	log_detVB = log_determinant_dup(Vb, col);
-
-	/* determine if design matrix is collinear */
-	if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-		/*warning("degenerate design matrix"); */
-		return 0.0-1e300*1e300;
-	}
-
-	/* determinant of T depends on Beta Prior Model */
-	if(T[0][0] == 0.0) {
-		assert(tau2 == 1.0);
-		log_detT = 0.0 /*- col*LOG_2_PI*/;
-		m = col;
-	} else log_detT = log_determinant_dup(T, col);
-
-	/* one = log(det(VB)) - n*log(2*pi) - log(det(K)) - log(det(T)) - col*log(tau2) */
-	one = log_detVB - n*LOG_2_PI - log_detK - log_detT - col*log(tau2);
-
-	/* two = (a0/2)*log(g0/2) - ((a0+n)/2)*log((g0+lambda)/2) 
-	 * + log(gamma((a0+n)/2)) - log(gamma(a0/2)); */
-	two = 0.5*a0*log(0.5*g0) - 0.5*(a0+n-m)*log(0.5*(g0+lambda));
-	two += gammln(0.5*(a0+n-m)) - gammln(0.5*a0);
-
-	/* posterior probability */
-	p = 0.5*one + two;
-
-	/* make sure we got a good p */
-	if(isnan(p)) {
-		p = 0.0-1e300*1e300;
-		/* warning("post_margin_rj, p is NAN"); */
-		#ifdef DEBUG
-		assert(!isnan(p));
-		#endif
-	}
-	return p;
+  /* determinant of T depends on Beta Prior Model */
+  if(T[0][0] == 0.0) {
+    assert(tau2 == 1.0);
+    log_detT = 0.0 /*- col*LOG_2_PI*/;
+    m = col;
+  } else log_detT = log_determinant_dup(T, col);
+  
+  /* one = log(det(VB)) - n*log(2*pi) - log(det(K)) - log(det(T)) - col*log(tau2) */
+  one = log_detVB - n*2*M_LN_SQRT_2PI - log_detK - log_detT - col*log(tau2);
+  
+  /* two = (a0/2)*log(g0/2) - ((a0+n)/2)*log((g0+lambda)/2) 
+   * + log(gamma((a0+n)/2)) - log(gamma(a0/2)); */
+  two = 0.5*a0*log(0.5*g0) - 0.5*(a0+n-m)*log(0.5*(g0+lambda));
+  two += lgammafn(0.5*(a0+n-m)) - lgammafn(0.5*a0);
+  
+  /* posterior probability */
+  p = 0.5*one + two;
+  
+  /* make sure we got a good p */
+  if(isnan(p)) {
+    p = 0.0-1e300*1e300;
+    /* warning("post_margin_rj, p is NAN"); */
+#ifdef DEBUG
+    assert(!isnan(p));
+#endif
+  }
+  return p;
 }
 
 /*
@@ -109,33 +109,33 @@ unsigned int n, col;
 double **Vb;
 double a0, g0, lambda, log_detK ;
 {
-	double log_detVB,  one, two, p;
-
-	/* log determinant of Vb */
-	log_detVB = log_determinant_dup(Vb, col);
-
-	/* determine if design matrix is collinear */
-	if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-		/* warning("degenerate design matrix"); */
-		return 0.0-1e300*1e300;
-	}
-	
-	/* one = log(det(VB)) - log(det(K)) */
-	one = log_detVB - log_detK;
-
-	/* two = - ((a0+n)/2)*log((g0+lambda)/2) */
-	two = 0.0 - 0.5*(a0+n)*log(0.5*(g0+lambda));
-
-	/* posterior probability */
-	p = 0.5*one + two;
-
-	/* make sure we got a good p */
-	if(isnan(p)) {
-		p = 0.0-1e300*1e300;
-		/* warning("post_margin, p is NAN"); */
-		#ifdef DEBUG
-		assert(!isnan(p));
-		#endif
-	}
-	return p;
+  double log_detVB,  one, two, p;
+  
+  /* log determinant of Vb */
+  log_detVB = log_determinant_dup(Vb, col);
+  
+  /* determine if design matrix is collinear */
+  if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
+    /* warning("degenerate design matrix"); */
+    return 0.0-1e300*1e300;
+  }
+  
+  /* one = log(det(VB)) - log(det(K)) */
+  one = log_detVB - log_detK;
+  
+  /* two = - ((a0+n)/2)*log((g0+lambda)/2) */
+  two = 0.0 - 0.5*(a0+n)*log(0.5*(g0+lambda));
+  
+  /* posterior probability */
+  p = 0.5*one + two;
+  
+  /* make sure we got a good p */
+  if(isnan(p)) {
+    p = 0.0-1e300*1e300;
+    /* warning("post_margin, p is NAN"); */
+#ifdef DEBUG
+    assert(!isnan(p));
+#endif
+  }
+  return p;
 }

@@ -620,7 +620,7 @@ void Corr_Prior::DrawNug(Corr **corr, unsigned int howmany, void *state)
 
 double Corr_Prior::log_NugPrior(double nug)
 {
-  return nug_prior_pdf(nug, nug_alpha, nug_beta);
+  return log_nug_prior_pdf(nug, nug_alpha, nug_beta);
 }
 
 
@@ -724,9 +724,31 @@ void Corr_Prior::PrintNug(FILE *outfile)
   if(fix_nug) myprintf(outfile, "nug prior fixed\n");
   else {
     myprintf(stdout, "nug lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	     nug_alpha_lambda[0], nug_beta_lambda[0], nug_alpha_lambda[1], nug_beta_lambda[1]);
+	     nug_alpha_lambda[0], nug_beta_lambda[0], nug_alpha_lambda[1], 
+	     nug_beta_lambda[1]);
   }
 
   /* gamma linear parameters */
   myprintf(outfile, "gamlin=[%g,%g,%g]\n", gamlin[0], gamlin[1], gamlin[2]);
+}
+
+
+/*
+ * log_NugHierPrior:
+ *
+ * return the log prior of the hierarchial parameters
+ * to the correllation parameters (i.e., nugget)
+ */
+
+double Corr_Prior::log_NugHierPrior(void)
+{
+  double lpdf, p;
+  lpdf = 0.0;
+
+  if(!fix_nug) {
+    lpdf += mixture_hier_prior_log(nug_alpha, nug_beta, 
+				   nug_alpha_lambda, nug_beta_lambda);
+  }
+
+  return lpdf;
 }

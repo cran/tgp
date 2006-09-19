@@ -77,7 +77,8 @@ extern void dtrsv(char*, char*, char*, int*, double*, int*, double*, int*);
 #endif
 
 
-void linalg_dtrsv(const enum CBLAS_TRANSPOSE TA, int n, double **A, int lda, double *Y, int ldy);
+void linalg_dtrsv(const enum CBLAS_TRANSPOSE TA, int n, double **A, int lda, 
+		  double *Y, int ldy);
 void linalg_daxpy(int n, double alpha, double *X, int ldx, double *Y, int ldy);
 double linalg_ddot(int n, double *X, int ldx, double *Y, int ldy);
 void linalg_dgemm(const enum CBLAS_TRANSPOSE TA, const enum CBLAS_TRANSPOSE TB, 

@@ -22,23 +22,19 @@
 #*******************************************************************************
 
 
-"bgp" <-
-function(X, Z, XX=NULL, bprior="bflat", corr="expsep",
-         BTE=c(1000,4000,2), R=1, m0r1=FALSE,
-         pred.n=TRUE, ds2x=FALSE, ego=FALSE, nu=1.5,
-         traces=FALSE, verb=1)#, 
-# base="gp")
+"exp2d.Z" <-
+  function(X, sd=0.001)
 {
-  n <- dim(X)[1]
-  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
-  else { d <- dim(X)[2] }
-  params <- tgp.default.params(d+1)#, base=base)
-  params$bprior <- bprior
-  params$corr <- corr
-  params$tree <- c(0,0,10)	# no tree
-  params$gamma <- c(0,0.2,0.7)	# no llm
+  ## check the number of columns
+  if(ncol(X) != 2)
+    stop(paste("X should be a matrix (or data frame) with 2 columns, you have", ncol(X)))
+  
+  ## calculate the Z data
+  Ztrue <- X[,1] * exp(- X[,1]^2 - X[,2]^2)
 
-  if(corr == "matern") params$nu <- nu
-  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,pred.n,ds2x,ego,traces,verb))
+  ## add randomness for random sample
+  Z <- Ztrue + rnorm(nrow(X),mean=0,sd=sd)
+
+  ## return a data frame object
+  return(data.frame(Z=Z,Ztrue=Ztrue))
 }
-

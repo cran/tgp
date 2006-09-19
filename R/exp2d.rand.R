@@ -46,8 +46,8 @@ function(n1=50, n2=30, lh=NULL)
     X <- rbind(X, lhs(n2[3], rbind(c(-2,2), c(2,6))))
 
     ## calculate the Z data
-    Ztrue <- X[,1] * exp(- X[,1]^2 - X[,2]^2)
-    Z <- Ztrue + rnorm(dim(X)[1],mean=0,sd=0.001)
+    Zdata <- exp2d.Z(X);
+    Ztrue <- Zdata$Ztrue; Z <- Zdata$Z
 
     ## now get the size of the XX vector (for each quadtant)
     if(length(lh) == 1) lh <- rep(ceiling(lh/4), 4)
@@ -62,9 +62,9 @@ function(n1=50, n2=30, lh=NULL)
     XX <- rbind(XX, lhs(lh[4], rbind(c(-2,2), c(2,6))))
 
     ## calculate the ZZ data
-    ZZtrue <- XX[,1] * exp(- XX[,1]^2 - XX[,2]^2)
-    ZZ <- ZZtrue + rnorm(dim(XX)[1],mean=0,sd=0.001)
-    
+    ZZdata <- exp2d.Z(X);
+    ZZtrue <- ZZdata$Ztrue; ZZ <- Zdata$Z
+
   } else {
 
     ## make sure we have enough data to fulfill the request

@@ -728,7 +728,7 @@ void *state;
 
 void compute_ego(n, nn, ego, z, mean, s)
      unsigned int n, nn;
-double *ego, *z, *mean, *s;
+     double *ego, *z, *mean, *s;
 {
   unsigned int which, i;
   double fmin, diff, stand, p, d;
@@ -749,9 +749,9 @@ double *ego, *z, *mean, *s;
 
     /* check for numerical issues in p and d, and otherwise compute */
     if(isinf(d) || isinf(p) || isnan(d) || isnan(p)) ego[i] = 0.0;
-    else ego[i] = diff * d + s[i]*d;
+    else ego[i] = diff * p + s[i]*d;
    
-    /* might have a negative EGo due to numerical instability */
+    /* might have a negative EGO due to numerical instability */
     if(ego[i] < 0.0) ego[i]=0.0;     
   }
 }

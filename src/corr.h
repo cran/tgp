@@ -161,10 +161,12 @@ class Corr_Prior
   virtual Corr_Prior* Dup(void)=0;
   virtual Base_Prior* BasePrior(void)=0;
   virtual void SetBasePrior(Base_Prior *base_prior)=0;
+  virtual double log_HierPrior(void)=0;
 
   void read_double_nug(double *dprior);
   void read_ctrlfile_nug(std::ifstream* ctrlfile);
   double log_NugPrior(double nug);
+  double log_NugHierPrior(void);
   double Nug(void);
   void DrawNug(Corr **corr, unsigned int howmany, void *state);
   void default_nug_priors(void);
@@ -179,7 +181,6 @@ class Corr_Prior
   double ForceLinear(void);
   void ResetLinear(double gam);
  
-
   void PrintNug(FILE *outfile);
 };
 

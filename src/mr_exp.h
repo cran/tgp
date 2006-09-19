@@ -38,7 +38,7 @@ class MrExp_Prior;
 class MrExp : public Corr
 {
  private:
-  unsigned int dim;		/* the true input dimension (dim[X]-1) */
+  unsigned int dim;     /* the true input dimension (dim[X]-1) */
   
   double d;		/* kernel correlation width parameter */
   double **xDISTx;	/* n x n, matrix of euclidean distances to the x spatial locations */
@@ -103,7 +103,7 @@ class MrExp_Prior : public Corr_Prior
   virtual void Print(FILE *outfile);
   virtual Base_Prior* BasePrior(void);
   virtual void SetBasePrior(Base_Prior *base_prior);
-
+  virtual double log_HierPrior(void);
 
   double D(void);
   double* DAlpha(void);

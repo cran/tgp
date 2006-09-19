@@ -653,28 +653,28 @@ double MrGp::Var(void)
 
 void MrGp::X_to_F(unsigned int n, double **X, double **F)
 {
-	unsigned int i,j;
-	for(i=0; i<n; i++) {
-	  /* Bobby: this 0.99 stuff is wierd */
-		if(X[i][0] >.99 ){
-			F[0][i] = r;
-			F[d][i] = 1.0;
-			}
-		else {
-			F[0][i] = 1.0;
-			F[d][i] = 0.0;
-			}
-		for(j=1; j<d; j++){
-		  if(X[i][0] > .99 ) {
-			F[j][i] = r*X[i][j];
-			F[j+d][i] = X[i][j];
-			}
-		  else {
-			F[j][i] = X[i][j];
-			F[j+d][i] = 0.0;
-			}
-		}
-	}
+  unsigned int i,j;
+  for(i=0; i<n; i++) {
+    /* Taddy: this 0.99 stuff is wierd */
+    if(X[i][0] >.99 ){
+      F[0][i] = r;
+      F[d][i] = 1.0;
+    }
+    else {
+      F[0][i] = 1.0;
+      F[d][i] = 0.0;
+    }
+    for(j=1; j<d; j++){
+      if(X[i][0] > .99 ) {
+	F[j][i] = r*X[i][j];
+	F[j+d][i] = X[i][j];
+      }
+      else {
+	F[j][i] = X[i][j];
+	F[j+d][i] = 0.0;
+      }
+    }
+  }
 }
 
 
@@ -738,6 +738,10 @@ MrGp_Prior::MrGp_Prior(unsigned int d) : Base_Prior(d)
   /* V = diag(2*ones(1,col)); */
   V = new_id_matrix(col);
   for(unsigned int i=0; i<col; i++) V[i][i] = 2;
+
+  /* rhoVi = (rho*V)^(-1) */
+  rhoVi = new_id_matrix(col);
+  for(unsigned int i=0; i<col; i++) rhoVi[i][i] = 1.0/(V[i][i]*rho);
 
   /* TREE.Ti = diag(ones(col,1)); */
   if(beta_prior == BFLAT) {
@@ -821,6 +825,7 @@ MrGp_Prior::MrGp_Prior(Base_Prior *prior) : Base_Prior(prior)
   /* linear prior matrices */
   Ci = new_dup_matrix(p->Ci, col, col);
   V = new_dup_matrix(p->V, col, col);
+  rhoVi = new_dup_matrix(p->rhoVi, col, col);
   T = new_dup_matrix(p->T, col, col);
   Ti = new_dup_matrix(p->Ti, col, col);
   Tchol = new_dup_matrix(p->Tchol, col, col);
@@ -858,6 +863,7 @@ MrGp_Prior::~MrGp_Prior(void)
   free(b0);
   delete_matrix(Ci);
   delete_matrix(V);
+  delete_matrix(rhoVi);
   delete_matrix(T);
   delete_matrix(Ti);
   delete_matrix(Tchol);
@@ -1556,16 +1562,38 @@ Base* MrGp_Prior::newBase(Model *model)
 }
 
 
+/*
+ * log_HierPrior:
+ *
+ * return the (log) prior density of the Gp base
+ * hierarchical prior parameters, e.g., B0, W (or T),
+ * etc., and additionaly add in the prior of the parameters
+ * to the correllation model prior
+ */
 
+double MrGp_Prior::log_HierPrior(void)
+{
+  double lpdf = 0.0;
 
+  /* start with the b0 prior, if this part of the model is on */
+  if(beta_prior != BFLAT) {
 
+    /* this is probably overcall because Ci is an ID matrix */
+    lpdf += mvnpdf_log_dup(b0, mu, Ci, col);
 
+    /* then do the wishart prior for T 
+       (which is called W in the paper) */
+    lpdf += wishpdf_log(Ti, rhoVi, col, rho);
+  }
 
+  /* hierarchical GP variance */
+  if(!fix_s2)
+    lpdf += hier_prior_log(s2_a0, s2_g0, s2_a0_lambda, s2_g0_lambda);
 
+  /* hierarchical Linear varaince */
+  if(!fix_tau2)
+    lpdf += hier_prior_log(tau2_a0, tau2_g0, tau2_a0_lambda, tau2_g0_lambda);
 
-
-
-
-
-
-
+  /* then add the part for the correllation function */
+  lpdf += corr_prior->log_HierPrior();
+}

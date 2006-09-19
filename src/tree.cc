@@ -875,10 +875,10 @@ bool Tree::change(void *state)
     if(oldLC) delete oldLC;
     if(oldRC) delete oldRC;
     if(tree_op == CHANGE && verb >= 4) 
-      myprintf(OUTFILE, "**CHANGE** @depth %d, var=%d, val=%g->%g: n=(%d,%d)\n", 
+      myprintf(OUTFILE, "**CHANGE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
 	       depth, var, old_val, val, leftChild->n, rightChild->n);
     else if(tree_op == CPRUNE && verb >= 1)
-      myprintf(OUTFILE, "**CPRUNE** @depth %d, var=%d, val=%g->%g: n=(%d,%d)\n", 
+      myprintf(OUTFILE, "**CPRUNE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
 	       depth, var, old_val, val, leftChild->n, rightChild->n);
     return true;
   } else { /* reject */
@@ -1737,15 +1737,26 @@ unsigned int Tree::Height(void)
 double Tree::FullPosterior(double alpha, double beta)
 {
   double post;
+
   if(isLeaf()) {
 
-    post = base->FullPosterior();
+    /* probability of not growing this branch */
+    post = log(1.0 - alpha*pow(1.0+depth,0.0-beta));
+
+    /* probability of the base model at this leaf */
+    post += base->FullPosterior();
 
   } else {
-    post = log(alpha) + beta*log(1.0 + depth);
+    
+    /* probability of growing here */
+    post = log(alpha) - beta*log(1.0 + depth);
+
+    /* probability of the children */
     post += leftChild->FullPosterior(alpha, beta);
     post += rightChild->FullPosterior(alpha, beta);
+
   }
+
   return post;
 }
 

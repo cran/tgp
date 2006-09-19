@@ -52,11 +52,13 @@ class MrExpSep : public Corr
   MrExpSep(unsigned int col, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~MrExpSep(void);
-  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
+  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, 
+		      double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
-		   double *lambda, double **bmu, double **Vb, double tau2, void *state);
+		   double *lambda, double **bmu, double **Vb, double tau2, 
+		   void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
@@ -74,23 +76,27 @@ class MrExpSep : public Corr
   virtual double log_Prior(void);
   void draw_d_from_prior(double *d_new, void *state);
   int d_draw(double *d, unsigned int n, unsigned int col, double **F, 
-		double **X, double *Z, double log_det_K, double lambda, double **Vb, 
-		double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
-		double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
-	     double **T, double tau2, double nug, double nugfine, double qRatio, double pRatio_log, 
-		double a0, double g0, int lin, void *state);
+	     double **X, double *Z, double log_det_K, double lambda, 
+	     double **Vb, double **K_new, double **Ki_new, 
+	     double **Kchol_new, double *log_det_K_new, 
+	     double *lambda_new, double **VB_new, double *bmu_new, 
+	     double *b0, double **Ti, double **T, double tau2, 
+	     double nug, double nugfine, double qRatio, 
+	     double pRatio_log, double a0, double g0, int lin, 
+	     void *state);
   double *D(void);
   double Delta(void);
   double R(void);
   double Nugfine(void);
   void corr_symm(double **K, unsigned int m, double **X, unsigned int n,
-		 double *d, double nug, double nugfine, double r, double delta, double pwr);
+		 double *d, double nug, double nugfine, double r, 
+		 double delta, double pwr);
   void corr_unsymm(double **K, unsigned int m, 
 		   double **X1, unsigned int n1, double **X2, unsigned int n2,
 		   double *d, double r, double delta, double pwr);
   bool DrawDelta(unsigned int n, double **X, double **F, double *Z,
-		       double *lambda, double **bmu, 
-		       double **Vb, double tau2, void *state);
+		 double *lambda, double **bmu, 
+		 double **Vb, double tau2, void *state);
 };
 
 
@@ -132,7 +138,7 @@ class MrExpSep_Prior : public Corr_Prior
   virtual void Print(FILE *outfile);
   virtual Base_Prior* BasePrior(void);
   virtual void SetBasePrior(Base_Prior *base_prior);
-
+  virtual double log_HierPrior(void);
 
   void draw_d_from_prior(double *d_new, void *state);
   double* D(void);

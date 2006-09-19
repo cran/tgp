@@ -32,13 +32,17 @@
 #define ERAND 903
 #define RNG RK 
 
-void gamma_mult(double *x, double alpha, double beta, unsigned int cases, void *state);
-void gamma_mult_gelman(double *x, double alpha, double beta, unsigned int cases, void *state);
-void inv_gamma_mult_gelman(double *x, double alpha, double beta, unsigned int cases, void *state);
+void gamma_mult(double *x, double alpha, double beta, unsigned int cases, 
+		void *state);
+void gamma_mult_gelman(double *x, double alpha, double beta, unsigned int cases, 
+		       void *state);
+void inv_gamma_mult_gelman(double *x, double alpha, double beta, unsigned int cases, 
+			   void *state);
 void beta_mult(double *x, double alpha, double beta, unsigned int cases, void *state);
 void wishrnd(double **x, double **S, unsigned int n, unsigned int nu, void *state);
 void mvnrnd(double *x, double *mu, double **cov, unsigned int n, void *state);
-void mvnrnd_mult(double *x, double *mu, double **Sigma, unsigned int n, unsigned int cases, void *state);
+void mvnrnd_mult(double *x, double *mu, double **Sigma, unsigned int n, 
+		 unsigned int cases, void *state);
 void rnor(double *x, void *state);
 void rnorm_mult(double *x, unsigned int n, void *state);
 double runi(void *state);
@@ -61,4 +65,5 @@ void* newRNGstate(unsigned long s);
 void* newRNGstate_rand(void *s);
 void deleteRNGstate(void *seed);
 void printRNGstate(void *state, FILE* outfile);
+unsigned long three2lstate(int *state);
 #endif

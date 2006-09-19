@@ -43,8 +43,8 @@ int compareDouble(const void* a, const void* b);
 
 typedef struct rank
 {
-	double s;
-	int r;
+  double s;
+  int r;
 } Rank;
 
 
@@ -58,15 +58,15 @@ typedef struct rank
 
 double** rect_sample(int dim, int n, void *state)
 {
-	int i,j;
-	double **s = new_matrix(dim, n);
-	for(i=0; i<dim; i++) {
-		for(j=0; j<n; j++) {
-			s[i][j] = runi(state);
-		}
-	}
+  int i,j;
+  double **s = new_matrix(dim, n);
+  for(i=0; i<dim; i++) {
+    for(j=0; j<n; j++) {
+      s[i][j] = runi(state);
+    }
+  }
 
-	return s;
+  return s;
 }
 
 
@@ -83,10 +83,12 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
 {
   void *state;
   double **rect, **s;
+  unsigned long lstate;
 
    /* create the RNG state */
-  state = newRNGstate((unsigned long) (state_in[0] * 100000 + state_in[1] * 100 + 
-				       state_in[2]));
+
+  lstate = three2lstate(state_in);
+  state = newRNGstate(lstate);
   
   /* allocate and copy the input-space rectangle */
   rect = new_matrix(2, *dim_in);
@@ -113,64 +115,64 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
 
 double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 {
-	int i,j;
-	double **z, **s, **zout;
-	double** e;
-	int **r;
-	Rank ** sr;
-
-	assert(n >= 0);
-	if(n == 0) return NULL;
-	z = e = s = NULL;
-
-	/* get initial sample */
-	s = rect_sample(dim, n, state);
-
-	/* get ranks */
-	r = (int**) malloc(sizeof(int*) * dim);
-	for(i=0; i<dim; i++) {
-		sr = (Rank**) malloc(sizeof(Rank*) * n);
-		r[i] = new_ivector(n);
-		for(j=0; j<n; j++) {
-			sr[j] = (Rank*) malloc(sizeof(Rank));
-			sr[j]->s = s[i][j];
-			sr[j]->r = j;
-		}
-		
-		qsort((void*)sr, n, sizeof(Rank*), compareRank);
-		
-		/* assign ranks	*/
-		for(j=0; j<n; j++) {
-			r[i][sr[j]->r] = j+1;
-			free(sr[j]);
-		}
-		free(sr);
-	}
-
-	/* Draw random variates */
-	if(er) e = rect_sample(dim, n, state);
-
-	/* Obtain latin hypercube sample */
-	z = new_matrix(dim,n);
-	for(i=0; i<dim; i++) {
-		for(j=0; j<n; j++) {
-			if(er) z[i][j] = (r[i][j] - e[i][j]) / n;
-			else z[i][j] = (double)r[i][j] / n;
-		}
-		free(r[i]);
-	}
-
-	/* Wrap up */
-	free(r);
-	delete_matrix(s);
-	if(er) delete_matrix(e);
-
-	rect_scale(z, dim, n, rect);
-
-	zout = new_t_matrix(z, dim, n);
-	delete_matrix(z);
-
-	return zout;
+  int i,j;
+  double **z, **s, **zout;
+  double** e;
+  int **r;
+  Rank ** sr;
+  
+  assert(n >= 0);
+  if(n == 0) return NULL;
+  z = e = s = NULL;
+  
+  /* get initial sample */
+  s = rect_sample(dim, n, state);
+  
+  /* get ranks */
+  r = (int**) malloc(sizeof(int*) * dim);
+  for(i=0; i<dim; i++) {
+    sr = (Rank**) malloc(sizeof(Rank*) * n);
+    r[i] = new_ivector(n);
+    for(j=0; j<n; j++) {
+      sr[j] = (Rank*) malloc(sizeof(Rank));
+      sr[j]->s = s[i][j];
+      sr[j]->r = j;
+    }
+    
+    qsort((void*)sr, n, sizeof(Rank*), compareRank);
+    
+    /* assign ranks	*/
+    for(j=0; j<n; j++) {
+      r[i][sr[j]->r] = j+1;
+      free(sr[j]);
+    }
+    free(sr);
+  }
+  
+  /* Draw random variates */
+  if(er) e = rect_sample(dim, n, state);
+  
+  /* Obtain latin hypercube sample */
+  z = new_matrix(dim,n);
+  for(i=0; i<dim; i++) {
+    for(j=0; j<n; j++) {
+      if(er) z[i][j] = (r[i][j] - e[i][j]) / n;
+      else z[i][j] = (double)r[i][j] / n;
+    }
+    free(r[i]);
+  }
+  
+  /* Wrap up */
+  free(r);
+  delete_matrix(s);
+  if(er) delete_matrix(e);
+  
+  rect_scale(z, dim, n, rect);
+  
+  zout = new_t_matrix(z, dim, n);
+  delete_matrix(z);
+  
+  return zout;
 }
 
 
@@ -182,10 +184,10 @@ double** rect_sample_lh(int dim, int n, double** rect, int er, void *state)
 
 int compareRank(const void* a, const void* b)
 {
-	Rank* aa = (Rank*)(*(Rank **)a); 
-	Rank* bb = (Rank*)(*(Rank **)b); 
-	if(aa->s < bb->s) return -1;
-	else return 1;
+  Rank* aa = (Rank*)(*(Rank **)a); 
+  Rank* bb = (Rank*)(*(Rank **)b); 
+  if(aa->s < bb->s) return -1;
+  else return 1;
 }
 
 
@@ -197,10 +199,10 @@ int compareRank(const void* a, const void* b)
 
 int compareDouble(const void* a, const void* b)
 {
-	double aa = (double)(*(double *)a); 
-	double bb = (double)(*(double *)b); 
-	if(aa < bb) return -1;
-	else return 1;
+  double aa = (double)(*(double *)a); 
+  double bb = (double)(*(double *)b); 
+  if(aa < bb) return -1;
+  else return 1;
 }
 
 
@@ -213,15 +215,15 @@ int compareDouble(const void* a, const void* b)
 
 void rect_scale(double** z, int d, int n, double** rect)
 {
-	int i,j;
-	double scale, shift;
-	for(i=0; i<d; i++) {
-		scale = rect[1][i] - rect[0][i];
-		shift = rect[0][i];
-		for(j=0; j<n; j++) {
-			z[i][j] = z[i][j]*scale + shift;
-		}
-	}
+  int i,j;
+  double scale, shift;
+  for(i=0; i<d; i++) {
+    scale = rect[1][i] - rect[0][i];
+    shift = rect[0][i];
+    for(j=0; j<n; j++) {
+      z[i][j] = z[i][j]*scale + shift;
+    }
+  }
 }
 
 
@@ -234,45 +236,45 @@ void rect_scale(double** z, int d, int n, double** rect)
 
 double** readRect(char* rect, unsigned int* d)
 {
-	unsigned int dim, commas, i, j;
-	double** r;
-	char* ss;
-
-	dim = commas = 0;
-
-	/* count the number of ";" to get the dimension */
-
-	for(i=0; rect[i] != '\0'; i++) {
-	 	if(rect[i] == ';' || rect[i] == '[' || rect[i] == ']') dim++;
-	 	if(rect[i] == ',') {
-			commas++;
-	 		if(commas != dim) errorBadRect();
-		}
-	}
-	dim--;
-
-	/* check final dimensions */
-	if(dim <= 0) errorBadRect();
-
-	/* allocate rectangle matrix */
-	r = (double**) new_matrix(2,dim);
-
-	/* copy rect into d */
-	if(!(ss = (char*) strtok(rect, " \t[,"))) errorBadRect();
-	r[0][0] = atof(ss);
-	if(!(ss = (char*) strtok(NULL, " \t;]"))) errorBadRect();
-	r[1][0] = atof(ss);
-
-	for(i=1; i<dim; i++) {
-		for(j=0; j<2; j++) {
-			if(!(ss = (char*) strtok(NULL, " \t],;"))) errorBadRect();
-			r[j][i] = atof(ss);
-		}
-		if(r[1][i] <= r[0][i]) errorBadRect();
-	}
-
-	*d = dim;
-	return r;
+  unsigned int dim, commas, i, j;
+  double** r;
+  char* ss;
+  
+  dim = commas = 0;
+  
+  /* count the number of ";" to get the dimension */
+  
+  for(i=0; rect[i] != '\0'; i++) {
+    if(rect[i] == ';' || rect[i] == '[' || rect[i] == ']') dim++;
+    if(rect[i] == ',') {
+      commas++;
+      if(commas != dim) errorBadRect();
+    }
+  }
+  dim--;
+  
+  /* check final dimensions */
+  if(dim <= 0) errorBadRect();
+  
+  /* allocate rectangle matrix */
+  r = (double**) new_matrix(2,dim);
+  
+  /* copy rect into d */
+  if(!(ss = (char*) strtok(rect, " \t[,"))) errorBadRect();
+  r[0][0] = atof(ss);
+  if(!(ss = (char*) strtok(NULL, " \t;]"))) errorBadRect();
+  r[1][0] = atof(ss);
+  
+  for(i=1; i<dim; i++) {
+    for(j=0; j<2; j++) {
+      if(!(ss = (char*) strtok(NULL, " \t],;"))) errorBadRect();
+      r[j][i] = atof(ss);
+    }
+    if(r[1][i] <= r[0][i]) errorBadRect();
+  }
+  
+  *d = dim;
+  return r;
 }
 
 
@@ -284,13 +286,13 @@ double** readRect(char* rect, unsigned int* d)
 
 void printRect(FILE* outfile, int d, double** rect)
 {
-	int j,i;
-	for(j=0; j<2; j++) {
-		for(i=0; i<d; i++) {
-			myprintf(outfile, " %5.4g", rect[j][i]);
-		}
-		myprintf(outfile, "\n");
-	}
+  int j,i;
+  for(j=0; j<2; j++) {
+    for(i=0; i<d; i++) {
+      myprintf(outfile, " %5.4g", rect[j][i]);
+    }
+    myprintf(outfile, "\n");
+  }
 }
 
 
@@ -315,7 +317,7 @@ void errorBadRect(void)
 
 void sortDouble(double *s, unsigned int n)
 {
-	qsort((void*)s, n, sizeof(double), compareDouble);
+  qsort((void*)s, n, sizeof(double), compareDouble);
 }
 
 
@@ -329,29 +331,28 @@ void sortDouble(double *s, unsigned int n)
 
 int* order(double *s, unsigned int n)
 {
-
-	int j;
-	int *r;
-	Rank ** sr;
-
-	r = new_ivector(n);
-	sr = (Rank**) malloc(sizeof(Rank*) * n);
-	for(j=0; j<n; j++) {
-		sr[j] = (Rank*) malloc(sizeof(Rank));
-		sr[j]->s = s[j];
-		sr[j]->r = j;
-	}
-
-	qsort((void*)sr, n, sizeof(Rank*), compareRank);
-
-	/* assign ranks */
-	for(j=0; j<n; j++) {
-		r[j] = sr[j]->r +1;
-		free(sr[j]);
-	}
-	free(sr);
-
-	return r;
+  int j;
+  int *r;
+  Rank ** sr;
+  
+  r = new_ivector(n);
+  sr = (Rank**) malloc(sizeof(Rank*) * n);
+  for(j=0; j<n; j++) {
+    sr[j] = (Rank*) malloc(sizeof(Rank));
+    sr[j]->s = s[j];
+    sr[j]->r = j;
+  }
+  
+  qsort((void*)sr, n, sizeof(Rank*), compareRank);
+  
+  /* assign ranks */
+  for(j=0; j<n; j++) {
+    r[j] = sr[j]->r +1;
+    free(sr[j]);
+  }
+  free(sr);
+  
+  return r;
 }
 
 
@@ -363,27 +364,26 @@ int* order(double *s, unsigned int n)
 
 int* rank(double *s, unsigned int n)
 {
-
-	int j;
-	int *r;
-	Rank ** sr;
-
-	r = new_ivector(n);
-	sr = (Rank**) malloc(sizeof(Rank*) * n);
-	for(j=0; j<n; j++) {
-		sr[j] = (Rank*) malloc(sizeof(Rank));
-		sr[j]->s = s[j];
-		sr[j]->r = j;
-	}
-
-	qsort((void*)sr, n, sizeof(Rank*), compareRank);
-
-	/* assign ranks */
-	for(j=0; j<n; j++) {
-		r[sr[j]->r] = j+1;
-		free(sr[j]);
-	}
-	free(sr);
-
-	return r;
+  int j;
+  int *r;
+  Rank ** sr;
+  
+  r = new_ivector(n);
+  sr = (Rank**) malloc(sizeof(Rank*) * n);
+  for(j=0; j<n; j++) {
+    sr[j] = (Rank*) malloc(sizeof(Rank));
+    sr[j]->s = s[j];
+    sr[j]->r = j;
+  }
+  
+  qsort((void*)sr, n, sizeof(Rank*), compareRank);
+  
+  /* assign ranks */
+  for(j=0; j<n; j++) {
+    r[sr[j]->r] = j+1;
+    free(sr[j]);
+  }
+  free(sr);
+  
+  return r;
 }

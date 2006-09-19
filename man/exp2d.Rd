@@ -34,12 +34,10 @@ Available as UCSC Technical Report ams2006-01.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\note{This data is used in the examples of the functions listed above in
+\note{This data is used in the examples of the functions listed below in
 the \dQuote{See Also} section via the \code{\link{exp2d.rand}} function}
 
-\seealso{ \code{\link{exp2d.rand}}, \code{\link{tgp}},
-  \code{\link{bgpllm}}, \code{\link{btlm}},
-  \code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
-  \code{\link{bgp}}}
+\seealso{ \code{\link{exp2d.rand}}, \code{exp2d.Z}, \code{\link{tgp}},
+  \code{\link{btgp}}, and other \code{b*} functions}
 
 \keyword{datasets}

@@ -36,7 +36,7 @@
 /*
  * log_bessel_k:
  *
- * a function that Bobby wrote to replace R's internal log(bessel_k()) 
+ * a function that was written to replace R's internal log(bessel_k()) 
  * because it was slow, and produced segfaults due to memory allocation
  * problems.  The difference here is that bk holds all the memory 
  * necessary (bn=floor(nu)+1 doubles), whereas the original function 

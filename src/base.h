@@ -131,6 +131,7 @@ class Base_Prior
   virtual void Print(FILE* outfile)=0;
   virtual Base* newBase(Model *model)=0;
   virtual Base_Prior* Dup(void)=0;
+  virtual double log_HierPrior(void)=0;
 };
 
 

@@ -1,3 +1,22 @@
+1.1-10 (19 Sept 2006)
+------
+
+Fixed big compute_ego() bug.
+
+Tweaks to RNG seeds so that they give same sequence
+across platforms (tested on OSX/PB & Linux/Xeons)
+
+Allow X=NULL in dopt.gp()
+
+Removal of constansts LOG_2_PI covered by R internal
+M_LOG_SQRT_2PI
+
+Added mvnpdf_log_dup and wishpdf_log functions
+
+Corrected full log-pdf function for tree prior, and
+added log-pdf of W and B0
+
+
 1.1-9 (03 Sept 2006)
 -----
 
