@@ -26,12 +26,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <Rmath.h>
 #include "rand_pdf.h"
 #include "matrix.h"
 #include "linalg.h"
 #include "rhelp.h"
 
-#define LOG_2_PI 1.83787706640935
 
 #define DEBUG
 
@@ -49,13 +49,13 @@ unsigned int n;
 double **cov, **Sigma;
 double scale;
 {
-	int i,j;
-	for(i=0; i<n; i++) {
-		for(j=i; j<n; j++) 
-			cov[i][j] = scale*Sigma[i][j];
-		/*for(j=0; j<i; j++) 
-			cov[i][j] = 0;*/
-	}
+  int i,j;
+  for(i=0; i<n; i++) {
+    for(j=i; j<n; j++) 
+      cov[i][j] = scale*Sigma[i][j];
+    /*for(j=0; j<i; j++) 
+      cov[i][j] = 0;*/
+  }
 }
 
 
@@ -74,88 +74,89 @@ unsigned int n;
 double **cov, **Sigma;
 double scale;
 {
-	int i,j;
-	for(i=0; i<n; i++) {
-		for(j=0; j<i+1; j++) 
-			cov[i][j] = scale*Sigma[i][j];
-		/*for(j=i+1; j<n; j++) 
-			cov[i][j] = 0;*/
-	}
+  int i,j;
+  for(i=0; i<n; i++) {
+    for(j=0; j<i+1; j++) 
+      cov[i][j] = scale*Sigma[i][j];
+    /*for(j=i+1; j<n; j++) 
+      cov[i][j] = 0;*/
+  }
 }
 
 
 /*
- * mvnpdf_log:
- * 
- * logarithm of the density of x (n x n) distrinbuted 
- * multivariate * normal with mean mu and covariance matrix Sigma
- * covariance matrix is destroyed (written over)
+ * mvnpdf_log_dup:
+ *
+ * duplicates the covariance matrix before calling
+ * mvnpdf_log -- returning the log density of x
+ * distributed with mean mu and variance cov
  */
 
-double mvnpdf_log(x, mu, cov, n)
-/*
- * get cases draws from a multivariate normal
- */
+double mvnpdf_log_dup(x, mu, cov, n)
 unsigned int n;
 double *x, *mu; 
 /*double cov[][n];*/
 double **cov;
 {
-    double log_det_sigma, discrim;
-    /*double xx[n];*/
-    double *xx;
-    int i, info;
+  double lpdf;
+  double **dupcov;
 
-    xx = (double*) malloc(sizeof(double) *n);
-    for(i=0; i<n; i++) xx[i] = x[i];
+  /* duplicate the covariace matrix */
+  dupcov = new_dup_matrix(cov, n, n);
 
-    /* R = chol(covlow) */
-    /* AND Step 2 of xx = (x - mu) / R; */
-    info = linalg_dpotrf(n, cov);
+  /* call mvmpdf_log with duplicated cov matrix; it will be altered
+     with the chol decomposition */
+  lpdf = mvnpdf_log(x, mu, dupcov, n);
 
-    /* det_sigma = prod(diag(R)) .^ 2 */
-    log_det_sigma = log_determinant_chol(cov, n);
+  /* free the modified duplicate cov matrix */
+  delete_matrix(dupcov);
 
-    /* xx = (x - mu) / R; */
-    linalg_daxpy(n, -1.0, mu, 1, xx, 1);
-    /*linalg_dtrsv(CblasTrans,n,cov,n,xx,1);*/
-    linalg_dtrsv(CblasTrans,n,cov,n,xx,1);
-
-    /* discrim = sum(x .* x, 2); */
-    /* discrim = linalg_ddot(n, xx, 1, xx, 1); */
-    discrim = linalg_ddot(n, xx, 1, xx, 1);
-    free(xx);
-
-    /*myprintf(stderr, "discrim = %g, log(deg_sigma) = %g\n", discrim, log_det_sigma);*/
-    return -0.5 * (discrim + log_det_sigma + n*LOG_2_PI);
+  /* return the log pdf */
+  return lpdf;
 }
 
-
 /*
- * gammln:
+ * mvnpdf_log:
  * 
- * natural log of the GAMMA function evaluated at positive x.
- * taken from Press's Numerical Recipies
+ * logarithm of the density of x (n-vector) distributed 
+ * multivariate normal with mean mu (n-vector) and covariance 
+ * matrix cov (n x n) covariance matrix is destroyed 
+ * (written over)
  */
 
-double gammln(double xx) 
-/* Returns the value ln[Gamma( xx )] for xx > 0. */
+double mvnpdf_log(x, mu, cov, n)
+unsigned int n;
+double *x, *mu; 
+/*double cov[][n];*/
+double **cov;
 {
-	/* Internal arithmetic will be done in double precision, 
-	 * a nicety that you can omit if five-figure accuracy is good enough. 
-	 */
-
-	double x,y,tmp,ser; 
-	static double cof[6]={76.18009172947146,-86.50532032941677, 
-		24.01409824083091,-1.231739572450155,
-		0.1208650973866179e-2,-0.5395239384953e-5}; 
-	int j; 
-	y=x=xx; 
-	tmp=x+5.5; 
-	tmp -= (x+0.5)*log(tmp); 
-	ser=1.000000000190015; 
-	for (j=0;j<=5;j++) ser += cof[j]/++y; 
-	return -tmp+log(2.5066282746310005*ser/x); 
+  double log_det_sigma, discrim;
+  /*double xx[n];*/
+  double *xx;
+  int info;
+  
+  /* duplicate of the x vector */
+  xx = new_dup_vector(x, n);
+  
+  /* R = chol(covlow) */
+  /* AND Step 2 of xx = (x - mu) / R; */
+  info = linalg_dpotrf(n, cov);
+  
+  /* det_sigma = prod(diag(R)) .^ 2 */
+  log_det_sigma = log_determinant_chol(cov, n);
+  
+  /* xx = (x - mu) / R; */
+  linalg_daxpy(n, -1.0, mu, 1, xx, 1);
+  /*linalg_dtrsv(CblasTrans,n,cov,n,xx,1);*/
+  linalg_dtrsv(CblasTrans,n,cov,n,xx,1);
+  
+  /* discrim = sum(x .* x, 2); */
+  /* discrim = linalg_ddot(n, xx, 1, xx, 1); */
+  discrim = linalg_ddot(n, xx, 1, xx, 1);
+  free(xx);
+  
+  /*myprintf(stderr, "discrim = %g, log(deg_sigma) = %g\n", discrim, log_det_sigma);*/
+  return -0.5 * (discrim + log_det_sigma) - n*M_LN_SQRT_2PI;
 }
 
 
@@ -171,10 +172,10 @@ void gampdf_log_gelman(p, x, a, b, n)
 unsigned int n;
 double *p, *x, a, b;
 {
-	int i;
-	for(i=0; i<n; i++) {
-		p[i] = a*log(b) - gammln(a) + (a-1)*log(x[i]) - b*x[i]; 
-	}
+  int i;
+  for(i=0; i<n; i++) {
+    p[i] = a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - b*x[i]; 
+  }
 }
 
 
@@ -190,10 +191,10 @@ void invgampdf_log_gelman(p, x, a, b, n)
 unsigned int n;
 double *p, *x, a, b;
 {
-	int i;
-	for(i=0; i<n; i++) {
-		p[i] = a*log(b) - gammln(a) - (a+1)*log(x[i]) - b/x[i]; 
-	}
+  int i;
+  for(i=0; i<n; i++) {
+    p[i] = a*log(b) - lgammafn(a) - (a+1)*log(x[i]) - b/x[i]; 
+  }
 }
 
 
@@ -209,10 +210,10 @@ void gampdf_log(p, x, a, b, n)
 unsigned int n;
 double *p, *x, a, b;
 {
-	int i;
-	for(i=0; i<n; i++) {
-		p[i] = - a*log(b) - gammln(a) + (a-1)*log(x[i]) - x[i]/b; 
-	}
+  int i;
+  for(i=0; i<n; i++) {
+    p[i] = - a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - x[i]/b; 
+  }
 }
 
 
@@ -227,11 +228,11 @@ void betapdf_log(p, x, a, b, n)
 unsigned int n;
 double *p, *x, a, b;
 {
-	int i;
-	for(i=0; i<n; i++) {
-		p[i] = gammln(a+b) - gammln(a) - gammln(b) + 
-			(a-1)*log(x[i]) + (b-1)*log(1-x[i]);
-	}
+  int i;
+  for(i=0; i<n; i++) {
+    p[i] = lgammafn(a+b) - lgammafn(a) - lgammafn(b) + 
+      (a-1)*log(x[i]) + (b-1)*log(1-x[i]);
+  }
 }
 
 
@@ -247,12 +248,12 @@ void normpdf_log(p, x, mu, s2, n)
 unsigned int n;
 double *p, *x, mu, s2;
 {
-	int i;
-	double diff;
-	for(i=0; i<n; i++) {
-		diff = (x[i] - mu);
-		p[i] = 0.0 - 0.5*(LOG_2_PI + log(s2)) - 0.5/s2*(diff)*(diff);
-	}
+  int i;
+  double diff;
+  for(i=0; i<n; i++) {
+    diff = (x[i] - mu);
+    p[i] = 0.0 - M_LN_SQRT_2PI - 0.5*log(s2) - 0.5/s2*(diff)*(diff);
+  }
 }
 
 
@@ -268,15 +269,15 @@ unsigned int n;
 /*double M[n][n];*/
 double **M;
 {
-    double log_det;
-    int i;
-	
-    /* det = prod(diag(R)) .^ 2 */
-    log_det = 0;
-    for(i=0; i<n; i++) log_det += log(M[i][i]);
-    log_det = 2*log_det;
-
-    return log_det;
+  double log_det;
+  int i;
+  
+  /* det = prod(diag(R)) .^ 2 */
+  log_det = 0;
+  for(i=0; i<n; i++) log_det += log(M[i][i]);
+  log_det = 2*log_det;
+  
+  return log_det;
 }
 
 
@@ -292,14 +293,14 @@ unsigned int n;
 /*double M[n][n];*/
 double **M;
 {
-    double ** Mdup;
-    double log_det;
-
-    Mdup = new_dup_matrix(M, n, n);
-    log_det = log_determinant(Mdup, n);
-    delete_matrix(Mdup);
-
-    return log_det;
+  double ** Mdup;
+  double log_det;
+  
+  Mdup = new_dup_matrix(M, n, n);
+  log_det = log_determinant(Mdup, n);
+  delete_matrix(Mdup);
+  
+  return log_det;
 }
 
 
@@ -307,7 +308,7 @@ double **M;
  * log_determinant:
  * 
  * returns the log determinant of the n x n
- * POSITIVE DEFINATE matrix M, but alters the matrix M, 
+ * POSITIVE DEFINITE matrix M, but alters the matrix M, 
  * replacing it with its choleski decomposition
  */
 
@@ -316,17 +317,128 @@ unsigned int n;
 /*double M[n][n];*/
 double **M;
 {
-    double log_det;
-    int i, info;
-	
-    /* choleski decopmpose M */
-    info = linalg_dpotrf(n, M);
-    if(info != 0) return -1e300*1e300;
+  double log_det;
+  int i, info;
+  
+  /* choleski decopmpose M */
+  info = linalg_dpotrf(n, M);
+  if(info != 0) {
+#ifdef DEBUG
+    warning("bad chol decomp in log_determinant");
+#endif
+    return -1e300*1e300;
+  }  
 
-    /* det = prod(diag(R)) .^ 2 */
-    log_det = 0;
-    for(i=0; i<n; i++) log_det += log(M[i][i]);
-    log_det = 2*log_det;
+  /* det = prod(diag(R)) .^ 2 */
+  log_det = 0;
+  for(i=0; i<n; i++) log_det += log(M[i][i]);
+  log_det = 2*log_det;
+  
+  return log_det;
+}
 
-    return log_det;
+
+/*
+ * wishpdf_log:
+ * 
+ * evaluate the pdf of an n x n RV "x" under a Wishart 
+ * distribtion with positive definite mean S, and 
+ * degrees of freedom nu. Follows R code for dwish
+ * from MCMCpack; this code is forced to duplicate x
+ * and S.  An alternative implementation is possible when
+ * these values can be discarded
+ *
+ * x[n][n], S[n][n];
+ */
+
+double wishpdf_log(x, S, n, nu)
+unsigned int n, nu;
+double **x, **S;
+{
+  /* double hold[n][n], Sdup[n][n] */
+  double **hold, **Sdup;
+  double lgampart, denom, ldetS, ldetW, tracehold, num;
+  int i;
+
+  /* sanity checks */
+  assert(n > 0);
+  assert(nu > n);
+
+  /* denominator */
+
+  /* gammapart <- 1 */
+  lgampart = 0.0;
+  
+  /* for(i in 1:k) gammapart <- gammapart * gamma((v + 1 - i)/2) */
+  for(i=1; i<=n; i++) lgampart += lgammafn((nu+1.0-(double)i)/2.0 );
+
+  /* denom <- gammapart *  2^(v * k / 2) * pi^(k*(k-1)/4) */  
+  denom = lgampart + (nu*n/2.0)*M_LN2 + (n*(n-1.0)/2.0)*M_LN_SQRT_PI;
+
+  /* numerator */
+
+  /* detW <- det(W) */
+  ldetW = log_determinant_dup(x, n);
+
+  /* hold <- solve(S) %*% W */
+  hold = new_dup_matrix(x, n, n);
+  Sdup = new_dup_matrix(S, n, n);
+  linalg_dposv(n, Sdup, hold);
+
+  /* detS <- det(S) */
+  /* dposv should have left us with chol(S) inside Sdup */
+  ldetS = log_determinant_chol(Sdup, n);
+  
+  /* tracehold <- sum(hold[row(hold) == col(hold)]) */
+  tracehold = 0.0;
+  for(i=0; i<n; i++) tracehold += hold[i][i];
+
+  /* num <- detS^(-v/2) * detW^((v - k - 1)/2) * exp(-1/2 * tracehold) */
+  num = (0.0-((double)nu)/2.0)*ldetS + ((nu-n-1.0)/2.0)*ldetW - 0.5*tracehold;
+
+  /* return */
+
+  /* clean up */
+  delete_matrix(hold);
+  delete_matrix(Sdup);
+
+  /* return(num / denom) */
+  return num - denom;
+}
+
+
+/* 
+ * wishpdf_log_R:
+ *
+ * R interface to wishpdf_log, evaluates the log pdf
+ * of n x n matrix RV W following a Wishart distribution
+ * with n x n matrix centering S and integer degrees of
+ * freedom nu
+ */
+
+void wishpdf_log_R(double *W_in, double *S_in, int *n_in, int *nu_in, 
+		   double *lpdf_out)
+{
+  double **W, **S;
+
+  /* sanity checks */
+  assert(*n_in > 0);
+  assert(*nu_in > *n_in);
+
+  /* copy W_in vector to W matrix */
+  /* Bobby: this is wasteful; should write a function which allocates
+   * the "skeleton" of a new matrix, and points W[0] to a vector */
+  W = new_matrix(*n_in, *n_in);
+  dupv(W[0], W_in, *n_in * *n_in);
+
+  /* copy S_in vector to S matrix */
+  S = new_matrix(*n_in, *n_in);
+  dupv(S[0], S_in, *n_in * *n_in);
+
+  /* evaluate the lpdf */
+  *lpdf_out = wishpdf_log(W, S, *n_in, *nu_in);
+
+  /* clean up */
+  delete_matrix(W);
+  delete_matrix(S);
 }

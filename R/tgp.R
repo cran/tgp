@@ -81,7 +81,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
   if(m0r1) { Zm0r1 <- mean0.range1(Z); Z <- Zm0r1$X }
 
   # RNG seed
-  state <- sample(seq(0,1000), 3)
+  state <- sample(seq(0,999), 3)
 
   ## run the C code
   ll <- .C("tgp", 

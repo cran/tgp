@@ -488,8 +488,8 @@ double Gp::Posterior(void)
   Gp_Prior *p = (Gp_Prior*) prior;
 
   /* the main posterior for the correlation function */
-  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
-			    tau2, p->s2Alpha(), p->s2Beta());
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), 
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta());
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
@@ -697,6 +697,7 @@ double* Gp::Trace(unsigned int* len)
 
 Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
 {
+  /* set the name of the base model and its dimesnion (+1) */
   base_model = GP;
   col = d+1;
 
@@ -730,13 +731,20 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
   rho = col+1;
 
   /* Ci = diag(ones(1,col)); */
+  /* Note: do not change this from an ID matrix, because there is code
+     below (particularly log_Prior) which assumes it is */
   Ci = new_id_matrix(col);
 
   /* V = diag(2*ones(1,col)); */
   V = new_id_matrix(col);
-  for(unsigned int i=0; i<col; i++) V[i][i] = 2;
+  for(unsigned int i=0; i<col; i++) V[i][i] = 2.0;
+
+  /* rhoVi = (rho*V)^(-1) */
+  rhoVi = new_id_matrix(col);
+  for(unsigned int i=0; i<col; i++) rhoVi[i][i] = 1.0/(V[i][i]*rho);
 
   /* TREE.Ti = diag(ones(col,1)); */
+  /* (the T matrix is called W in the paper) */
   if(beta_prior == BFLAT) {
     Ti = new_zero_matrix(col, col);
     T = new_zero_matrix(col, col);
@@ -753,7 +761,7 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
  * InitT:
  *
  * (re-) initialize the T matrix based on the choice of beta 
- * prior (assume memory has already been allocated.  This is 
+ * prior (assume memory has already been allocated).  This is 
  * required for the asserts in the Compute function.  Might 
  * consider getting rid of this later.
  */
@@ -797,8 +805,7 @@ Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
 {
   assert(prior);
   assert(prior->BaseModel() == GP);
-  
-  
+    
   Gp_Prior *p = (Gp_Prior*) prior;
   d = p->d;
   /* generic and tree parameters */
@@ -816,6 +823,7 @@ Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
   /* linear prior matrices */
   Ci = new_dup_matrix(p->Ci, col, col);
   V = new_dup_matrix(p->V, col, col);
+  rhoVi = new_dup_matrix(p->rhoVi, col, col);
   T = new_dup_matrix(p->T, col, col);
   Ti = new_dup_matrix(p->Ti, col, col);
   Tchol = new_dup_matrix(p->Tchol, col, col);
@@ -853,6 +861,7 @@ Gp_Prior::~Gp_Prior(void)
   free(b0);
   delete_matrix(Ci);
   delete_matrix(V);
+  delete_matrix(rhoVi);
   delete_matrix(T);
   delete_matrix(Ti);
   delete_matrix(Tchol);
@@ -927,7 +936,8 @@ void Gp_Prior::read_double(double * dparams)
     else {
       tau2_a0_lambda = dparams[0];
       tau2_g0_lambda = dparams[1];
-      // myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", tau2_a0_lambda, tau2_g0_lambda);
+      // myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
+      //          tau2_a0_lambda, tau2_g0_lambda);
     }
   }
   dparams += 2; /* reset */
@@ -1007,7 +1017,7 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   s2_g0 = atof(strtok(NULL, " \t\n#"));
   myprintf(stdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
 
-  /* read the tau2-prior parameters (tau2_a0, tau2_g0) from the control file */
+  /* read the tau2-prior parameters (tau2_a0, tau2_g0) from the ctrl file */
   ctrlfile->getline(line, BUFFMAX);
   if(beta_prior != BFLAT && beta_prior != BCART) {
     tau2_a0 = atof(strtok(line, " \t\n#"));
@@ -1025,7 +1035,8 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   else {
     s2_a0_lambda = atof(strtok(line, " \t\n#"));
     s2_g0_lambda = atof(strtok(NULL, " \t\n#"));
-    myprintf(stdout, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
+    myprintf(stdout, "s2 lambda[a0,g0]=[%g,%g]\n", 
+	     s2_a0_lambda, s2_g0_lambda);
   }
   
   /* read the s2-prior hierarchical parameters 
@@ -1039,7 +1050,8 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
     else {
       tau2_a0_lambda = atof(strtok(line, " \t\n#"));
       tau2_g0_lambda = atof(strtok(NULL, " \t\n#"));
-      myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", tau2_a0_lambda, tau2_g0_lambda);
+      myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
+	       tau2_a0_lambda, tau2_g0_lambda);
     }
   }
 
@@ -1095,7 +1107,6 @@ void Gp_Prior::default_tau2_priors(void)
 }
 
 
-
 /*
  * default_tau2_priors:
  * 
@@ -1139,7 +1150,8 @@ void Gp_Prior::read_beta(char *line)
   for(unsigned int i=1; i<col; i++) {
     char *l = strtok(NULL, " \t\n#");
     if(!l) {
-      error("not enough beta coefficients (%d)\n, there should be (%d)", i+1, col);
+      error("not enough beta coefficients (%d)\n, there should be (%d)", 
+	    i+1, col);
     }
     b[i] = atof(l);
   }
@@ -1184,6 +1196,7 @@ double Gp_Prior::s2Alpha(void)
   return s2_a0;
 }
 
+
 /*
  * s2Beta:
  *
@@ -1206,6 +1219,7 @@ double Gp_Prior::tau2Alpha(void)
 {
   return tau2_a0;
 }
+
 
 /*
  * tau2Beta:
@@ -1325,11 +1339,13 @@ void Gp_Prior::Print(FILE* outfile)
   
   /* hyperpriors */
   if(fix_s2) myprintf(outfile, "s2 prior fixed\n");
-  else myprintf(outfile, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
+  else myprintf(outfile, "s2 lambda[a0,g0]=[%g,%g]\n", 
+		s2_a0_lambda, s2_g0_lambda);
   if(beta_prior != BFLAT && beta_prior != BCART) {
     myprintf(outfile, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
     if(fix_tau2) myprintf(outfile, "tau2 prior fixed\n");
-    else myprintf(outfile, "tau2 lambda[a0,g0]=[%g,%g]\n", tau2_a0_lambda, tau2_g0_lambda);
+    else myprintf(outfile, "tau2 lambda[a0,g0]=[%g,%g]\n", 
+		  tau2_a0_lambda, tau2_g0_lambda);
   }
 
   /* correllation function */
@@ -1348,38 +1364,46 @@ void Gp_Prior::Print(FILE* outfile)
 
 void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 {
-	double **b, **bmle, *s2, *tau2;
-	Corr **corr;
-	
-	/* allocate temporary parameters for each leaf node */
-	allocate_leaf_params(col, &b, &s2, &tau2, &corr, leaves, numLeaves);
-	if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
-	else bmle = NULL;
+  double **b, **bmle, *s2, *tau2;
+  Corr **corr;
+  
+  /* allocate temporary parameters for each leaf node */
+  allocate_leaf_params(col, &b, &s2, &tau2, &corr, leaves, numLeaves);
+  if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
+  else bmle = NULL;
 
-	/* for use in b0 and Ti draws */
+  /* for use in b0 and Ti draws */
+  
+  /* collect bmle parameters from the leaves */
+  if(beta_prior == BMLE)
+    for(unsigned int i=0; i<numLeaves; i++)
+      dupv(bmle[i], ((Gp*)(leaves[i]->GetBase()))->Bmle(), col);
+  
+  /* draw hierarchical parameters */
+  if(beta_prior == B0 || beta_prior == BMLE) { 
+    b0_draw(b0, col, numLeaves, b, s2, Ti, tau2, mu, Ci, state);
+    Ti_draw(Ti, col, numLeaves, b, bmle, b0, rho, V, s2, tau2, state);
+    inverse_chol(Ti, (this->T), Tchol, col);
+  }
+  
+  /* update the corr and sigma^2 prior params */
 
-	/* collect bmle parameters from the leaves */
-	if(beta_prior == BMLE)
-	  for(unsigned int i=0; i<numLeaves; i++)
-	    dupv(bmle[i], ((Gp*)(leaves[i]->GetBase()))->Bmle(), col);
-	
-	/* draw hierarchical parameters */
-	if(beta_prior == B0 || beta_prior == BMLE) { 
-		b0_draw(b0, col, numLeaves, b, s2, Ti, tau2, mu, Ci, state);
-		Ti_draw(Ti, col, numLeaves, b, bmle, b0, rho, V, s2, tau2, state);
-		inverse_chol(Ti, (this->T), Tchol, col);
-	}
+  /* tau2 prior first */
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
+    sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,
+		      tau2_g0_lambda,state);
 
-	/* update the corr and sigma^2 prior params */
-	if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
-	  sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,tau2_g0_lambda,state);
-	if(!fix_s2)
-	  sigma2_prior_draw(&s2_a0,&s2_g0,s2,numLeaves,s2_a0_lambda,s2_g0_lambda,state);
-	corr_prior->Draw(corr, numLeaves, state);
+  /* then sigma2 prior */
+  if(!fix_s2)
+    sigma2_prior_draw(&s2_a0,&s2_g0,s2,numLeaves,s2_a0_lambda,
+		      s2_g0_lambda,state);
 
-	/* clean up the garbage */
-	deallocate_leaf_params(b, s2, tau2, corr);
-	if(beta_prior == BMLE) delete_matrix(bmle);
+  /* then corr prior */
+  corr_prior->Draw(corr, numLeaves, state);
+  
+  /* clean up the garbage */
+  deallocate_leaf_params(b, s2, tau2, corr);
+  if(beta_prior == BMLE) delete_matrix(bmle);
 }
 
 
@@ -1392,7 +1416,7 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 
 double** Gp_Prior::get_Ti(void)
 {
-	return Ti;
+  return Ti;
 }
 
 
@@ -1404,7 +1428,7 @@ double** Gp_Prior::get_Ti(void)
 
 double** Gp_Prior::get_T(void)
 {
-	return T;
+  return T;
 }
 
 
@@ -1416,9 +1440,8 @@ double** Gp_Prior::get_T(void)
 
 double* Gp_Prior::get_b0(void)
 {
-	return b0;
+  return b0;
 }
-
 
 
 /*
@@ -1494,8 +1517,9 @@ char* Gp::State(void)
  * values at each leaf (of numLeaves) of the tree
  */
 
-void allocate_leaf_params(unsigned int col, double ***b, double **s2, 
-			  double **tau2, Corr ***corr, Tree **leaves, unsigned int numLeaves)
+void allocate_leaf_params(unsigned int col, double ***b, double **s2,
+			  double **tau2, Corr ***corr, Tree **leaves, 
+			  unsigned int numLeaves)
 {
   *b = new_matrix(numLeaves, col);
   *s2 = new_vector(numLeaves);
@@ -1536,4 +1560,41 @@ void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
 Base* Gp_Prior::newBase(Model *model)
 {
   return new Gp(col-1, (Base_Prior*) this, model);
+}
+
+
+/*
+ * log_HierPrior:
+ *
+ * return the (log) prior density of the Gp base
+ * hierarchical prior parameters, e.g., B0, W (or T),
+ * etc., and additionaly add in the prior of the parameters
+ * to the correllation model prior
+ */
+
+double Gp_Prior::log_HierPrior(void)
+{
+  double lpdf = 0.0;
+
+  /* start with the b0 prior, if this part of the model is on */
+  if(beta_prior != BFLAT) {
+
+    /* this is probably overcall because Ci is an ID matrix */
+    lpdf += mvnpdf_log_dup(b0, mu, Ci, col);
+
+    /* then do the wishart prior for T 
+       (which is called W in the paper) */
+    lpdf += wishpdf_log(Ti, rhoVi, col, rho);
+  }
+
+  /* hierarchical GP variance */
+  if(!fix_s2)
+    lpdf += hier_prior_log(s2_a0, s2_g0, s2_a0_lambda, s2_g0_lambda);
+
+  /* hierarchical Linear varaince */
+  if(!fix_tau2)
+    lpdf += hier_prior_log(tau2_a0, tau2_g0, tau2_a0_lambda, tau2_g0_lambda);
+
+  /* then add the hierarchical part for the correllation function */
+  lpdf += corr_prior->log_HierPrior();
 }

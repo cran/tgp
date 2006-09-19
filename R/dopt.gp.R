@@ -23,47 +23,55 @@
 
 
 "dopt.gp" <-
-function(nn, X, Xcand)
+function(nn, X=NULL, Xcand)
 {
-	if(nn == 0) return(NULL);
+  if(nn == 0) return(NULL);
 
-	# check X inputs
-	Xnames <- names(X)
-	X <- check.matrix(X)$X
-	n <- dim(X)[1]; m <- dim(X)[2]
+  ## check X inputs
+  Xnames <- names(X)
+  X <- check.matrix(X)$X
 
-	# check the Xcand inputs
-	if(is.null(Xcand)) stop("XX cannot be NULL")
-	Xcand <- check.matrix(Xcand)$X
-	if(dim(Xcand)[2] != m) stop("mismatched column dimension of X and Xcand");
-	ncand <- dim(Xcand)[1]
+  ## check the Xcand inputs
+  if(is.null(Xcand)) stop("XX cannot be NULL")
+  Xcand <- check.matrix(Xcand)$X
 
-	# reduce nn if it is too big
-	if(nn > dim(Xcand)[1]) {
-		warning("nn greater than dim(Xcand)[1]");
-		nn <- dim(Xcand)[1];
-	}
+  ## check if X is NULL 
+  if(!is.null(X)) {
+    n <- nrow(X); m <- ncol(X)
+    X <- t(X) ## for row-major in .C
+  } else { n <- 0; m <- ncol(Xcand) }
 
-	# choose a random state for the C code
-	state <- sample(seq(0,1000), 3)
+  ## check that cols of Xcand match X
+  if(ncol(Xcand) != m) stop("mismatched column dimension of X and Xcand");
+  ncand <- nrow(Xcand)
 
-	# run the C code
-	ll <- .C("dopt_gp", 
-		state = as.integer(state),
-		nn = as.integer(nn),
-		X = as.double(t(X)),
-		n = as.integer(n),
-		m = as.integer(m),
-		Xcand = as.double(t(Xcand)),
-		ncand = as.integer(ncand),
-		fi = integer(nn),
-		PACKAGE="tgp"
-	)
+  ## reduce nn if it is too big
+  if(nn > nrow(Xcand)) {
+    warning("nn greater than dim(Xcand)[1]");
+    nn <- nrow(Xcand);
+  }
 
-	# deal with X, and names of X
-	ll$X <- framify.X(ll$X, Xnames, m)
-	ll$Xcand <- framify.X(ll$Xcand, Xnames, m)
-	ll$XX <- ll$Xcand[ll$fi,]
-	return(ll)
+  ## choose a random state for the C code
+  state <- sample(seq(0,999), 3)
+
+  ## run the C code
+  ll <- .C("dopt_gp", 
+           state = as.integer(state),
+           nn = as.integer(nn),
+           ## transpose of X is taken above
+           X = as.double(X),
+           n = as.integer(n),
+           m = as.integer(m),
+           Xcand = as.double(t(Xcand)),
+           ncand = as.integer(ncand),
+           fi = integer(nn),
+           PACKAGE="tgp"
+           )
+  
+  ## deal with X, and names of X
+  ll$X <- framify.X(ll$X, Xnames, m)
+  ll$Xcand <- framify.X(ll$Xcand, Xnames, m)
+  ll$XX <- ll$Xcand[ll$fi,]
+  return(ll)
 }
 

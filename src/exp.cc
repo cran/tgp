@@ -133,9 +133,10 @@ bool Exp::DrawNug(unsigned int n, double **X, double **F,
   /* make the draw */
   double nug_new = 
     nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
-		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
-		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), prior->NugBeta(), 
-		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
+		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, 
+		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), 
+		    tau2, prior->NugAlpha(), prior->NugBeta(), gp_prior->s2Alpha(), 
+		    gp_prior->s2Beta(), (int) linear, state);
   
   /* did we accept the draw? */
   if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
@@ -696,14 +697,16 @@ void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
  * log_Prior:
  * 
  * compute the (log) prior for the parameters to
- * the correlation function (e.g. d and nug)
+ * the correlation function (e.g. d and nug) : does
+ * not include priors of hierarchical params.  See
+ * log_HierPrior, below
  */
 
 double Exp_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
   if(gamlin[0] < 0) return prob;
-  prob += d_prior_pdf(d, d_alpha, d_beta);
+  prob += log_d_prior_pdf(d, d_alpha, d_beta);
   if(gamlin[0] <= 0) return prob;
   double lin_pdf = linear_pdf(&d, 1, gamlin);
   if(linear) prob += log(lin_pdf);
@@ -745,7 +748,7 @@ void Exp_Prior::Print(FILE *outfile)
 {
   myprintf(stdout, "corr prior: isotropic power\n");
 
-  /* print nugget stugg first */
+  /* print nugget stuff first */
   PrintNug(outfile);
 
   /* range parameter */
@@ -759,6 +762,31 @@ void Exp_Prior::Print(FILE *outfile)
   if(fix_d) myprintf(outfile, "d prior fixed\n");
   else {
     myprintf(stdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], d_beta_lambda[1]);
+	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
+	     d_beta_lambda[1]);
   }
+}
+
+
+/*
+ * log_HierPrior:
+ *
+ * return the log prior of the hierarchial parameters
+ * to the correllation parameters (i.e., range and nugget)
+ */
+
+double Exp_Prior::log_HierPrior(void)
+{
+  double lpdf, p;
+  lpdf = 0.0;
+
+  /* mixture prior for the range parameter, d */
+  if(!fix_d) {
+    lpdf += mixture_hier_prior_log(d_alpha, d_beta, d_alpha_lambda, d_beta_lambda);
+  }
+
+  /* mixture prior for the nugget */
+  lpdf += log_NugHierPrior();
+
+  return lpdf;
 }

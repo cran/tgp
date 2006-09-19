@@ -26,6 +26,7 @@
 function(n, rect)
 {
   ## sanity checks
+  if(length(n) != 1) stop(paste("length(n) should be 1, you have", length(n)))
   if(n < 0) stop(paste("n should be positive, you have", n))
   if(n == 0) return(NULL)
 
@@ -35,7 +36,7 @@ function(n, rect)
   if(ncol != 2) stop("dim(rect)[2] must be 2")
   
   ## choose a random state for the C code
-  state <- sample(seq(0,1000), 3)
+  state <- sample(seq(0,999), 3)
 
   ## run the C code
   ll <- .C("lh_sample", 

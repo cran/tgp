@@ -102,7 +102,7 @@ class Exp_Prior : public Corr_Prior
   virtual void Print(FILE *outfile);
   virtual Base_Prior* BasePrior(void);
   virtual void SetBasePrior(Base_Prior *base_prior);
-
+  virtual double log_HierPrior(void);
 
   double D(void);
   double* DAlpha(void);

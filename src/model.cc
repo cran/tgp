@@ -134,9 +134,12 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,iface_rect,NORMSCALE);
   if(base_prior->BaseModel() == MR_GP) { 
+
+    /* make sure that the first column is still indicates
+       the coarse or fine process */
     for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
     // printMatrix(Xc, n, d, stdout);
-    }
+  }
 
   double *Zc = new_dup_vector(Z, n);
 
@@ -571,8 +574,11 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,rect,NORMSCALE);
   if(base_prior->BaseModel() == MR_GP) { 
+    
+    /* make sure that the first column is still indicates
+       the coarse or fine process */
     for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
-    printMatrix(Xc, n, d, stdout); 
+    // printMatrix(Xc, n, d, stdout); 
   }
 
   double *Zc = new_dup_vector(Z, n); 
@@ -698,6 +704,8 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, d
   preds->nn = nn;
   preds->n = n;
   preds->d = d;
+  /* Taddy: wouldn't you have to copy the first column of XX here
+     for base ==  MR_GP ?? -- not sure */
   if(rect) preds->XX = new_normd_matrix(XX,nn,d,rect,NORMSCALE);
   else preds->XX = new_dup_matrix(XX,nn,d);
   preds->R = R/every;
@@ -1284,8 +1292,16 @@ double Model::Posterior(void)
   unsigned int t_minpart;
   double t_alpha, t_beta;
   
+  /* part of the posterior that has to do with the tree,
+     and the base models at the leaves of the tree */
   params->get_T_params(&t_alpha, &t_beta, &t_minpart);
   double full_post = t->FullPosterior(t_alpha, t_beta);
+
+  /* include priors hierarchical (linear) params W, B0, etc. 
+     and the hierarchical corr prior priors in the Base module */
+  full_post += base_prior->log_HierPrior();
+
+  /* see if this is the MAP model; if so then record */
   register_posterior(posteriors, t, full_post);
 
   /* record the (log) posterior as a function of height */
@@ -1294,6 +1310,7 @@ double Model::Posterior(void)
     myprintf(POSTTRACEFILE, "%d %g\n", t->Height(), full_post);
   }
   
+  /* return the value of the posterior density */
   return full_post;
 }
 

@@ -567,10 +567,12 @@ void MrExpSep::propose_new_d(MrExpSep* c1, MrExpSep* c2, void *state)
  */
 
 int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F, 
-		     double **X, double *Z, double log_det_K, double lambda, double **Vb, 
-		     double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
-		     double *lambda_new, double **VB_new, double *bmu_new, double *b0, double **Ti, 
-		     double **T, double tau2, double nug, double nugfine, double qRatio, double pRatio_log, 
+		     double **X, double *Z, double log_det_K, double lambda, 
+		     double **Vb, double **K_new, double **Ki_new, 
+		     double **Kchol_new, double *log_det_K_new, 
+		     double *lambda_new, double **VB_new, double *bmu_new, 
+		     double *b0, double **Ti, double **T, double tau2,
+		     double nug, double nugfine, double qRatio, double pRatio_log, 
 		     double a0, double g0, int lin, void *state)
 {
   double pd, pdlast, alpha;
@@ -634,7 +636,6 @@ bool MrExpSep::DrawDelta(unsigned int n, double **X, double **F, double *Z,
   double pnewdelta;
 
   /* make the draw */
-  
 
     double newdelta = unif_propose_pos(delta, &q_fwd, &q_bak, state);
     // printf("%g %g\n", delta, newdelta);
@@ -864,7 +865,9 @@ char* MrExpSep::State(void)
  * log_Prior:
  * 
  * compute the (log) prior for the parameters to
- * the correlation function (e.g. d and nug)
+ * the correlation function (e.g. d and nug). Does not
+ * include hierarchical prior params; see log_HierPrior
+ * below
  */
 
 double MrExpSep::log_Prior(void)
@@ -1434,7 +1437,7 @@ double MrExpSep_Prior::log_Prior(double *d, int *b, double *pb, bool linear)
 
   /* sum the log priors for each of the d-parameters */
   for(unsigned int i=0; i<(2*nin); i++)
-    prob += d_prior_pdf(d[i], d_alpha[i], d_beta[i]);
+    prob += log_d_prior_pdf(d[i], d_alpha[i], d_beta[i]);
 
   /* if not allowing the LLM, then we're done */
   if(gamlin[0] <= 0) return prob;
@@ -1468,7 +1471,7 @@ double MrExpSep_Prior::log_DPrior_pdf(double *d)
 {
   double p = 0;
   for(unsigned int i=0; i<(2*nin); i++) {
-    p += d_prior_pdf(d[i], d_alpha[i], d_beta[i]);
+    p += log_d_prior_pdf(d[i], d_alpha[i], d_beta[i]);
   }
   return p;
 }
@@ -1521,7 +1524,7 @@ void MrExpSep_Prior::Print(FILE *outfile)
 {
   myprintf(stdout, "corr prior: separable power\n");
 
-  /* print nugget stugg first */
+  /* print nugget stuff first */
   PrintNug(outfile);
 
   /* range parameter */
@@ -1542,6 +1545,34 @@ void MrExpSep_Prior::Print(FILE *outfile)
   if(fix_d) myprintf(outfile, "d prior fixed\n");
   else {
     myprintf(stdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], d_beta_lambda[1]);
+	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
+	     d_beta_lambda[1]);
   }
+}
+
+
+/*
+ * log_HierPrior:
+ *
+ * return the log prior of the hierarchial parameters
+ * to the correllation parameters (i.e., range and nugget)
+ */
+
+double MrExpSep_Prior::log_HierPrior(void)
+{
+ double lpdf, p;
+ 
+ lpdf = 0.0;
+
+  /* mixture prior for the range parameter, d */
+  if(!fix_d) {
+    for(unsigned int i=0; i<col-1; i++)
+      lpdf += mixture_hier_prior_log(d_alpha[i], d_beta[i], 
+				     d_alpha_lambda, d_beta_lambda);
+  }
+
+  /* mixture prior for the nugget */
+  lpdf += log_NugHierPrior();
+
+  return lpdf;
 }

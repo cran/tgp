@@ -65,8 +65,8 @@ Available as UCSC Technical Report ams2006-01.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{\link{tgp}},
-  \code{\link{btgp}}, and other \code{b*} functions}
+\seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{link{exp2d.Z}},
+  \code{\link{tgp}}, \code{\link{btgp}}, and other \code{b*} functions}
 
 
 \examples{

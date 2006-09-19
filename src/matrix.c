@@ -174,9 +174,10 @@ double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2)
 
 void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2)
 {
-  unsigned int i, j;
+  unsigned int i;
+  if(n1 == 0 || n2 == 0) return;
   assert(M1 && M2);
-  for(i=0; i<n1; i++) for(j=0; j<n2; j++) M1[i][j] = M2[i][j];
+  for(i=0; i<n1; i++) dupv(M1[i], M2[i], n2);
 }
 
 
@@ -250,7 +251,7 @@ double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2,
 		double **rect, double normscale)
 {
   double **m;
-  m = new_dup_matrix(M,n1, n2);
+  m = new_dup_matrix(M, n1, n2);
   normalize(m, rect, n1, n2, normscale);
   return m;
 }
@@ -1006,6 +1007,8 @@ void normalize(double **X, double **rect, int N, int d, double normscale)
 {
   int i, j;
   double norm;
+  if(N == 0) return;
+  assert(d != 0);
   for(i=0; i<d; i++) {
     norm = fabs(rect[1][i] - rect[0][i]);
     if(norm == 0) norm = fabs(rect[0][i]);

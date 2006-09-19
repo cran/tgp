@@ -1,4 +1,4 @@
-/******************************************************************************** 
+ /******************************************************************************** 
  *
  * Bayesian Regression and Adaptive Sampling with Gaussian Process Trees
  * Copyright (C) 2005, University of California
@@ -467,7 +467,9 @@ double Matern::NU(void)
  * log_Prior:
  * 
  * compute the (log) prior for the parameters to
- * the correlation function (e.g. d and nug)
+ * the correlation function (e.g. d and nug).  Does not
+ * include hierarchical prior params; see log_HierPrior
+ * below
  */
 
 double Matern::log_Prior(void)
@@ -776,7 +778,7 @@ double Matern_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
   if(gamlin[0] < 0) return prob;
-  prob += d_prior_pdf(d, d_alpha, d_beta);
+  prob += log_d_prior_pdf(d, d_alpha, d_beta);
   if(gamlin[0] <= 0) return prob;
   double lin_pdf = linear_pdf(&d, 1, gamlin);
   if(linear) prob += log(lin_pdf);
@@ -818,7 +820,7 @@ void Matern_Prior::Print(FILE *outfile)
 {
   myprintf(stdout, "corr prior: matern\n");
 
-  /* print nugget stugg first */
+  /* print nugget stuff first */
   PrintNug(outfile);
 
   /* range parameter */
@@ -835,6 +837,31 @@ void Matern_Prior::Print(FILE *outfile)
   if(fix_d) myprintf(outfile, "d prior fixed\n");
   else {
     myprintf(stdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], d_beta_lambda[1]);
+	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
+	     d_beta_lambda[1]);
   }
+}
+
+
+/*
+ * log_HierPrior:
+ *
+ * return the log prior of the hierarchial parameters
+ * to the correllation parameters (i.e., range and nugget)
+ */
+
+double Matern_Prior::log_HierPrior(void)
+{
+  double lpdf, p;
+  lpdf = 0.0;
+
+  /* mixture prior for the range parameter, d */
+  if(!fix_d) {
+    lpdf += mixture_hier_prior_log(d_alpha, d_beta, d_alpha_lambda, d_beta_lambda);
+  }
+
+  /* mixture prior for the nugget */
+  lpdf += log_NugHierPrior();
+
+  return lpdf;
 }

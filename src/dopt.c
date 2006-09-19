@@ -49,44 +49,49 @@ double DOPT_NUG(void) { return 0.01; }
  */
 
 void dopt_gp(state_in, nn_in, X_in, n_in, m_in, Xcand_in, ncand_in, fi_out)
-unsigned short *state_in;
+int *state_in;
 unsigned int *nn_in, *n_in, *m_in, *ncand_in;
 double *X_in, *Xcand_in;
 int *fi_out;
 {
-	unsigned int nn, n, m, ncand;
-	double **Xall, **X, **Xcand, **fixed, **rect;
-	void *state = newRNGstate(100000*state_in[0] + 100*state_in[1] + state_in[2]);
+  unsigned int nn, n, m, ncand;
+  double **Xall, **X, **Xcand, **fixed, **rect;
+  unsigned long lstate;
+  void *state;
 
-	/* integral dimension parameters */
-	n = (unsigned int) *n_in;
-	m = (unsigned int) *m_in;
-	nn = (unsigned int) *nn_in;
-	ncand = (unsigned int) *ncand_in;
-
-	Xall = new_matrix(n+ncand, m);
-	dupv(Xall[0], X_in, n*m);
-	dupv(Xall[n], Xcand_in, ncand*m);
-	rect = get_data_rect(Xall, n+ncand, m);
-	delete_matrix(Xall);
-
-	/* copy X from input */
-	X = new_zero_matrix(n+nn, m);
-	fixed = new_matrix(n, m);
-	dupv(fixed[0], X_in, n*m);
-	normalize(fixed, rect, n, m, 1.0);
-	Xcand = new_zero_matrix(ncand, m);
-	dupv(Xcand[0], Xcand_in, ncand*m);
-	normalize(Xcand, rect, ncand, m, 1.0);
-	delete_matrix(rect);
-
-	/* call dopt */
-	dopt(X, fi_out, fixed, Xcand, m, n, ncand, nn, DOPT_D((unsigned)m), 
-	     DOPT_NUG(), state);
-
-	delete_matrix(X);
-	delete_matrix(fixed);
-	delete_matrix(Xcand);
+  lstate = three2lstate(state_in);
+  state = newRNGstate(lstate);
+  
+  /* integral dimension parameters */
+  n = (unsigned int) *n_in;
+  m = (unsigned int) *m_in;
+  nn = (unsigned int) *nn_in;
+  ncand = (unsigned int) *ncand_in;
+  
+  Xall = new_matrix(n+ncand, m);
+  dupv(Xall[0], X_in, n*m);
+  dupv(Xall[n], Xcand_in, ncand*m);
+  rect = get_data_rect(Xall, n+ncand, m);
+  delete_matrix(Xall);
+  
+  /* copy X from input */
+  X = new_zero_matrix(n+nn, m);
+  fixed = new_matrix(n, m);
+  if(fixed) dupv(fixed[0], X_in, n*m);
+  normalize(fixed, rect, n, m, 1.0);
+  Xcand = new_zero_matrix(ncand, m);
+  dupv(Xcand[0], Xcand_in, ncand*m);
+  normalize(Xcand, rect, ncand, m, 1.0);
+  delete_matrix(rect);
+  
+  /* call dopt */
+  dopt(X, fi_out, fixed, Xcand, m, n, ncand, nn, DOPT_D((unsigned)m), 
+       DOPT_NUG(), state);
+  
+  delete_matrix(X);
+  if(fixed) delete_matrix(fixed);
+  delete_matrix(Xcand);
+  deleteRNGstate(state);
 }
 
 
@@ -111,120 +116,104 @@ double d, nug;
 void *state;
 /* remember, column major! */
 {
-	unsigned int i,j, ai, fii;
-	double* r, *aprobs, *fprobs;
-	int *o;
-	int *avail;
-	double **DIST, **K;
-	double log_det, log_det_new;
-	int a, f;
+  unsigned int i,j, ai, fii;
+  double *aprobs, *fprobs;
+  unsigned int *o, *avail;
+  double **DIST, **K;
+  double log_det, log_det_new;
+  int a, f;
+  
+  assert(n2 >= n);
 
-	/*myprintf(stderr, "n1=%d, n2=%d, n=%d\n", n1, n2, n); */
-	assert(n2 >= n);
+  /* set fixed into X */
+  dup_matrix(X, fixed, n1, m);
+  DIST = new_matrix(n+n1, n+n1);
+  K = new_matrix(n+n1, n+n1);
+  avail = new_uivector(n2-n);
 
-	/* get average distance */
-	
-	/* set fixed into X */
-	for(i=0; i<n1; i++) for(j=0; j<m; j++) X[i][j] = fixed[i][j];
-	DIST = new_matrix(n+n1, n+n1);
-	K = new_matrix(n+n1, n+n1);
-	avail = new_ivector(n2-n);
+  /* get indices to randomly permuted the Xcand matrix with */
+  o = rand_indices(n2, state);
 
-	/* r = runif(N, 0, 1); */
-	r = (double*) malloc(sizeof(double) * n2);
-	runif_mult(r, 0, 1, n2, state);
+  /* free = I(1:n); */
+  /* X = [fixed, Xcand(:,free)]; */
+  for(i=0; i<n; i++) {
+    fi[i] = o[i];
+    dupv(X[n1+i], Xcand[((int)o[i])-1], m);
+  }
+  for(i=0; i<n2-n; i++) avail[i] = o[n+i];
+  free(o);
 
-	/* [S, I] = sort(r); */
-	o = order(r, n2);
-	free(r);
+  /* fprobs = ones(1,n)/n; */
+  fprobs = ones(n, 1.0/n);
+  /* aprobs = ones(1,(N-n))/(N-n); */
+  aprobs = ones(n2-n, 1.0/(n2-n));
+  
+  /*
+   * first determinant calculation
+   */
+  
+  /* dist = dist_2d_c(X, X, 1); */
+  dist_symm(DIST, m, X, n+n1, PWR);
+  
+  /* K = dist_to_K(DIST, 0.02, 0.01);*/
+  dist_to_K_symm(K, DIST, d, nug, n+n1);
+  /* d = det(K); */
+  log_det = log_determinant(K, n+n1);
+  
+  /* 
+   * stochastic ascent 
+   */
 
-	/* free = I(1:n); */
+  if(n2 > n) { /* no need to do iterations if ncand == n */
+    for(i=0; i<ITERATIONS; i++) {
+      
+      /* choose random used and available X row */
+      
+      /* [f, fi] = sample(1, free, fprobs, seeds(1)); */
+      isample(&f, &fii, 1, n, fi, fprobs, state);
+      /*[a, ai] = sample(1, avail, aprobs, seeds(2));*/
+      isample(&a, &ai, 1, n2-n, (int*) avail, aprobs, state);
+      assert(f == fi[fii]);
+      assert(a == avail[ai]);
+      
+      /* swap the rows */
+      
+      /* free(fi) = a; avail(ai) = f; */
+      fi[fii] = a; avail[ai] = f;
+      /* X = [fixed, Xcand(:,free)]; */
+      for(j=0; j<m; j++) {
+	assert(Xcand[f-1][j] == X[n1+fii][j]);
+	X[n1+fii][j] = Xcand[a-1][j];
+      }
+      
+      /* dist = dist_2d_c(X, X, 1); */
+      dist_symm(DIST, m, X, n+n1, PWR);
+      /* K = dist_to_K(DIST, 0.02, 0.01);*/
+      dist_to_K_symm(K, DIST, d, nug, n+n1);
+      /* d = det(K); */
+      log_det_new = log_determinant(K, n+n1);
+      
+      /*
+       * see if its worth doing the new one
+       */
+      
+      if(log_det < log_det_new) {
+	log_det = log_det_new;
+      } else {
+	/* free(fi) = f; avail(ai) = a; */
+	fi[fii] = f; avail[ai] = a;
 	/* X = [fixed, Xcand(:,free)]; */
-	for(i=0; i<n; i++) {
-		fi[i] = o[i];
-		for(j=0; j<m; j++) X[n1+i][j] = Xcand[o[i]-1][j];
-	}
-	for(i=0; i<n2-n; i++) avail[i] = o[n+i];
-	free(o);
-
-	/* fprobs = ones(1,n)/n; */
-	fprobs = ones(n, 1.0/n);
-	/* aprobs = ones(1,(N-n))/(N-n); */
-	aprobs = ones(n2-n, 1.0/(n2-n));
-
-	/*
-	 * first determinant calculation
-	 */
-
-	/* dist = dist_2d_c(X, X, 1); */
-	dist_symm(DIST, m, X, n+n1, PWR);
-
-	/* K = dist_to_K(DIST, 0.02, 0.01);*/
-	dist_to_K_symm(K, DIST, d, nug, n+n1);
-	/* d = det(K); */
-	log_det = log_determinant(K, n+n1);
-
-	/*fprintf(stderr, "START log_det = %g\n", log_det);
-	if(log_det == -1e300*1e300) {
-	  matrix_to_file("X.dump", X, n+n1, m);
-	  matrix_to_file("DIST.dump", DIST, n+n1, n+n1);
-	  matrix_to_file("K.dump", K, n+n1, n+n1);
-	  error("zero determinant");
-	  }*/
-
-	/* 
-	 * simulated annealing
-	 */
-
-	if(n2 > n) { /* no need to do iterations if ncand == n */
-	for(i=0; i<ITERATIONS; i++) {
+	dupv(X[n1+fii], Xcand[(int)f-1], m);
+      }
+    }
+  }
 	
-		/* choose random used and available X row */
-		
-		/* [f, fi] = sample(1, free, fprobs, seeds(1)); */
-		isample(&f, &fii, 1, n, fi, fprobs, state);
-		/*[a, ai] = sample(1, avail, aprobs, seeds(2));*/
-		isample(&a, &ai, 1, n2-n, avail, aprobs, state);
-		assert(f == fi[fii]);
-		assert(a == avail[ai]);
-
-		/* swap the rows */
-
-		/* free(fi) = a; avail(ai) = f; */
-		fi[fii] = a; avail[ai] = f;
-		/* X = [fixed, Xcand(:,free)]; */
-		for(j=0; j<m; j++) {
-			assert(Xcand[f-1][j] == X[n1+fii][j]);
-			X[n1+fii][j] = Xcand[a-1][j];
-		}
-
-		/* dist = dist_2d_c(X, X, 1); */
-		dist_symm(DIST, m, X, n+n1, PWR);
-		/* K = dist_to_K(DIST, 0.02, 0.01);*/
-		dist_to_K_symm(K, DIST, d, nug, n+n1);
-		/* d = det(K); */
-		log_det_new = log_determinant(K, n+n1);
-
-		/*
-		 * see if its worth doing the new one
-		 */
-
-		if(log_det < log_det_new) {
-		  log_det = log_det_new;
-		  /* fprintf(stderr, "i=%d, log_det=%g\n", i, log_det); */
-		} else {
-			/* free(fi) = f; avail(ai) = a; */
-			fi[fii] = f; avail[ai] = a;
-			/* X = [fixed, Xcand(:,free)]; */
-			for(j=0; j<m; j++) X[n1+fii][j] = Xcand[(int)f-1][j];
-		}
-	}}
-	
-	free(fprobs);
-	free(aprobs);
-	delete_matrix(DIST);
-	delete_matrix(K);
-	free(avail);
+  /* clean up */
+  free(fprobs);
+  free(aprobs);
+  delete_matrix(DIST);
+  delete_matrix(K);
+  free(avail);
 }
 
 
