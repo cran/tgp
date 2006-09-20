@@ -1,3 +1,10 @@
+1.1-11 (20 Sept 2006)
+------
+
+Bad compilation flags caused bad bug in log_HierPrior
+to go unnoticed until assertion failure on Windows
+
+
 1.1-10 (19 Sept 2006)
 ------
 
@@ -30,7 +37,7 @@ computation; added comments to gen_covar.c
 Compilation warnings addressed in update of compat-
 ibility with C/C++ adaptive sampling (as) code
 
-Not getting BestPartitions from Tgp instead of at the
+Now getting BestPartitions from Tgp instead of at the
 end of Model::Rounds
 
 

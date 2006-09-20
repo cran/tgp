@@ -22,23 +22,42 @@
  ********************************************************************************/
 
 
-#ifndef __RAND_PDF_H__
-#define __RAND_PDF_H__
+#ifndef __PARAMS_H__
+#define __PARAMS_H__ 
 
-void gampdf_log(double *p, double *x, double a, double b, unsigned int n);
-void gampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void invgampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void betapdf_log(double *p, double *x, double a, double b, unsigned int n);
-void normpdf_log(double *p, double *x, double mu, double s2, unsigned int n);
-void copyCovLower(double **cov, double **Sigma, unsigned int n, double scale);
-void copyCovUpper(double **cov, double **Sigma, unsigned int n, double scale);
-double mvnpdf_log_dup(double *x, double *mu, double **cov, unsigned int n);
-double mvnpdf_log(double *x, double *mu, double **cov, unsigned int n);
-double log_determinant(double **M, unsigned int n);
-double log_determinant_dup(double **M, unsigned int n);
-double log_determinant_chol(double **M, unsigned int n);
-double wishpdf_log(double **x, double **S, unsigned int n, unsigned int nu);
-double temper(double p, double temp, int uselog);
-void temper_invgam(double *a, double *b, double temp);
+#include <fstream>
+#include "gp.h"
+#include "mr_gp.h"
+#include "base.h"
+
+//#define BUFFMAX 256
+
+class Params
+{
+ private:
+  unsigned int d;  	/* dimenstion of the data */
+  unsigned int col;	/* dimenstion of the design matrix */
+  double t_alpha;		/* tree prior parameter alpha */
+  double t_beta;  	/* tree prior parameter beta */
+  unsigned int t_minpart; /* tree prior parameter minpart, smallest partition */
+	
+  Base_Prior *prior;
+
+ public:
+
+  /* start public functions */
+  Params(unsigned int d);
+  Params(Params* params);
+  ~Params(void);
+  void read_ctrlfile(std::ifstream* ctrlfile);
+  void read_double(double *dparams);
+  void get_T_params(double *alpha, double *beta, unsigned int* minpart);
+  unsigned int T_minp(void);
+  Base_Prior* BasePrior(void);
+  void Print(FILE *outfile);
+};
+
+void get_mix_prior_params(double *alpha, double *beta, char *line, char* which);
+void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, char* which);
 
 #endif
