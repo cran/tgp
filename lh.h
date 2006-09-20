@@ -22,23 +22,19 @@
  ********************************************************************************/
 
 
-#ifndef __RAND_PDF_H__
-#define __RAND_PDF_H__
+#ifndef __LH_H__
+#define __LH_H__
 
-void gampdf_log(double *p, double *x, double a, double b, unsigned int n);
-void gampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void invgampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void betapdf_log(double *p, double *x, double a, double b, unsigned int n);
-void normpdf_log(double *p, double *x, double mu, double s2, unsigned int n);
-void copyCovLower(double **cov, double **Sigma, unsigned int n, double scale);
-void copyCovUpper(double **cov, double **Sigma, unsigned int n, double scale);
-double mvnpdf_log_dup(double *x, double *mu, double **cov, unsigned int n);
-double mvnpdf_log(double *x, double *mu, double **cov, unsigned int n);
-double log_determinant(double **M, unsigned int n);
-double log_determinant_dup(double **M, unsigned int n);
-double log_determinant_chol(double **M, unsigned int n);
-double wishpdf_log(double **x, double **S, unsigned int n, unsigned int nu);
-double temper(double p, double temp, int uselog);
-void temper_invgam(double *a, double *b, double temp);
+#include <stdio.h>
+
+double** rect_sample(int dim, int n, void *state);
+double** rect_sample_lh(int dim, int n, double** rect, int er, void *state);
+void rect_scale(double** z, int n, int d, double** rect);
+double** readRect(char* rect, unsigned int *d);
+void errorBadRect(void);
+void printRect(FILE* outfile, int d, double** rect);
+void errorBadRect(void);
+int* order(double *s, unsigned int n);
+void sortDouble(double *s, unsigned int n);
 
 #endif

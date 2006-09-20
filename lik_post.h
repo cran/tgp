@@ -22,23 +22,12 @@
  ********************************************************************************/
 
 
-#ifndef __RAND_PDF_H__
-#define __RAND_PDF_H__
+#ifndef __LIK_POST_H__
+#define __LIK_POST_H__
 
-void gampdf_log(double *p, double *x, double a, double b, unsigned int n);
-void gampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void invgampdf_log_gelman(double *p, double *x, double a, double b, unsigned int n);
-void betapdf_log(double *p, double *x, double a, double b, unsigned int n);
-void normpdf_log(double *p, double *x, double mu, double s2, unsigned int n);
-void copyCovLower(double **cov, double **Sigma, unsigned int n, double scale);
-void copyCovUpper(double **cov, double **Sigma, unsigned int n, double scale);
-double mvnpdf_log_dup(double *x, double *mu, double **cov, unsigned int n);
-double mvnpdf_log(double *x, double *mu, double **cov, unsigned int n);
-double log_determinant(double **M, unsigned int n);
-double log_determinant_dup(double **M, unsigned int n);
-double log_determinant_chol(double **M, unsigned int n);
-double wishpdf_log(double **x, double **S, unsigned int n, unsigned int nu);
-double temper(double p, double temp, int uselog);
-void temper_invgam(double *a, double *b, double temp);
+double post_margin_rj(unsigned int n, unsigned int col, double lambda, double **Vb,
+	double log_detK, double **T, double tau2, double a0, double g0);
+double post_margin(unsigned int n, unsigned int col, double lambda, double **Vb, 
+	double log_detK, double a0, double g0);
 
 #endif
