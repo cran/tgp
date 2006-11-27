@@ -22,12 +22,22 @@
 #*******************************************************************************
 
 
-"tgp.get.partitions" <-
-function(X, out)
-{
-	m <- which.max(out$posts$lpost)
-	tree <- out$trees[[m]]
+"tree2c" <-
+function(t) {
 
-	return(tgp.partition(X, tree, 1))
+  ## change var into a numeric vector
+  var <- as.character(t$var)
+  var[var == "<leaf>"] <- -1
+  var <- as.numeric(var)
+  
+  ## to return
+  tr <- data.frame(rows=t$rows, var=var)
+  tr <- cbind(tr, t[,8:ncol(t)])
+
+  ## order the rows by the row column
+  o <- order(tr[,1])
+  tr <- tr[o,]
+
+  return(as.matrix(tr))
 }
 

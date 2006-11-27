@@ -34,8 +34,6 @@
 #include <assert.h>
 #include <Rmath.h>
 
-#define PWR 2.0
-
 /* #define DEBUG */
 
 /*
@@ -48,13 +46,17 @@
  * T[col][col], Vb[col][col]
  */
 
-double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0)
+double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, itemp)
 unsigned int n,col;
 double **T, **Vb;
-double a0, g0, tau2, lambda, log_detK;
+double a0, g0, tau2, lambda, log_detK, itemp;
 {
   double log_detVB, log_detT, one, two, p;
   unsigned int m = 0;
+
+  /* sanity check for temperature */
+  assert(itemp >= 0);
+  if(itemp == 0) return 0.0;
   
   /* log det Vb */
   log_detVB = log_determinant_dup(Vb, col);
@@ -71,17 +73,21 @@ double a0, g0, tau2, lambda, log_detK;
     log_detT = 0.0 /*- col*LOG_2_PI*/;
     m = col;
   } else log_detT = log_determinant_dup(T, col);
-  
+
   /* one = log(det(VB)) - n*log(2*pi) - log(det(K)) - log(det(T)) - col*log(tau2) */
-  one = log_detVB - n*2*M_LN_SQRT_2PI - log_detK - log_detT - col*log(tau2);
+  one = log_detVB - (itemp*n)*2*M_LN_SQRT_2PI - itemp*log_detK - log_detT - col*log(tau2);
   
   /* two = (a0/2)*log(g0/2) - ((a0+n)/2)*log((g0+lambda)/2) 
    * + log(gamma((a0+n)/2)) - log(gamma(a0/2)); */
-  two = 0.5*a0*log(0.5*g0) - 0.5*(a0+n-m)*log(0.5*(g0+lambda));
-  two += lgammafn(0.5*(a0+n-m)) - lgammafn(0.5*a0);
+  two = 0.5*a0*log(0.5*g0) - 0.5*(a0 + itemp*(n-m))*log(0.5*(g0+lambda));
+  two += lgammafn(0.5*(a0 + itemp*(n-m))) - lgammafn(0.5*a0);
   
   /* posterior probability */
   p = 0.5*one + two;
+
+  /* myprintf(stderr, "n=%d, one=%g, two=%g, ldVB=%g, ldK=%g, log_detT=%g, col_ltau2=%g\n",
+	     n, one, two, log_detVB, log_detK, log_detT, col*log(tau2));
+	     myflush(stderr); */
   
   /* make sure we got a good p */
   if(isnan(p)) {
@@ -91,8 +97,10 @@ double a0, g0, tau2, lambda, log_detK;
     assert(!isnan(p));
 #endif
   }
+
   return p;
 }
+
 
 /*
  * post_margin:
@@ -104,13 +112,17 @@ double a0, g0, tau2, lambda, log_detK;
  * Vb[col][col]
  */
 
-double post_margin(n, col, lambda, Vb, log_detK, a0, g0)
+double post_margin(n, col, lambda, Vb, log_detK, a0, g0, itemp)
 unsigned int n, col;
 double **Vb;
-double a0, g0, lambda, log_detK ;
+double a0, g0, lambda, log_detK, itemp;
 {
   double log_detVB,  one, two, p;
-  
+ 
+  /* sanity check for temperature */
+  assert(itemp >= 0);
+  if(itemp == 0) return 0.0;
+ 
   /* log determinant of Vb */
   log_detVB = log_determinant_dup(Vb, col);
   
@@ -119,12 +131,12 @@ double a0, g0, lambda, log_detK ;
     /* warning("degenerate design matrix"); */
     return 0.0-1e300*1e300;
   }
-  
+
   /* one = log(det(VB)) - log(det(K)) */
-  one = log_detVB - log_detK;
+  one = log_detVB - itemp*log_detK; 
   
   /* two = - ((a0+n)/2)*log((g0+lambda)/2) */
-  two = 0.0 - 0.5*(a0+n)*log(0.5*(g0+lambda));
+  two = 0.0 - 0.5*(a0 + itemp*n)*log(0.5*(g0+lambda));
   
   /* posterior probability */
   p = 0.5*one + two;
@@ -137,5 +149,63 @@ double a0, g0, lambda, log_detK ;
     assert(!isnan(p));
 #endif
   }
+
   return p;
+}
+
+
+/*
+ * gp_lhood:
+ *
+ * compute the GP likelihood MVN;  some of these calculations are
+ * the same as in predict_help().  Should consider moving them to
+ * a more accessible place so predict_help and gp_lhood can share.
+ *
+ * nug only used when Ki == NULL
+ * uses annealing inv-temperature;
+ * returns the log pdf
+ */
+
+double gp_lhood(double *Z, unsigned int n, unsigned int col, double **F, 
+		double *b, double s2, double **Ki, double log_det_K, 
+		double nug, double itemp)
+{
+  double *ZmFb, *KiZmFb;
+  double ZmFbKiZmFb, eponent, front, llik;
+
+  if(itemp == 0.0) return 0.0;
+
+  /* ZmFb = Zdat - F * b; first, copy Z (copied code from predict_help()) */
+  ZmFb = new_dup_vector(Z, n);
+  linalg_dgemv(CblasNoTrans,n,col,-1.0,F,n,b,1,1.0,ZmFb,1);
+
+  /* KiZmFb = Ki * (Z - F * b); first, zero-out KiZmFb */
+  if(Ki) {
+    KiZmFb = new_zero_vector(n);
+    linalg_dsymv(n,1.0,Ki,n,ZmFb,1,0.0,KiZmFb,1); 
+  } else {
+    /* This assertion will fail eventually, when MrGp calls this function correctly */
+    /* assert(log_det_K == n*log(1.0 + nug)); */
+    KiZmFb = ZmFb;
+  }
+
+  /* eponent = -(1/2) * (ZmFb * KiZmFb)/s2 */
+  ZmFbKiZmFb = linalg_ddot(n, ZmFb, 1, KiZmFb, 1);
+  if(!Ki) ZmFbKiZmFb /= (1.0+nug);
+  eponent = 0.0 - 0.5 * itemp * ZmFbKiZmFb / s2;
+
+  /* clean up */
+  free(ZmFb);
+  if(Ki) free(KiZmFb);
+
+  /* front = - log(sqrt(2*pi*s2)^n * det(K))) */
+  front = 0.0 - n*M_LN_SQRT_2PI - 0.5*(log_det_K + n*(log(s2) - log(itemp)));
+
+  /* MVN pdf calculation in log space */
+  llik = front + eponent;
+
+  /* myprintf(stderr, "llik=%g, n=%d, nMLN2PI=%g, front=%g, eponent=%g, log_det_K=%g, s2=%g\n", 
+     llik, n, n*M_LN_SQRT_2PI, front, eponent, log_det_K, s2); */
+
+  return(llik);
 }

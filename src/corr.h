@@ -84,7 +84,7 @@ class Corr
   virtual ~Corr(void);
   virtual Corr& operator=(const Corr &c)=0;
   virtual int Draw(unsigned int n, double **F, double **X, double *Z,double *lambda, 
-		   double **bmu, double **Vb, double tau2, void *state)=0;
+		   double **bmu, double **Vb, double tau2, double temp, void *state)=0;
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, 
 		      double **XX)=0;
   virtual void Update(unsigned int n1, double **X)=0;
@@ -95,10 +95,12 @@ class Corr
   virtual double log_Prior(void)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void ToggleLinear(void)=0;
-  virtual bool DrawNug(unsigned int n, double **X,  double **F, double *Z,
-		       double *lambda, double **bmu, 
-		       double **Vb, double tau2, void *state)=0;
+  virtual bool DrawNug(unsigned int n, double **X,  double **F, double *Z, 
+		       double *lambda, double **bmu, double **Vb, double tau2, 
+		       double temp, void *state)=0;
   virtual double* Trace(unsigned int *len)=0;
+  virtual char** TraceNames(unsigned int *len)=0;
+  virtual void Init(double *dcorr)=0;
 
   unsigned int N();
   double get_delta_nug(Corr* c1, Corr* c2, void *state);
@@ -117,6 +119,7 @@ class Corr
   void Cov(Corr *cc);
   double log_NugPrior(void);
   void printCorr(unsigned int n);
+  void NugInit(double nug, bool linear);
 };
 
 
@@ -162,6 +165,9 @@ class Corr_Prior
   virtual Base_Prior* BasePrior(void)=0;
   virtual void SetBasePrior(Base_Prior *base_prior)=0;
   virtual double log_HierPrior(void)=0;
+  virtual double* Trace(unsigned int* len)=0;
+  virtual char** TraceNames(unsigned int* len)=0;
+  virtual void Init(double *dhier)=0;
 
   void read_double_nug(double *dprior);
   void read_ctrlfile_nug(std::ifstream* ctrlfile);
@@ -180,6 +186,9 @@ class Corr_Prior
   bool LLM(void);
   double ForceLinear(void);
   void ResetLinear(double gam);
+  double* NugTrace(unsigned int* len);
+  char** NugTraceNames(unsigned int* len);
+  void NugInit(double *dhier);
  
   void PrintNug(FILE *outfile);
 };

@@ -174,8 +174,11 @@ MrGp::~MrGp(void)
  * tree partion
  */
 
-void MrGp::Init(void)
+void MrGp::Init(double *dgp)
 {
+  /* TADDY NEEDS TO WRITE CODE TO SUPPORT THIS */
+  assert(dgp == NULL);
+
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* partition parameters */
@@ -265,7 +268,7 @@ void MrGp::Update(double **X, unsigned int n, unsigned int d, double *Z)
   corr->Invert(n);
   if(((MrGp_Prior*)prior)->BetaPrior() == BMLE) 
     mle_beta(bmle, n, col, F, Z);
-  mean_of_rows(&mean, &Z, 1, n);
+  wmean_of_rows(&mean, &Z, 1, n, NULL);
 }
 
 
@@ -276,7 +279,7 @@ void MrGp::Update(double **X, unsigned int n, unsigned int d, double *Z)
  * (leaf) node based on the current parameter settings
  */
 
-void MrGp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy)
+void MrGp::UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)
 {
   assert(this->XX == NULL);
   if(XX == NULL) { assert(nn == 0); return; }
@@ -311,22 +314,14 @@ void MrGp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2
 
 bool MrGp::Draw(void *state)
 {
-  MrGp_Prior *p = (MrGp_Prior*) prior;
-
-  /* s2 */
-  if(p->BetaPrior() == BFLAT) 
-    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha()-col,p->s2Beta(), state);
-  else      
-    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
-
-  /* if beta draw is bad, just use mean, then zeros */
-  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
-  if(info != 0) b[0] = mean; 
+  /* 
+   * start with draws from the marginal posterior of the corr function 
+   */
   
   /* correlation function */
   int success, i;
   for(i=0; i<5; i++) {
-    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, state);
+    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, state);
     if(success != -1) break;
   }
 
@@ -341,6 +336,23 @@ bool MrGp::Draw(void *state)
     if(xxKxx) { delete_matrix(xxKxx); }
     xxKx = xxKxx = NULL;
   }
+
+  /* 
+   * then go to the others
+   */
+
+  MrGp_Prior *p = (MrGp_Prior*) prior;
+
+  /* s2 */
+  if(p->BetaPrior() == BFLAT) 
+    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha()-col,p->s2Beta(), state);
+  else      
+    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
+
+  /* if beta draw is bad, just use mean, then zeros */
+  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
+  if(info != 0) b[0] = mean; 
+
   
   /* tau2: last becuase of Vb and lambda */
   if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART)
@@ -359,8 +371,10 @@ bool MrGp::Draw(void *state)
  * correct sizes
  */
 
-void MrGp::Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
-		 double **ds2xy, double *ego, bool err, void *state)
+void MrGp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
+		   unsigned int nn, double *zz, double *zzm, double *zzs2,
+		   double **ds2xy, double *improv, double Zmin, bool err, 
+		   void *state)
 {
   assert(this->n == n);
   assert(this->nn == nn);
@@ -370,18 +384,17 @@ void MrGp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
   /* try to make some predictions, but first: choose LLM or MrGp */
   if(corr->Linear())  {
     /* under the limiting linear */
-    predict_full_linear(n, nn, col, z, zz, Z, F, FF, bmu, s2, Vb, ds2xy, ego,
-			corr->Nug(), err, state);
+    /* TADDY: shouldn't this involve all nuggets ? */
+    predict_full_linear(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, 
+			Z, col, F, FF, bmu, s2, Vb, corr->Nug(), Zmin, err, state);
   } else {
     /* full MrGp prediction */
-    warn = mr_predict_full(n, nn, col, z, zz, ds2xy, ego, 
-			   Z, X, F, corr->get_K(), 
-			   corr->get_Ki(), ((MrGp_Prior*)prior)->get_T(), tau2,
+    warn = mr_predict_full(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, 
+			   Z, col, X, F, corr->get_K(), corr->get_Ki(), 
+			   ((MrGp_Prior*)prior)->get_T(), tau2,
 			   XX, FF, xxKx, xxKxx, bmu, s2, corr->Nug(),
-			   ((MrExpSep*)corr)->Nugfine(), 
-			   ((MrExpSep*)corr)->R(),
-			   ((MrExpSep*)corr)->Delta(),
-			   err, state);
+			   ((MrExpSep*)corr)->Nugfine(), ((MrExpSep*)corr)->R(),
+			   ((MrExpSep*)corr)->Delta(), Zmin, err, state);
   }
   
   /* print warnings if there were any */
@@ -455,6 +468,7 @@ void MrGp::Split(Base *l, Base *r, void *state)
 void MrGp::split_tau2(double *tau2_new, void *state)
 {
   int i[2];
+
   MrGp_Prior *p = (MrGp_Prior*) prior;
   /* make the larger partition more likely to get the smaller d */
   propose_indices(i, 0.5, state);
@@ -462,8 +476,7 @@ void MrGp::split_tau2(double *tau2_new, void *state)
   if(p->BetaPrior() == BFLAT || p->BetaPrior() == BCART) 
     tau2_new[i[1]] = tau2;
   else 
-    inv_gamma_mult_gelman(&(tau2_new[i[1]]), p->tau2Alpha()/2, 
-			  p->tau2Beta()/2, 1, state);
+    tau2_new[i[1]] = tau2_prior_rand(p->tau2Alpha()/2, p->tau2Beta()/2, state);
 }
 
 
@@ -486,26 +499,67 @@ double mr_combine_tau2(double l_tau2, double r_tau2, void *state)
 
 
 /*
- * posterior:
+ * Posterior:
+ *
+ * called by tree: for these Gps, the Posterior is the same as
+ * the marginal Likelihood due to the proposals coming from priors 
+ */
+
+double MrGp::Posterior(void)
+{
+  return MarginalLikelihood(itemp);
+}
+
+
+/*
+ * MarginalLikelihood:
  * 
  * computes the marginalized likelihood/posterior for this (leaf) node
  */
 
-double MrGp::Posterior(void)
+double MrGp::MarginalLikelihood(double itemp)
 {
   assert(F != NULL);
    
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* the main posterior for the correlation function */
-  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
-			    tau2, p->s2Alpha(), p->s2Beta());
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), 
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
   if(isinf(post)) warning("inf in posterior");
 #endif
   return post;
+}
+
+/*
+ * Likelihood:
+ * 
+ * computes the MVN (log) likelihood for this (leaf) node
+ */
+
+double MrGp::Likelihood(double itemp)
+{
+  /* sanity check */
+  assert(F != NULL);
+   
+  /* getting the covariance matrix and its determinant */
+  double **Ki;
+  if(corr->Linear()) Ki = NULL;
+  else Ki = corr->get_Ki();
+  double log_det_K = corr->get_log_det_K();
+
+  /* the main posterior for the correlation function */
+  /* Taddy: corr->Nug() is probably not right, should use both nuggets ?? */
+  double llik = gp_lhood(Z, n, col, F, b, s2, Ki, log_det_K, corr->Nug(), itemp);
+
+#ifdef DEBUG
+  if(isnan(llik)) warning("nan in likelihood");
+  if(isinf(llik)) warning("inf in likelihood");
+#endif
+  return llik;
 }
 
 
@@ -516,14 +570,66 @@ double MrGp::Posterior(void)
  * this Gaussian Process model
  */
 
-double MrGp::FullPosterior(void)
+double MrGp::FullPosterior(double itemp)
 {
-  double post = Posterior() + corr->log_Prior();
-  /* add in prior for tau2 */
-  double ptau2;
+  /* calculate the likelihood of the data */
+  double post = Likelihood(itemp);
+
+  /* for adding in priors */
   MrGp_Prior *p = (MrGp_Prior*) prior;
-  invgampdf_log_gelman(&ptau2, &tau2, p->tau2Alpha()/2, p->tau2Beta()/2, 1);
-  post += ptau2;
+
+  /* calculate the prior on the beta regression coeffs */
+  if(p->BetaPrior() == B0 || p->BetaPrior() == BMLE) { 
+    double **V = new_dup_matrix(p->get_T(), col, col);
+    scalev(V[0], col*col, s2*tau2);
+    post += mvnpdf_log(b, p->get_b0(), V, col);
+    delete_matrix(V);
+  }
+  
+  /* add in the correllation prior */
+  post += corr->log_Prior();
+
+  /* add in prior for s2 */
+  post += log_tau2_prior_pdf(s2,  p->s2Alpha()/2, p->s2Beta()/2);
+
+  /* add in prior for tau2 */
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+    post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2, p->tau2Beta()/2);
+  }
+
+  return post;
+}
+
+
+/*
+ * MarginalPosterior:
+ *
+ * return the full marginal posterior (pdf) probability of 
+ * this Gaussian Process model -- i.e., with beta and s2 integrated out
+ */
+
+double MrGp::MarginalPosterior(double itemp)
+{
+  /* for adding in priors */
+  MrGp_Prior *p = (MrGp_Prior*) prior;
+
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(),
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
+
+  /* don't need to include prior for beta, because
+     its alread included in the above calculation */
+  
+  /* add in the correllation prior */
+  post += corr->log_Prior();
+
+ /* don't need to include prior for beta, because
+    its alread included in the above calculation */
+
+   /* add in prior for tau2 */
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+    post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2, p->tau2Beta()/2);
+  }
+
   return post;
 }
 
@@ -537,7 +643,7 @@ double MrGp::FullPosterior(void)
  * prior model.
  */
 
-void MrGp::Compute()
+void MrGp::Compute(void)
 {
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
@@ -559,9 +665,9 @@ void MrGp::Compute()
   
   /* compute the marginal parameters */
   if(corr->Linear())
-    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug());
+    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug(), itemp);
   else
-    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0);
+    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, itemp);
 }
 
 
@@ -683,17 +789,50 @@ void MrGp::X_to_F(unsigned int n, double **X, double **F)
 
 
 /*
+ * TraceNames:
+ *
+ * returns the names of the traces of the parameters recorded in MrGp::Trace()
+ */
+
+char** MrGp::TraceNames(unsigned int* len, bool full)
+{
+  *len = 0;
+  return NULL;
+}
+
+
+/*
  * Trace:
  *
  * returns the trace of the betas, plus the trace of
  * the underlying correllation function 
  */
 
-double* MrGp::Trace(unsigned int* len)
+double* MrGp::Trace(unsigned int* len, bool full)
 {
   *len = 0;
   return NULL;
 }
+
+
+/* 
+ * NewInvTemp:
+ *
+ * set a new inv-temperature, and thence recompute
+ * the necessary marginal parameters which would
+ * change for different temperature
+ */
+
+double MrGp::NewInvTemp(double itemp, bool isleaf)
+{
+  double olditemp = this->itemp;
+  if(this->itemp != itemp) {
+    this->itemp = itemp;
+    if(isleaf) Compute();
+  }
+  return olditemp;
+}
+
 
 
 /*
@@ -758,6 +897,18 @@ MrGp_Prior::MrGp_Prior(unsigned int d) : Base_Prior(d)
     Tchol = new_id_matrix(col);
   }
 }
+
+
+/*
+ * Init
+ *
+ */
+
+void MrGp_Prior::Init(double *hprior)
+{
+  /* FOR TADDY TO FILL IN */
+}
+
 
 
 /* 
@@ -904,7 +1055,7 @@ void MrGp_Prior::read_double(double * dparams)
   /* read starting beta linear regression parameter vector */
   dupv(b, dparams, col);
   /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout); */
+     printVector(b, col, stdout, HUMAN); */
   dparams += col; /* reset */
 
   /* read starting (initial values) parameter */
@@ -1009,7 +1160,7 @@ void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   read_beta(line);
   myprintf(stdout, "starting beta=");
-  printVector(b, col, stdout);
+  printVector(b, col, stdout, HUMAN);
   
   /* read the s2 and tau2 initial parameter from the control file */
   ctrlfile->getline(line, BUFFMAX);
@@ -1162,7 +1313,7 @@ void MrGp_Prior::read_beta(char *line)
   }
   
   /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout) */
+     printVector(b, col, stdout, HUMAN) */
 }
 
 
@@ -1342,7 +1493,7 @@ void MrGp_Prior::Print(FILE* outfile)
 
   /* beta */
   /*myprintf(outfile, "starting b=");
-    printVector(b, col, outfile); */
+    printVector(b, col, outfile, HUMAN); */
 
   /* s2 and tau2 */
   // myprintf(outfile, "starting s2=%g tau2=%g\n", s2, tau2);
@@ -1375,38 +1526,56 @@ void MrGp_Prior::Print(FILE* outfile)
 
 void MrGp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 {
-	double **b, **bmle, *s2, *tau2;
-	Corr **corr;
-	
-	/* allocate temporary parameters for each leaf node */
-	allocate_leaf_params(col, &b, &s2, &tau2, &corr, leaves, numLeaves);
-	if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
-	else bmle = NULL;
+  double **b, **bmle, *s2, *tau2;
+  unsigned int *n;
+  Corr **corr;
+  
+  /* allocate temporary parameters for each leaf node */
+  mr_allocate_leaf_params(col, &b, &s2, &tau2, &n, &corr, leaves, numLeaves);
+  if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
+  else bmle = NULL;
+  
+  /* for use in b0 and Ti draws */
+  
+  /* collect bmle parameters from the leaves */
+  if(beta_prior == BMLE)
+    for(unsigned int i=0; i<numLeaves; i++)
+      dupv(bmle[i], ((MrGp*)(leaves[i]->GetBase()))->Bmle(), col);
+  
+  /* draw hierarchical parameters */
+  if(beta_prior == B0 || beta_prior == BMLE) { 
+    b0_draw(b0, col, numLeaves, b, s2, Ti, tau2, mu, Ci, state);
+    Ti_draw(Ti, col, numLeaves, b, bmle, b0, rho, V, s2, tau2, state);
+    inverse_chol(Ti, (this->T), Tchol, col);
+  }
 
-	/* for use in b0 and Ti draws */
+  /* update the corr and sigma^2 prior params */
 
-	/* collect bmle parameters from the leaves */
-	if(beta_prior == BMLE)
-	  for(unsigned int i=0; i<numLeaves; i++)
-	    dupv(bmle[i], ((MrGp*)(leaves[i]->GetBase()))->Bmle(), col);
-	
-	/* draw hierarchical parameters */
-	if(beta_prior == B0 || beta_prior == BMLE) { 
-		b0_draw(b0, col, numLeaves, b, s2, Ti, tau2, mu, Ci, state);
-		Ti_draw(Ti, col, numLeaves, b, bmle, b0, rho, V, s2, tau2, state);
-		inverse_chol(Ti, (this->T), Tchol, col);
-	}
+  /* tau2 prior first */
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART) {
+    unsigned int *colv = new_ones_uivector(numLeaves, col);
+    sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,tau2_g0_lambda,
+		      colv, state);
+    free(colv);
+  }
 
-	/* update the corr and sigma^2 prior params */
-	if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
-	  sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,tau2_g0_lambda,state);
-	if(!fix_s2)
-	  sigma2_prior_draw(&s2_a0,&s2_g0,s2,numLeaves,s2_a0_lambda,s2_g0_lambda,state);
-	corr_prior->Draw(corr, numLeaves, state);
+  /* subtract col from n for sigma2_prior_draw when using flat BETA prior */
+  if(beta_prior == BFLAT) 
+    for(unsigned int i=0; i<numLeaves; i++) {
+      assert(n[i] > col);
+      n[i] -= col;
+    }
 
-	/* clean up the garbage */
-	deallocate_leaf_params(b, s2, tau2, corr);
-	if(beta_prior == BMLE) delete_matrix(bmle);
+  /* then sigma2 prior */
+  if(!fix_s2)
+    sigma2_prior_draw(&s2_a0,&s2_g0,s2,numLeaves,s2_a0_lambda,s2_g0_lambda,n,state);
+  
+  /* draw for the corr prior */
+  corr_prior->Draw(corr, numLeaves, state);
+  
+  /* clean up the garbage */
+  mr_deallocate_leaf_params(b, s2, tau2, n, corr);
+  if(beta_prior == BMLE) delete_matrix(bmle);
 }
 
 
@@ -1515,14 +1684,15 @@ char* MrGp::State(void)
 
 
 /*
- * allocate_leaf_params:
+ * mr_allocate_leaf_params:
  * 
  * allocate arrays to hold the current parameter
  * values at each leaf (of numLeaves) of the tree
  */
 
-void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, 
-			  double **tau2, Corr ***corr, Tree **leaves, unsigned int numLeaves)
+void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2, 
+			     unsigned int **n, Corr ***corr, Tree **leaves, 
+			     unsigned int numLeaves)
 {
   *b = new_matrix(numLeaves, col);
   *s2 = new_vector(numLeaves);
@@ -1533,23 +1703,26 @@ void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2,
   for(unsigned int i=0; i<numLeaves; i++) {
     MrGp* mrgp = (MrGp*) (leaves[i]->GetBase());
     dupv((*b)[i], mrgp->all_params(&((*s2)[i]), &((*tau2)[i]), &((*corr)[i])), col);
+    (*n)[i] = mrgp->N();
   }
 }
 
 
 /*
- * deallocate_leaf_params:
+ * mr_deallocate_leaf_params:
  * 
  * deallocate arrays used to hold the current parameter
  * values at each leaf of numLeaves
  */
 
-void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
+void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, unsigned int *n,
+			       Corr **corr)
 {
   delete_matrix(b); 
   free(s2); 
   free(tau2); 
   free(corr); 
+  free(n);
 }
 
 
@@ -1580,7 +1753,7 @@ double MrGp_Prior::log_HierPrior(void)
   double lpdf = 0.0;
 
   /* start with the b0 prior, if this part of the model is on */
-  if(beta_prior != BFLAT) {
+  if(beta_prior == B0 || beta_prior == BMLE) { 
 
     /* this is probably overcall because Ci is an ID matrix */
     lpdf += mvnpdf_log_dup(b0, mu, Ci, col);
@@ -1595,7 +1768,7 @@ double MrGp_Prior::log_HierPrior(void)
     lpdf += hier_prior_log(s2_a0, s2_g0, s2_a0_lambda, s2_g0_lambda);
 
   /* hierarchical Linear varaince */
-  if(!fix_tau2)
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
     lpdf += hier_prior_log(tau2_a0, tau2_g0, tau2_a0_lambda, tau2_g0_lambda);
 
   /* then add the part for the correllation function */
@@ -1603,4 +1776,50 @@ double MrGp_Prior::log_HierPrior(void)
 
   /* return the resulting log pdf*/
   return lpdf;
+}
+
+
+
+/*
+ * TraceNames:
+ *
+ * returns the names of the trace of the hierarchal parameters
+ * recorded in MrGp::Trace()
+ */
+
+char** MrGp_Prior::TraceNames(unsigned int* len, bool full)
+{
+  *len = 0;
+  return NULL;
+}
+
+
+/*
+ * Trace:
+ *
+ * returns the trace of the inv-gamma hierarchical variance parameters,
+ * and the hierarchical mean beta0, plus the trace of
+ * the underlying correllation function prior 
+ */
+
+double* MrGp_Prior::Trace(unsigned int* len, bool full)
+{
+  *len = 0;
+  return NULL;
+}
+
+
+/*
+ * GamLin:
+ *
+ * return gamlin[which] from corr_prior; must have
+ * 0 <= which <= 2
+ */
+
+double MrGp_Prior::GamLin(unsigned int which)
+{
+  assert(which < 3);
+
+  double *gamlin = corr_prior->GamLin();
+  return gamlin[which];
 }

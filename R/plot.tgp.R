@@ -24,24 +24,24 @@
 
 "plot.tgp" <-
 function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
-         layout="both", main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", method="loess", gridlen=40, span=0.1, ...)
+         center="mean", layout="both", main=NULL, xlab=NULL, ylab=NULL,
+         zlab=NULL, pc="pc", method="loess", gridlen=40, span=0.1, ...)
 {
   
-  # check for valid layout
+  ## check for valid layout
   if(layout != "both" && layout != "surf" && layout != "as")
     stop("layout argument must be \"both\", \"surf\", or \"as\"");
 
-  # check if 'as' plots can be made
-  if(x$nn == 0 && !is.null(as)) {
+  ## check if 'as' plots can be made
+  if(x$nn == 0 && (!is.null(as) && (as != "s2" && as != "ks2"))) {
      if(layout == "both") {
-	cat("cannot make \"as\" plot since x$nn == 0, resorting to layout = \"surf\"\n")
+	cat("cannot make \"as\" plot since x$nn=0, default to layout = \"surf\"\n")
         layout <- "surf"
      } else if(layout == "as") {
-        stop("cannot make \"as\" plot since x$nn == 0\n")
+        stop("cannot make \"as\" plot since x$nn=0\n")
      }
   }
-  
+
   if(x$d == 1) { # plotting 1d data
 
     if(layout=="both") par(mfrow=c(1,2), bty="n")
@@ -50,19 +50,34 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
     # construct/get graph labels
     if(is.null(xlab)) xlab <- names(x$X)[1]
     if(is.null(ylab)) ylab <- x$response
-    smain <- paste(main, x$response, "mean and error")
 
     # plot means and errors
     if(layout == "both" || layout == "surf") {
+      
+      ## choose mean or median for center
+      center <- tgp.choose.center(x, center)
+      Z.mean <- center$Z;
+      smain <- paste(main, zlab, center$name)
+      X <- center$X[,1]
+      o <- order(X)
+
+      ## plot the data
       plot(x$X[,1],x$Z, xlab=xlab, ylab=ylab, main=smain,...)
-      Xb <- c(x$X[,1],x$XX[,1])
-      o <- order(Xb)
-      Zb.mean <- c(x$Zp.mean, x$ZZ.mean)
-      lines(Xb[o], Zb.mean[o], ...)
-      Zb.q1 <- c(x$Zp.q1, x$ZZ.q1)
-      Zb.q2 <- c(x$Zp.q2, x$ZZ.q2)
-      lines(Xb[o], Zb.q1[o], col=2, ...)
-      lines(Xb[o], Zb.q2[o], col=2, ...)
+
+      # plot the center (mean)
+      lines(X[o], Z.mean[o], ...)
+
+      ## and 0.5 and 0.95 quantiles
+      if(center$name == "kriging mean") {
+        Zb.q1 <- Z.mean + 1.96*sqrt(c(x$Zp.ks2, x$ZZ.ks2))
+        Zb.q2 <- Z.mean - 1.96*sqrt(c(x$Zp.ks2, x$ZZ.ks2))
+      } else {
+        Zb.q1 <- c(x$Zp.q1, x$ZZ.q1)
+        Zb.q2 <- c(x$Zp.q2, x$ZZ.q2)
+      }
+
+      lines(X[o], Zb.q1[o], col=2, ...)
+      lines(X[o], Zb.q2[o], col=2, ...)
       
       # plot parts
       if(pparts & !is.null(x$parts) ) { tgp.plot.parts.1d(x$parts) }
@@ -87,13 +102,13 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
   } else if(x$d >= 2) { # 2-d plotting
     
     if(x$d == 2 || is.null(slice)) { # 2-d slice projection plot
-      tgp.plot.proj(x, pparts=pparts, proj=proj, map=map, as=as, layout=layout,
-                    main=main, xlab=xlab, ylab=ylab, zlab=zlab, pc=pc,
-                    method=method, gridlen=gridlen, span=span, ...)
+      tgp.plot.proj(x, pparts=pparts, proj=proj, map=map, as=as, center=center,
+                    layout=layout, main=main, xlab=xlab, ylab=ylab, zlab=zlab,
+                    pc=pc, method=method, gridlen=gridlen, span=span, ...)
     } else { # 2-d slice plot
-      tgp.plot.slice(x, pparts=pparts, slice=slice, map=map, as=as, layout=layout,
-                     main=main, xlab=xlab, ylab=ylab, zlab=zlab, pc=pc,
-                     method=method, gridlen=gridlen, span=span, ...)
+      tgp.plot.slice(x, pparts=pparts, slice=slice, map=map, as=as, center=center,
+                     layout=layout, main=main, xlab=xlab, ylab=ylab, zlab=zlab,
+                     pc=pc, method=method, gridlen=gridlen, span=span, ...)
     }
   } else { # ERROR
     cat(paste("Sorry: no plot defind for ", x$d, "-d tgp data\n", sep=""))

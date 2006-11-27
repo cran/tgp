@@ -40,5 +40,7 @@ double log_determinant_chol(double **M, unsigned int n);
 double wishpdf_log(double **x, double **S, unsigned int n, unsigned int nu);
 double temper(double p, double temp, int uselog);
 void temper_invgam(double *a, double *b, double temp);
+void temper_gamma(double *a, double *b, double temp);
+void temper_wish(int *rho, double **V, unsigned int col, double temp);
 
 #endif

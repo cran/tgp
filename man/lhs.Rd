@@ -14,15 +14,15 @@ lhs(n, rect)
 \arguments{
   \item{n}{ Size of the LH sample }
   \item{rect}{ Rectangle describing the domain from which the LH sample
-    is to be taken.  The rectangle should have exactly two columns
-    (i.e., \code{dim(rect)[2] = 2}), and number of rows equal to the
+    is to be taken.  The rectangle should be a \code{matrix} or
+    \code{data.frame} with \code{ncol(rect) = 2}, and number of rows equal to the
     dimension of the domain.  For 1-d data, a vector of length 2
     is allowed}
 }
 
 \value{
   The output is a \code{matrix} with \code{n} rows and
-  \code{dim(rect)[1]} columns.  Each of the \code{n} rows represents
+  \code{nrow(rect)} columns.  Each of the \code{n} rows represents
   a sample
 }
 
@@ -49,5 +49,6 @@ plot(s1)
 abline(v=seq(-2,3,length=11), lty=2, col=3)
 abline(h=seq(0.5,0.8,length=11), lty=2, col=3)
 }
+
 \keyword{ design }
 \keyword{ spatial }

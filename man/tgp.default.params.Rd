@@ -3,52 +3,58 @@
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ Default Treed Gaussian Process Model Parameters }
 \description{
-  Construct a default list of parameters to the \code{\link{tgp}} 
-  function-- the generic interface to treed Gaussian process
+  Construct a default list of parameters to the \code{b*} 
+  functions-- the interfaces to treed Gaussian process
   modeling
 }
 \usage{
-tgp.default.params(col, base = "gp")
+tgp.default.params(col, base = "gp", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{col}{ number of input dimensions \code{dim(X)[2]} plus 1 }
+  \item{col}{ number of input dimensions \code{ncol(X)+1}}
   \item{base}{ Base model to be used.  Right now, the only supported
     option is the default, \code{base = "gp"}.  Future versions of
     this package will support other base models.}
+  \item{...}{ These elipses arguments are interpreted as augmentations
+    to the prior specification. You may use these to specify
+    a custom setting of any of default parameters in the output list 
+    detailed below}
 }
 
 \value{
    The output is the following list of \code{params}...
 
    \item{corr}{\code{"expsep"} separable power exponential family
-     correlation model; alternate is \code{"exp"} isotropic power family}
-   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
-     alternates include \code{"b0"} hierarchical Normal prior,
-     \code{"bmle"} empirical Bayes Normal prior, \code{"bcart"}
-     Bayesian linear CART style prior from Chipman et al, \code{"b0tau"}
-     a independent Normal prior with inverse-gamma variance.}
+     correlation model; alternate is \code{"exp"} isotropic power
+     family, or \code{"matern"}}
+   \item{bprior}{Linear (beta) prior, default is \code{"bflat"}
+     which gives an \dQuote{improper} prior which can perform badly 
+     when the signal-to-noise ratio is low.  In these cases the 
+     \dQuote{proper} hierarchical specification \code{"b0"} or independent 
+     \code{"b0tau"} prior may perform better
+     }
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range \eqn{d}{d},
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}
-   \item{beta}{\code{rep(0,d)} starting values for beta linear parameters}
-   \item{tree}{\code{c(0.25,2,10)} tree prior process parameters 
+   \item{beta}{\code{rep(0,col)} starting values for beta linear parameters}
+   \item{tree}{\code{c(0.25,2,min(c(10,col+1)))} tree prior process parameters 
      \code{c(alpha, beta, nmin)} specifying
      \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
 	  \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
-     with zero probability to trees
+	with zero probability given to trees
 	with partitions containing less than \code{nmin} data points}
       \item{s2.p}{\code{c(5,10)} \eqn{\sigma^2}{s2} inverse-gamma prior
 	parameters \code{c(a0, g0)} where \code{g0} is scale (1/rate) parameter}
       \item{tau2.p}{\code{c(5,10)} \eqn{\tau^2}{tau2} inverse-gamma
 	prior parameters \code{c(a0, g0)} where \code{g0} is scale (1/rate) parameter}
-   \item{d.p}{c(1.0,20.0,10.0,10.0) Mixture of gamma prior parameter (initial values) for
+   \item{d.p}{c(1.0,20.0,10.0,10.0) Mixture of gamma prior parameter (initial values)
      for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters}
-   \item{d.p}{code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values) for
+   \item{d.p}{\code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values)
      for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior}
    \item{gamma}{\code{c(10,0.2,10)}
-        Limiting Linear model parameters c(g, t1, t2), with growth parameter \code{g > 0}
+        LLM parameters c(g, t1, t2), with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
 	\code{t1 + t2 <= 1} specifies \deqn{p(b|d)=t_1 +
 	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 +
@@ -56,7 +62,7 @@ tgp.default.params(col, base = "gp")
       \item{d.lam}{\code{"fixed"} Hierarchical exponential distribution
 	parameters to \code{a1}, \code{g1}, \code{a2}, and \code{g2}
 	of the prior distribution for the range parameter \code{d.p};
-	fixed indicates that the hierarchical prior is \dQuote{turned off}}
+	\code{"fixed"} indicates that the hierarchical prior is \dQuote{turned off}}
       \item{nug.lam}{\code{"fixed"} Hierarchical exponential
 	distribution parameters to \code{a1}, \code{g1},
    	\code{a2}, and \code{g2} of the prior distribution for the nug
@@ -66,10 +72,10 @@ tgp.default.params(col, base = "gp")
      \code{a0} and \code{g0} of the prior distribution for the s2
      parameter \code{s2.p}; \code{"fixed"} indicates that the
      hierarchical prior is \dQuote{turned off}}
-   \item{tau2.lam}{\code{c(0.2,10)} Hierarchical exponential distribution prior for 
+   \item{tau2.lam}{\code{c(0.2,0.1)} Hierarchical exponential distribution prior for 
      \code{a0} and \code{g0} of the prior distribution for the s2
      parameter \code{tau2.p}; \code{"fixed"} indicates that the
-     hierarchical prior is dQuote{turned off}}
+     hierarchical prior is \dQuote{turned off}}
 }
 
 
@@ -87,7 +93,8 @@ Available as UCSC Technical Report ams2006-01.
 "See Also" list below and \code{vignette("tgp")}
 }
 
-\seealso{ \code{\link{tgp}} }
+\seealso{ \code{\link{blm}}, \code{\link{btlm}}, \code{\link{bgp}},
+  \code{\link{btgp}}, \code{\link{bgpllm}}, \code{\link{btgpllm}} }
 
 \keyword{ nonparametric }
 \keyword{ smooth }

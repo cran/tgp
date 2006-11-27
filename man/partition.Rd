@@ -14,10 +14,10 @@ partition(X, out)
 
 \arguments{
   \item{X}{\code{data.frame}, \code{matrix}, or vector of inputs \code{X} 
-  with the same dimension of \code{out$X}, i.e., \code{dim(X)[2] == dim(out$X)[2]}}
+  with the same dimension of \code{out$X}, i.e., \code{ncol(X) == ncol(out$X)}}
   \item{out}{ \code{"tgp"}-class object which is the output of one
   	the model functions with tree support (e.g. \code{\link{btgpllm}},
-	\code{\link{btgp}}, \code{\link{btlm}}, or \code{\link{tgp}}) }
+	\code{\link{btgp}}, \code{\link{btlm}}) }
 }
 
 \value{

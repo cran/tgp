@@ -27,8 +27,10 @@ extern "C"
 #include "matrix.h"
 #include "all_draws.h"
 #include "rand_draws.h"
+#include "rand_pdf.h"
 #include "gen_covar.h"
 #include "rhelp.h"
+#include <Rmath.h>
 }
 #include "model.h"
 #include <stdlib.h>
@@ -40,6 +42,8 @@ extern "C"
 #define DNORM true
 #define MEDBUFF 256
 
+#define DBETAA 2.0
+#define DBETAB 1.0
 
 /*
  * Model:
@@ -78,30 +82,12 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
   partitions = 0;
 
   /* null initializations for trace files and data structures*/
-  PARTSFILE = XXTRACEFILE = POSTTRACEFILE = NULL;
+  PARTSFILE = XXTRACEFILE = HIERTRACEFILE = POSTTRACEFILE = NULL;
   lin_area = NULL;
 
-  /* open files for recording traces */
-  if(trace) {
-
-    /* asynchronous writing to files by multiple threads is problematic */
-    if(parallel) {
+  /* asynchronous writing to files by multiple threads is problematic */
+  if(trace && parallel) 
       warning("traces in parallel version of tgp not recommended\n");
-    }
-
-    /* stuff for printing partitions and other to files */
-    PARTSFILE = OpenFile("trace", "parts");
-
-    /* allocate the trace files for printing posteriors*/
-    POSTTRACEFILE = OpenFile("trace", "post");
-    myprintf(POSTTRACEFILE, "height lpost\n");
-
-    /* trace of GP parameters for each XX input location */
-    XXTRACEFILE = OpenFile("trace", "XX");
-  
-    /* traces of aread under the LLM */
-    new_linarea();
-  }
   
   /* initialize tree operation statistics */
   swap = prune = change = grow = swap_try = change_try = grow_try = prune_try = 0;
@@ -109,10 +95,16 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
   /* init best tree posteriors */
   posteriors = new_posteriors();
 
+  /* initialize Zmin to zero -- nothing better */
+  Zmin = 0;
+
   /* make null tree, and then call Model::Init() to make a new
    * one so that when we pass "this" model to tree, it won't be
    * only partially allocated */
   t = NULL;
+
+  /* default inv-temperature is 1.0 */
+  itemps = NULL;
 }
 
 
@@ -125,23 +117,32 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
  * Model::Model() finishes.  So this function has all of the stuff
  * that used to be at the end of Model::Model.  It should always be
  * called immediately after Model::Model()
+ *
+ * the last three arguments (dtree, ncol, dhier) describe a place to
+ * initialize the model at; i.e., what tree (and base model params) and
+ * what base (hierarchal) prior.
  */
 
-void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
+void Model::Init(double **X, unsigned int n, unsigned int d, double *Z, iTemps *itemps,
+		 double *dtree, unsigned int ncol, double *dhier)
 {
   assert(d == this->d);
 
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,iface_rect,NORMSCALE);
-  if(base_prior->BaseModel() == MR_GP) { 
 
-    /* make sure that the first column is still indicates
-       the coarse or fine process */
+  /* read hierarchical parameters from a double-vector */
+  if(dhier) base_prior->Init(dhier);
+
+  /* make sure the first col still indicates the coarse or fine process */
+  if(base_prior->BaseModel() == MR_GP)
     for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
-    // printMatrix(Xc, n, d, stdout);
-  }
 
+  /* handle Z inputs */
   double *Zc = new_dup_vector(Z, n);
+  
+  /* calculate the minimum Z-value for EGO/Improv calculations */
+  Zmin = min(Z, n, &wZmin);
 
   /* compute rectangle */
   Rect* newRect = new_rect(d);
@@ -152,14 +153,20 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z)
     newRect->opr[i] = LEQ;
   }  
 
+  /* set the starting inv-temperature */
+  /* it is important that this happens before new Tree() */
+  this->itemps = new_dup_itemps(itemps);
+
   /* initialization of the (main) tree part of the model */
   int *p = iseq(0,n-1);
   t = new Tree(Xc, p, n, d, Zc, newRect, NULL, this);  
   
-  /* get it ready to go: note that these are out here on purporse; 
-   * don't move them inside the Tree constructor */
-  t->Update();
-  t->Compute();
+  /* initialize the tree mode: i.e., Update() & Compute() */
+  t->Init(dtree, ncol, iface_rect);
+
+  /* initialize the posteriors with the current tree only
+     if that tree was read-in from R; don't record a trace */
+  if(ncol > 0) Posterior(false);
 }
 
 
@@ -182,9 +189,15 @@ Model::~Model(void)
   delete t;
   delete params;
 
+  /* delete the inv-temperature structure */
+  if(itemps) delete_itemps(itemps);
+
   /* delete linarea and posterior */
   if(posteriors) delete_posteriors(posteriors);
-  if(trace) delete_linarea();
+  if(trace && lin_area) {
+    delete_linarea(lin_area);
+    lin_area = NULL;
+  }
 
   /* clean up partsfile */
   if(PARTSFILE) fclose(PARTSFILE);
@@ -194,9 +207,13 @@ Model::~Model(void)
   if(POSTTRACEFILE) fclose(POSTTRACEFILE);
   POSTTRACEFILE = NULL;
 
-  /* clean up trace files */
+  /* clean up XX trace file */
   if(XXTRACEFILE) fclose(XXTRACEFILE);
   XXTRACEFILE = NULL;
+
+  /* clean up trace file for hierarchical params */
+  if(HIERTRACEFILE) fclose(HIERTRACEFILE);
+  HIERTRACEFILE = NULL;
 
   deleteRNGstate(state_to_init_consumer);
 }
@@ -216,25 +233,19 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   if(T>B) { 
     assert(preds); 
     assert(T-B >= preds->mult);
-    assert((T-B) / preds->R == preds->mult);
-  }
-  
-  unsigned int numLeaves = 1;
-  
-  /* TRACE NOTE: this should be moved out of this function, because
-     it could get called multiple times in a single run */
-  
-  /* zero-out the Delta-sigma matrix */
-  if(preds) {
-    if(preds->Ds2xy) zero(preds->Ds2xy, preds->nn, preds->nn);
-    if(preds->ego) zerov(preds->ego, preds->nn);
+    assert(((int)ceil(((double)(T-B))/preds->R)) == (int)preds->mult);
   }
 
+  unsigned int numLeaves = 1;
+  
   /* for helping with periodic interrupts */
   time_t itime = time(NULL);
   
   /* every round, do ... */
   for(int r=0; r<(int)T; r++) {
+
+    /* draw a new temperature */
+    DrawInvTemp(state);
 
     /* propose tree changes */
     bool treemod = false;
@@ -247,13 +258,11 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     int index = (int)r-B;
     bool success = false;
     for(unsigned int i=0; i<numLeaves; i++) {
-      if(! ((r+1)/4==0)) leaves[i]->Compute();
+      // if(! ((r+1)/4==0)) leaves[i]->Compute();
       
-      /* draws for the leaves of the tree */
-      if(!(success = leaves[i]->Draw(state))) break;
-      
-      /* predict for each leaf */
-      predict_master(leaves[i], preds, index, state);
+      /* draws for the parameters at the leaves of the tree */
+      if(!(success = leaves[i]->Draw(state))) break;     
+      /* note that Compte still needs to be called on each leaf, below */
     }
     
     /* check to see if draws from leaves was successful */
@@ -265,32 +274,39 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     }
     
     /* produce leaves for parallel prediction */
+    /* MAYBE this should be moved after/into the preds if-statement below */
     if(parallel && PP && PP->Len() > PPMAX) produce();
     
     /* draw hierarchical parameters */
     base_prior->Draw(leaves, numLeaves, state);
+
+    /* make sure to Compute on leaves now that hier-priors have changed */
+    for(unsigned int i=0; i<numLeaves; i++) leaves[i]->Compute();
     
     /* print progress meter */
     if((r+1) % 1000 == 0 && r>0 && verb >= 1) 
       PrintState(r+1, numLeaves, leaves);
     
     /* process full posterior, and calculate linear area */
-    if(T>B && (r-B) % preds->mult == 0) {
+    if(T>B && (index % preds->mult == 0)) {
 
-      /* keep track of MAP */
-      Posterior();
+      /* keep track of MAP, and calculate importance sampling weight */
+      preds->w[index/preds->mult] = Posterior(true);
+      preds->itemp[index/preds->mult] = get_curr_itemp(itemps);
+
+      /* predict for each leaf */
+      /* make sure to do this after calculation of preds->w[r], above */
+      for(unsigned int i=0; i<numLeaves; i++)
+	predict_master(leaves[i], preds, index, state);
       
       /* keeping track of the average number of partitions */
       double m = ((double)(r-B)) / preds->mult;
       partitions = (m*partitions + numLeaves)/(m+1);
 
-      /* save the traces? */
-      if(trace) {
-	process_linarea(numLeaves, leaves);
-    
-	/* get the leaves of the tree (the partitions) */
-	PrintPartitions();
-      }
+      /* these do nothing when traces=FALSE */
+      ProcessLinarea(leaves, numLeaves);       /* calc area under the LLM */
+      PrintPartitions();                       /* print leaves of the tree */
+      PrintHiertrace();                        /* print hierarchical params */
     }
     
     /* clean up the garbage */
@@ -305,6 +321,10 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   
   /* wait for final predictions to finish */
   if(parallel) wrap_up_predictions(); 
+
+  /* normalize Ds2x, i.e., divide by the total (not within-partition) XX locs */
+  if(preds && preds->Ds2x) 
+    scalev(preds->Ds2x[0], preds->R * preds->nn, 1.0/preds->nn);
 }
 
 
@@ -346,18 +366,22 @@ void Model::Predict(Tree* leaf, Preds* preds, unsigned int index,
 		bool dnorm, void *state)
 {
   /* these declarations just make for shorter function arguments below */
-  double ** ZZ = preds->ZZ; 
-  double ** Zp = preds->Zp; 
-  double ** Ds2xy = preds->Ds2xy;
-  double *ego = preds->ego;
+  double *Zp, *Zpm, *Zps2, *ZZ, *ZZm, *ZZs2, *improv, *Ds2x;
+
+  if(preds->Zp) Zp = preds->Zp[index]; else Zp = NULL;
+  if(preds->Zpm) Zpm = preds->Zpm[index]; else Zpm = NULL;
+  if(preds->Zps2) Zps2 = preds->Zps2[index]; else Zps2 = NULL;
+  if(preds->ZZ) ZZ = preds->ZZ[index]; else ZZ = NULL;
+  if(preds->ZZm) ZZm = preds->ZZm[index]; else ZZm = NULL;
+  if(preds->ZZs2) ZZs2 = preds->ZZs2[index]; else ZZs2 = NULL;
+  if(preds->Ds2x) Ds2x = preds->Ds2x[index]; else Ds2x = NULL;
+  if(preds->improv) improv = preds->improv[index]; else improv = NULL;
 
   /* this is probably the best place for gathering traces about XX */
-  if(ZZ) Trace(leaf, index); /* checks if trace=TRUE inside Trace */
+  if(preds->ZZ) Trace(leaf, index); /* checks if trace=TRUE inside Trace */
 
   /* here is where the actual prediction happens */
-  if(ZZ && Zp) leaf->Predict(ZZ[index], Zp[index], Ds2xy, ego, dnorm, state);
-  else if(Zp) leaf->Predict(NULL, Zp[index], Ds2xy, ego, dnorm, state);
-  else if(ZZ) leaf->Predict(ZZ[index], NULL, Ds2xy, ego, dnorm, state);
+  leaf->Predict(Zp, Zpm, Zps2, ZZ, ZZm, ZZs2, Ds2x, improv, Zmin, wZmin, dnorm, state);
 }
 
 
@@ -472,6 +496,11 @@ bool Model::prune_tree(void *state)
   double pEtaPT = t_alpha * pow(1+depth-1,0.0-(t_beta));
   double diff = 1-pEtaT;
   double pTreeRatio =  (1-pEtaPT) / ((diff*diff) * pEtaPT);
+
+  /* temper the tree probabilities in non-log space ==> uselog=0 */
+  // pTreeRatio = temper(pTreeRatio, get_curr_itemp(itemps), 0);
+
+  /* attempt a prune */
   bool success = nodes[k]->prune((q_bak/q_fwd)*pTreeRatio, state);
   free(nodes);
   
@@ -489,7 +518,6 @@ bool Model::prune_tree(void *state)
 
 bool Model::grow_tree(void *state)
 {
-
   unsigned int len, t_minpart;
   double t_alpha, t_beta;
 
@@ -498,15 +526,38 @@ bool Model::grow_tree(void *state)
 	
   Tree** nodes = t->leavesList(&len);
   
+  /* forward (grow) probability */
   double q_fwd = 1.0/len;
-  double q_bak = 1.0/(t->numPrunable()+1);
-  
+
+  /* choose which leaf to grow on */
   unsigned int k = (unsigned int) sample_seq(0,len-1, state);
+
+  /* calculate the reverse (prune) probability */
+  double q_bak;
+  double num_prune = t->numPrunable();
+
+  /* if the parent is prunable, then we don't change the number
+     of prunable nodes with a grow; otherwise we add one */
+  Tree* parent_k = nodes[k]->Parent();
+  if(parent_k == NULL) {
+    assert(nodes[k]->getDepth() == 0);
+    q_bak = 1.0/(num_prune+1);
+  } else if(parent_k->isPrunable()) {
+    q_bak = 1.0/(num_prune+1);
+  } else {
+    q_bak = 1.0/num_prune;
+  }
+  
   unsigned int depth = nodes[k]->getDepth();
   double pEtaT = t_alpha * pow(1+depth,0.0-(t_beta));
   double pEtaCT = t_alpha * pow(1+depth+1,0.0-(t_beta));
   double diff = 1-pEtaCT;
   double pTreeRatio =  pEtaT * (diff*diff) / (1-pEtaT);
+
+  /* temper the tree probabilities in non-log space ==> uselog=0 */
+  // pTreeRatio = temper(pTreeRatio, get_curr_itemp(itemps), 0);
+
+  /* attempt a grow */
   bool success = nodes[k]->grow((q_bak/q_fwd)*pTreeRatio, state);
   free(nodes);
   
@@ -550,7 +601,7 @@ void Model::cut_branch(void *state)
  */
 
 void Model::cut_root(void)
-{
+{ 
   if(t->isLeaf()) {
     if(verb >= 1)
       myprintf(OUTFILE, "removed 0 leaves from the tree\n");
@@ -559,6 +610,20 @@ void Model::cut_root(void)
       myprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
   }
   t->cut_branch();
+}
+
+
+/*
+ * update_tprobs:
+ *
+ * re-create the prior distribution of the temperature
+ * ladder by dividing by the normalization constant -- returns
+ * a pointer to the new probabilities
+ */
+
+double *Model::update_tprobs(void)
+{
+  return update_prior(itemps);
 }
 
 
@@ -599,10 +664,10 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
 
 void Model::PrintTreeStats(FILE* outfile)
 {
-  if(grow_try > 0) myprintf(outfile, "Grow: %.4g%c, ", (double)grow/grow_try, '%');
-  if(prune_try > 0) myprintf(outfile, "Prune: %.4g%c, ", (double)prune/prune_try, '%');
-  if(change_try > 0) myprintf(outfile, "Change: %.4g%c, ", (double)change/change_try, '%');
-  if(swap_try > 0) myprintf(outfile, "Swap: %.4g%c", (double)swap/swap_try, '%');
+  if(grow_try > 0) myprintf(outfile, "Grow: %.4g%c, ", 100* (double)grow/grow_try, '%');
+  if(prune_try > 0) myprintf(outfile, "Prune: %.4g%c, ", 100* (double)prune/prune_try, '%');
+  if(change_try > 0) myprintf(outfile, "Change: %.4g%c, ", 100* (double)change/change_try, '%');
+  if(swap_try > 0) myprintf(outfile, "Swap: %.4g%c", 100* (double)swap/swap_try, '%');
   if(grow_try > 0) myprintf(outfile, "\n");
 }
 
@@ -643,35 +708,46 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   /* print round information */
 #ifdef PARALLEL
   if(num_produced - num_consumed > 0)
-    myprintf(OUTFILE, "(r,l)=(%d,%d) d=", r, num_produced - num_consumed);
-  else myprintf(OUTFILE, "r=%d d=", r);
+    myprintf(OUTFILE, "(r,l)=(%d,%d)", r, num_produced - num_consumed);
+  else myprintf(OUTFILE, "r=%d", r);
 #else
-  myprintf(OUTFILE, "r=%d d=", r);
+  myprintf(OUTFILE, "r=%d", r);
 #endif
   
-  /* print the (correllation) state (d-values and maybe nugget values) */
-  for(unsigned int i=0; i<numLeaves; i++) {
-    char *state = leaves[i]->State();
-    myprintf(OUTFILE, "%s ", state);
-    free(state);
+  /* this is here so that the progress meter in Krige doesn't need to print
+     the same tree information each time */
+  if(numLeaves > 0) {
+
+    myprintf(OUTFILE, " d=");
+
+    /* print the (correllation) state (d-values and maybe nugget values) */
+    for(unsigned int i=0; i<numLeaves; i++) {
+      char *state = leaves[i]->State();
+      myprintf(OUTFILE, "%s", state);
+      if(i != numLeaves-1) myprintf(OUTFILE, " ");
+      free(state);
+    }
+    
+    /* a delimeter */
+    myprintf(OUTFILE, "; ");
+    
+    /* print maximum posterior prob tree height */
+    Tree *maxt = maxPosteriors();
+    if(maxt) myprintf(OUTFILE, "mh=%d ", maxt->Height());
+    
+    /* print partition sizes */
+    if(numLeaves > 1) myprintf(OUTFILE, "n=(");
+    else myprintf(OUTFILE, "n=");
+    for(unsigned int i=0; i<numLeaves-1; i++)
+      myprintf(OUTFILE, "%d,", leaves[i]->getN());
+    if(numLeaves > 1) myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
+    else myprintf(OUTFILE, "%d", leaves[numLeaves-1]->getN());
+    
   }
-  
-  /* a delimeter */
-  myprintf(OUTFILE, ": ");
-  
-  /* print maximum posterior prob tree height */
-  Tree *maxt = maxPosteriors();
-  if(maxt) myprintf(OUTFILE, "mh=%d ", maxt->Height());
-  
-  /* print partition sizes */
-  if(numLeaves > 1) myprintf(OUTFILE, "n=(");
-  else myprintf(OUTFILE, "n=");
-  for(unsigned int i=0; i<numLeaves-1; i++)
-    myprintf(OUTFILE, "%d ", leaves[i]->getN());
-  if(numLeaves > 1) myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
-  else myprintf(OUTFILE, "%d", leaves[numLeaves-1]->getN());
-  
+
   /* cap off the printing */
+  if(itemps->n > 1 || get_curr_itemp(itemps) != 1.0)
+    myprintf(OUTFILE, " itemp=%g", get_curr_itemp(itemps));
   myprintf(OUTFILE, "\n");
   myflush(OUTFILE);  
 }
@@ -685,103 +761,7 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
 
 Params* Model::get_params()
 {
-	return params;
-}
-
-
-/*
- * new_preds:
- * 	
- * new preds structure makes it easier to pass around
- * the storage for the predictions and the delta
- * statistics
- */
-
-Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, double **rect, 
-		 unsigned int R, bool delta_s2, bool ego, unsigned int every)
-{
-  Preds* preds = (Preds*) malloc(sizeof(struct preds));
-  preds->nn = nn;
-  preds->n = n;
-  preds->d = d;
-  /* Taddy: wouldn't you have to copy the first column of XX here
-     for base ==  MR_GP ?? -- not sure */
-  if(rect) preds->XX = new_normd_matrix(XX,nn,d,rect,NORMSCALE);
-  else preds->XX = new_dup_matrix(XX,nn,d);
-  preds->R = R/every;
-  preds->mult = every;
-  preds->ZZ = new_zero_matrix(preds->R, nn);
-  preds->Zp = new_zero_matrix(preds->R, n);
-  if(delta_s2) preds->Ds2xy = new_zero_matrix(nn, nn);
-  else preds->Ds2xy = NULL;
-  if(ego) preds->ego = new_zero_vector(nn);
-  else preds->ego = NULL;
-  return preds;
-}
-
-/*
- * import_preds:
- * 	
- * copy preds data from from to to
- * in the case of Ds2xy and ego add.
- */
-
-void import_preds(Preds* to, unsigned int where, Preds *from)
-{
-  assert(where >= 0);
-  assert(where <= to->R);
-  assert(where + from->R <= to->R);
-  assert(to->nn == from->nn);
-  assert(to->n == from->n);
-  
-  if(from->ZZ) dupv(to->ZZ[where], from->ZZ[0], from->R * from->nn);
-  if(from->Zp) dupv(to->Zp[where], from->Zp[0], from->R * from->n);
-  if(from->Ds2xy) add_matrix(1.0, to->Ds2xy, 1.0, from->Ds2xy, to->nn, to->nn);
-  if(from->ego) add_vector(1.0, to->ego, 1.0, from->ego, to->nn);
-}
-
-
-/*
- * combine_preds:
- *
- * create and return a new preds structure with the
- * combined contents of preds to and preds from.
- * (to and from must be of same dimenstion, but may
- * be of different size)
- */
-
-Preds *combine_preds(Preds *to, Preds *from)
-{
-  assert(from);
-  if(to == NULL) return from;
-  
-  if(to->nn != from->nn) myprintf(stderr, "to->nn=%d, from->nn=%d\n", to->nn, from->nn);
-  assert(to->nn == from->nn);  
-  assert(to->d == from->d); 
-  assert(to->mult == from->mult);
-  Preds *preds = new_preds(to->XX, to->nn, to->n, to->d, NULL, (to->R + from->R)*to->mult, 
-			   (bool) to->Ds2xy, (bool) to->ego, to->mult);
-  import_preds(preds, 0, to);
-  import_preds(preds, to->R, from);
-  delete_preds(to);
-  delete_preds(from);
-  return preds;
-}
-
-/*
- * delete_preds:
- * 
- * destructor for preds structure
- */
-
-void delete_preds(Preds* preds)
-{
-  if(preds->XX) delete_matrix(preds->XX);
-  if(preds->ZZ) delete_matrix(preds->ZZ);
-  if(preds->Zp) delete_matrix(preds->Zp);
-  if(preds->Ds2xy) delete_matrix(preds->Ds2xy);
-  if(preds->ego) free(preds->ego);
-  free(preds);
+  return params;
 }
 
 
@@ -1088,23 +1068,6 @@ void Model::wrap_up_predictions(void)
 }
 
 
-/* 
- * fill_larg:
- * 
- * full an LArg structure with the parameters to
- * the each_leaf function that will be forked using
- * pthreads
- */
-
-void fill_larg(LArgs* larg, Tree *leaf, Preds* preds, int index, bool dnorm)
-{
-  larg->leaf = leaf;
-  larg->preds = preds;
-  larg->index = index;
-  larg->dnorm = dnorm;
-}
-
-
 /*
  * CopyPartitions:
  * 
@@ -1138,6 +1101,8 @@ void Model::PrintBestPartitions()
 {
   FILE *BESTPARTS;
   Tree *maxt = maxPosteriors();
+  if(!maxt) maxt = t;
+  assert(maxt);
   BESTPARTS = OpenFile("best", "parts");
   print_parts(BESTPARTS, maxt, iface_rect);
   fclose(BESTPARTS);
@@ -1171,12 +1136,19 @@ void print_parts(FILE *PARTSFILE, Tree *t, double** iface_rect)
  * PrintPartitions:
  * 
  * print rectangles covered by leaves of the tree
- * (i.e. the partitions)
+ * (i.e. the partitions) -- do nothing if traces are not
+ * enabled
  */
 
 void Model::PrintPartitions(void)
 {
-  if(!PARTSFILE) return;
+  if(!trace) return;
+
+  if(!PARTSFILE) {
+    /* stuff for printing partitions and other to files */
+    if(params->isTree()) PARTSFILE = OpenFile("trace", "parts");
+    else return;
+  }
   print_parts(PARTSFILE, t, iface_rect);
 }
 
@@ -1236,21 +1208,6 @@ double Model::Partitions(void)
 
 
 /*
- * norm_Ds2xy:
- * 
- * turn a sum into an average,
- * and then take the square root
- */
-
-void norm_Ds2xy(double **Ds2xy, unsigned int R, unsigned int nn)
-{
-  for(unsigned int i=0; i<nn; i++) 
-    for(unsigned int j=0; j<nn; j++) 
-      Ds2xy[i][j] = sqrt(Ds2xy[i][j]/R);
-}
-
-
-/*
  * OpenFile:
  * 
  * open a the file named prefix_trace_Id+1.out
@@ -1274,116 +1231,114 @@ FILE* Model::OpenFile(char *prefix, char *type)
 void Model::PrintTree(FILE* outfile)
 {
   assert(outfile);
-  myprintf(outfile, "rows\t var\t n\t dev\t yval\t splits.cutleft splits.cutright\n");
+  myprintf(outfile, "rows var n dev yval splits.cutleft splits.cutright ");
+
+  /* the following are for printing a higher precision val, and base model
+     parameters for reconstructing trees later */
+  myprintf(outfile, "val ");
+  TraceNames(outfile, true);
   this->t->PrintTree(outfile, iface_rect, NORMSCALE, 1);
+}
+
+
+/* 
+ * DrawInvTemp:
+ *
+ * propose and accept/reject a new annealed importance sampling
+ * inv-temperature 
+ */
+
+void Model::DrawInvTemp(void* state)
+{
+  /* don't do anything if there is only one temperature */
+  if(itemps->n == 1) return;
+
+  /* propose a new inv-temperature */
+  double q_fwd, q_bak;
+  double itemp_new = propose_itemp(itemps, &q_fwd, &q_bak, state);
+
+  /* calculate the posterior probability under both temperatures */
+  //double p = t->FullPosterior(itemp);
+  //double pnew = t->FullPosterior(itemp_new);
+
+  /* calculate the log likelihood under both temperatures */
+  double ll = t->Likelihood(get_curr_itemp(itemps));
+  double llnew = t->Likelihood(itemp_new);
+
+  /* sanity check that the priors don't matter */
+  //double diff_post = pnew - p;
+  double diff_lik =  llnew - ll;
+
+  //myprintf(stderr, "diff=%g\n", diff_post-diff_lik);
+  // assert(diff_post == diff_lik);
+
+  /* add in the priors for the itemp (weights) */
+  double diff_p_itemp = log(get_proposed_prob(itemps)) - log(get_curr_prob(itemps));
+  
+  /* Calcculate the MH acceptance ratio */
+  //double alpha = exp(diff_post + diff_p_itemp)*q_bak/q_fwd;
+  double alpha = exp(diff_lik + diff_p_itemp)*q_bak/q_fwd;
+  double ru = runi(state);
+  if(ru < alpha) {
+    /* myprintf(stdout, "accepted itemp %g -> %g : alpha=%g, ru=%g\n", 
+       itemp_new, get_curr_itemp(itemps), alpha, ru); */
+    keep_new_itemp(itemps, itemp_new);
+    t->NewInvTemp(itemp_new);
+  } else {
+    reject_new_itemp(itemps, itemp_new);
+    /* myprintf(stdout, "rejected itemp %g -> %g : alpha=%g, ru=%g\n", 
+       itemp_new, get_curr_itemp(itemps), alpha, ru); */
+  }
 }
 
 
 /*
  * Posterior:
  *
- * Compute (and return) full posterior of the model.
- * Main component is the tree posterior.
+ * Compute full posterior of the model, tempered and untempered.
  * Record best posterior as a function of tree height.
+ *
+ * The importance sampling weight is returned, the argument indicates
+ * whether or not a trace should be recorded for the current posterior
+ * probability
  */
 
-double Model::Posterior(void)
+double Model::Posterior(bool record)
 {
-  unsigned int t_minpart;
-  double t_alpha, t_beta;
-  
-  /* part of the posterior that has to do with the tree,
-     and the base models at the leaves of the tree */
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart);
-  double full_post = t->FullPosterior(t_alpha, t_beta);
+  /* tempered and untemepered posteriors, from tree on down */
+  double full_post_temp = t->FullPosterior(get_curr_itemp(itemps));
+  double full_post = t->FullPosterior(1.0);
 
   /* include priors hierarchical (linear) params W, B0, etc. 
      and the hierarchical corr prior priors in the Base module */
-  full_post += base_prior->log_HierPrior();
+  double hier_full_post = base_prior->log_HierPrior();
+  full_post_temp += hier_full_post;
+  full_post += hier_full_post;
 
-  /* see if this is the MAP model; if so then record */
+  /* importance sampling weight */
+  double w = exp(full_post - full_post_temp);
+  if(get_curr_itemp(itemps) == 1.0) assert(w==1.0);
+
+  /* see if this is (untempered) the MAP model; if so then record */
   register_posterior(posteriors, t, full_post);
+  // register_posterior(posteriors, t, t->MarginalPosterior(1.0));
 
   /* record the (log) posterior as a function of height */
-  if(trace) {
-    assert(POSTTRACEFILE);
-    myprintf(POSTTRACEFILE, "%d %g\n", t->Height(), full_post);
-  }
-  
-  /* return the value of the posterior density */
-  return full_post;
-}
-
-
-/* 
- * new_posteriors:
- *
- * creade a new Posteriors data structure for 
- * recording the posteriors of different tree depths
- * and initialize
- */
-
-Posteriors* new_posteriors(void)
-{
-  Posteriors* posteriors = (Posteriors*) malloc(sizeof(struct posteriors));
-  posteriors->maxd = 1;
-  posteriors->posts = (double *) malloc(sizeof(double) * posteriors->maxd);
-  posteriors->trees = (Tree **) malloc(sizeof(Tree*) * posteriors->maxd);
-  posteriors->posts[0] = -1e300*1e300;
-  posteriors->trees[0] = NULL;
-  return posteriors;
-}
-
-
-/*
- * delete_posteriors:
- * 
- * free the memory used by the posteriors
- * data structure, and delete the trees saved therein
- */
-
-void delete_posteriors(Posteriors* posteriors)
-{
-  free(posteriors->posts);
-  for(unsigned int i=0; i<posteriors->maxd; i++) {
-    if(posteriors->trees[i]) {
-      delete posteriors->trees[i];
+  if(trace && record) {
+ 
+    /* allocate the trace files for printing posteriors*/   
+    if(!POSTTRACEFILE) {
+       POSTTRACEFILE = OpenFile("trace", "post");
+      myprintf(POSTTRACEFILE, "height lpost itemp tlpost w\n");
     }
+
+    /* write a line to the file recording the trace of the posteriors */
+    myprintf(POSTTRACEFILE, "%d %.20f %.20f %.20f %.20f\n", 
+	     t->Height(), full_post, get_curr_itemp(itemps), full_post_temp, w);
+    myflush(POSTTRACEFILE);
   }
-  free(posteriors->trees);
-  free(posteriors);
-}
 
-
-/*
- * register_posterior:
- *
- * if the posterior for the tree *t is the current largest
- * seen (for its height), then save it in the Posteriors
- * data structure.
- */
-
-void register_posterior(Posteriors* posteriors, Tree* t, double post)
-{
-  unsigned int height = t->Height();
-
-  /* reallocate necessary memory */
-  if(height > posteriors->maxd) {
-    posteriors->posts = (double*) realloc(posteriors->posts, sizeof(double) * height);
-    posteriors->trees = (Tree**) realloc(posteriors->trees, sizeof(Tree*) * height);
-    for(unsigned int i=posteriors->maxd; i<height; i++) {
-      posteriors->posts[i] = -1e300*1e300;
-      posteriors->trees[i] = NULL;
-    }
-    posteriors->maxd = height;
-  }
-  
-  /* if this posterior is better, record it */
-  if(posteriors->posts[height-1] < post) {
-    posteriors->posts[height-1] = post;
-    if(posteriors->trees[height-1]) delete posteriors->trees[height-1];
-    posteriors->trees[height-1] = new Tree(t);
-  }
+  return w;
 }
 
 
@@ -1398,23 +1353,46 @@ void register_posterior(Posteriors* posteriors, Tree* t, double post)
 void Model::PrintPosteriors(void)
 {
   char filestr[MEDBUFF];
+
+  /* open a file to write the posterior information to */
   sprintf(filestr, "tree_m%d_posts.out", Id);
   FILE *postsfile = fopen(filestr, "w");
-  myprintf(postsfile, "height\t lpost\n");
+  myprintf(postsfile, "height lpost ");
+  PriorTraceNames(postsfile, true);
 
-  unsigned int t_minpart;
+  /* unsigned int t_minpart;
   double t_alpha, t_beta;
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart);
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart); */
   
   for(unsigned int i=0; i<posteriors->maxd; i++) {
     if(posteriors->trees[i] == NULL) continue;
+
+    /* open a file to write the tree to */
     sprintf(filestr, "tree_m%d_%d.out", Id, i+1);
     FILE *treefile = fopen(filestr, "w");
-    myprintf(treefile, "rows\t var\t n\t dev\t yval\t splits.cutleft splits.cutright\n");
+
+    /* add maptree-relevant headers */
+    myprintf(treefile, "rows var n dev yval splits.cutleft splits.cutright ");
+
+  /* the following are for printing a higher precision val, and base model
+     parameters for reconstructing trees later */
+    myprintf(treefile, "val ");
+
+    /* add parameter trace relevant headers */
+    TraceNames(treefile, true);
+
+    /* write the tree and trace parameters */
     posteriors->trees[i]->PrintTree(treefile, iface_rect, NORMSCALE, 1);
     fclose(treefile);
-    myprintf(postsfile, "%d\t %g\n", posteriors->trees[i]->Height(), 
-	     posteriors->trees[i]->FullPosterior(t_alpha, t_beta));
+
+    /* add information about height and posteriors to file */
+    myprintf(postsfile, "%d %g ", posteriors->trees[i]->Height(), posteriors->posts[i]);
+    
+    /* add prior parameter trace information to the posts file */
+    unsigned int tlen;
+    double *trace = (posteriors->trees[i]->GetBasePrior())->Trace(&tlen, true);
+    printVector(trace, tlen, postsfile, MACHINE);
+    free(trace);
   }
   fclose(postsfile);
 }
@@ -1483,133 +1461,6 @@ void Model::ResetLinear(double gam)
   base_prior->ResetLinear(gam);
 }
 
-/*
- * new_linarea:
- *
- * allocate memory for the linarea structure
- * that keep tabs on how much of the input domain
- * is under the linear model
- */
-
-void Model::new_linarea(void)
-{
-  assert(lin_area == NULL);
-  lin_area = (Linarea*) malloc(sizeof(struct linarea));
-  lin_area->total = 1000;
-  lin_area->ba = new_zero_vector(lin_area->total);
-  lin_area->la = new_zero_vector(lin_area->total);
-  lin_area->counts = (unsigned int *) malloc(sizeof(unsigned int) * lin_area->total);
-  reset_linarea();
-}
-
-
-/*
- * new_linarea:
- *
- * reallocate memory for the linarea structure
- * that keep tabs on how much of the input domain
- * is under the linear model
- */
-
-void Model::realloc_linarea(void)
-{
-  assert(lin_area != NULL);
-  lin_area->total *= 2;
-  lin_area->ba = 
-    (double*) realloc(lin_area->ba, sizeof(double) * lin_area->total);
-  lin_area->la = 
-    (double*) realloc(lin_area->la, sizeof(double) * lin_area->total);
-  lin_area->counts = (unsigned int *) 
-    realloc(lin_area->counts,sizeof(unsigned int)*lin_area->total);
-  for(unsigned int i=lin_area->size; i<lin_area->total; i++) {
-    lin_area->ba[i] = 0;
-    lin_area->la[i] = 0;
-    lin_area->counts[i] = 0;
-  }
-}
-
-
-/*
- * delete_linarea:
- *
- * free the linarea data structure and
- * all of its fields
- */
-
-void Model::delete_linarea(void)
-{
-  assert(lin_area);
-  free(lin_area->ba);
-  free(lin_area->la);
-  free(lin_area->counts);
-  free(lin_area);
-  lin_area = NULL;
-}
-
-
-/*
- * reset_linearea:
- *
- * re-initialize the lineara data structure
- */
-
-void Model::reset_linarea(void)
-{
-  for(unsigned int i=0; i<lin_area->total; i++) lin_area->counts[i] = 0;
-  zerov(lin_area->ba, lin_area->total);
-  zerov(lin_area->la, lin_area->total);
-  lin_area->size = 0;
-}
-
-
-/*
- * process_linarea:
- *
- * tabulate the area of the leaves which are under the 
- * linear model (and the gp model) as well as the count of linear
- * boolean for each dimension
- */
-
-void Model::process_linarea(unsigned int numLeaves, Tree** leaves)
-{
-  if(lin_area->size + 1 > lin_area->total) realloc_linarea();
-  double ba = 0.0;
-  double la = 0.0;
-  unsigned int sumi = 0;
-  for(unsigned int i=0; i<numLeaves; i++) {
-    double area;
-    unsigned int sum_b;
-    bool linear = leaves[i]->Linarea(&sum_b, &area);
-    la += area * linear;
-    ba += sum_b * area;
-    sumi += sum_b;
-  }
-  lin_area->ba[lin_area->size] = ba;
-  lin_area->la[lin_area->size] = la;
-  lin_area->counts[lin_area->size] = sumi;
-  (lin_area->size)++;
-}
-
-
-/*
- * print_linarea
- *
- * print linarea stats to the outfile
- * doesn't do anything if linarea is false
- */
-
-void Model::print_linarea(void)
-{
-  if(!trace) return;
-  FILE *outfile = OpenFile("trace", "linarea");
-  myprintf(outfile, "count\t la ba\n");
-  for(unsigned int i=0; i<lin_area->size; i++) {
-    myprintf(outfile, "%d\t %g %g\n", 
-	     lin_area->counts[i], lin_area->la[i], lin_area->ba[i]);
-  }
-  fclose(outfile);
-}
-
 
 /*
  * Linburn:
@@ -1624,7 +1475,7 @@ void Model::Linburn(unsigned int B, void *state)
 {
   double gam = Linear();
   if(gam) {
-    myprintf(OUTFILE, "\nlinear model init:\n");
+    if(verb > 0) myprintf(OUTFILE, "\nlinear model init:\n");
     rounds(NULL, B, B, state);
     ResetLinear(gam);
   }
@@ -1639,7 +1490,7 @@ void Model::Linburn(unsigned int B, void *state)
 
 void Model::Burnin(unsigned int B, void *state)
 {
-  if(verb >= 1) myprintf(OUTFILE, "\nburn in:\n");
+  if(verb >= 1 && B>0) myprintf(OUTFILE, "\nburn in:\n");
   rounds(NULL, B, B, state);
 }
 
@@ -1653,13 +1504,76 @@ void Model::Burnin(unsigned int B, void *state)
 
 void Model::Sample(Preds *preds, unsigned int R, void *state)
 {
-  if(verb >= 1) {
-    myprintf(OUTFILE, "\nObtaining samples (nn=%d pred locs):", preds->nn);
-    if(trace) myprintf(OUTFILE, " [with param traces]");
+  if(R == 0) return;
+
+  if(verb >= 1 && R>0) {
+    myprintf(OUTFILE, "\nSampling @ nn=%d pred locs:", preds->nn);
+    if(trace) myprintf(OUTFILE, " [with traces]");
     myprintf(OUTFILE, "\n");
   }
 		       
   rounds(preds, 0, R, state);
+}
+
+
+/*
+ * Krige:
+ *
+ * simply predict in rounds conditional on the (MAP) parameters theta;
+ * i.e., don't draw base (GP) parameters or modify tree
+ */
+
+void Model::Krige(Preds *preds, unsigned int R, void *state)
+{
+  if(R == 0) return;
+  assert(preds);
+
+  if(verb >=1) myprintf(OUTFILE, "\nKriging @ nn=%d predictive locs:\n", preds->nn);
+
+  /* get leaves of the tree */
+  unsigned int numLeaves;
+  Tree **leaves = t->leavesList(&numLeaves);
+  assert(numLeaves > 0);
+
+  /* for helping with periodic interrupts */
+  time_t itime = time(NULL);
+
+  for(unsigned int r=0; r<R; r++) {
+
+    if((r+1) % 1000 == 0 && r>0 && verb >= 1) 
+      PrintState(r+1, 0, NULL);
+
+    /* produce leaves for parallel prediction */
+    if(parallel && PP && PP->Len() > PPMAX) produce();
+
+  /* process full posterior, and calculate linear area */
+    if(r % preds->mult == 0) {
+
+      /* keep track of MAP, and calculate importance sampling weight */
+      preds->w[r/preds->mult] = 1.0; //Posterior(false);
+      preds->itemp[r/preds->mult] = get_curr_itemp(itemps);
+
+      /* predict for each leaf */
+      /* make sure to do this after calculation of preds->w[r], above */
+      for(unsigned int i=0; i<numLeaves; i++)
+	predict_master(leaves[i], preds, r, state);      
+    }
+
+    /* periodically check R for interrupts and flush console every second */
+    itime = my_r_process_events(itime);
+  }
+
+  /* clean up */
+  free(leaves);
+  
+  /* send a full set of leaves out for prediction */
+  if(parallel && PP) produce();
+  
+  /* wait for final predictions to finish */
+  if(parallel) wrap_up_predictions(); 
+
+  /* normalize Ds2x, i.e., divide by the total (not within-partition) XX locs */
+  if(preds->Ds2x) scalev(preds->Ds2x[0], preds->R * preds->nn, 1.0/preds->nn);
 }
 
 
@@ -1672,7 +1586,53 @@ void Model::Sample(Preds *preds, unsigned int R, void *state)
 
 void Model::Print(void)
 {
+  myprintf(stderr, "anneal itemp = %g\n", get_curr_itemp(itemps));
+  params->Print(OUTFILE);
   base_prior->Print(OUTFILE);
+}
+
+
+/*
+ * TraceNames
+ *
+ * write the names of the tree (or base) model traces
+ * to the specified outfile.  This function does not check
+ * that trace = TRUE since it is also used by PrintTree()
+ */
+
+void Model::TraceNames(FILE * outfile, bool full)
+{
+  assert(outfile);
+  unsigned int len;
+  char **trace_names = t->TraceNames(&len, full);
+  for(unsigned int i=0; i<len; i++) {
+    myprintf(outfile, "%s ", trace_names[i]);
+    free(trace_names[i]);
+  }
+  myprintf(outfile, "\n");
+  free(trace_names);
+}
+
+
+/*
+ * PriorTraceNames
+ *
+ * write the names of the prior (base) model traces
+ * to the specified outfile.  This function does not check
+ * that trace = TRUE.
+ */
+
+void Model::PriorTraceNames(FILE * outfile, bool full)
+{
+  assert(outfile);
+  unsigned int len;
+  char **trace_names = base_prior->TraceNames(&len, full);
+  for(unsigned int i=0; i<len; i++) {
+    myprintf(outfile, "%s ", trace_names[i]);
+    free(trace_names[i]);
+  }
+  myprintf(outfile, "\n");
+  free(trace_names);
 }
 
 
@@ -1695,12 +1655,98 @@ void Model::Trace(Tree *leaf, unsigned int index)
   pthread_mutex_lock(l_trace_mut);
 #endif
 
+  /* open the trace file and write the header */
+  if(!XXTRACEFILE) {
+    /* trace of GP parameters for each XX input location */
+    XXTRACEFILE = OpenFile("trace", "XX");
+    myprintf(XXTRACEFILE, "ppi index ");
+    TraceNames(XXTRACEFILE, false);
+  }
+
   /* actual printing of trace for a tree leaf */
   leaf->Trace(index, XXTRACEFILE);
+  myflush(XXTRACEFILE);
 
   /* unlock */
 #ifdef PARALLEL
   pthread_mutex_unlock(l_trace_mut);
 #endif
 
+}
+
+
+/* 
+ * Temp:
+ *
+ * Return the importance annealing temperature
+ * known by the model 
+ */
+
+double Model::iTemp(void)
+{
+  return get_curr_itemp(itemps);
+}
+
+
+/* 
+ * PrintLinarea:
+ *
+ * if traces were recorded, output the trace of the linareas
+ * to an optfile opened just for the occasion
+ */
+
+void Model::PrintLinarea(void)
+{
+  if(!trace || !lin_area) return;
+  FILE *outfile = OpenFile("trace", "linarea");
+  print_linarea(lin_area, outfile);
+}
+
+
+/*
+ * PrintHiertrace:
+ *
+ * collect the traces of the hiererchical base paameters
+ * and append them to the trace file -- if unopened, then
+ * open the file first -- do nothing if trace=FALSE
+ */
+
+void Model::PrintHiertrace(void)
+{
+  if(!trace) return;
+
+  /* append to traces of hierarchical parameters */
+  /* trace of GP parameters for each XX input location */
+  if(!HIERTRACEFILE) {
+    HIERTRACEFILE = OpenFile("trace", "hier");
+    PriorTraceNames(HIERTRACEFILE, false);
+  }
+  
+  unsigned int tlen;
+  double *trace = base_prior->Trace(&tlen, false);
+  printVector(trace, tlen, HIERTRACEFILE, MACHINE);
+  free(trace);
+}
+
+
+/*
+ * ProcessLinarea:
+ *
+ * collect the linarea statistics over time -- if
+ * not allocated already, allocate lin_area;  should only
+ * be doing this if trace=TRUE and we are not forcing the
+ * LLM
+ */
+
+void Model::ProcessLinarea(Tree **leaves, unsigned int numLeaves)
+{
+  if(!trace) return;
+
+  /* traces of aread under the LLM */
+  if(lin_area == NULL && base_prior->GamLin(0) > 0) {
+    lin_area = new_linarea();
+  }
+  
+  if(lin_area) process_linarea(lin_area, numLeaves, leaves);
+  else return;
 }

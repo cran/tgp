@@ -15,12 +15,12 @@ dopt.gp(nn, X=NULL, Xcand)
 \arguments{
   \item{nn}{ Number of new points in the design. Must
   	be less than or equal to the number of candidates contained in
-	\code{Xcand}, i.e., \code{nn <= dim(Xcand)[1]}}
+	\code{Xcand}, i.e., \code{nn <= nrow(Xcand)}}
   \item{X}{ \code{data.frame}, \code{matrix} or vector of input locations
   	which are forced into (already in) the design}
   \item{Xcand}{ \code{data.frame}, \code{matrix} or vector of candidates 
   	from which new design points are subsampled.  Must have the same
-	dimension as \code{X}, i.e., \code{dim(X)[2] == dim(Xcand)[2]}}
+	dimension as \code{X}, i.e., \code{ncol(X) == ncol(Xcand)}}
 }
 \details{
   Design is based on a stationary Gaussian process model with stationary isotropic
@@ -36,11 +36,8 @@ dopt.gp(nn, X=NULL, Xcand)
   used to find the optimal design.  The chosen design locations can be 
   accessed as list members \code{XX} or equivalently \code{Xcand[fi,]}.
 
-  \item{state}{unsigned short[3] random number seed to C}
   \item{X}{Input argument: \code{data.frame} of inputs \code{X}, can be \code{NULL}}
   \item{nn}{Input argument: number new points in the design}
-  \item{n}{Number of rows in \code{X}, i.e., \code{n = dim(X)[1]}}
-  \item{m}{Number of cols in \code{X}, i.e., \code{m = dim(X)[2]}}
   \item{Xcand}{Input argument: \code{data.frame} of candidate locations \code{Xcand}}
   \item{ncand}{Number of rows in \code{Xcand}, i.e., \code{nncand = dim(Xcand)[1]}}
   \item{fi}{Vector of length \code{nn}  describing the selected new design locations

@@ -18,10 +18,10 @@
   }
 }
 \details{
-  The response is evaluated as 
+  The true response is evaluated as 
   \deqn{Z(X)=x_1 * \exp(x_1^2-x_2^2).}{Z(X) = X1 * exp(-X1^2 -X2^2).}
   Zero-mean normal noise
-  with \code{sd=0.001} has been added to the response
+  with \code{sd=0.001} has been added to the true response
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
@@ -37,7 +37,7 @@ Available as UCSC Technical Report ams2006-01.
 \note{This data is used in the examples of the functions listed below in
 the \dQuote{See Also} section via the \code{\link{exp2d.rand}} function}
 
-\seealso{ \code{\link{exp2d.rand}}, \code{exp2d.Z}, \code{\link{tgp}},
+\seealso{ \code{\link{exp2d.rand}}, \code{\link{exp2d.Z}},
   \code{\link{btgp}}, and other \code{b*} functions}
 
 \keyword{datasets}

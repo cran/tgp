@@ -41,6 +41,13 @@
 #define LINEAR(gamma, min, max, d) min + max / (1.0 + exp(0.0-gamma*(d-0.5)));
 #define NUGMIN 1e-10
 
+/*
+ * mle_beta:
+ *
+ * compute the maximum likelihood estimate for the regression
+ * coefficnents, beta; for use in the emperical Bayes BMLE
+ * model
+ */
 
 void mle_beta(mle, n, col, F, Z)
 unsigned int n, col;
@@ -89,35 +96,38 @@ double **F;
  * Ti[col][col], Vb[col][col];
  */
 
-void compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug)
+void compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp)
 unsigned int n, col;
 double *Z, *b0, *b, *TiB0, *by;
 double **F, **Ti, **Vb;
-double tau2, nug;
+double tau2, nug, itemp;
 {
-  double **aux1;
+  double **Vbi;
   int info;
+
+  /* sanity check for inv-temperature */
+  assert(itemp >= 0);
 	
   /* zero out by and b */
   zerov(by, col); zerov(b, col);
   
-  /* aux1 = F'F/(1+g) + Ti/tau2 */
-  aux1 = new_dup_matrix(Ti, col, col);
+  /* aux1 = F'F/(1+g) + Ti/tau2; with tempering aux1 = itemp * F'F/(1+g) + Ti/tau2 */
+  Vbi = new_dup_matrix(Ti, col, col);
   linalg_dgemm(CblasTrans,CblasNoTrans, col,col,n,
-	       1.0/(1.0+nug),F,n,F,n,1.0/tau2,aux1,col);
-  
-  /* Vb = inv(F'*F + Ti/tau2) */
+	       itemp/(1.0+nug),F,n,F,n,1.0/tau2,Vbi,col);
+
+  /* Vb = inv(F'*F + Ti/tau2); is inv(aux1) */
   id(Vb, col);
-  info = linalg_dgesv(col, aux1, Vb);
-  delete_matrix(aux1);
+  info = linalg_dgesv(col, Vbi, Vb);
+  delete_matrix(Vbi);
   
-  /* by = Z*F/(1+g) + b0'*Ti/tau2 */
+  /* by = Z*F/(1+g) + b0'*Ti/tau2; with tempering by = itemp*Z*F/(1+g) + b0'*Ti/tau2 */
   /* first set: by = b0'*Ti */
   linalg_dsymv(col,1.0,Ti,col,b0,1,0.0,by,1);
   /* save the result for later */
   dupv(TiB0, by, col);
   /* use vector stuff for the last part */
-  linalg_dgemv(CblasTrans,n,col,1.0/(1.0+nug),F,n,Z,1,1.0/tau2,by,1);
+  linalg_dgemv(CblasTrans,n,col,itemp/(1.0+nug),F,n,Z,1,1.0/tau2,by,1);
   
   /* b = by*Vb */
   linalg_dsymv(col,1.0,Vb,col,by,1,0.0,b,1);
@@ -135,29 +145,32 @@ double tau2, nug;
  * Z[n], b0[col], b[col], F[col][n], Ki[n][n], Ti[col][col], Vb[col][col];
  */
 
-double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, nug)
+double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, nug, itemp)
 unsigned int n, col;
 double *Z, *b0, *b;
 double **F, **Ti, **Vb;
-double tau2;
-double nug;
+double tau2, nug, itemp;
 {
   /*double TiB0[col], KiZ[n], by[col];*/
   double *TiB0, *by;
   double lambda, ZZ, BVBiB, b0Tib0;
   
+  /* sanity check for inv-temperature */
+  assert(itemp >= 0);
+
   /* init alloc */
   TiB0 = new_vector(col);
   by = new_vector(col);
   
-  compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug);
+  compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp);
   
   /* lambda = Z*Z' + b0'*Ti*b0 - B'*VBi*B; */
   /* as performed in many steps below */
   
   /* ZZ = Z'Z/(1+g) */
   ZZ = linalg_ddot(n,Z,1,Z,1);
-  ZZ = ZZ / (1.0 + nug);
+  /* noK ==> K = 1+g, and tempered K is (1+g)/itemp */
+  ZZ = itemp * ZZ / (1.0 + nug);
   
   /* Tib0 = by ... we already did this above */
   /* b0Tib0 = b0 * by / tau2 */
@@ -171,6 +184,13 @@ double nug;
   /* now for lambda */
   lambda = ZZ + b0Tib0 - BVBiB;
   
+  /*myprintf(stderr, "noK: n=%d, itemp=%g, ZZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
+    n, itemp, ZZ, tau2, b0Tib0, BVBiB, lambda);*/
+
+  /* this is here because when itemp=0 lambda should be 0, but
+     sometimes there are numerical issues where we get e^-17 */
+  if(itemp == 0.0) lambda = 0.0;
+
   return lambda;
 }
 
@@ -186,32 +206,35 @@ double nug;
  * Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0)
+void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
 unsigned int n, col;
 double *Z, *b0, *b, *TiB0, *by;
 double **F, **Ki, **Ti, **Vb;
-double tau2;
+double tau2, itemp;
 {
-  double **KiF, **aux1;
+  double **KiF, **Vbi;
   int info;
 
-  /* KiF = Ki * F */
+  /* sanity check for temperature */
+  assert(itemp >= 0);
+
+  /* KiF = Ki * F; when tempered KiF = itemp * Ki * F */
   KiF = new_zero_matrix(col, n);
-  linalg_dsymm(CblasLeft,n,col,1.0,Ki,n,F,n,0.0,KiF,n);
+  linalg_dsymm(CblasLeft,n,col,itemp,Ki,n,F,n,0.0,KiF,n);
   
   /* aux1 = F'*KiF + Ti/tau2 */
-  aux1 = new_dup_matrix(Ti, col, col);
+  Vbi = new_dup_matrix(Ti, col, col);
   linalg_dgemm(CblasTrans,CblasNoTrans,col,col,n,
-	       1.0,F,n,KiF,n,1.0/tau2,aux1,col);
+	       1.0,F,n,KiF,n,1.0/tau2,Vbi,col);
   
   /* Vb = inv(F'*KiF + Ti/tau2) */
   id(Vb, col);
-  info = linalg_dgesv(col, aux1, Vb);
-  delete_matrix(aux1);
+  info = linalg_dgesv(col, Vbi, Vb);
+  delete_matrix(Vbi);
   
   /* by = Z*KiF + b0'*Ti/tau2 */
   /* first set: by = b0'*Ti */
-  zerov(by, col); 
+  zerov(by, col);
   linalg_dsymv(col,1.0,Ti,col,b0,1,0.0,by,1);
   /* save the result for later */
   dupv(TiB0, by, col);
@@ -235,35 +258,38 @@ double tau2;
  * Z[n], b0[col], b[col]; F[col][n], Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0)
+double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
 unsigned int n, col;
 double *Z, *b0, *b;
 double **F, **Ki, **Ti, **Vb;
-double tau2;
+double tau2, itemp;
 {
   /*double TiB0[col], KiZ[n], by[col];*/
   double *TiB0, *KiZ, *by;
   double lambda, ZKiZ, BVBiB, b0Tib0;
   
+  /* sanity check for inv-temperature */
+  assert(itemp >= 0);
+
   /* init alloc */
   TiB0 = new_vector(col);
   KiZ = new_vector(n);
   by = new_vector(col);
   
-  compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0);
+  compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, itemp);
   
   /* lambda = Z*Ki*Z' + b0'*Ti*b0 - B'*VBi*B; */
   /* as performed in many steps below */
   
-  /* KiZ = Ki * Z */
+  /* KiZ = Ki * Z; when tempered KiZ = itemp * Ki * Z */
   zerov(KiZ, n);
-  linalg_dsymv(n,1.0,Ki,n,Z,1,0.0,KiZ,1);
+  linalg_dsymv(n,itemp,Ki,n,Z,1,0.0,KiZ,1);
   /* ZKiZ = Z * KiZ */
   ZKiZ = linalg_ddot(n,Z,1,KiZ,1);
   free(KiZ);
   
   /* Tib0 = by ... we already did this above */
-  /* b0Tib0 = b0 * by */
+  /* b0Tib0 = b0 * Tib0 */
   b0Tib0 = linalg_ddot(col, b0, 1, TiB0, 1);
   free(TiB0);
   
@@ -273,10 +299,16 @@ double tau2;
   
   /* now for lambda */
   lambda = ZKiZ + b0Tib0/tau2 - BVBiB;
-  
+
+  /* myprintf(stderr, "n=%d, itemp=%g, ZKiZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
+    n, itemp, ZKiZ, tau2, b0Tib0/tau2, BVBiB, lambda); */
+
+  /* this is here because when itemp=0 lambda should be 0, but
+     sometimes there are numerical issues where we get e^-17 */
+  if(itemp == 0.0) lambda = 0.0;
+
   return lambda;
 }
-
 
 
 /*
@@ -298,7 +330,7 @@ void *state;
   /*double V[col][col];*/
   double **V;
   int info;
-  
+ 
   /* compute s2*Vb */
   V = new_matrix(col, col);
   /*for(i=0; i<col; i++) for(j=0; j<col; j++) V[i][j] = s2*Vb[i][j];*/
@@ -328,11 +360,11 @@ void *state;
  * Z[n], b0[col], b[col], F[col][n], Ti[col][col];
  */
 
-void beta_draw_noK(b, n, col, F, Z, s2, Ti, tau2, b0, nug, state)
+void beta_draw_noK(b, n, col, F, Z, s2, Ti, tau2, b0, nug, itemp, state)
 unsigned int n, col;
 double *Z, *b0, *b; 
 double **F, **Ti;
-double s2, tau2;
+double s2, tau2, itemp;
 double nug;
 void *state;
 {
@@ -343,13 +375,16 @@ void *state;
   double *mu, *by, *TiB0;
   int info;
   
+  /* allocate some memory */
   Vb = new_matrix(col,col);
   mu = new_vector(col);
   by = new_vector(col);
   TiB0 = new_vector(col);
-  compute_b_and_Vb_noK(Vb, mu, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug);
+
+  /* compute b and Vb without K*/
+  compute_b_and_Vb_noK(Vb, mu, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp);
   free(TiB0);
-  
+
   /* compute s2*Vb */
   /*for(i=0; i<col; i++) for(j=0; j<col; j++) Vb[i][j] = s2*Vb[i][j];*/
   for(i=0; i<col; i++) for(j=0; j<=i; j++) Vb[i][j] = s2*Vb[i][j];
@@ -375,29 +410,31 @@ void *state;
  * Z[n], b0[col], F[col][n], Ti[col][col];
  */
 
-double sigma2_draw_no_b_noK(n, col, F, Z, Ti, tau2, b0, alpha0, beta0, state)
+double sigma2_draw_no_b_noK(n, col, F, Z, Ti, tau2, b0, alpha0, beta0, 
+			    itemp, state)
 unsigned int n, col;
 double *Z, *b0; 
 double **F, **Ti;
-double alpha0, beta0, tau2;
+double alpha0, beta0, tau2, itemp;
 void *state;
 {
   double **Vb;
   double *b;
   double alpha, g, lambda, x;
-  
+
+  /* compute lambda and Vb */
   Vb = new_matrix(col, col);
   b = new_vector(col);
-  lambda = compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, 1.0);
+  lambda = compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, 1.0, itemp);
   delete_matrix(Vb);
   free(b);
   
   /* alpha = (alpha0 + length(Z) + length(b))/2; */
   alpha = (alpha0 + n)/2;
-  
+
   /* g = (gamma0 + BLAH)/2; */
   g = (beta0 + lambda)/2;
-  
+
   /* s2 = 1/gamrnd(alpha, 1/g, 1) */
   /* return 1.0 / (1.0/g * rgamma(alpha)); */
   inv_gamma_mult_gelman(&x, alpha, g, 1, state);
@@ -417,7 +454,7 @@ double alpha0, beta0, lambda;
 void *state;
 {
   double alpha, g, x;
-
+  
   /* alpha = (alpha0 + length(Z) + length(b))/2; */
   alpha = (alpha0 + n)/2;
 
@@ -456,7 +493,7 @@ void *state;
   /*double bmb0[col], Tibmb0[col];*/
   double *bmb0, *Tibmb0;
   double right, alpha, g, x;
-  
+
   /* bmb0 = b-b0 */
   bmb0 = new_dup_vector(b, col);
   linalg_daxpy(col,-1.0,b0,1,bmb0,1);
@@ -468,11 +505,13 @@ void *state;
   free(bmb0);
   free(Tibmb0);
   
-  /* alpha and beta of gamma distribution */
+  /* alpha of gamma distribution */
   alpha = (alpha0 + col)/2;
+
+  /* beta of a gamma distribution */
   g = (beta0 + right)/2;
 
-  /* s2 = 1/gamrnd(alpha, 1/g, 1) */
+  /* tau2 = 1/gamrnd(alpha, 1/g, 1) */
   /* return 1.0 / (1.0/g * rgamma(alpha)); */
   inv_gamma_mult_gelman(&x, alpha, g, 1, state);
   return x;
@@ -490,10 +529,13 @@ double gamma_mixture_pdf(d, alpha, beta)
 double d;
 double alpha[2], beta[2];
 {
-  double p1, p2;
+  double p1, p2, lp;
+  
   gampdf_log_gelman(&p1, &d, alpha[0], beta[0], 1);
   gampdf_log_gelman(&p2, &d, alpha[1], beta[1], 1);
-  return log(0.5*(exp(p1)+exp(p2)));
+  lp = log(0.5*(exp(p1)+exp(p2)));
+  
+  return(lp);
 }
 
 
@@ -508,7 +550,7 @@ double log_d_prior_pdf(d, alpha, beta)
 double d;
 double alpha[2], beta[2];
 {
-  return gamma_mixture_pdf(d, alpha, beta);
+  return(gamma_mixture_pdf(d, alpha, beta));
 }
 
 
@@ -522,7 +564,7 @@ double d_prior_rand(alpha, beta, state)
 double alpha[2], beta[2];
 void *state;
 {
-  return gamma_mixture_rand(alpha, beta, state);
+  return(gamma_mixture_rand(alpha, beta, state));
 }
 
 
@@ -564,21 +606,33 @@ void *state;
   int bb;
   unsigned int i;
   assert(b);  assert(d);
+
+  /* force the GP model */
   if(gamlin[0] == 0) {
     for(i=0; i<n; i++) b[i] = 1;	
     return 0;
   }
+
+  /* force the linear model */
   if(gamlin[0] < 0) {
     for(i=0; i<n; i++) b[i] = 0;
     return 1;
   }
+
+  /* otherwise */
+
+  /* update pb-vector based on d-vector */
   linear_pdf_sep(pb, d, n, gamlin);
+
+  /* sample b accurding to pb */
   bb = 1;
   for(i=0; i<n; i++) {
     if(runi(state) < pb[i]) b[i] = 0;
     else b[i] = 1;
     bb *= !(b[i]);
   }
+
+  /* return the prob of the joint LLM */
   return (bb);
 }
 
@@ -595,10 +649,15 @@ double linear_pdf(double *d, unsigned int n, double *gamlin)
 {
   unsigned int i;
   double p = 1.0;
+
+  /* sanity checks */
   assert(d);
   assert(gamlin[0] > 0 && gamlin[1] >= 0 && gamlin[1] <= 1 && 
 	 gamlin[2] >= 0 && gamlin[2] <= 1);
+
+  /* product of LLM prob in each dimension */
   for(i=0; i<n; i++) p *= LINEAR(gamlin[0], gamlin[1], gamlin[2], d[i]);
+
   return p;
 }
 
@@ -617,13 +676,19 @@ double linear_pdf_sep(double *pb, double *d, unsigned int n, double *gamlin)
 {
   unsigned int i;
   double p = 1.0;
+
+  /* sanity checks */
   assert(d && pb);
   assert(gamlin[0] > 0 && gamlin[1] >= 0 && gamlin[1] <= 1 && 
 	 gamlin[2] >= 0 && gamlin[2] <= 1);
+
+  /* calculate each dimension separately, save it, and then accumulate the product */
   for(i=0; i<n; i++) {
     pb[i] = LINEAR(gamlin[0], gamlin[1], gamlin[2], d[i]);
     p *= pb[i];
   }
+
+  /* return the product of LLM prob in each dimension */
   return p;
 }
 
@@ -639,8 +704,7 @@ double linear_pdf_sep(double *pb, double *d, unsigned int n, double *gamlin)
 void d_proposal(n, p, d, dold, q_fwd, q_bak, state)
 unsigned int n;
 int *p;
-double *d, *dold;
-double *q_fwd, *q_bak;
+double *d, *dold, *q_fwd, *q_bak;
 void *state;
 {
   unsigned int i;
@@ -665,7 +729,7 @@ double log_nug_prior_pdf(nug, alpha, beta)
 double nug;
 double alpha[2], beta[2];
 {
-  return gamma_mixture_pdf(nug-NUGMIN, alpha, beta);
+  return(gamma_mixture_pdf(nug-NUGMIN, alpha, beta));
 }
 
 
@@ -718,7 +782,7 @@ void *state;
  * 
  * propose a new positive "ret" based on an old value "last"
  * by proposing uniformly in [3last/4, 4last/3], and return
- * the forward and backward probabilities
+ * the forward and backward probabilities; 
  */
 
 #define PNUM 3.0
@@ -730,20 +794,23 @@ double *q_fwd, *q_bak;
 void *state;
 {
   double left, right, ret;
-  
+
   /* propose new d, and compute proposal probability */
-  left = PNUM*last/PDENOM;
-  right = PDENOM*last/PNUM;
+  left = PNUM*last/(PDENOM);
+  right = PDENOM*last/(PNUM);
   assert(left > 0 && left < right);
-  runif_mult(&ret,left, right, 1, state);
+  runif_mult(&ret, left, right, 1, state);
   *q_fwd = 1.0/(right - left);
   
   /* compute backwards probability */
-  left = PNUM*ret/PDENOM;
-  right = PDENOM*ret/PNUM;
+  left = PNUM*ret/(PDENOM);
+  right = PDENOM*ret/(PNUM);
   assert(left >= 0 && left < right);
   *q_bak = 1.0/(right - left);
   assert(*q_bak > 0);
+
+  /* make sure this is reversible */
+  assert(last >= left && last <= right);
   
   if(ret > 10e10) {
     warning("unif_propose_pos (%g) is bigger than max", ret);
@@ -788,10 +855,14 @@ double mixture_priors_ratio(double *alpha_new, double *alpha, double *beta_new,
   int i;
   double log_p, p, p_new;
   log_p = 0;
+
+  /* ratio of p(d) under prior */
   for(i=0; i<n; i++) {
     log_p += gamma_mixture_pdf(d[i], alpha_new, beta_new) 
       - gamma_mixture_pdf(d[i], alpha, beta);
   }
+
+  /* ratio of hierarchical alpha priors */
   for(i=0; i<2; i++) {
     if(alpha[i] != alpha_new[i]) {
       gampdf_log_gelman(&p_new, &(alpha_new[i]), GA, alpha_lambda[i], 1);
@@ -799,6 +870,8 @@ double mixture_priors_ratio(double *alpha_new, double *alpha, double *beta_new,
       log_p += p_new - p;
     }
   }
+
+  /* ratio of hierarchical beta priors */
   for(i=0; i<2; i++) {
     if(beta[i] != beta_new[i]) {
       gampdf_log_gelman(&p_new, &(beta_new[i]), GA, beta_lambda[i], 1);
@@ -806,6 +879,7 @@ double mixture_priors_ratio(double *alpha_new, double *alpha, double *beta_new,
       log_p += p_new - p;
     }
   }
+
   return exp(log_p);
 }
 
@@ -824,8 +898,8 @@ double mixture_hier_prior_log(double *alpha, double *beta, double *beta_lambda,
   double lpdf;
   unsigned int i;
 
+  /* for the two elements in the mixture */
   lpdf = 0.0;
-
   for(i=0; i<2; i++) {
     lpdf += hier_prior_log(alpha[i], beta[i], alpha_lambda[i], beta_lambda[i]);
   }
@@ -840,6 +914,7 @@ double mixture_hier_prior_log(double *alpha, double *beta, double *beta_lambda,
  * return the sum of the log priors for each of the two
  * alpha and beta parameters which are exponentially 
  * distributed with rates alpha_lambda and beta_lambda
+ *
  */
 
 double hier_prior_log(double alpha, double beta, double beta_lambda,
@@ -865,42 +940,50 @@ double hier_prior_log(double alpha, double beta, double beta_lambda,
  * the sigma^2 parameter
  */
 
-void sigma2_prior_draw(a0, g0, s2, n, a0_lambda, g0_lambda, state)
-unsigned int n;
+void sigma2_prior_draw(a0, g0, s2, nl, a0_lambda, g0_lambda, n, state)
+unsigned int nl;
 double a0_lambda, g0_lambda;
 double *a0, *g0, *s2;
+unsigned int* n;
 void *state;
 {
-  double q_fwd, q_bak, a, log_p, lp;
+  double q_fwd, q_bak, alpha, log_p, lp;
   double a0_new, g0_new;
   unsigned int i;
   
   /* proposing a new alpha */
-  a0_new = 2+unif_propose_pos(*a0-2, &q_fwd, &q_bak, state);
+  a0_new = 2.0+unif_propose_pos(*a0-2.0, &q_fwd, &q_bak, state);
   log_p = 0.0;
-  for(i=0; i<n; i++) {
+
+  /* accumulate product of the prior for s2 */
+  for(i=0; i<nl; i++) {
     invgampdf_log_gelman(&lp, &(s2[i]), a0_new/2, (*g0)/2, 1); log_p += lp;
     invgampdf_log_gelman(&lp, &(s2[i]), (*a0)/2, (*g0)/2, 1); log_p -= lp;
   }
+
+  /* add in prior for alpha */
   gampdf_log_gelman(&lp, &a0_new, 1.0, a0_lambda, 1); log_p += lp;
   gampdf_log_gelman(&lp, a0, 1.0, a0_lambda, 1); log_p -= lp;
-  a = exp(log_p) * q_bak/q_fwd;
-  if(a > 1) a = 1;
-  if(runi(state) < a) *a0 = a0_new;
+
+  /* accept or reject alpha */
+  alpha = exp(log_p) * q_bak/q_fwd;
+  if(runi(state) < alpha) *a0 = a0_new;
   
   /* proposing a new beta */
   g0_new = unif_propose_pos(*g0, &q_fwd, &q_bak, state);
   log_p = 0.0;
-  for(i=0; i<n; i++) {
+  for(i=0; i<nl; i++) {
     invgampdf_log_gelman(&lp, &(s2[i]), (*a0)/2, g0_new/2, 1); log_p += lp;
     invgampdf_log_gelman(&lp, &(s2[i]), (*a0)/2, (*g0)/2, 1); log_p -= lp;
   }
+
+  /* add in prior for beta */
   gampdf_log_gelman(&lp, &g0_new, 1.0, g0_lambda, 1); log_p += lp;
   gampdf_log_gelman(&lp, g0, 1.0, g0_lambda, 1); log_p -= lp;
-  a = exp(log_p) * q_bak/q_fwd;
-  /*myprintf(stderr, "g0=%g, g0_new=%g, ag=%g\n", *g0, g0_new, a);*/
-  if(a > 1) a = 1;
-  if(runi(state) < a) *g0 = g0_new;
+  
+  /* accept or reject beta */
+  alpha = exp(log_p) * q_bak/q_fwd;
+  if(runi(state) < alpha) *g0 = g0_new;
 }
 
 
@@ -922,6 +1005,8 @@ void *state;
   double q_fwd, q_bak, a;
   double alpha_new[2], beta_new[2];
 
+  /* draws for alpha_new[0] and beta_new[0] conditional on
+     alpha[1] and beta[1] */
   alpha_new[1] = alpha[1];
   beta_new[1] = beta[1];
   alpha_new[0] = unif_propose_pos(alpha[0], &q_fwd, &q_bak, state);
@@ -930,20 +1015,24 @@ void *state;
     a = mixture_priors_ratio(alpha_new, alpha, beta_new, beta, 
 			     d, n, alpha_lambda, beta_lambda);
     a = a*(q_bak/q_fwd);
-    if(a > 1) a = 1;
+
+    /* accept or reject */
     if(runi(state) >= a) {
       alpha_new[0] = alpha[0];
       beta_new[0] = beta[0];
     }
   }
   
+  /* draws for alpha_new[1] and beta_new[1] conditional on
+     alpha_new[1] and beta_new[1] */
   alpha_new[1] = unif_propose_pos(alpha[1], &q_fwd, &q_bak, state);
   beta_new[1] = unif_propose_pos(beta[1], &q_fwd, &q_bak, state);
   if(beta_new[1] > alpha_new[1]) {
     a = mixture_priors_ratio(alpha_new, alpha, beta_new, beta, 
 			     d, n, alpha_lambda, beta_lambda);
     a = a*(q_bak/q_fwd);
-    if(a > 1) a = 1;
+
+    /* accept or reject */
     if(runi(state) >= a) {
       alpha_new[1] = alpha[1];
       beta_new[1] = beta[1];
@@ -965,15 +1054,15 @@ void *state;
  */
 
 int d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, 
-	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-	b0, Ti, T, tau2, nug, qRatio, d_alpha, d_beta, a0, g0, lin, state)
+		  K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
+		  bmu_new,  b0, Ti, T, tau2, nug, qRatio, d_alpha, d_beta, a0, 
+		  g0, lin, itemp, state)
 unsigned int n, col;
 int lin;
 double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z;
 double d_alpha[2], d_beta[2];
-double qRatio;
-double d, dlast, nug, a0, g0, lambda, tau2, log_det_K;
+double d, dlast, nug, a0, g0, lambda, tau2, log_det_K, qRatio, itemp;
 double *lambda_new, *bmu_new, *log_det_K_new;
 void *state;
 {
@@ -990,26 +1079,29 @@ void *state;
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
   } else {	/* linear */
     *log_det_K_new = n*log(1.0 + nug);
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* start computation of posterior distribution */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
   pd += log_d_prior_pdf(d, d_alpha, d_beta);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   pdlast += log_d_prior_pdf(dlast, d_alpha, d_beta);
   
+  /* if(lin && pd > pdlast) myprintf(stderr, "pd=%g, pdlast=%g, qRatio=%g\n",
+     pd, pdlast, qRatio); */
+
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
   alpha = exp(pd - pdlast)*qRatio;
   if(isnan(alpha)) return -1;
-  if(alpha >= 1 || runi(state) < alpha) return 1;
+  if(runi(state) < alpha) return 1;
   else return 0;
 }
 
@@ -1019,53 +1111,63 @@ void *state;
  * 
  * draws for d given the rest of the parameters except b and s2 marginalized out
  *
- *  F[col][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col] Vb[col][col], 
- *  Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n], b0[col], Z[n], dlast[col-1],
- *  d_alpha[col-1][2], d_beta[col-1][2]
+ * F[col][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col] Vb[col][col], 
+ * Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n], b0[col], Z[n], dlast[col-1],
+ * d_alpha[col-1][2], d_beta[col-1][2]
  *
- *  return 1 if draw accepted, 0 if rejected, -1 if error
+ * if input d=NULL and lin_new=0, then the MH ratio is just a prior ratio
+ * (plus proposal probabilities)
+ *
+ * return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
 int d_sep_draw_margin(d, n, col, F, X, Z, log_det_K, lambda, Vb, 
 	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 	bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 
-	lin, state)
+	lin, itemp, state)
 unsigned int n, col;
 int lin;
 double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *d, *log_det_K_new;
-double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log;
+double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log, itemp;
 double *lambda_new, *bmu_new;
 void *state;
 {
   double pd, pdlast, alpha;
   unsigned int m = 0;
-  
+
+  /* d could be null if d_new == d_new_eff, and in this case the 
+     acceptance ratio would be based solely on the prior (& qRatio) */
+
   /* Knew = dist_to_K(dist, d, nugget)
      compute lambda, Vb, and bmu, for the NEW d */
-  if(! lin) {	/* regular */
+  if(!lin && d) {	/* regular */
     exp_corr_sep_symm(K_new, col-1, X, n, d, nug, PWR);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
-  } else {	/* linear */
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+  } else if(lin) { /* linear */
     *log_det_K_new = n*log(1.0 + nug);
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   }
   
-  if(T[0][0] == 0) m = col;
+  if(d || lin) {
+    /* adjustment for BFLAT */
+    if(T[0][0] == 0) m = col;
   
-  /* posteriors */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+    /* posteriors */
+    pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+    pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   
-  /* compute acceptance prob */
-  /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
+    /* or, no posterior contribution */
+  } else { pd = 0.0; pdlast = 0.0; }
+  
+  /* compute acceptance prob; and accept or reject */
   alpha = exp(pd - pdlast + pRatio_log)*qRatio;
   if(isnan(alpha)) return -1;
-  if(alpha >= 1 || runi(state) < alpha) return 1;
+  if(runi(state) < alpha) return 1;
   else return 0;
 }
 
@@ -1084,14 +1186,13 @@ void *state;
 int matern_d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, K_new,
 			 Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
 			 b0, Ti, T, tau2, nug, nu, bk, nb, qRatio, d_alpha, d_beta, a0, 
-			 g0, lin, state)
+			 g0, lin, itemp, state)
 unsigned int n, col;
 int lin;
 double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *bk;
 double d_alpha[2], d_beta[2];
-double qRatio;
-double d, dlast, nug, nu, a0, g0, lambda, tau2, log_det_K;
+double d, dlast, nug, nu, a0, g0, lambda, tau2, log_det_K, qRatio, itemp;
 double *lambda_new, *bmu_new, *log_det_K_new;
 long nb;
 void *state;
@@ -1101,7 +1202,7 @@ void *state;
   
   /* check if we are sticking with linear model */
   assert(dlast != 0.0);
-  
+
   /* Knew = dist_to_K(dist, d, nugget);
      compute lambda, Vb, and bmu, for the NEW d */
   if(! lin) {	/* regular */
@@ -1109,26 +1210,26 @@ void *state;
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
   } else {	/* linear */
     *log_det_K_new = n*log(1.0 + nug);
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* start computation of posterior distribution */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
   pd += log_d_prior_pdf(d, d_alpha, d_beta);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   pdlast += log_d_prior_pdf(dlast, d_alpha, d_beta);
   
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
   alpha = exp(pd - pdlast)*qRatio;
   if(isnan(alpha)) return -1;
-  if(alpha >= 1 || runi(state) < alpha) return 1;
+  if(runi(state) < alpha) return 1;
   else return 0;
 }
 
@@ -1145,13 +1246,13 @@ void *state;
 
 double nug_draw_margin(n, col, nuglast, F, Z, K, log_det_K, lambda, Vb, 
 	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-	b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, state)
+	b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, state)
 unsigned int n, col;
 int linear;
 double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *log_det_K_new; 
 double nug_alpha[2], nug_beta[2];
-double nuglast, a0, g0, lambda, tau2, log_det_K;
+double nuglast, a0, g0, lambda, tau2, log_det_K, itemp;
 double *lambda_new, *bmu_new;
 void *state;
 {
@@ -1166,31 +1267,29 @@ void *state;
   if(linear) {
     *log_det_K_new = n * log(1.0 + nug);
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   } else  {
     dup_matrix(K_new, K, n, n);
     for(i=0; i<n; i++) K_new[i][i] += (nug - nuglast);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* posteriors */
   pnug = log_nug_prior_pdf(nug, nug_alpha, nug_beta);
-  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
   pnuglast = log_nug_prior_pdf(nuglast, nug_alpha, nug_beta);
-  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak/q_fwd);
-  if(alpha >= 1) return nug;
-  else {
-    if(runi(state) > alpha) return nuglast;
-    else return nug;
-  }
+  /* myprintf(stderr, "nug_last=%g -> nug=%g : alpha=%g", nuglast, nug, alpha); */
+  if(runi(state) > alpha) { /* myprintf(stderr, "  -- rejected\n");*/ return nuglast; }
+  else { /* myprintf(stderr, "  -- accepted\n"); */ return nug; }
 }
 
 
@@ -1207,13 +1306,13 @@ void *state;
 double* mr_nug_draw_margin(n, col, nug, nugfine, X, F, Z, K, log_det_K, lambda, Vb, 
 			   K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 			   bmu_new, b0, Ti, T, tau2, nug_alpha, nug_beta, nugf_alpha, 
-			   nugf_beta, r, delta, a0, g0, linear, state)
+			   nugf_beta, r, delta, a0, g0, linear, itemp, state)
 unsigned int n, col;
 int linear;
 double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new, **X;
 double *b0, *Z, *log_det_K_new; 
 double nug_alpha[2], nug_beta[2], nugf_alpha[2], nugf_beta[2];
-double nug, nugfine, a0, g0, lambda, tau2, log_det_K, r, delta;
+double nug, nugfine, a0, g0, lambda, tau2, log_det_K, r, delta, itemp;
 double *lambda_new, *bmu_new;
 void *state;
 {
@@ -1234,7 +1333,7 @@ void *state;
       else *log_det_K_new += log(1.0 + nug);
     }
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   } else  {
     dup_matrix(K_new, K, n, n);
     for(i=0; i<n; i++){
@@ -1244,7 +1343,7 @@ void *state;
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
   }
   
   if(T[0][0] == 0) m = col;
@@ -1252,17 +1351,17 @@ void *state;
   /* posteriors */
   pnug = log_nug_prior_pdf(newnugs[0], nug_alpha, nug_beta);
   pnug += log_nug_prior_pdf(newnugs[1], nugf_alpha, nugf_beta);
-  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
+  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
   pnuglast = log_nug_prior_pdf(nug, nug_alpha, nug_beta);
   pnuglast += log_nug_prior_pdf(nugfine, nugf_alpha, nugf_beta);
-  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak*q_bakf)/(q_fwd*q_fwdf);
   
   if(runi(state) > alpha){
     /* printf("nugs %g %g\n",nug, nugfine); */
-    /*printVector(newnugs, 2, stdout); */
+    /*printVector(newnugs, 2, stdout, HUMAN); */
     newnugs[0] = nug;
     newnugs[1] = nugfine;
   }
@@ -1292,7 +1391,9 @@ void *state;
   sbb0 = new_zero_matrix(col, col);
   S = new_id_matrix(col);
   
-  /* for i=1:length(s2) sbb0 = sbb0 + (b(:,i)-b0) * (b(:,i)-b0)'/s2(i); end */
+  /* for i=1:length(s2) 
+        sbb0 = sbb0 + (b(:,i)-b0) * (b(:,i)-b0)'/s2(i); 
+     end */
   bmb0 = new_vector(col);
   for(i=0; i<ch; i++) {
     dupv(bmb0, b[i], col);
@@ -1310,8 +1411,10 @@ void *state;
   /* then invert: S = inv(sbb0) */
   info = linalg_dgesv(col, sbb0, S);
   delete_matrix(sbb0);
-  
+
+  /* rho parameter */
   nu = rho +ch;
+
   wishrnd(Ti, S, col, nu, state);
   delete_matrix(S);
 }
@@ -1335,7 +1438,7 @@ void *state;
   double s2i_sum, s2i;
   double **Vb0i, **Vb0;
   double *b_s2i_sum, *left, *right, *bm;
-  
+
   /* ss2i = 1./ss2; */
   /* s2i_sum = sum(ss2i); */
   /* b_s2i_sum = b_s2i_sum + bb(:,i) * ss2i(i); */
@@ -1376,7 +1479,7 @@ void *state;
   linalg_dsymv(col,1.0,Vb0,col,right,1,0.0,bm,1);
   free(right);
   /* done */
-	
+
   /* first: get the choleski decomposition */
   /* note that this changes the cov variable (Vb0) */
   info = linalg_dpotrf(col, Vb0);
@@ -1385,4 +1488,38 @@ void *state;
   mvnrnd(b0, bm, Vb0, col, state);
   delete_matrix(Vb0);
   free(bm);
+}
+
+
+
+/*
+ * tau2_prior_rand:
+ * 
+ * rand draws from inv-gamma prior for tau2
+ */
+
+double tau2_prior_rand(alpha, beta, state)
+double alpha, beta;
+void *state;
+{
+  double tau2;
+  inv_gamma_mult_gelman(&tau2, alpha, beta, 1, state);
+  return tau2;
+}
+
+
+/*
+ * log_tau2_prior_pdf:
+ * 
+ * PDF: inverse-gamma prior for tau2
+ * returns the log pdf
+ */
+
+double log_tau2_prior_pdf(tau2, alpha, beta)
+double tau2;
+double alpha, beta;
+{
+  double lp;
+  invgampdf_log_gelman(&lp, &tau2, alpha, beta, 1);
+  return(lp);
 }

@@ -23,6 +23,7 @@
 
 
 #include "rhelp.h"
+#include "rand_draws.h"
 #include "matrix.h"
 #include <assert.h>
 #include <math.h>
@@ -334,7 +335,7 @@ void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile)
 
 /*
  * add two matrices of the same size 
- * M1 = M1 + M2
+ * M1 = a*M1 + b*M2
  */
 
 void add_matrix(double a, double **M1, double b, double **M2, 
@@ -366,58 +367,271 @@ void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v,
 
 
 /*
- * fill mean[n1] with the mean of the columns of M (n1 x n2)
+ * wmean_of_columns:
+ *
+ * fill mean[n1] with the weighted mean of the columns of M (n1 x n2);
+ * weight vector should have length n1; weight should be pre-normalized
  */
 
-void mean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2)
+void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2,
+		      double *weight)
 {
   unsigned int i,j;
+  double sw;
+
+  /* sanity checks */
   assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
+  
+  /* find normailzation constant */
+  if(weight) sw = sumv(weight, n1); 
+  else sw = (double) n1;
+
+  /* calculate mean of columns */
   for(i=0; i<n2; i++) {
     mean[i] = 0;
-    for(j=0; j<n1; j++) mean[i] += M[j][i];	
-    mean[i] = mean[i] / n1;
+    if(weight) for(j=0; j<n1; j++) mean[i] += weight[j] * M[j][i];	
+    else for(j=0; j<n1; j++) mean[i] += M[j][i];	
+    mean[i] = mean[i] / sw;
   }
 }
 
 
 /*
- * fill mean[n1] with the mean of the rows of M (n1 x n2)
+ * wmean_of_columns_f:
+ *
+ * fill mean[n1] with the weighted mean of the columns of M (n1 x n2);
+ * weight vector should have length n1 -- each element of which is
+ * sent through function f() first; weight should be pre-normalized
  */
 
-void mean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2)
+void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2,
+		      double *weight, double(*f)(double))
 {
   unsigned int i,j;
+  double sw;
+
+  /* sanity checks */
+  assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
-  for(i=0; i<n1; i++) {
+  
+  /* find normailzation constant */
+  if(weight) sw = sumv(weight, n1);
+  else sw = (double) n1;
+
+  /* calculate mean of columns */
+  for(i=0; i<n2; i++) {
     mean[i] = 0;
-    for(j=0; j<n2; j++) mean[i] += M[i][j];	
-    mean[i] = mean[i] / n2;
+    if(weight) for(j=0; j<n1; j++) mean[i] += weight[j] * f(M[j][i]);
+    else for(j=0; j<n1; j++) mean[i] += f(M[j][i]);
+    mean[i] = mean[i] / sw;
   }
 }
 
+
+/*
+ * wmean_of_rows_f:
+ *
+ * fill mean[n1] with the weighted mean of the rows of M (n1 x n2);
+ * weight vector should have length n2 -- each element of which is
+ * sent through function f() first; weight should be pre-normalized
+ */
+
+void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2,
+		  double *weight, double(*f)(double))
+{
+  unsigned int i,j;
+  double sw;
+
+  /* sanity checks */
+  assert(mean && M);
+  if(n1 <= 0 || n2 <= 0) {return;}
+
+  /* calculate the normalization constant */
+  if(weight) sw = sumv(weight, n2);
+  else sw = (double) n2;
+
+  /* calculate the mean of rows */
+  for(i=0; i<n1; i++) {
+    mean[i] = 0;
+    if(weight) for(j=0; j<n2; j++) mean[i] += weight[j] * f(M[i][j]);	
+    else for(j=0; j<n2; j++) mean[i] += f(M[i][j]);	
+    mean[i] = mean[i] / sw;
+  }
+}
+
+
+/*
+ * wmean_of_rows_f:
+ *
+ * fill mean[n1] with the weighted mean of the rows of M (n1 x n2);
+ * weight vector should have length n2; weight should be pre-normalized
+ */
+
+void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2,
+		  double *weight)
+{
+  unsigned int i,j;
+  double sw;
+
+  /* sanity checks */
+  assert(mean && M);
+  if(n1 <= 0 || n2 <= 0) {return;}
+
+  /* calculate the normalization constant */
+  if(weight) sw =  sumv(weight, n2);
+  else sw = (double) n2;
+
+  /* calculate the mean of rows */
+  for(i=0; i<n1; i++) {
+    mean[i] = 0;
+    if(weight) for(j=0; j<n2; j++) mean[i] += weight[j] * M[i][j];	
+    else for(j=0; j<n2; j++) mean[i] += M[i][j];	
+    mean[i] = mean[i] / sw;
+  }
+}
 
 
 /*
  * fill the q^th quantile for each column of M (n1 x n2)
+ * if non-null, the w argument should contain NORMALIZED
+ * weights to be used in a bootstrap calculation of the 
+ * quantiles
  */
 
-void quantile_of_columns(double *Q, double **M, 
-	unsigned int n1, unsigned int n2, double q)
+void quantiles_of_columns(double **Q, double *q, unsigned int m,
+			  double **M, unsigned int n1, unsigned int n2, 
+			  double *w)
 {
-  unsigned int k,i,j;
-  double *Mc; /*[n1];*/
-  assert(q >=0 && q <=1);
+  unsigned int i,j;
+  double *Mc, *wnorm, *qs;
+  double W;
+
+  /* check if there is anything to do */
+  if(n1 == 0) return;
+
+  /* allocate vector representing the current column,
+   * and for storing the m quantiles */
   Mc = new_vector(n1);
-  k = (unsigned int) n1*q;
-  for(i=0; i<n2; i++) {
-    for(j=0; j<n1; j++) Mc[j] = M[j][i];
-    /*Q[i] = select_k(k, n1, Mc);*/
-    /*Q[i] = kth_smallest(Mc, n1, k);*/
-    Q[i] = quick_select(Mc, n1, k);
+  qs = new_vector(m);
+
+  /* if non-null, create a normalized weight vector */
+  if(w != NULL) {
+    W = sumv(w, n1);
+    wnorm = new_dup_vector(w, n1);
+    scalev(wnorm, n1, 1.0/W);
+  } else {
+    wnorm = NULL;
   }
+
+  /* for each column */
+  for(i=0; i<n2; i++) {
+
+    /* copy the column into a vector */
+    for(j=0; j<n1; j++) Mc[j] = M[j][i];
+
+    quantiles(qs, q, m, Mc, wnorm, n1);
+    for(j=0; j<m; j++) Q[j][i] = qs[j];
+  }
+
+  /* clean up */
+  if(w != NULL) { assert(wnorm); free(wnorm); }
   free(Mc);
+  free(qs);
+}
+
+
+typedef struct wsamp
+{
+  double w;
+  double x;
+} Wsamp;
+
+
+/*
+ * comparison function for weighted samples
+ */
+
+int compareWsamp(const void* a, const void* b)
+{
+  Wsamp* aa = (Wsamp*)(*(Wsamp **)a); 
+  Wsamp* bb = (Wsamp*)(*(Wsamp **)b); 
+  if(aa->x < bb->x) return -1;
+  else return 1;
+}
+
+
+/*
+ * calculate the quantiles of v[1:n] specified in q[1:m], and store them
+ * in qs[1:m]; If non-null weights, then use the sorting method; assume
+ * that the weights are NORMALIZED, it is also assumed that the q[1:m] 
+ * is specified in increasing order
+ */
+
+void quantiles(double *qs, double *q, unsigned int m, double *v,
+	       double *w, unsigned int n)
+{
+  unsigned int i, k, j;
+  double wsum;
+  Wsamp **wsamp;
+
+  /* create and fill pointers to weighted sample structures */
+  if(w != NULL) {
+    wsamp = (Wsamp**) malloc(sizeof(struct wsamp*) * n);
+    for(i=0; i<n; i++) {
+      wsamp[i] = malloc(sizeof(struct wsamp));
+      wsamp[i]->w = w[i];
+      wsamp[i]->x = v[i];
+    }
+
+    /* sort by v; and implicity reported the associated weights w */
+    qsort((void*)wsamp, n, sizeof(Wsamp*), compareWsamp);
+  } else wsamp = NULL;
+
+  /* for each quantile in q */
+  wsum = 0.0;
+  for(i=0, j=0; j<m; j++) {
+    
+    /* check to make sure the j-th quantile requested is valid */
+    assert(q[j] > 0 && q[j] <1);
+    
+    /* find the (non-weighted) quantile using select */
+    if(w == NULL) {
+      
+      /* calculate the index-position of the quantile */
+      k = (unsigned int) n*q[j];
+      qs[j] = quick_select(v, n, k);
+
+    } else { /* else using sorting method */
+
+      /* check to make sure the qs are ordered */
+      assert(wsamp);
+      if(j > 0) assert(q[j] > q[j-1]);
+
+      /* find the next quantile in the q-array */
+      for(; i<n; i++) {
+	
+	/* to cover the special case where n<=m */
+	if(wsum >= q[j]) { qs[j] = wsamp[i-1]->x; break; }
+
+	/* increment with the next weight */
+	wsum += wsamp[i]->w;
+
+	/* see if we've found the next quantile */
+	if(wsum >= q[j]) { qs[j] = wsamp[i]->x; break; }
+      }
+
+      /* check to make sure we actually had founda  quantile */
+      if(i == n) warning("unable to find quanile q[%d]=%g", j, q[j]);
+    }
+  }
+
+  /* clean up */
+  if(w) {
+    assert(wsamp);
+    for(i=0; i<n; i++) free(wsamp[i]);
+    free(wsamp);
+  }
 }
 
 
@@ -497,6 +711,8 @@ int* iseq(double from, double to)
 
 
 /*
+ * find:
+ *
  * return an integer of length (*len) with indexes into V which
  * satisfy the relation "V op val" where op is one of 
  * LT(<) GT(>) EQ(==) LEQ(<=) GEQ(>=) NE(!=)
@@ -554,7 +770,7 @@ int* find(double *V, unsigned int n, FIND_OP op, double val, unsigned int* len)
       if(tf[i] == 1) (*len)++;
     }
     break;
-  default: puts("OP not supported"); exit(0);
+  default: error("OP not supported");
   }
   
   if(*len == 0) found = NULL;
@@ -632,7 +848,7 @@ int* find_col(double **V, unsigned int n, unsigned int var,
       if(tf[i] == 1) (*len)++;
     }
     break;
-  default: puts("OP not supported"); exit(0);
+  default: error("OP not supported");
   }
   
   if(*len == 0) found = NULL;
@@ -753,7 +969,7 @@ void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n)
   unsigned int i;
   
   Mm = (double*) malloc(sizeof(double) * n);
-  mean_of_columns(Mm, M, T, n);
+  wmean_of_columns(Mm, M, T, n, NULL);
   MmOUT = fopen(file_str, "w");
   assert(MmOUT);
   for(i=0; i<n; i++) myprintf(MmOUT, "%g\n", Mm[i]);
@@ -824,25 +1040,6 @@ void copy_p_matrix(double **V, int *p1, int *p2, double **v,
   assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
   for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
     V[p1[i]][p2[j]] = v[i][j];
-}
-
-
-
-/* 
- * compute the difference in quantiles (of the
- * columns of the matrix M)
- */
-
-void qsummary(double *q, double *q1, double *median, double *q2, 
-	      double **M, unsigned int T, unsigned int n)
-{
-  unsigned int i;
-  
-  if(n <= 0) return;
-  quantile_of_columns(q1, M, T, n, 0.05);
-  quantile_of_columns(median, M, T, n, 0.5);
-  quantile_of_columns(q2, M, T, n, 0.95);
-  for(i=0; i<n; i++) q[i] = q2[i]-q1[i];
 }
 
 
@@ -1097,6 +1294,43 @@ void dupv(double *v, double* vold, unsigned int n)
 }
 
 
+/* 
+ * sumv:
+ *
+ * return the sum of the contents of the vector
+ */
+
+double sumv(double *v, unsigned int n)
+{
+  unsigned int i;
+  double s;
+  if(n==0) return 0;
+  assert(v);
+  s = 0;
+  for(i=0; i<n; i++) s += v[i];
+  return(s);
+}
+
+
+/* 
+ * sum_fv:
+ *
+ * return the sum of the contents of the vector
+ * each entry of which is applied to function f
+ */
+
+double sum_fv(double *v, unsigned int n, double(*f)(double))
+{
+  unsigned int i;
+  double s;
+  if(n==0) return 0;
+  assert(v);
+  s = 0;
+  for(i=0; i<n; i++) s += f(v[i]);
+  return(s);
+}
+
+
 /*
  * swaps the pointer of v2 to v1, and vice-versa
  * (avoids copying via dupv)
@@ -1155,6 +1389,7 @@ void copy_p_vector(double *V, int *p, double *v, unsigned int n)
 void copy_sub_vector(double *V, int *p, double *v, unsigned int n)
 {
   int i;
+  if(n == 0) return;
   assert(V); assert(p); assert(n > 0);
   for(i=0; i<n; i++) V[i] = v[p[i]];
 }
@@ -1179,6 +1414,7 @@ double* new_sub_vector(int *p, double *v, unsigned int n)
 
 void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
 {
+  if(n == 0) return;
   assert(n > 0);
   assert(v1 && v2);
   add_matrix(a, &v1, b, &v2, 1, n);
@@ -1194,6 +1430,7 @@ void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
 void add_p_vector(double a, double *V, int *p, double b, double *v, unsigned int n)
 {
   int i = 0;
+  if(n == 0) return;
   assert(V); assert(p);
   add_p_matrix(a, &V, &i, p, b, &v, 1, n);
 }
@@ -1203,10 +1440,12 @@ void add_p_vector(double a, double *V, int *p, double b, double *v, unsigned int
  * printing a vector out to outfile
  */
 
-void printVector(double *v, unsigned int n, FILE *outfile)
+void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type)
 {
   unsigned int i;
-  for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
+  if(type==HUMAN) for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
+  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%.20f ", v[i]);
+  else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }
 
@@ -1440,3 +1679,15 @@ void copy_sub_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n)
 
 unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n)
 { return (unsigned int*) new_sub_ivector(p, (int*)v, n); }
+
+
+/*
+ * sq:
+ * 
+ * calculate the square of x
+ */
+
+double sq(double x)
+{
+  return x*x;
+}

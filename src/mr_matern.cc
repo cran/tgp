@@ -27,6 +27,7 @@ extern "C"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"
+#include "rand_pdf.h"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "rhelp.h"
@@ -126,6 +127,21 @@ MrMatern::~MrMatern(void)
   xDISTx = NULL;
 }
 
+
+/*
+ * Init:
+ * 
+ * initialise this corr function with the parameters provided
+ * from R via the vector of doubles
+ */
+
+void MrMatern::Init(double *dmrmat)
+{
+  d = dmrmat[1];
+  NugInit(dmrmat[0], (bool) dmrmat[2]);
+}
+
+
 /* 
  * DrawNug:
  * 
@@ -134,9 +150,8 @@ MrMatern::~MrMatern(void)
  * return true if the correlation matrix has changed; false otherwise
  */
 
-bool MrMatern::DrawNug(unsigned int n, double **X, double **F, double *Z,
-		       double *lambda, 
-		   double **bmu, double **Vb, double tau2, void *state)
+bool MrMatern::DrawNug(unsigned int n, double **X, double **F, double *Z, double *lambda, 
+		       double **bmu, double **Vb, double tau2, double itemp, void *state)
 {
   bool success = false;
   MrGp_Prior *gp_prior = (MrGp_Prior*) base_prior;
@@ -151,7 +166,7 @@ bool MrMatern::DrawNug(unsigned int n, double **X, double **F, double *Z,
     nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
 		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
 		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), prior->NugBeta(), 
-		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
+		    gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, itemp, state);
   
   /* did we accept the draw? */
   if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
@@ -234,14 +249,15 @@ void MrMatern::Update(unsigned int n1, unsigned int n2, double **K, double **X, 
 
 int MrMatern::Draw(unsigned int n, double **F, double **X, double *Z, 
 	      double *lambda, double **bmu, double **Vb, double tau2, 
-	      void *state)
+	      double itemp, void *state)
 {
   int success = 0;
   bool lin_new;
   double q_fwd , q_bak, d_new;
 
   /* sometimes skip this Draw for linear models for speed */
-  if(linear && runi(state) > 0.5) return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
+  if(linear && runi(state) > 0.5) 
+    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
 
   /* proppose linear or not */
   if(prior->Linear()) lin_new = true;
@@ -278,7 +294,8 @@ int MrMatern::Draw(unsigned int n, double **F, double **X, double *Z,
 			   Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
 			   gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
 			   nug, nu, bk, nb, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
-			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, state);
+			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, 
+			   itemp, state);
   }
   
   /* did we accept the new draw? */
@@ -293,7 +310,7 @@ int MrMatern::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
 
   /* draw nugget */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
   success = success || changed;
   
   return success;
@@ -473,6 +490,18 @@ double MrMatern::log_Prior(void)
 }
 
 
+/* 
+ * TraceNames:
+ *
+ * return the names of the parameters recorded by MrMatern::Trace()
+ */
+
+char** MrMatern::TraceNames(unsigned int* len)
+{
+  *len = 0;
+  return NULL;
+}
+
 
 /* 
  * Trace:
@@ -519,6 +548,23 @@ MrMatern_Prior::MrMatern_Prior(unsigned int col) : Corr_Prior(col)
 
   default_d_priors();
   default_d_lambdas();
+}
+
+
+/*
+ * Init:
+ *
+ * read hiererchial prior parameters from a double-vector
+ *
+ */
+
+void MrMatern_Prior::Init(double *dhier)
+{
+  d_alpha[0] = dhier[0];
+  d_beta[0] = dhier[1];
+  d_alpha[1] = dhier[2];
+  d_beta[1] = dhier[3];
+  NugInit(&(dhier[4]));
 }
 
 
@@ -769,14 +815,26 @@ void MrMatern_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
 double MrMatern_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
+
+  /* force the linear model */
   if(gamlin[0] < 0) return prob;
+
   prob += log_d_prior_pdf(d, d_alpha, d_beta);
+
+  /* force the GP model */
   if(gamlin[0] <= 0) return prob;
+
+    /* using 1.0, because of 1.0 - lin_pdf, and will adjust later */
   double lin_pdf = linear_pdf(&d, 1, gamlin);
-  if(linear) prob += log(lin_pdf);
-  else prob += log(1.0 - lin_pdf);
+
+  /* temper on log scale ==> uselog=1 */
+  if(linear) prob += log(lin_pdf); 
+  else prob += log(1.0-lin_pdf); 
+
+  /* return the log pdf */
   return prob;
 }
+
 
 /* 
  * BasePrior:
@@ -847,11 +905,78 @@ double MrMatern_Prior::log_HierPrior(void)
 
   /* mixture prior for the range parameter, d */
   if(!fix_d) {
-    lpdf += mixture_hier_prior_log(d_alpha, d_beta, d_alpha_lambda, d_beta_lambda);
+    lpdf += mixture_hier_prior_log(d_alpha, d_beta, d_alpha_lambda, 
+				   d_beta_lambda);
   }
 
   /* mixture prior for the nugget */
   lpdf += log_NugHierPrior();
 
   return lpdf;
+}
+
+
+/* 
+ * Trace:
+ *
+ * return the current values of the hierarchical 
+ * parameters to this correlation function: 
+ * nug(alpha,beta), d(alpha,beta), then linear
+ */
+
+double* MrMatern_Prior::Trace(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  double *c = NugTrace(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = 4;
+  double* trace = new_vector(clen + *len);
+  trace[0] = d_alpha[0]; trace[1] = d_beta[0];
+  trace[2] = d_alpha[1]; trace[3] = d_beta[1];
+
+  /* then copy in the nug trace */
+  dupv(&(trace[*len]), c, clen);
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
+}
+
+
+/* 
+ * TraceNames:
+ *
+ * return the names of the traces recorded in MrMatern_Prior::Trace()
+ */
+
+char** MrMatern_Prior::TraceNames(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  char **c = NugTraceNames(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = 4;
+  char** trace = (char**) malloc(sizeof(char*) * (clen + *len));
+  trace[0] = strdup("d.a0");
+  trace[1] = strdup("d.g0");
+  trace[2] = strdup("d.a1");
+  trace[3] = strdup("d.g1");
+
+  /* then copy in the nug trace */
+  for(unsigned int i=0; i<clen; i++) trace[*len + i] = c[i];
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
 }

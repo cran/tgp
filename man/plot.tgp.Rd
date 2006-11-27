@@ -3,7 +3,7 @@
 
 \title{ Plotting for Treed Gaussian Process Models }
 \description{
-  A generic function for plotting of \code{"tgp"} class objects.
+  A generic function for plotting of \code{"tgp"}-class objects.
   1-d posterior mean and error plots, 2-d posterior mean and
   error image and perspective plots, and 3+-dimensional mean and error
   image and perspective plots are supported via projection
@@ -11,14 +11,14 @@
 }
 \usage{
 plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
-         as = NULL, layout = "both", main = NULL, xlab = NULL,
-         ylab = NULL, zlab = NULL, pc = "pc", method = "loess",
-         gridlen = 40, span = 0.1, ...)
+         as = NULL, center = "mean", layout = "both", main = NULL,
+         xlab = NULL, ylab = NULL, zlab = NULL, pc = "pc",
+         method = "loess", gridlen = 40, span = 0.1, ...)
 }
 
 \arguments{
-  \item{x}{ \code{"tgp"} class object that is the output of one of
-  	the \code{\link{tgp}} functions: \code{\link{blm}}, \code{\link{btlm}}
+  \item{x}{ \code{"tgp"}-class object that is the output of one of
+  	the \code{b*} functions: \code{\link{blm}}, \code{\link{btlm}}
 	\code{\link{bgp}}, \code{\link{bgpllm}}, \code{\link{btgp}}, or 
 	\code{\link{btgpllm}}}
   \item{pparts}{If \code{TRUE}, partition-regions are plotted (default), 
@@ -31,7 +31,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
     supported, e.g., \code{proj = c(2)} would show the second variable
     projection. For 3-d data or higher, \code{proj=NULL} defaults to
     \code{proj = c(1,2)} which plots a 2-d projection for the first two
-    variables.  Slices have priority over the projectsions---
+    variables.  Slices have priority over the projections---
     see next argument (\code{slice})--- when non-null arguments are
     provided for both.}
   \item{slice}{\code{list} object with \code{x} and \code{z} fields, which
@@ -44,23 +44,30 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
     \code{NULL}, yielding to the \code{proj} argument.  Argument is
     ignored for 1-d data, i.e., if \code{x$d == 1}}
   \item{map}{Optional 2-d map (longitude and latitude) 
-    from \code{library(maps)} to be shown on top of image plots}
+    from \pkg{maps} to be shown on top of image plots}
+  \item{center}{Default \code{center = "mean"} causes the posterior
+    predictive mean to be plotted as the centering statistic.
+    Otherwise the median can be used with \code{center = "med"}, or the
+    kriging mean with \code{center = "km"}}
   \item{as}{Optional string indicator for plotting of adaptive sampling
-    statistics: specifying \code{as = "alm"} for ALM, \code{as = "alc"} for ALC,
-    and \code{as = "ego"} for EGO.  The default \code{as = NULL}
-    plots error-bars (1d-plots) or error magnitudes (2d-plots), which is
-    essentially the same as \code{as = "alm"}}
+    statistics: specifying \code{as = "alm"} for ALM, \code{as = "s2"}
+    for predictive variance, \code{as = "ks2"} for expected kriging
+    variance, \code{as = "alc"} for ALC,
+    and \code{as = "improv"} for expected improvement (about the minimum).  
+    The default \code{as = NULL} plots error-bars (1d-plots) or 
+    error magnitudes (2d-plots), which is essentially the same as 
+    \code{as = "alm"}}
   \item{layout}{Specify whether to plot the mean predictive surface
     (\code{layout = "surf"}), the error or adaptive sampling statistics
     (\code{layout = "as"}), or default (\code{layout = "both"}) which shows both}
-  \item{main}{Optional character string to add to the main title of the plot}
+  \item{main}{Optional \code{character} string to add to the main title of the plot}
   \item{xlab}{ Optional \code{character} string to add to the x label of the plots}
   \item{ylab}{ Optional \code{character} string to add to the y label of the plots} 
   \item{zlab}{ Optional \code{character} string to add to the z label of the plots;
   	ignored unless \code{pc = "p"}}
   \item{pc}{ Selects perspective-posterior mean and image-error plots
-  	(\code{pc = "pc"}, the default) or a double-image plot (\code{pc
-	  = "c"})}
+  	(\code{pc = "pc"}, the default) or a double--image plot (\code{pc
+	  = "c"})} (only valid for 2-d plots)
   \item{method}{ Method of interpolation onto a regular grid for
     perspective and image plotting of 2-d slices and projections.
     Ignored for 1-d plots and projections.
@@ -75,14 +82,13 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
   \item{gridlen}{ Number of regular grid points for 2-d slices and
     projections.  Default is \code{gridlen = 40}.  Ignored for 1-d plots
     and projections}
-  \item{span}{ Span for \code{\link[stats]{loess}} kernel.  See
-    \code{help(loess)} for mode details.  This argument is ignored for
+  \item{span}{ Span for \code{\link[stats]{loess}} kernel. This argument is ignored for
     1-d plots and projections, and 2-d plots with
     \code{method  = "akima"}. The \pkg{tgp} package default (\code{span =
       0.1}) is set lower than the \code{\link[stats]{loess}} default.
-    Decreasing the span any further, or when
-    the data or predictive locations are sparse, warnings may be given and
-    ugly plots may result.  In this case, try increasing the span, or use the
+    Smaller spans can lead to warnings from \code{\link[stats]{loess}}
+    when the data or predictive locations are sparse and ugly plots may
+    result.  In this case, try increasing the span, or use the
     \code{method = "akima"} option}
   \item{\dots}{ Extra arguments to 1-d (\code{plot}) and 2-d plotting functions
   	\code{persp} and \code{image}}
@@ -124,7 +130,7 @@ plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
 }
 
 \seealso{ \code{\link[base]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
-	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}},
+	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{predict.tgp}},
 	\code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link[akima]{interp}},
 	\code{\link[base]{loess}}}
 

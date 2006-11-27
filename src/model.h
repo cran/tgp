@@ -28,77 +28,13 @@
 #include "tree.h"
 #include "list.h"
 #include "params.h"
+#include "mstructs.h"
 
-#define NORMSCALE 1.0
 
 /*#define PARALLEL*/ 		/* should prediction be done with pthreads */
 #define NUMTHREADS 2		/* number of pthreads for prediction */
 #define QUEUEMAX 100		/* maximum queue size for partitions on which to predict */
 #define PPMAX 100		/* maximum partitions accumulated before sent to queue */
-
-extern FILE* STDOUT;	        /* file to print stdout to */
-
-/*
- * useful structure for passing the storage of
- * predictive data locations around
- */
-
-typedef struct preds
-{
-  double **XX;		/* predictive locations (nn * col) */
-  unsigned int nn;	/* number of predictive locations */
-  unsigned int n;	/* number of data locations */
-  unsigned int d;	/* number of covariates */
-  unsigned int R;	/* number of rounds in preds */
-  unsigned int mult;	/* number of rounds per prediction */
-  double **ZZ;		/* predictions at candidates XX */
-  double **Zp;		/* predictions at inputs X */
-  double *ego;          /* expected global optimizatoin */
-  double **Ds2xy;	/* delta-sigma calculation for XX */
-} Preds;
-
-
-/* 
- * structure used to keep track of the highest
- * posterior trees for each depth 
- */
-
-typedef struct posteriors
-{
-  unsigned int maxd;
-  double* posts;
-  Tree** trees;
-} Posteriors;
-
-
-/* 
- * structure used to keep track of the area
- * of regions under the linear model
- * and of proportions of linear dimensions
- */
-
-typedef struct linarea
-{
-  unsigned int total;
-  unsigned int size;
-  double* ba;
-  double* la;
-  unsigned int *counts;
-} Linarea;
-
-
-/* structure for passing arguments to processes
- * that are spawned using pthreads */
-
-typedef struct largs
-{
-  Tree* leaf;
-  Preds* preds;
-  int index;
-  bool dnorm;
-  Model *model;
-  bool tree_modify;
-} LArgs;
 
 
 class Model
@@ -114,6 +50,9 @@ class Model
   
   Tree* t;		                /* root of the partition tree */
   
+  double Zmin;                          /* global minimum Z-value used in EGO/Improve calculations */
+  unsigned int wZmin;                   /* index of minimum Z-value in Z-vector */
+
   /* for computing acceptance proportions of tree proposals */
   int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
   
@@ -134,6 +73,7 @@ class Model
   FILE *PARTSFILE;			/* what file to write partitions to */
   FILE *POSTTRACEFILE;			/* what file to write posterior traces to */
   FILE *XXTRACEFILE;                    /* files for writing traces to for each XX */
+  FILE *HIERTRACEFILE;                  /* files for writing traces to hierarchical params */
   double partitions;			/* counter for the averave number of partitions */
   FILE* OUTFILE;			/* file for MCMC status output */
   int verb;                             /* printing level (0=none, ... , 3+=verbose) */
@@ -141,6 +81,8 @@ class Model
 
   Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
   Linarea *lin_area;			/* if so, we need a pointer to the area structure */
+
+  iTemps *itemps;                         /* inv-temperature for importance-tempering */
   
  public:
   
@@ -148,13 +90,15 @@ class Model
   Model(Params *params, unsigned int d, double **rect, int Id, bool trace,
 	void *state_to_init_conumer);
   ~Model(void);
-  void Init(double **X, unsigned int d, unsigned int n, double *Z);
+  void Init(double **X, unsigned int d, unsigned int n, double *Z, iTemps *itemps,
+	    double *dtree, unsigned int ncol, double* hier);
   
   /* MCMC */
   void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
   void Linburn(unsigned int B, void *state);
   void Burnin(unsigned int B, void *state);
   void Sample(Preds *preds, unsigned int R, void *state);
+  void Krige(Preds *preds, unsigned int R, void *state);
   
   /* tree operations and modifications */
   bool modify_tree(void *state);
@@ -191,40 +135,33 @@ class Model
   void PrintPartitions(void);
   void PrintBestPartitions();
   void PrintTree(FILE* outfile);
-  double Posterior(void);
+  double Posterior(bool record);
   void PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves);
   void PrintPosteriors(void);
   Tree* maxPosteriors(void);
   void Print(void);
   void PrintTreeStats(FILE* outfile);
+  void PrintHiertrace(void);
+  void ProcessLinarea(Tree **leaves, unsigned int numLeaves);
   
   /* LLM functions */
   double Linear(void);
   void ResetLinear(double gam);
-  void new_linarea(void);
-  void realloc_linarea(void);
-  void delete_linarea(void);
-  void process_linarea(unsigned int numLeaves, Tree** leaves);
-  void reset_linarea(void);
-  void print_linarea(void);
+  void PrintLinarea(void);
 
   /* recording traces of Base parameters for XX in leaves */
   void Trace(Tree *leaf, unsigned int index);
+  void TraceNames(FILE * outfile, bool full);
+  void PriorTraceNames(FILE * outfile, bool full);
+
+  /* annealed importance sampling */
+  double iTemp(void);
+  void DrawInvTemp(void* state);
+  double* update_tprobs(void);
 };
 
 
 unsigned int new_index(double *quantiles, unsigned int n, unsigned int r);
-Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, double **rect, 
-		 unsigned int R, bool delta_s2, bool egp, unsigned int every);
-void delete_preds(Preds* preds);
-void import_preds(Preds* to, unsigned int where, Preds *from);
-Preds *combine_preds(Preds *to, Preds *from);
-void norm_Ds2xy(double **Ds2xy, unsigned int nn, unsigned int TmB);
-Posteriors* new_posteriors(void);
-void delete_posteriors(Posteriors* posteriors);
-void register_posterior(Posteriors* posteriors, Tree* t, double post);
-
-void fill_larg(LArgs* larg, Tree *leaf, Preds* preds, int index, bool dnorm);
 void* predict_consumer_c(void* m);
 void print_parts(FILE *PARTSFILE, Tree *t, double **iface_rect);
 

@@ -61,7 +61,7 @@ class MrGp : public Base
   double *bmu;		        /* mean of gibbs beta step */
   double *bmle;		        /* linear coefficients mle w/o MrGp */
    
-  double r;		        /*correlation between fidelities */
+  double r;		        /* correlation between fidelities */
   double lambda;		/* parameter in marginalized beta */
   
  public:
@@ -72,26 +72,32 @@ class MrGp : public Base
   virtual void Clear(void);
   virtual void ClearPred(void);
   virtual void Update(double **X, unsigned int n, unsigned int d, double *Z);
-  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, 
-			  double **Ds2xy);  
+  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy);
   virtual bool Draw(void *state);
-  virtual void Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
-		       double **ds2xy, double *ego, bool err, void *state);
+  virtual void Predict(unsigned int n, double *zp, double *zpm, double *zps2, 
+		       unsigned int nn, double *zz, double *zzm, double *zzs2,
+		       double **ds2xy, double *improv, double Zmin, bool err, 
+		       void *state);
   virtual void Match(Base* mrgp_old);
   virtual void Combine(Base *l_mrgp, Base *r_mrgp, void *state);
   virtual void Split(Base *l_mrgp, Base *r_mrgp, void *state);
-  virtual double Posterior(void);
   virtual void Compute(void);
   virtual void ToggleLinear(void);
   virtual bool Linear(void);
   virtual void printFullNode(void);
   virtual double Var(void);
-  virtual double FullPosterior(void);
+  virtual double Posterior(void);
+  virtual double MarginalLikelihood(double itemp);
+  virtual double Likelihood(double itemp);
+  virtual double FullPosterior(double itemp);
+  virtual double MarginalPosterior(double itemp);
   virtual char* State(void);
   virtual unsigned int sum_b(void);
-  virtual void Init(void);
+  virtual void Init(double *dmrgp);
   virtual void X_to_F(unsigned int n, double **X, double **F);  
-  virtual double* Trace(unsigned int* len);
+  virtual double* Trace(unsigned int* len, bool full);
+  virtual char** TraceNames(unsigned int* len, bool full);
+  virtual double NewInvTemp(double itemp, bool isleaf);
 
   double* get_b(void);
   double *Bmle(void);
@@ -150,6 +156,7 @@ class MrGp_Prior : public Base_Prior
 
   virtual void read_ctrlfile(std::ifstream* ctrlfile);
   virtual void read_double(double *dparams);
+  virtual void Init(double *dhier);
   
   virtual void Draw(Tree** leaves, unsigned int numLeaves, void *state);
   virtual bool LLM(void);
@@ -159,6 +166,9 @@ class MrGp_Prior : public Base_Prior
   virtual Base* newBase(Model *model);
   virtual Base_Prior* Dup(void);
   virtual double log_HierPrior(void);
+  virtual double* Trace(unsigned int* len, bool full);
+  virtual char** TraceNames(unsigned int* len, bool full);
+  virtual double GamLin(unsigned int which);
   
   void InitT(void);
   void read_beta(char *line);
@@ -183,9 +193,10 @@ class MrGp_Prior : public Base_Prior
   BETA_PRIOR BetaPrior(void);
 };
 
-void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, 
-			     double **tau2, Corr ***corr, Tree **leaves, 
+void mr_allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2, 
+			     unsigned int **n, Corr ***corr, Tree **leaves, 
 			     unsigned int numLeaves);
-void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr);
+void mr_deallocate_leaf_params(double **b, double *s2, double *tau2, unsigned int *n, 
+			       Corr **corr);
 
 #endif

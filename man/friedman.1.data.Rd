@@ -4,18 +4,18 @@
 \title{ First Friedman Dataset }
 
 \description{
-  Function to generate X and Y values from the 10-dim \dQuote{first}
+  Generate X and Y values from the 10-dim \dQuote{first}
   Friedman data set used to validate the Multivariate Adaptive 
-  Regression Splines (MARS) model.  This function is stationary,
-  with three non-linear and interacting variables, 
-  along with two linear, and five irrelevant effects.
+  Regression Splines (MARS) model.  This test function has
+  three non-linear and interacting variables, 
+  along with two linear, and five which are irrelevant
 }
 \usage{
 friedman.1.data(n = 100)
 }
 
 \arguments{
-  \item{n}{Number of samples}
+  \item{n}{Number of samples desired}
 }
 \details{
    10-dim inputs \code{X} are drawn from N(0,1), and responses
@@ -26,7 +26,7 @@ friedman.1.data(n = 100)
 \value{
   Output is a \code{data.frame} with columns
   
-  \item{X1\dotsX10 }{describing the 10-d sampled inputs}
+  \item{X1\dots 10 }{describing the 10-d sampled inputs}
   \item{Y}{sample responses (with N(0,1) noise)}
   \item{Ytruth}{true responses (without noise)}
 }
@@ -52,7 +52,7 @@ Machine Learning, \bold{48}, 303--324.
 \note{An example using this data is contained in the package vignette:
 \code{vignette("tgp")}.}
 
-\seealso{ \code{\link{tgp}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
-	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}} \code{\link{bgp}}}
+\seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, 
+	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{bgp}}}
 
 \keyword{ datasets }

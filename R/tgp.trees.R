@@ -34,7 +34,7 @@ function(out, which=NULL, main=NULL, ...)
   
   if(howmany > 1) {
     h <- howmany
-    if(sum(out$posts$height == 1) >= 1) { h <- h - 1; }
+    if(sum(out$posts$height[which] == 1) >= 1) { h <- h - 1; }
     rows <- floor(sqrt(h)); cols <- floor(h / rows)
     while(rows * cols < h) cols <- cols + 1
     par(mfrow=c(rows, cols), bty="n")
@@ -47,7 +47,7 @@ function(out, which=NULL, main=NULL, ...)
   
   for(j in 1:howmany) { 
     if(is.null(out$trees[[which[j]]])) next;
-    tgp.plot.tree(out$trees[[which[j]]], names, out$posts[j,], main=main, ...); 
+    tgp.plot.tree(out$trees[[which[j]]], names, out$posts[which[j],], main=main, ...); 
   }
 }
 

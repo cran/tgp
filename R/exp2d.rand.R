@@ -23,16 +23,18 @@
 
 
 "exp2d.rand" <-
-function(n1=50, n2=30, lh=NULL)
+function(n1=50, n2=30, lh=NULL, dopt=1)
 {
   ## check the sanity of the inputs
-  if(n1 < 0 || n2 < 0) stop("n1 and n1 must be >= 0")
+  if(n1 < 0 || n2 < 0) { stop("n1 and n2 must be >= 0") }
 
   ## use Latin Hybpercube sampling
   if(!is.null(lh)) {
 
     ## start with the interesting region
-    X <- lhs(n1, rbind(c(-2,2), c(-2,2)))
+    Xcand <- lhs(n1*dopt, rbind(c(-2,2), c(-2,2)))
+    if(dopt > 2) { X <- dopt.gp(n1, NULL, Xcand)$XX }
+    else { X <- Xcand }
 
     ## check if n2 is a 1-vector or a 3-vector
     if(length(n2) == 1) n2 <- rep(ceiling(n2/3), 3)
@@ -40,36 +42,53 @@ function(n1=50, n2=30, lh=NULL)
       stop(paste("length of n2 should be 1 or 3, you have",
                  length(n2)))
 
+    ## check validity of dopt
+    if(length(dopt) != 1 || dopt < 1)
+      stop(paste("dopt should be a scalar >= 1, you have", dopt))
+
     ## do the remaining three (uninteresting) quadtants
-    X <- rbind(X, lhs(n2[1], rbind(c(2,6), c(-2,2))))
-    X <- rbind(X, lhs(n2[2], rbind(c(2,6), c(2,6))))
-    X <- rbind(X, lhs(n2[3], rbind(c(-2,2), c(2,6))))
+    Xcand <- lhs(n2[1]*dopt, rbind(c(2,6), c(-2,2)))
+    Xcand <- rbind(Xcand, lhs(n2[2]*dopt, rbind(c(2,6), c(2,6))))
+    Xcand <- rbind(Xcand, lhs(n2[3]*dopt, rbind(c(-2,2), c(2,6))))
+
+    ## see if we need d-optimal subsample
+    if(dopt > 2) { X <- rbind(X, dopt.gp(sum(n2), NULL, Xcand)$XX) }
+    else { X <- rbind(X, Xcand) }
 
     ## calculate the Z data
     Zdata <- exp2d.Z(X);
     Ztrue <- Zdata$Ztrue; Z <- Zdata$Z
 
     ## now get the size of the XX vector (for each quadtant)
+    
     if(length(lh) == 1) lh <- rep(ceiling(lh/4), 4)
     else if(length(lh) != 4)
       stop(paste("length of lh should be 0 (for grid), 1 or 4, you have",
                  length(lh)))
 
     ## fill the XX vector
-    XX <- lhs(lh[1], rbind(c(-2,2), c(-2,2)))
-    XX <- rbind(XX, lhs(lh[2], rbind(c(2,6), c(-2,2))))
-    XX <- rbind(XX, lhs(lh[3], rbind(c(2,6), c(2,6))))
-    XX <- rbind(XX, lhs(lh[4], rbind(c(-2,2), c(2,6))))
+    XX <- lhs(lh[1]*dopt, rbind(c(-2,2), c(-2,2)))
+    XX <- rbind(XX, lhs(lh[2]*dopt, rbind(c(2,6), c(-2,2))))
+    XX <- rbind(XX, lhs(lh[3]*dopt, rbind(c(2,6), c(2,6))))
+    XX <- rbind(XX, lhs(lh[4]*dopt, rbind(c(-2,2), c(2,6))))
 
+    ## see if we need d-optimal subsample
+    if(length(X) > 0 && dopt > 2) {
+      XX <- dopt.gp(sum(lh), X, XX)$XX
+    }
+    
     ## calculate the ZZ data
-    ZZdata <- exp2d.Z(X);
+    ZZdata <- exp2d.Z(XX);
     ZZtrue <- ZZdata$Ztrue; ZZ <- Zdata$Z
 
   } else {
 
     ## make sure we have enough data to fulfill the request
-    if(n1 + n2 >= 441) stop("n1 + n2 must be <= 441")
+    if(n1 + n2 >= 441) { stop("n1 + n2 must be <= 441") }
 
+    ## dopt = TRUE doesn't make sense here
+    if(dopt != 1) { warning("argument dopt != 1 only makes sens when !is.null(lh)") }
+    
     ## load the data
     data(exp2d); n <- dim(exp2d)[1]
 

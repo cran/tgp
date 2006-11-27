@@ -8,7 +8,8 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-options(width=65)
+##options(width=65)
+seed <- 0; set.seed(seed)
 @ 
 
 Consider 1-dimensional simulated data which is partly a mixture of
@@ -36,52 +37,55 @@ Z <- Z + rnorm(length(Z), sd=0.1)
 @ 
 
 By design, the data is clearly nonstationary.  Perhaps not knowing
-this, good first model choice for this data might be a GP.
-<<echo=TRUE,results=HIDE>>=
-sin.bgp <- bgp(X=X, Z=Z, XX=XX)
+this, a good first model choice for this data might be a GP.
+<<>>=
+sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
 @ 
 \begin{figure}[ht!]
 \centering
-<<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
+<<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(sin.bgp, main='GP,', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.5cm}
+\includegraphics[trim=0 25 0 25]{sin-bgp}
+%\vspace{-0.25cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
     bgp} on synthetic sinusoidal data: mean and 90\% credible
   interval}
 \label{f:sin:bgp}
 \end{figure}
-Progress indicators have been suppressed.  Figure \ref{f:sin:bgp} shows
-the resulting posterior predictive surface under the GP.  Notice how
-the (stationary) GP gets the wiggliness of the sinusoidal region, but
-fails to capture the smoothness of the linear region.  This is becuase
-the data comes from a process that is nonstationary.
+Figure \ref{f:sin:bgp} shows the resulting posterior predictive
+surface under the GP.  Notice how the (stationary) GP gets the
+wiggliness of the sinusoidal region, but fails to capture the
+smoothness of the linear region.  This is because the data comes from
+a process that is nonstationary.
 
-So one might consider a Bayesian CART model instead.
+So one might consider a Bayesian treed linear model (LM) instead.
 <<>>=
 sin.btlm <- btlm(X=X, Z=Z, XX=XX)
-@ 
-MCMC progress indicators printed to {\tt stdout} indicate successful
-{\em grow} and {\em prune} operations as they happen, and region sizes
-$n$ every 1,000 rounds.
+@
+MCMC progress indicators show successful {\em grow} and {\em prune}
+operations as they happen, and region sizes $n$ every 1,000 rounds.
+Specifying {\tt verb=3}, or higher will show echo more successful tree
+operations, i.e., {\em change}, {\em swap}, and {\em rotate}.
  
 \begin{figure}[ht!]
 \centering
-<<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(sin.btlm, main='Linear CART,', layout='surf')
+<<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(sin.btlm, main='treed LM,', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.25cm}
+\includegraphics[trim=0 25 0 25]{sin-btlm}
+%\vspace{-0.25cm}
 <<label=btlmtrees,fig=TRUE,echo=TRUE,width=12,height=10>>=
 tgp.trees(sin.btlm)
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
 \vspace{-1cm}
 \caption{\footnotesize {\em Top:} Posterior predictive distribution
@@ -95,44 +99,35 @@ dev.off()
 Figure \ref{f:sin:btlm} shows the resulting posterior predictive
 surface ({\em top}) and trees ({\em bottom}).  The MAP partition
 ($\hat{\mathcal{T}}$) is also drawn onto the surface plot ({\em top})
-in the form of vertical lines.  The CART model captures the smoothness
+in the form of vertical lines.  The treed LM captures the smoothness
 of the linear region just fine, but comes up short in the sinusoidal
 region---doing the best it can with piecewise linear models.
 
-The ideal model for this data is the Bayesian treed GP becuase it can
+The ideal model for this data is the Bayesian treed GP because it can
 be both smooth and wiggly.
-<<echo=TRUE,results=HIDE>>=
-sin.btgp <- btgp(X=X, Z=Z, XX=XX)
+<<>>=
+sin.btgp <- btgp(X=X, Z=Z, XX=XX, verb=0)
 @ 
 \begin{figure}[ht!]
 \centering
-<<label=btgp,fig=TRUE,echo=FALSE,width=7,height=5>>=
+<<label=btgp,fig=TRUE,echo=FALSE,width=7,height=5,include=FALSE>>=
 plot(sin.btgp, main='treed GP,', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.25cm}
-<<label=btgptrees,fig=TRUE,echo=TRUE,width=6,height=5>>=
-tgp.trees(sin.btgp)
-@
-<<echo=false,results=hide>>=
-dev.off()
-@
-\vspace{-1cm}
-\caption{\footnotesize {\em Top:} Posterior predictive distribution
+\includegraphics[trim=0 25 0 25]{sin-btgp}
+%\vspace{-1cm}
+\caption{\footnotesize Posterior predictive distribution
   using {\tt btgp} on synthetic sinusoidal data: mean and 90\%
-  credible interval, and MAP partition ($\hat{\mathcal{T}}$); {\em
-    Bottom} MAP trees for each height encountered in the Markov
-  chain.}
-\label{f:sin:btgp}
+  credible interval, and MAP partition ($\hat{\mathcal{T}}$)
+    \label{f:sin:btgp}}
 \end{figure}
-Progress indicators have been suppressed.
 Figure \ref{f:sin:btgp} shows the resulting posterior predictive
-surface ({\em top}) and trees ({\em bottom}).
+surface ({\em top}) and MAP $\hat{\mathcal{T}}$ with height=2.
 
 Finally, speedups can be obtained if the GP is allowed to jump to the
-LLM \cite{gramacy:thesis:2005}, since half of the response surface is
+LLM \cite{gra:lee:2006}, since half of the response surface is
 {\em very} smooth, or linear.  This is not shown here since the results
 are very similar to those above, replacing {\tt btgp} with {\tt btgpllm}.
 The example in the next subsection offers a comparison for 2-d data.

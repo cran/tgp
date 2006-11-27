@@ -1,4 +1,4 @@
-/******************************************************************************** 
+#/******************************************************************************** 
  *
  * Bayesian Regression and Adaptive Sampling with Gaussian Process Trees
  * Copyright (C) 2005, University of California
@@ -61,8 +61,6 @@ Corr::Corr(unsigned int col, Base_Prior *base_prior)
   /* set priors */
   assert(base_prior);
   this->base_prior = base_prior;
- 
-
 }
 
 
@@ -77,6 +75,21 @@ Corr::~Corr(void)
   deallocate_new();
   delete_matrix(Vb_new);
   free(bmu_new);
+}
+
+
+/* 
+ * NugInit:
+ *
+ * reset nug and linear (as passed via one of the inheretid corr
+ * corr functions) eventually coming via a vector of doubles from
+ * passt by R
+ */
+
+void Corr::NugInit(double nug, bool linear)
+{
+  this->nug = nug;
+  this->linear = linear;
 }
 
 
@@ -410,6 +423,21 @@ Corr_Prior::~Corr_Prior(void)
 
 
 /*
+ * Init:
+ *
+ * read hiererchial prior parameters from a double-vector
+ *
+ */
+
+void Corr_Prior::NugInit(double *dhier)
+{
+  nug_alpha[0] = dhier[0];
+  nug_beta[0] = dhier[1];
+  nug_alpha[1] = dhier[2];
+  nug_beta[1] = dhier[3];
+}
+
+/*
  * default_nug_priors:
  * 
  * set nug prior parameters
@@ -418,10 +446,10 @@ Corr_Prior::~Corr_Prior(void)
 
 void Corr_Prior::default_nug_priors(void)
 {
-	nug_alpha[0] = 1.0;
-	nug_beta[0] = 1.0;
-	nug_alpha[1] = 1.0;
-	nug_beta[1] = 1.0;
+  nug_alpha[0] = 1.0;
+  nug_beta[0] = 1.0;
+  nug_alpha[1] = 1.0;
+  nug_beta[1] = 1.0;
 }
 
 
@@ -434,12 +462,12 @@ void Corr_Prior::default_nug_priors(void)
 
 void Corr_Prior::default_nug_lambdas(void)
 {
-	nug_alpha_lambda[0] = 0.5;
-	nug_beta_lambda[0] = 10.0;
-	nug_alpha_lambda[1] = 0.5;
-	nug_beta_lambda[1] = 10.0;
-	fix_nug = false;
-	//fix_nug = true;
+  nug_alpha_lambda[0] = 0.5;
+  nug_beta_lambda[0] = 10.0;
+  nug_alpha_lambda[1] = 0.5;
+  nug_beta_lambda[1] = 10.0;
+  fix_nug = false;
+  //fix_nug = true;
 }
 
 
@@ -452,7 +480,7 @@ void Corr_Prior::default_nug_lambdas(void)
 
 void Corr_Prior::fix_nug_prior(void)
 {
-	fix_nug = true;
+  fix_nug = true;
 }
 
 
@@ -746,9 +774,45 @@ double Corr_Prior::log_NugHierPrior(void)
   lpdf = 0.0;
 
   if(!fix_nug) {
-    lpdf += mixture_hier_prior_log(nug_alpha, nug_beta, 
-				   nug_alpha_lambda, nug_beta_lambda);
+    lpdf += mixture_hier_prior_log(nug_alpha, nug_beta, nug_alpha_lambda, 
+				   nug_beta_lambda);
   }
 
   return lpdf;
+}
+
+
+
+/* 
+ * NugTrace:
+ *
+ * return the current values of the hierarchical 
+ * parameters to nugget of this correlation function: 
+ */
+
+double* Corr_Prior::NugTrace(unsigned int* len)
+{
+  *len = 4;
+  double* trace = new_vector(*len);
+  trace[0] = nug_alpha[0]; trace[1] = nug_beta[0];
+  trace[2] = nug_alpha[1]; trace[3] = nug_beta[1];
+  return trace;
+}
+
+
+/* 
+ * NugTraceNames:
+ *
+ * return the names of the traces recorded by Corr_Prior::NugTrace()
+ */
+
+char** Corr_Prior::NugTraceNames(unsigned int* len)
+{
+  *len = 4;
+  char** trace = (char**) malloc(sizeof(char*) * (*len));
+  trace[0] = strdup("nug.a0");
+  trace[1] = strdup("nug.g0");
+  trace[2] = strdup("nug.a1");
+  trace[3] = strdup("nug.g1");
+  return trace;
 }

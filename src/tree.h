@@ -40,7 +40,7 @@ typedef enum TREE_OP {GROW=201, PRUNE=202, CHANGE=203, CPRUNE=204, SWAP=205,
 
 /* dummy prototype */
 class Model;
-extern FILE* STDOUT;
+
 
 class Tree
 {
@@ -109,6 +109,7 @@ class Tree
    * (likelihood + plus some prior stuff) 
    * of a particular lef, or all leaves */
   double leavesPosterior(void);
+  double Posterior(void);
   unsigned int leavesN(void);
     
  public:
@@ -117,14 +118,15 @@ class Tree
   Tree(double **X, int *p, unsigned int n, unsigned int d, double *Z, 
        Rect* rect, Tree* parent, Model* model);
   Tree(const Tree *oldt);
-  void init(void);
+  void Init(double *dtree, unsigned int nrow, double **iface_rect);
   ~Tree(void);
   void delete_XX(void);
   
   /* things that model (module) will initiate 
    * on ONLY leaf nodes */
-  void Predict(double *ZZ, double *Zpred, double **Ds2xy, double *ego,
-	       bool err, void *state);
+  void Predict(double *Zp, double *Zpm, double *Zps2,double *ZZ, 
+	       double *ZZm, double *ZZs2, double *Ds2x, double *improv,
+	       double Zmin, unsigned int wZmin, bool err, void *state);
   
   /* propose tree operations */
   bool grow(double ratio, void *state);
@@ -137,24 +139,27 @@ class Tree
   
   /* access functions:
    * return current values of the parameters */
-  unsigned int getDepth(void);
-  unsigned int getN(void);
-  unsigned int getNN(void);
-  Rect* GetRect(void);
-  int* get_pp(void);
-  double** get_XX(void);
-  double** get_X(void);
-  double* get_Z(void);
+  unsigned int getDepth(void) const;
+  unsigned int getN(void) const;
+  unsigned int getNN(void) const;
+  Rect* GetRect(void) const;
+  int* get_pp(void) const;
+  double** get_XX(void) const;
+  double** get_X(void) const;
+  double* get_Z(void) const;
+  Base* GetBase(void) const;
+  Base_Prior* GetBasePrior(void) const;
+
+  /* global computation functions */
   void Update(void);
   void Compute(void);
-  double Posterior(void);
   void ToggleLinear(void);
-  bool Linarea(unsigned int *sum_b, double *area);
-  Base* GetBase(void);
+  bool Linarea(unsigned int *sum_b, double *area) const;
+  void NewInvTemp(double itemp);
 
   /* access function: info about nodes */
   bool isLeaf(void) const;
-  bool isRoot(void);
+  bool isRoot(void) const;
   char* State(void);
   bool Draw(void* state);
   void Clear(void);
@@ -167,16 +172,18 @@ class Tree
   Tree** internalsList(unsigned int* len);
   Tree** buildTreeList(unsigned int len);
   unsigned int numPrunable(void);
+  bool isPrunable(void) const;
   unsigned int numLeaves(void);
- 
+  Tree* Parent(void) const; 
+
   /* size checks */
-  double Area(void);
-  bool wellSized(void);
-  unsigned int Height(void);
-  bool Singular(void);
+  double Area(void) const;
+  bool wellSized(void) const;
+  unsigned int Height(void) const;
+  bool Singular(void) const;
   
   /* printing */
-  void PrintTree(FILE* outfile, double** rect, double scale, int root);
+  void PrintTree(FILE* outfile, double** rect, double scale, int root) const;
   void Outfile(FILE *file, int verb);
   
   /* seperating prediction from estimation */
@@ -184,11 +191,14 @@ class Tree
   void new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned int d_new);
   unsigned int* dopt_from_XX(unsigned int N, void *state);
   
-  /* computing the full posterior of the tree */
-  double FullPosterior(double alpha, double beta);
+  /* computing the full posterior or likelihood of the tree */
+  double FullPosterior(double itemp);
+  double MarginalPosterior(double itemp);
+  double Likelihood(double itemp);
 
   /* gathering traces of parameters */
   void Trace(unsigned int index, FILE* XXTRACEFILE);
+  char** TraceNames(unsigned int *len, bool full);
 };
 
 #endif

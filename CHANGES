@@ -1,3 +1,39 @@
+1.2 (21 Nov 2006)
+---
+
+Now allowing BTE[2]-BTE[1] % BTE[3] != 0
+
+Added predict.tgp and necesary functionality to save 
+and load in MAP tgp model for later prediction
+
+Corrected par calculation in tgp.trees for non-default
+which argument when there is an unprinted height 1 tree
+
+Traces not recorded for linarea, parts, and ego, when 
+they are off or fixed to unchanging settings
+
+Fixed EGO calculations; now calling them "improv", made
+them thread-safe, and added improv samples to traces
+
+Also now renamed ds2x to Ds2x, and made Ds2x (i.e., ALC) 
+calculations thread-safe
+
+Elipses to b* function allow other params arguments to 
+be passed to replace defaults in tgp.default.params()
+
+Added traces of hierarchical parameters, and all 
+predictive summaries (including kriging means and vars)
+
+Initial implementation of Importance Tempering idea
+
+Calculating variances of predictive distribution, and
+saving kriging means and variances
+
+Fixed numPrunable (P+1) calculation in grow attempts
+
+EGO calculations made thread-safe
+
+
 1.1-11 (20 Sept 2006)
 ------
 
@@ -8,7 +44,7 @@ to go unnoticed until assertion failure on Windows
 1.1-10 (19 Sept 2006)
 ------
 
-Fixed big compute_ego() bug.
+Fixed big compute_ego() bug
 
 Tweaks to RNG seeds so that they give same sequence
 across platforms (tested on OSX/PB & Linux/Xeons)

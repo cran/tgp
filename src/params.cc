@@ -189,7 +189,7 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 
 
 /*
- * get_T_alpha_beta:
+ * get_T_params:
  * 
  * pass back the tree prior parameters
  * t_alpha nad t_beta
@@ -197,9 +197,23 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 
 void Params::get_T_params(double *alpha, double *beta, unsigned int *minpart)
 {
-	*alpha = t_alpha;
-	*beta = t_beta;
-	*minpart = t_minpart;
+  *alpha = t_alpha;
+  *beta = t_beta;
+  *minpart = t_minpart;
+}
+
+
+/*
+ * isTree:
+ *
+ * return true if the tree-proir allows tree growth,
+ * and false otherwise
+ */
+
+bool Params::isTree(void)
+{
+  if(t_alpha > 0 && t_beta > 0) return true;
+  else return false;
 }
 
 
@@ -223,12 +237,12 @@ unsigned int Params::T_minp(void)
 
 void get_mix_prior_params(double *alpha, double *beta, char *line, char* which)
 {
-	assert((alpha[0] = atof(strtok(line, " \t\n#"))) > 0);
-	assert((beta[0] = atof(strtok(NULL, " \t\n#"))) > 0);
-	assert((alpha[1] = atof(strtok(NULL, " \t\n#"))) > 0);
-	assert((beta[1] = atof(strtok(NULL, " \t\n#"))) > 0);
-	/* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	   which, alpha[0], beta[0], alpha[1], beta[1]); */
+  assert((alpha[0] = atof(strtok(line, " \t\n#"))) > 0);
+  assert((beta[0] = atof(strtok(NULL, " \t\n#"))) > 0);
+  assert((alpha[1] = atof(strtok(NULL, " \t\n#"))) > 0);
+  assert((beta[1] = atof(strtok(NULL, " \t\n#"))) > 0);
+  /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+     which, alpha[0], beta[0], alpha[1], beta[1]); */
 } 
 
 
@@ -240,12 +254,12 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, char* which)
 
 void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, char* which)
 {
-	assert((alpha[0] = alpha_beta[0]) > 0);
-	assert((beta[0] = alpha_beta[1]) > 0);
-	assert((alpha[1] = alpha_beta[2]) > 0);
-	assert((beta[1] = alpha_beta[3]) > 0);
-	/* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
-	   which, alpha[0], beta[0], alpha[1], beta[1]); */
+  assert((alpha[0] = alpha_beta[0]) > 0);
+  assert((beta[0] = alpha_beta[1]) > 0);
+  assert((alpha[1] = alpha_beta[2]) > 0);
+  assert((beta[1] = alpha_beta[3]) > 0);
+  /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+     which, alpha[0], beta[0], alpha[1], beta[1]); */
 }
 
 

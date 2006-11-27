@@ -4,7 +4,7 @@
 \title{ Lowess 2-d interpolation onto a uniform grid }
 \description{
   Use the \code{\link[stats]{loess}} function to interpolate the
-  two-dimensional x, y, z data onto a uniform grid.  The output
+  two-dimensional \code{x}, \code{y}, and \code{z} data onto a uniform grid.  The output
   produced is an object directly usable by the plotting functions
   \code{\link[graphics]{persp}}, \code{\link[graphics]{image}},
   and \code{\link[graphics]{contour}}, etc.
@@ -63,12 +63,12 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
 
 \note{ 
   As mentioned above, the default \code{span = 0.1} parameter is 
-  signifigantly smaller that the default \code{\link[stats]{loess}} setting.
+  significantly smaller that the default \code{\link[stats]{loess}} setting.
    This asserts a tacit assumption that
-      the input is densly packed and that the noise in \code{z}'s is small.  
+      the input is densely packed and that the noise in \code{z}'s is small.  
       Such should be the case when the data are output from a \pkg{tgp} regression --
       this function was designed specifically for this situation.
-      For data that is random or sparce, simply choose higher setting,
+      For data that is random or sparse, simply choose higher setting,
     e.g., the default \code{\link[stats]{loess}} setting of \code{span =
   0.75}, or a more intermediate setting of \code{span = 0.5} as in the example below}
 }
@@ -81,7 +81,7 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
 # random data
 ed <- exp2d.rand()
 
-# higher span = 0.5 required becuase the data is sparce
+# higher span = 0.5 required because the data is sparse
 # and was generated randomly
 ed.g <- interp.loess(ed$X[,1], ed$X[,2], ed$Z, span=0.5)
 

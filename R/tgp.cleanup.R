@@ -23,44 +23,104 @@
 
 
 "tgp.cleanup" <-
-  function(verb)
+  function(message="INTERRUPT", verb, rmfiles=TRUE)
 {
   .C("tgp_cleanup", PACKAGE = "tgp")
+
+  ## remove the trace (and other) files?
+  if(rmfiles) {
   
-  if(file.exists(paste("./", "best_parts_1.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed best_parts_1.out\n")
-    unlink("best_parts_1.out")
-  } 
-  
-  if(file.exists(paste("./", "tree_m0_posts.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed tree_m0_posts.out\n")
-    unlink("tree_m0_posts.out")
+    if(file.exists(paste("./", "best_parts_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed best_parts_1.out\n", sep=""))
+      unlink("best_parts_1.out")
+    } 
+    
+    if(file.exists(paste("./", "tree_m0_posts.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed tree_m0_posts.out\n", sep=""))
+      unlink("tree_m0_posts.out")
+    }
+    
+    if(file.exists(paste("./", "trace_parts_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_parts_1.out\n", sep=""))
+      unlink("trace_parts_1.out")
+    } 
+    
+    if(file.exists(paste("./", "trace_post_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_post_1.out\n", sep=""))
+      unlink("trace_post_1.out")
+    }
+    
+    if(file.exists(paste("./", "trace_wess_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_wess_1.out\n", sep=""))
+      unlink("trace_wess_1.out")
+    } 
+    
+    if(file.exists(paste("./", "trace_hier_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_hier_1.out\n", sep=""))
+      unlink("trace_hier_1.out")
+    } 
+    
+    if(file.exists(paste("./", "trace_linarea_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_linarea_1.out\n", sep=""))
+      unlink("trace_linarea_1.out")
+    } 
+    
+    if(file.exists(paste("./", "trace_XX_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_XX_1.out\n", sep=""))
+      unlink("trace_XX_1.out")
+    } 
+
+    if(file.exists(paste("./", "trace_Zp_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_Zp_1.out\n", sep=""))
+      unlink("trace_Zp_1.out")
+    }
+
+    if(file.exists(paste("./", "trace_Zpkm_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_Zpkm_1.out\n", sep=""))
+      unlink("trace_Zpkm_1.out")
+    }
+    
+    if(file.exists(paste("./", "trace_Zpks2_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_Zpks2_1.out\n", sep=""))
+      unlink("trace_Zpks2_1.out")
+    }
+    
+    if(file.exists(paste("./", "trace_ZZ_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_ZZ_1.out\n", sep=""))
+      unlink("trace_ZZ_1.out")
+    }
+
+    if(file.exists(paste("./", "trace_ZZkm_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_ZZkm_1.out\n", sep=""))
+      unlink("trace_ZZkm_1.out")
+    }
+    
+    if(file.exists(paste("./", "trace_ZZks2_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_ZZks2_1.out\n", sep=""))
+      unlink("trace_ZZks2_1.out")
+    }
+    
+    if(file.exists(paste("./", "trace_improv_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_improv_1.out\n", sep=""))
+      unlink("trace_improv_1.out")
+    }
+
+    if(file.exists(paste("./", "trace_Ds2x_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_Ds2x_1.out\n", sep=""))
+      unlink("trace_Ds2x_1.out")
+    }
+
+    ## get all of the names of the tree files
+    tree.files <- list.files(pattern="tree_m0_[0-9]+.out")
+    
+    ## for each tree file
+    if(length(tree.files > 0)) {
+      for(i in 1:length(tree.files)) {
+        if(verb >= 1) cat(paste(message, ": removed ", tree.files[i], "\n", sep=""))
+        if(rmfiles) unlink(tree.files[i])
+      }
+    }
   }
-
-  if(file.exists(paste("./", "trace_parts_1.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed trace_parts_1.out\n")
-    unlink("trace_parts_1.out")
-  } 
-
-  if(file.exists(paste("./", "trace_post_1.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed trace_post_1.out\n")
-    unlink("trace_post_1.out")
-  } 
-
-  if(file.exists(paste("./", "trace_linarea_1.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed trace_linarea_1.out\n")
-    unlink("trace_linarea_1.out")
-  } 
-
-  if(file.exists(paste("./", "trace_XX_1.out", sep=""))) {
-    if(verb >= 1) cat("INTERRUPT: removed trace_XX_1.out\n")
-    unlink("trace_XX_1.out")
-  } 
-
-  if(file.exists(paste("./", "trace_ZZ_1.out", sep=""))) {
-    if(verb > 1) cat("INTERRUPT: removed trace_ZZ_1.out\n")
-    unlink("trace_ZZ_1.out")
-  }
-
-  if(verb >= 1) cat("\n")
- }
+    
+  if(verb >= 1 && message == "INTERRUPT") cat("\n")
+}

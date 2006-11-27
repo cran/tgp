@@ -25,38 +25,60 @@
 "print.tgptraces" <-
 function(x, ...)
 {
-	cat("\nThis 'tgptraces'-class object contains traces of\n")
-	cat("the parameters to a tgp model. Access is as a list:\n")
+  cat("\nThis 'tgptraces'-class object contains traces of the parameters\n")
+  cat("to a tgp model. Access is as a list:\n\n")
+  
+  ## info about XX
+  cat(paste("1.) $XX contains the traces of GP parameters for ",
+            length(x$XX), " predictive\n", sep=""))
+  cat("    locations\n\n")
+  
+  if(length(x$XX) > 0) {
+    if(length(x$XX) == 1) { cat(paste("\n$XX[[1]]" , sep="")) }
+    else { cat(paste("    Each of $XX[[1]] ... $XX[[", length(x$XX), "]]", sep="")) }
+    cat(paste("  is a data frame with the\n    columns representing GP parameters:\n\n",
+              sep=""))
+    print(names(x$XX[[1]]), quote=FALSE)
+    
+  } else
+    cat(" ** The $XX list is empty because XX=NULL\n")
 
-	cat(paste("\n1.) $XX contains the traces of GP parameters for ",
-                  length(x$XX), "\n", sep=""))
-        cat("predictive locations.\n")
-
-        if(length(x$XX) > 0) {
-          cat(paste("\nEach of $XX[[1]] ... $XX[[", length(x$XX),
-              "]] is a data frame\nwith the columns representing GP parameters:\n\n",
-                    sep=""))
-          cat(paste(names(x$XX[[1]]), sep=" "))
-          cat("\n")
-
-        } else 
-          cat("\nThis list is empty, since you did not specify XX\n")
-
-        cat("\n2.) $linarea has a trace of areas under the LLM.\n")
-        cat("Models which 'force' (e.g., blm, btlm), or 'bar' a\n")
-        cat("LLM (e.g., bgp, btgp) make this list is boring.\n")
-        cat("Otherwise, it is a data frame with columns:\n\n")
-        cat("   count: number of booleans b=0, indicating LLM\n")
-        cat("   la:    area of domain under LLM\n")
-        cat("   ba:    area of domain under LLM weighed by dim\n")
- 
-        cat("\n3.) $parts contains all of the partitions visited.\n")
-        cat("Use tgp.plot.parts.[1d,2d] functions for visuals\n")
-
-        cat("\n4.) $posts is a data frame with two columns showing\n")
-        cat("how log posterior relates to tree height\n")
-
-        cat("\n5.) $ZZ is a data frame containing samples from \n")
-        cat("the posterior predictive at the XX locations\n")
-        cat("\n")
-      }
+  ## info about hierarchial params
+  cat("\n2.) $hier has a trace of the hierarchical params:\n", sep="", fill=TRUE)
+  print(names(x$hier), quote=FALSE)
+  
+  ## info about linarea
+  cat("\n3.) $linarea has a trace of areas under the LLM.  It is a \n")
+  cat("    data frame with columns:\n\n")
+  cat("    count: number of booleans b=0, indicating LLM\n")
+  cat("       la: area of domain under LLM\n")
+  cat("       ba: area of domain under LLM weighed by dim\n")
+  if(length(x$linarea) <= 0) {
+    cat("\n ** $linarea is empty since you fit either a\n")
+    cat(" ** model which either forced the LLM (btlm, blm),\n")
+    cat(" ** or disallowed it (bgp, btgp)\n")
+  }
+  
+  ## info about parts
+  cat("\n4.) $parts contains all of the partitions visited.  Use the\n")
+  cat("    tgp.plot.parts.[1d,2d] functions for visuals\n\n")
+  if(length(x$parts) <= 0) {
+    cat(" ** $parts is empty since you fit a non-treed model\n")
+  }
+  
+  ## info about posts
+  cat("5.) $post is a data frame with columns showing the following:\n")
+  cat("    log posterior ($lpost), tree height ($height), IS\n") 
+  cat("    weights ($w), tempered log posterior ($tlpost), inv-temp\n")
+  cat("    ($itemp), and weights adjusted for ESS ($wess)\n\n")
+  
+  ## info about ZZ
+  cat("6.) $preds is a list containing data.frames for samples from\n")
+  cat("    the posterior predictive distributions data (X) locations\n")
+  cat("    (if pred.n=TRUE: $Zp, $Zp.km, $Zp.ks2) and (XX) locations\n")
+  cat("    (if XX != NULL: $ZZ, $ZZ.km, $ZZ.ks2), with $Ds2x when\n")
+  cat("    input argument ds2x=TRUE, and $improv when improv=TRUE\n\n")
+  if(length(x$preds) <= 0) {
+    cat(" ** $preds is empty because pred.n=FALSE and XX=NULL\n\n")
+  }
+}

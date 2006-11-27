@@ -2,8 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-options(width=65)
-graphics.off()
+##options(width=65)
+seed <- 0; set.seed(seed)
 
 
 ###################################################
@@ -20,7 +20,7 @@ Z <- Z + rnorm(length(Z), sd=0.1)
 ###################################################
 ### chunk number 3: 
 ###################################################
-sin.bgp <- bgp(X=X, Z=Z, XX=XX)
+sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
 
 
 ###################################################
@@ -32,8 +32,8 @@ plot(sin.bgp, main='GP,', layout='surf')
 ###################################################
 ### chunk number 5: 
 ###################################################
-rl <- readline("pres RETURN to continue: ")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
@@ -51,8 +51,8 @@ plot(sin.btlm, main='Linear CART,', layout='surf')
 ###################################################
 ### chunk number 8: 
 ###################################################
-rl <- readline("pres RETURN to continue: ")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
@@ -64,14 +64,14 @@ tgp.trees(sin.btlm)
 ###################################################
 ### chunk number 10: 
 ###################################################
-rl <- readline("pres RETURN to continue: ")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
 ### chunk number 11: 
 ###################################################
-sin.btgp <- btgp(X=X, Z=Z, XX=XX)
+sin.btgp <- btgp(X=X, Z=Z, XX=XX, verb=0)
 
 
 ###################################################
@@ -83,13 +83,7 @@ plot(sin.btgp, main='treed GP,', layout='surf')
 ###################################################
 ### chunk number 13: 
 ###################################################
-rl <- readline("pres RETURN to continue: ")
-dev.off()
-
-
-###################################################
-### chunk number 14: btgptrees
-###################################################
-tgp.trees(sin.btgp)
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 

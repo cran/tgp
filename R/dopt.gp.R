@@ -72,6 +72,10 @@ function(nn, X=NULL, Xcand)
   ll$X <- framify.X(ll$X, Xnames, m)
   ll$Xcand <- framify.X(ll$Xcand, Xnames, m)
   ll$XX <- ll$Xcand[ll$fi,]
+
+  ## dont return some of the things used by C
+  ll$n <- NULL; ll$m <- NULL; ll$state <- NULL
+  
   return(ll)
 }
 

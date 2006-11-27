@@ -25,22 +25,24 @@
 "tgp.design" <-
 function(howmany, Xcand, out)
 {
-	Xcand.parts <- partition(Xcand, out)
-	X.parts <- partition(out$X, out)
+  ## get partitioned candidates and dat locaitons
+  Xcand.parts <- partition(Xcand, out)
+  X.parts <- partition(out$X, out)
 
-	XX <- NULL
-
-	# subsample some from each partition
-	cat(paste("\nsequential treed D-Optimal design in ", 
-		length(Xcand.parts), " partitions\n", sep=""))
-	for(i in 1:length(Xcand.parts)) {
-		nn <- ceiling(howmany*(dim(Xcand.parts[[i]])[1])/(dim(Xcand)[1]))
-		cat(paste("dopt.gp (", i, ") choosing ", nn, " new inputs from ", 
-			dim(Xcand.parts[[i]])[1], " candidates\n", sep=""))
-		dout <- dopt.gp(nn, X.parts[[i]], Xcand.parts[[i]]);
-		XX <- rbind(XX, dout$XX)
-	}
-
-	return(XX)
+  ## initialize selected candidates to none
+  XX <- NULL
+  
+  ## subsample some from each partition
+  cat(paste("\nsequential treed D-Optimal design in ", 
+            length(Xcand.parts), " partitions\n", sep=""))
+  for(i in 1:length(Xcand.parts)) {
+    nn <- ceiling(howmany*(dim(Xcand.parts[[i]])[1])/(dim(Xcand)[1]))
+    cat(paste("dopt.gp (", i, ") choosing ", nn, " new inputs from ", 
+              dim(Xcand.parts[[i]])[1], " candidates\n", sep=""))
+    dout <- dopt.gp(nn, X.parts[[i]], Xcand.parts[[i]]);
+    XX <- rbind(XX, dout$XX)
+  }
+  
+  return(XX)
 }
 

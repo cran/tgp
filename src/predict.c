@@ -49,22 +49,22 @@ double predictive_mean(n1, col, FFrow, KKrow, b, KiZmFb)
 unsigned int n1, col;
 double *FFrow, *KKrow, *KiZmFb, *b;
 {
-  double zz;
+  double zzm;
 	
   /* f(x)' * beta */
-  zz = linalg_ddot(col, FFrow, 1, b, 1);
+  zzm = linalg_ddot(col, FFrow, 1, b, 1);
 
   /* E[Z(x)] = f(x)' * beta  + k'*Ki*(Zdat - F*beta) */
-  zz += linalg_ddot(n1, KKrow, 1, KiZmFb, 1);
+  zzm += linalg_ddot(n1, KKrow, 1, KiZmFb, 1);
   
 #ifdef DEBUG
   /* check to make sure the prediction is not too big;
      an old error */
-  if(abs(zz) > 10e10) 
-    warning("(predict) abs(zz)=%g > 10e10", zz);
+  if(abs(zzm) > 10e10) 
+    warning("(predict) abs(zz)=%g > 10e10", zzm);
 #endif
 
-  return zz;
+  return zzm;
 }
 
 
@@ -78,9 +78,9 @@ double *FFrow, *KKrow, *KiZmFb, *b;
  * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
  */
 
-void predict_data(zmean,zs,n1,col,FFrow,K,b,ss2,nug,KiZmFb)
+void predict_data(zpm,zps2,n1,col,FFrow,K,b,ss2,nug,KiZmFb)
 unsigned int n1, col;
-double *b, *KiZmFb, *zmean, *zs;
+double *b, *KiZmFb, *zpm, *zps2;
 double **FFrow, **K;
 double ss2, nug;
 {
@@ -88,8 +88,8 @@ double ss2, nug;
 	
   /* for each point at which we want a prediction */
   for(i=0; i<n1; i++) {
-    zmean[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
-    zs[i] = sqrt(ss2*nug);
+    zpm[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
+    zps2[i] = ss2*nug;
   }
 }
 
@@ -104,9 +104,9 @@ double ss2, nug;
  * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
  */
 
-void mr_predict_data(zmean,zs,n1,col,X,FFrow,K,b,ss2,nug,nugfine,KiZmFb)
+void mr_predict_data(zpm,zps2,n1,col,X,FFrow,K,b,ss2,nug,nugfine,KiZmFb)
 unsigned int n1, col;
-double *b, *KiZmFb, *zmean, *zs;
+double *b, *KiZmFb, *zpm, *zps2;
 double **FFrow, **K, **X;
 double ss2, nug, nugfine;
 {
@@ -116,11 +116,11 @@ double ss2, nug, nugfine;
   for(i=0; i<n1; i++) {
 
     /* same as non-mr predictive_mean */
-    zmean[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
+    zpm[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
 
     /* decide whether to use coarse or fine nugget */
-    if(X[i][0]==1) zs[i] = sqrt(ss2*nugfine);
-    else zs[i] = sqrt(ss2*nug);
+    if(X[i][0]==1) zps2[i] = ss2*nugfine;
+    else zps2[i] = ss2*nug;
   }
 }
 
@@ -261,10 +261,10 @@ double ss2, var, tau2;
  * Ds2xy[n2][n2];
  */
 
-void predict_delta(zmean,zs,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,KKrow,xxKxx,KpFWFi,b,
+void predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,KKrow,xxKxx,KpFWFi,b,
 		ss2,nug,KiZmFb)
 unsigned int n1, n2, col;
-double *b, *KiZmFb, *zmean, *zs;
+double *b, *KiZmFb, *zzm, *zzs2;
 double **FFrow, **KKrow, **xxKxx, **KpFWFi, **FW, **W, **Ds2xy;
 double ss2, nug, tau2;
 {
@@ -282,9 +282,9 @@ double ss2, nug, tau2;
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
-    zmean[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
-    zs[i] = sqrt(predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, 
-				KKrow[i], FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug));
+    zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
+    zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, 
+				KKrow[i], FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug);
     
     /* compute the ith row of the Ds2xy matrix */
     delta_sigma2(Ds2xy[i], n1, n2, col, ss2, s2cor, FW, tau2, Wf, rhs, 
@@ -310,10 +310,10 @@ double ss2, nug, tau2;
  * KpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void mr_predict_no_delta(zmean,zs,n1,n2,col,XX,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
+void mr_predict_no_delta(zzm,zzs2,n1,n2,col,XX,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
 			 nug,nugfine,r,delta,KiZmFb)
 unsigned int n1, n2, col;
-double *b, *KiZmFb, *zmean, *zs;
+double *b, *KiZmFb, *zzm, *zzs2;
 double **FFrow, **KKrow, **KpFWFi, **FW, **W, **XX;
 double ss2, nug, nugfine, r, delta, tau2;
 {
@@ -331,15 +331,15 @@ double ss2, nug, nugfine, r, delta, tau2;
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
-    zmean[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
+    zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
 
     /* compute the var parameter (1 + nugget) across coarse and fine levels */
     if(XX[i][0]==1) var = r*r + delta + nugfine;
     else var = 1.0 + nug;
 
     /* calculate the predictive standard deviation */
-    zs[i] = sqrt(predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
-				FFrow[i], FW, W, tau2, KpFWFi, var));
+    zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
+				FFrow[i], FW, W, tau2, KpFWFi, var);
   }
 
   /* clean up */
@@ -361,10 +361,10 @@ double ss2, nug, nugfine, r, delta, tau2;
  * KpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta(zmean,zs,n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
+void predict_no_delta(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
 		      nug,KiZmFb)
 unsigned int n1, n2, col;
-double *b, *KiZmFb, *zmean, *zs;
+double *b, *KiZmFb, *zzm, *zzs2;
 double **FFrow, **KKrow, **KpFWFi, **FW, **W;
 double ss2, nug, tau2;
 {
@@ -382,11 +382,11 @@ double ss2, nug, tau2;
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
-    zmean[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
+    zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
 
     /* var parameter is 1+nug for non-mr_tgp */
-    zs[i] = sqrt(predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
-				FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug));
+    zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
+				FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug);
   }
 
   /*clean up */
@@ -452,13 +452,16 @@ double tau2;
  * return the number of infs and nans
  */
 
-int predict_draw(n, z, mean, s, err, state)
+int predict_draw(n, z, mean, s2, err, state)
 unsigned int n;
-double *z, *mean, *s;
+double *z, *mean, *s2;
 void *state;
 int err;
 {
   unsigned int fnan, finf, i;  
+
+  /* need to make sure there is somewhere to put the results */
+  if(!z) return 0;
 
   /* get random variates */
   if(err) rnorm_mult(z, n, state);
@@ -469,12 +472,12 @@ int err;
   for(i=0; i<n; i++) {
 
     /* draw from the normal (if possible) */
-    if(s[i] == 0 || !err) z[i] = mean[i];
-    else z[i] = z[i]*s[i] + mean[i];
+    if(s2[i] == 0 || !err) z[i] = mean[i];
+    else z[i] = z[i]*sqrt(s2[i]) + mean[i];
     
 #ifdef DEBUG
     /* accumulate counts of nan and inf errors */
-    if(isnan(z[i]) || s[i] == 0) fnan++;
+    if(isnan(z[i]) || s2[i] == 0) fnan++;
     if(isinf(z[i])) finf++;
 #endif
   }
@@ -493,24 +496,25 @@ int err;
  * returns the number of warnings
  */
 
-int predict_full(n1, n2, col, z, zz, Ds2xy, ego, Z, F, K, Ki, W, tau2, FF, 
-		xxKx, xxKxx, b, ss2, nug, err, state)
+int predict_full(n1, zp, zpm, zps2, n2, zz, zzm, zzs2, Ds2xy, improv, 
+		 Z, col, F, K, Ki, W, tau2, FF, xxKx, xxKxx, b, ss2, 
+		 nug, Zmin, err, state)
 unsigned int n1, n2, col;
 int err;
-double *zz, *z, *Z, *b, *ego;
+double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *b, *improv;
 double **F, **K, **Ki, **W, **FF, **xxKx, **xxKxx, **Ds2xy;
-double ss2, nug, tau2;
+double ss2, nug, tau2, Zmin;
 void *state;
 {
   /*double KiZmFb[n1]; 
     double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], 
            Frow[n1][col];*/
-  double *KiZmFb, *zmean, *zs;
+  double *KiZmFb;
   double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
   int i, warn;
 	
   /* sanity checks */
-  if(!(z || zz)) { assert(n2 == 0); return 0; }
+  if(!(zp || zz)) { assert(n2 == 0); return 0; }
   assert(K && Ki && F && Z && W);
 
   /* init */
@@ -527,10 +531,6 @@ void *state;
     /* sanity check */
     assert(FF && xxKx);
 		
-    /* allocate mean and s2 data */
-    zmean = new_vector(n2);
-    zs = new_vector(n2);
-
     /* transpose the FF and KK matrices */
     KKrow = new_t_matrix(xxKx, n1, n2);
     FFrow = new_t_matrix(FF, col, n2);
@@ -538,12 +538,12 @@ void *state;
     if(Ds2xy) { 
       /* yes, compute Delta-sigma for all pairs of new locations */
       assert(xxKxx);
-      predict_delta(zmean,zs,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
+      predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
 		    KKrow,xxKxx,KpFWFi,b,ss2,nug,KiZmFb);
     } else { 
       /* just predict, don't compute Delta-sigma */
       assert(xxKxx == NULL);
-      predict_no_delta(zmean,zs,n1,n2,col,FFrow,FW,W,tau2,KKrow,
+      predict_no_delta(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,KKrow,
 		       KpFWFi,b,ss2,nug,KiZmFb);
     }
     
@@ -551,19 +551,11 @@ void *state;
     delete_matrix(KKrow); delete_matrix(FFrow);
     
     /* draw from the posterior predictive distribution */
-    warn += predict_draw(n2, zz, zmean, zs, err, state);
-    if(ego) compute_ego(n1, n2, ego, Z, zmean, zs);
-    
-    /* clean up */
-    free(zmean); free(zs);
+    warn += predict_draw(n2, zz, zzm, zzs2, err, state);
   }
 
-  if(z) {    /* predicting at the data locations */
+  if(zp) {    /* predicting at the data locations */
 	 
-    /* allocate mean and s2 data */
-    zmean = new_vector(n1);
-    zs = new_vector(n1);
-	  
     /* take away the nugget for prediction */
     for(i=0; i<n1; i++) K[i][i] -= nug;
     
@@ -571,7 +563,7 @@ void *state;
     Frow = new_t_matrix(F, col, n1);
 
     /* calculate the necessary means and vars for prediction */
-    predict_data(zmean,zs,n1,col,Frow,K,b,ss2,nug,KiZmFb);
+    predict_data(zpm,zps2,n1,col,Frow,K,b,ss2,nug,KiZmFb);
     
     /* clean up the transposed F-matrix */
     delete_matrix(Frow);
@@ -580,10 +572,13 @@ void *state;
     for(i=0; i<n1; i++) K[i][i] += nug;
     
     /* draw from the posterior predictive distribution */
-    warn += predict_draw(n1, z, zmean, zs, err, state);
+    warn += predict_draw(n1, zp, zpm, zps2, err, state);
+  }
 
-    /* clean up */
-    free(zmean); free(zs);
+  /* compute IMPROV statistic */
+  if(improv) {
+    if(zp) predicted_improv(n1, n2, improv, Zmin, zp, zz); 
+    else expected_improv(n1, n2, improv, Zmin, zzm, zzs2);
   }
 
   /* clean up */
@@ -607,24 +602,25 @@ void *state;
  * returns the number of warnings
  */
 
-int mr_predict_full(n1, n2, col, z, zz, Ds2xy, ego, Z, X, F, K, Ki, W, tau2, XX, FF, 
-		    xxKx, xxKxx, b, ss2, nug, nugfine, r, delta, err, state)
+int mr_predict_full(n1, zp, zpm, zps2, n2, zz, zzm, zzs2, Ds2xy, improv, 
+		    Z, col, X, F, K, Ki, W, tau2, XX, FF, xxKx, xxKxx, b, 
+		    ss2, nug, nugfine, r, delta, Zmin, err, state)
 unsigned int n1, n2, col;
 int err;
-double *zz, *z, *Z, *b, *ego;
+double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *b, *improv;
 double **X, **F, **K, **Ki, **W, **XX, **FF, **xxKx, **xxKxx, **Ds2xy;
-double ss2, nug, nugfine, r, delta, tau2;
+double ss2, nug, nugfine, r, delta, tau2, Zmin;
 void *state;
 {
   /*double KiZmFb[n1]; 
     double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], 
            Frow[n1][col];*/
-  double *KiZmFb, *zmean, *zs;
+  double *KiZmFb;
   double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
   int i, warn;
 	
   /* sanity checks */
-  if(!(z || zz)) { assert(n2 == 0); return 0; }
+  if(!(zp || zz)) { assert(n2 == 0); return 0; }
   assert(K && Ki && F && Z && W);
 
   /* init */
@@ -641,10 +637,6 @@ void *state;
     /* sanity check */
     assert(FF && xxKx);
 		
-    /* allocate mean and s2 data */
-    zmean = new_vector(n2);
-    zs = new_vector(n2);
-    
     /* transpose the FF and KK matrices */
     KKrow = new_t_matrix(xxKx, n1, n2);
     FFrow = new_t_matrix(FF, col, n2);
@@ -652,12 +644,12 @@ void *state;
     if(Ds2xy) { 
       /* yes, compute Delta-sigma for all pairs of new locations */
       assert(xxKxx);
-      predict_delta(zmean,zs,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
+      predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
 		    KKrow,xxKxx,KpFWFi,b,ss2,nug,KiZmFb);
     } else { 
       /* just predict, don't compute Delta-sigma */
       assert(xxKxx == NULL);
-      mr_predict_no_delta(zmean,zs,n1,n2,col,XX, FFrow,FW,W,tau2,KKrow,
+      mr_predict_no_delta(zzm,zzs2,n1,n2,col,XX, FFrow,FW,W,tau2,KKrow,
 			  KpFWFi,b,ss2,nug,nugfine,r,delta,KiZmFb);
     }
 
@@ -665,21 +657,11 @@ void *state;
     delete_matrix(KKrow); delete_matrix(FFrow);
 		
     /* draw from the posterior predictive distribution */
-    warn += predict_draw(n2, zz, zmean, zs, err, state);
-
-    /* compute EGO statistic */
-    if(ego) compute_ego(n1, n2, ego, Z, zmean, zs);
-
-    /* clean up */
-    free(zmean); free(zs);
+    warn += predict_draw(n2, zz, zzm, zzs2, err, state);
   }
   
-  if(z) {  /* predict at the data locations */
+  if(zp) {  /* predict at the data locations */
 
-    /* allocate mean and s2 data */
-    zmean = new_vector(n1);
-    zs = new_vector(n1);
-	  
     /* subtract the nugget at both levels for prediction */
     for(i=0; i<n1; i++){ 
       if(X[i][0]==1) K[i][i] -= nugfine;
@@ -690,7 +672,7 @@ void *state;
     Frow = new_t_matrix(F, col, n1);
     
     /* calculate the necessart means and vars for sampling */
-    mr_predict_data(zmean,zs,n1,col,X,Frow,K,b,ss2,nug,nugfine,KiZmFb);
+    mr_predict_data(zpm,zps2,n1,col,X,Frow,K,b,ss2,nug,nugfine,KiZmFb);
 
     /* clean up the F-transpose matrix */
     delete_matrix(Frow);
@@ -702,10 +684,13 @@ void *state;
     }
     
     /* draw from the posterior predictive distribution */
-    warn += predict_draw(n1, z, zmean, zs, err, state);
-    
-    /* clean up */
-    free(zmean); free(zs);
+    warn += predict_draw(n1, zp, zpm, zps2, err, state);    
+  }
+
+  /* compute IMPROV statistic */
+  if(improv) { 
+    if(zp) predicted_improv(n1, n2, improv, Zmin, zp, zz);
+    else expected_improv(n1, n2, improv, Zmin, zzm, zzs2);
   }
   
   /* clean up */
@@ -719,39 +704,100 @@ void *state;
 
 
 /*
- * compute_ego:
+ * expected_improv:
  *
- * compute the Expected Global Optimization statistic for
+ * compute the Expected Improvement statistic for
  * posterior predictive data z with mean and variance
- * given by params mean and s2
+ * given by params mean and sd s=sqrt(s2); 
+ *
+ * the z-argument can be the predicted z(X) (recommended) 
+ * or the data Z(X).  This is the same when nugget = 0.
+ * For non-zero nugget using predicted z(X) seems more
+ * reliable.  Original Jones, et al., paper used Z(X) but
+ * had no nugget.
+ *
  */
 
-void compute_ego(n, nn, ego, z, mean, s)
+void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
      unsigned int n, nn;
-     double *ego, *z, *mean, *s;
+     double *improv, *zzm, *zzs2;
+     double Zmin;
 {
-  unsigned int which, i;
-  double fmin, diff, stand, p, d;
+  unsigned int /* which */ i;
+  double fmin, diff, stand, p, d, zzs;
 
-  /* shouldn't be called if ego is NULL */
-  assert(ego);
+  /* shouldn't be called if improv is NULL */
+  assert(improv);
 
   /* calculate best minimum so far */
-  fmin = min(z, n, &which);
+  /* fmin = min(Z, n, &which);*/
+  fmin = Zmin;
+  /* myprintf(stderr, "Zmin = %g, min(zzm) = %g\n", Zmin, min(zzm, nn, &which)); */
 
-  /* compute expected information about that minimum */
   for(i=0; i<nn; i++) {
-    diff = fmin - mean[i];
-    stand = diff/s[i];
+
+    /* standard deviation */
+    zzs = sqrt(zzs2[i]);
+
+    /* components of the improv formula */
+    diff = fmin - zzm[i];
+    stand = diff/zzs;
     normpdf_log(&d, &stand, 0.0, 1.0, 1);
     d = exp(d);
     p = pnorm(stand, 0.0, 1.0, 1, 0);
+    
+    /* finish the calculation as long as there weren't any
+       numerical instabilities */
+    if(isinf(d) || isinf(p) || isnan(d) || isnan(p)) {     
+      improv[i] = 0.0;
+    } else improv[i] = diff * p + zzs*d;
+    
+    /* make sure the calculation doesn't go negative due to
+       numerical instabilities */
+    /* if (diff > 0) improv[i] = diff; */
+    if(improv[i] < 0) improv[i] = 0.0;
+  }
+}
 
-    /* check for numerical issues in p and d, and otherwise compute */
-    if(isinf(d) || isinf(p) || isnan(d) || isnan(p)) ego[i] = 0.0;
-    else ego[i] = diff * p + s[i]*d;
-   
-    /* might have a negative EGO due to numerical instability */
-    if(ego[i] < 0.0) ego[i]=0.0;     
+
+/*
+ * predicted_improv:
+ *
+ * compute the improvement statistic for
+ * posterior predictive data z
+ *
+ * This more raw statistic  allows
+ * a full summary of the Improvement I(X) distribution, 
+ * rather than the expected improvement provided by
+ * expected_improv.  
+ * 
+ * Samples z(X) are (strongly) preferred over the data 
+ * Z(X), and likewise for zz(XX) rather than zz-hat(XX)
+ *
+ * Note that there is no predictive-variance argument.
+ */
+
+void predicted_improv(n, nn, improv, Zmin, zp, zz)
+     unsigned int n, nn;
+     double *improv, *zp, *zz;
+     double Zmin;
+{
+  unsigned int which, i;
+  double fmin, diff;
+
+  /* shouldn't be called if improv is NULL */
+  assert(improv);
+
+  /* calculate best minimum so far */
+  fmin = min(zp, n, &which);
+  /* myprintf(stderr, "fmin = %g, Zmin = %g, min(zz) = %g\n", fmin, Zmin, min(zz, nn, &which));*/
+  if(Zmin < fmin) fmin = Zmin;
+
+  for(i=0; i<nn; i++) {
+
+    /* I(x) = max(fmin-zz(X),0) */
+    diff = fmin - zz[i];
+    if (diff > 0) improv[i] = diff;
+    else improv[i] = 0.0;
   }
 }

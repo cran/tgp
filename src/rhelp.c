@@ -114,11 +114,11 @@ void warning(const char *str, ...)
 
 void myflush(FILE *outfile)
 {
-	#ifdef RPRINT
-	R_FlushConsole();
-	#else
-	fflush(outfile);
-	#endif
+#ifdef RPRINT
+  R_FlushConsole();
+#else
+  fflush(outfile);
+#endif
 }
 
 

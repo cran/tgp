@@ -2,10 +2,15 @@
 %% Part of the sensible export list but (currently?) documented as
 %% internal (or waiting for documentation to be written):
 %% <LIST>
+\alias{tgp}
+\alias{tree2c}
+\alias{tgp.postprocess}
 \alias{print.tgptraces}
+\alias{tgp.read.XX.traces}
 \alias{tgp.read.traces}
 \alias{tgp.cleanup}
 \alias{tgp.choose.as}
+\alias{tgp.choose.center}
 \alias{tgp.check.params}
 \alias{tgp.partition}
 \alias{tgp.get.trees}
@@ -24,6 +29,7 @@
 \alias{mean0.range1}
 \alias{undo.mean0.range1}
 \alias{check.matrix}
+\alias{check.itemps}
 \alias{check.slice}
 \alias{check.proj}
 \alias{getlocs}

@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 typedef enum FIND_OP {LT=101, LEQ=102, EQ=103, GEQ=104, GT=105, NE=106} FIND_OP;
+typedef enum PRINT_PREC {HUMAN=1001, MACHINE=1002} PRINT_PREC;
 
 typedef struct rect {
 	unsigned int d;
@@ -39,7 +40,8 @@ typedef struct rect {
 Rect* new_rect(unsigned int d);
 Rect* new_dup_rect(Rect* oldR);
 void delete_rect(Rect* rect);
-unsigned int matrix_constrained(int *p, double **X, unsigned int n1, unsigned int n2, Rect *rect);
+unsigned int matrix_constrained(int *p, double **X, unsigned int n1, unsigned int n2, 
+				Rect *rect);
 void print_rect(Rect *r, FILE* outfile);
 double rect_area(Rect* rect);
 void rect_unnorm(Rect* r, double **rect, double normscale);
@@ -62,12 +64,21 @@ double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2,
 		double **rect, double normscale);
 void delete_matrix(double** m);
 void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile);
-void mean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2);
-void mean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2);
+void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
+		      double *weight);
+void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
+			double *weight, double(*f)(double));
+void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2, 
+		   double *weight);
+void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
+		     double *weight, double(*f)(double));
 void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile);
-void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, unsigned int n2);
-void copy_p_matrix(double **V, int *p1, int *p2, double **v, unsigned int n1, unsigned int n2);
-void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v, unsigned int n1, unsigned int n2);
+void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, 
+		unsigned int n2);
+void copy_p_matrix(double **V, int *p1, int *p2, double **v, unsigned int n1, 
+		   unsigned int n2);
+void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v, 
+		  unsigned int n1, unsigned int n2);
 
 double* ones(unsigned int n, double scale);
 double* dseq(double from, double to, double by);
@@ -79,16 +90,17 @@ int* find_col(double **V, unsigned int n, unsigned int var, FIND_OP op,
 
 double kth_smallest(double a[], int n, int k);
 double quick_select(double arr[], int n, int k);
-void quantile_of_columns(double *Q, double **M, 
-	unsigned int n1, unsigned int n2, double q);
+void quantiles_of_columns(double **Q, double *q, unsigned int m, double **M, 
+			  unsigned int n1, unsigned int n2, double *w);
+void quantiles(double *qs, double *q, unsigned int m, double *v,
+	       double *w, unsigned int n);
 
 void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n);
 void vector_to_file(char* file_str, double *quantiles, unsigned int n);
-void qsummary(double *qdiff, double *q1, double *median, double *q2, double **M, unsigned int T, unsigned int n);
 void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n);
 void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
 void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
-void printVector(double *v, unsigned int n, FILE *outfile);
+void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type);
 
 double* new_dup_vector(double* vold, unsigned int n);
 double* new_zero_vector(unsigned int n);
@@ -114,6 +126,8 @@ void ivector_to_file(char* file_str, int *vector, unsigned int n);
 void copy_p_ivector(int *V, int *p, int *v, unsigned int n);
 void copy_sub_ivector(int *V, int *p, int *v, unsigned int n);
 int* new_sub_ivector(int *p, int *v, unsigned int n);
+double sum_fv(double *v, unsigned int n, double(*f)(double));
+double sumv(double *v, unsigned int n);
 
 unsigned int* new_uivector(unsigned int n);
 unsigned int* new_dup_uivector(unsigned int *iv, unsigned int n);
@@ -128,5 +142,6 @@ unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n);
 
 double max(double *v, unsigned int n, unsigned int *which);
 double min(double *v, unsigned int n, unsigned int *which);
+double sq(double x);
 
 #endif

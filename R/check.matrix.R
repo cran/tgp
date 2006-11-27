@@ -57,6 +57,10 @@ function(X, Z=NULL)
   if(length(nnan) < n) warning(paste(n-length(nnan), "NaNs removed from input matrix"))
   if(length(ninf) < n) warning(paste(n-length(ninf), "Infs removed from input matrix"))
   neitherX <- intersect(nna, intersect(nnan, ninf))
+
+  ## oops, no data:
+  if(length(neitherX) == 0)
+    stop("no valid (non-NA NaN or Inf) data found")
   
   ## combine good X and Z rows
   neither <- intersect(neitherZ, neitherX)

@@ -23,17 +23,18 @@
 
 
 "tgp.default.params" <-
-function(col, base="gp")
+function(col, base="gp", ...)
 {
   if(base == "mrgp") col=2*(col-1)
 
+  ## parameters shared by all models
   params <-
     list(
          base=base,
-         tree=c(0.25,2,10),		# tree prior params <alpha> and <beta>
+         tree=c(0.5,2,max(c(10,col+1))), # tree prior params <alpha>, <beta> and <minpart>
          bprior="bflat",		# linear prior (b0, bmle, bflat, bcart or b0tau)
          beta=rep(0,col), 		# start vals beta (length = col = dim + 1)
-         start=c(1.0,1.0), 	        # start vals for s2, and tau2
+         start=c(1,1), 	                # start vals for s2, and tau2
          s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>
          s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
          tau2.p=c(5,10),	       	# tau2 prior params (initial values) <a0> and <g0>
@@ -49,14 +50,28 @@ function(col, base="gp")
          d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
          nu=c()                         # matern correlation smoothing parameter
          )
-  
- if(base == "mrgp"){
-   mrd.p <- c(1,100,1,20)               # add in the gamma-mix params for the residual process
-   params$d.p =c(params$d.p, mrd.p) 
-   params$delta.p=c(2,2,2,2)
-   params$nugf.p=c(1,20,1,1)
- }
-  
+
+  ## parameter specific to multi-resolution GP models
+  if(base == "mrgp"){
+    mrd.p <- c(1,100,1,20)               # add in the gamma-mix params for the residual process
+    params$d.p =c(params$d.p, mrd.p) 
+    params$delta.p=c(2,2,2,2)
+    params$nugf.p=c(1,20,1,1)
+  }
+
+
+  ## Replace the parameters with ellipsis arguments
+  plist <- list( ... )
+  if(length(plist)>0) {
+    pmatch <- match(names(plist), names(params))
+    for(i in 1:length(plist)){
+      if( is.na(pmatch[[ i ]]) ){
+        stop(paste("your argument \"", names(plist)[i], "\" is not recognized", sep=""))
+      }
+      else params[[ pmatch[i] ]]<- plist[[ i ]]
+    }
+  }
+
   return(params)
 }
 

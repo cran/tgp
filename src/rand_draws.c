@@ -194,6 +194,8 @@ double runi(void *state)
     unsigned long rv;
     assert(state);
     rv = rk_random((rk_state*) state);
+    /* myprintf(stderr, "(%d)",  ((int)(10000000 * (((double) rv)/RK_MAX))));
+       if(((int)(10000000 * (((double) rv)/RK_MAX))) == 7294478) assert(0); */
     return ((double) rv) / RK_MAX;
   }
   case ERAND: 
@@ -352,7 +354,7 @@ double rexpo(double lambda, void *state)
 {
     double random, uniform;
     uniform = runi(state);
-    random = - (1/lambda) * log(uniform);
+    random = 0.0 - (1/lambda) * log(uniform);
     return random;
 }
 
@@ -377,7 +379,7 @@ double rgamma1(double alpha, void *state)
   uniform1 = runi(state);
   if (uniform0 > M_E/(alpha + M_E))
     {
-      random = -log((alpha + M_E)*(1-uniform0)/(alpha*M_E));
+      random = 0.0 -log((alpha + M_E)*(1-uniform0)/(alpha*M_E));
       if ( uniform1 > pow(random,alpha - 1))
 	return -1;
       else 
@@ -816,7 +818,7 @@ unsigned int rpoiso(float xm, void *state)
       oldm=xm;
       g=exp(-xm); /* If xm is new, compute the exponential. */
     }
-    em = -1;
+    em = 0.0-1.0;
     t=1.0;
     do { /* Instead of adding exponential deviates it is equivalent
 	    to multiply uniform deviates. We never

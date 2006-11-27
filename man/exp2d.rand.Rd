@@ -1,24 +1,29 @@
+
 \name{exp2d.rand}
 \alias{exp2d.rand}
 
 \title{ Random 2-d Exponential Data }
 \description{
   A Random subsample of \code{data(\link{exp2d})}, or 
-  Latin Hypercube sampled data evaluated similarly
+  Latin Hypercube sampled data evaluated with \code{\link{exp2d.Z}}
 }
 
-\usage{exp2d.rand(n1 = 50, n2 = 30, lh=NULL)}
+\usage{exp2d.rand(n1 = 50, n2 = 30, lh = NULL, dopt = 1)}
 
 \arguments{
   \item{n1}{Number of samples from the first, interesting, quadrant}
   \item{n2}{Number of samples from the other three, uninteresting, quadrants}
-  \item{lh}{If \code{!is.null(lh)} then Latin Hypercube sampling
+  \item{lh}{If \code{!is.null(lh)} then Latin Hypercube (LH) sampling
     (\code{\link{lhs}}) is used instead of subsampling from
-    \code{data(\link{exp2d})}; \code{lh} should be a single positive
+    \code{data(\link{exp2d})}; \code{lh} should be a single nonnegative
     integer specifying the desired number of predictive locations,
     \code{XX}; or, it should be a vector of length 4, specifying the
     number of predictive locations desired from each of the four
     quadrants (interesting quadrant first, then counter-clockwise)}
+  \item{dopt}{If \code{dopt >= 2} then d-optimal subsampling from LH
+    candidates of the multiple indicated by the value of
+    \code{dopt} will be used.  This argument only
+    makes sense when \code{!is.null(lh)}}
   } 
 
 \value{
@@ -38,19 +43,29 @@
 }
 \details{
 	When \code{is.null(lh)}, data is subsampled without replacement from 
-        \code{data(\link{exp2d})}.
-	Of the \code{n1 + n2 <= 441} input/response pairs \code{X,Z}, \code{n1}
-	are taken from the first quadrant, i.e., where the response is interesting, 
-	and the remaining \code{n1} are taken from the other three quadrant.  The
-	remaining \code{441 - (n1 + n2)} are treated as predictive locations
+        \code{data(\link{exp2d})}. Of the \code{n1 + n2 <= 441}
+	input/response pairs \code{X,Z}, there are \code{n1} are taken from the
+	first quadrant, i.e., where the	response is interesting, 
+	and the remaining \code{n2} are taken from the other three
+	quadrants. The remaining \code{441 - (n1 + n2)} are treated as
+	predictive locations
 
 	Otherwise, when \code{!is.null(lh)}, Latin Hypercube Sampling 
-	(\code{\link{lhs}}) is used 
+	(\code{\link{lhs}}) is used
 
-  	In both cases, the response is evaluated as 
+	If \code{dopt >= 2} then \code{n1*dopt} LH candidates are used
+	for to get a D-optimal subsample of size \code{n1} from the
+	first (interesting) quadrant.  Similarly \code{n2*dopt} in the
+	rest of the un-interesting region.
+	A total of \code{lh*dopt} candidates will be used for sequential D-optimal
+	subsampling for predictive locations \code{XX} in all four
+	quadrants assuming the already-sampled \code{X} locations will
+	be in the design.
+
+  	In all three cases, the response is evaluated as 
   	\deqn{Z(X)=x_1 * \exp(x_1^2-x_2^2).}{Z(X) = X1 * exp(-X1^2
   	  -X2^2),}
-	thus creating the outputs \code{Ztruth} and \code{ZZtruth}.
+	thus creating the outputs \code{Ztrue} and \code{ZZtrue}.
   	Zero-mean normal noise with \code{sd=0.001} is added to the
 	responses \code{Z} and \code{ZZ}
 }
@@ -65,8 +80,8 @@ Available as UCSC Technical Report ams2006-01.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{link{exp2d.Z}},
-  \code{\link{tgp}}, \code{\link{btgp}}, and other \code{b*} functions}
+\seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{\link{exp2d.Z}},
+  \code{\link{btgp}}, and other \code{b*} functions}
 
 
 \examples{
@@ -89,7 +104,7 @@ points(eds$XX, pch=19, cex=0.5)
 ## Latin Hypercube sampled data
 ## ----------------------------
 
-edlh <- exp2d.rand(lh=c(5, 10, 15, 20))
+edlh <- exp2d.rand(lh=c(20, 15, 10, 5))
 
 # higher span = 0.5 required because the data is sparse
 # and was generated randomly
@@ -105,6 +120,29 @@ points(edlh$XX, pch=19, cex=0.5)
 # show the quadrants
 abline(h=2, col=2, lty=2, lwd=2)
 abline(v=2, col=2, lty=2, lwd=2)
+
+
+\dontrun{
+## D-optimal subsample with a factor of 10 (more) candidates
+## ---------------------------------------------------------
+
+edlhd <- exp2d.rand(lh=c(20, 15, 10, 5), dopt=10)
+
+# higher span = 0.5 required because the data is sparse
+# and was generated randomly
+edlhd.g <- interp.loess(edlhd$X[,1], edlhd$X[,2], edlhd$Z, span=0.5)
+
+# perspective plot, and plot of the input (X & XX) locations
+par(mfrow=c(1,2), bty="n")
+persp(edlhd.g, main="loess surface", theta=-30, phi=20,
+      xlab="X[,1]", ylab="X[,2]", zlab="Z")
+plot(edlhd$X, main="D-optimally Sampled Inputs")
+points(edlhd$XX, pch=19, cex=0.5)
+
+# show the quadrants
+abline(h=2, col=2, lty=2, lwd=2)
+abline(v=2, col=2, lty=2, lwd=2)
 }
-      
+}
+
 \keyword{datasets}

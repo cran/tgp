@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 1.1-11
-Date: 2006-09-20
+Version: 1.2
+Date: 2006-11-27
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu>
 Depends: R (>= 2.1)
 Suggests: akima, maptree, combinat

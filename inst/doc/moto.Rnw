@@ -8,7 +8,8 @@
 
 <<echo=false,results=hide>>=
 library(tgp)
-options(width=65)
+##options(width=65)
+seed <- 0; set.seed(seed)
 @ 
 
 The Motorcycle Accident Dataset \cite{silv:1985} is a classic
@@ -17,10 +18,11 @@ nonstationary data set used in recent literature
 models.  The data consists of measurements of the acceleration of the
 head of a motorcycle rider as a function of time in the first moments
 after an impact.  In addition to being nonstationary, the data has
-input-dependent noise which makes it useful for illustrating how the
-treed GP model handles this nuance.  There are at least two---perhaps
-three---three regions where the response exhibits different behavior
-both in terms of the correlation structure and noise level.
+input--dependent noise (heteroskedasticity) which makes it useful for
+illustrating how the treed GP model handles this nuance.  There are at
+least two---perhaps three---three regions where the response exhibits
+different behavior both in terms of the correlation structure and
+noise level.
 
 The data is included as part of the {\tt MASS} library in {\tt R}.
 <<>>= 
@@ -31,22 +33,22 @@ the nonlinearity in the response but fails to capture the input
 dependent noise and increased smoothness (perhaps linearity) in
 parts of the input space.
 <<echo=TRUE,results=HIDE>>=
-moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
+moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
 @ 
 Since the responses in this data have a wide range, it helps to
 translate and rescale them so that they have a mean of zero and a
-range of one.  The {\tt m0r1} argument to {\tt b*} and {\tt tgp}
-functions automates this procedure.  Progress indicators
-are surpressed.
+range of one.  The {\tt m0r1} argument to {\tt b*} functions automates
+this procedure.  Progress indicators are suppressed.
 \begin{figure}[ht!]
 \centering
-<<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
+<<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(moto.bgp, main='GP,', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.5cm}
+\includegraphics[trim=0 25 0 25]{moto-bgp}
+%\vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
     bgp} on the motorcycle accident data: mean and 90\% credible
   interval}
@@ -55,21 +57,22 @@ dev.off()
 
 A Bayesian Linear CART model is able to capture the input dependent
 noise but fails to capture the waviness of the
-``whiplash''---center--- segment of th the response.
+``whiplash''---center--- segment of the response.
 <<echo=TRUE,results=HIDE>>=
-moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
+moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
 @ 
 Figure \ref{f:moto:btlm} shows the resulting piecewise linear
 predictive surface and MAP partition ($\hat{\mathcal{T}}$).
 \begin{figure}[ht!]
 \centering
-<<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5>>=
+<<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(moto.btlm, main='Bayesian CART,', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.5cm}
+\includegraphics[trim=0 25 0 25]{moto-btlm}
+%\vspace{-0.5cm}
 \caption{\footnotesize Posterior predictive distribution using {\tt
     btlm} on the motorcycle accident data: mean and 90\% credible
   interval}
@@ -79,43 +82,67 @@ dev.off()
 A treed GP model seems appropriate because it can model input
 dependent smoothness {\em and} noise.  A treed GP LLM is probably
 most appropriate since the left-hand part of the input space is likely
-linear.  One might further hypothesize that the right-hand region is
-also linear, perhaps with the same mean as the left-hand region, only
-with higher noise.  The {\tt b*} and {\tt tgp} functions can force
-an i.i.d.~hierarchical linear model by setting {\tt bprior=b0}.
-Moreover, instead of rescaling the responses with {\tt m0r1}, one might
-try encoding a mixture prior for the nugget in order to explicitly
-model region-specific noise.  This requires direct usage of {\tt tgp}.
+linear.  One might further hypothesize that the right--hand region is
+also linear, perhaps with the same mean as the left--hand region, only
+with higher noise.  The {\tt b*} functions can force
+an i.i.d.~hierarchical linear model by setting \verb!bprior="b0"!.
 <<echo=TRUE,results=HIDE>>=
-p <- tgp.default.params(2)
-p$bprior <- "b0"
-p$nug.p <- c(1.0,0.1,10.0,0.1)
-moto.tgp <- tgp(X=mcycle[,1], Z=mcycle[,2], params=p,
-	   BTE=c(2000,22000,2))
+moto.btgpllm <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
+                        m0r1=TRUE, verb=0)
+moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 @ 
+The {\tt predict.tgp} function obtains posterior predictive estimates
+from the MAP parameterization (a.k.a., {\em kriging}).
 \begin{figure}[ht!]
 \centering
-<<label=btgp,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(moto.tgp, main='custom treed GP LLM,', layout='surf')
+<<label=btgp,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='surf')
+plot(moto.btgpllm.p, center='km', layout='surf')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-<<label=btgpq,fig=TRUE,echo=TRUE,width=7,height=5>>=
-plot(moto.tgp, main='custom treed GP LLM,', layout='as')
+
+\includegraphics[trim=50 25 50 20]{moto-btgp}
+
+<<label=btgpq,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='as')
+plot(moto.btgpllm.p, as='ks2', layout='as')
 @
 <<echo=false,results=hide>>=
-dev.off()
+graphics.off()
 @
-\vspace{-0.5cm}
+
+\includegraphics[trim=50 25 50 20]{moto-btgpq}
+
+%\vspace{-0.5cm}
 \caption{\footnotesize {\em top} Posterior predictive distribution
-  using a custom parameterized {\tt tgp} call on the motorcycle
-  accident data: mean and 90\% credible interval; {\em bottom}
-  Quantile-norm (90\%-5\%) showing input-dependent noise.}
+  using treed GP LLM on the motorcycle accident data. The {\em
+    left}--hand panes how mean and 90\% credible interval; {\em
+    bottom} Quantile-norm (90\%-5\%) showing input-dependent noise.
+    The {\em right}--hand panes show similar {\em kriging} surfaces
+  for the MAP parameterization.}
 \label{f:moto:tgp}
 \end{figure}
-The resulting posterior predictive surface is shown in the {\em top}
-half of Figure \ref{f:moto:tgp}.  The {\em bottom} half of the figure
-shows the norm (difference) in predictive quantiles, clearly
-illustrating the treed GP's ability to capture input-specific noise in
-the posterior predictive distribution.
+The resulting posterior predictive surface is shown in the {\em
+  top--left} of Figure \ref{f:moto:tgp}.  The {\em bottom--left} of
+the figure shows the norm (difference) in predictive quantiles,
+clearly illustrating the treed GP's ability to capture input-specific
+noise in the posterior predictive distribution.  The {\em right}--hand
+side of the figure shows the MAP surfaces obtained from the output of
+the {\tt predict.tgp} function.
+
+The {\tt tgp}--default \verb!bprior="bflat"! implies an improper prior
+on the regression coefficients $\bm{\beta}$.  It essentially forces
+$\mb{W}=\mb{\infty}$, thus eliminating the need to specify priors on
+$\bm{\beta}_0$ of $\mb{W}^{-1}$ in (\ref{eq:model}).  This was chosen
+as the default because it works well in many examples, and leads to a
+simpler overall model and a faster implementation.  However, the
+Motorcycle data is an exception. Moreover, when the response data is
+very noisy (i.e., low signal--to--noise ratio), {\tt tgp} can be
+expected to partition heavily under the \verb!bprior="bflat"! prior.
+In such cases, one of the other proper priors like the full
+hierarchical \verb!bprior="b0"!  or the independent
+\verb!bprior="b0tau"! might be preferred.

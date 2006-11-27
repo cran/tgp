@@ -25,21 +25,24 @@
 #ifndef __PREDICT_LINEAR_H__
 #define __PREDICT_LINEAR_H__
 
-int predict_full_linear(unsigned int n, unsigned int nn, unsigned int col, 
-			double *z, double *zz, double *Z, double **F, double **FF, double *bmu, 
-			double s2, double  **Vb, double **Ds2xy, double *ego, 
-			 double nug, int err, void *state);
-int predict_full_noK(unsigned int n1, unsigned int n2, unsigned int col, double * zz, 
-	double * z, double **Ds2xy, double **F, double **T, double tau2, 
-	double **FF, double *b, double ss2, double nug, int err, void *state);
-void predict_noK(unsigned int n1, unsigned int col, double *zmean, double *zs2, double **F, 
+int predict_full_linear(unsigned int n, double *zp, double *zpm, double *zps2,
+			unsigned int nn, double *zz, double *zzm, double *zzs2, 
+			double **Ds2xy, double *improv, double *Z, 
+			unsigned int col, double **F, double **FF, double *bmu, 
+			double s2, double  **Vb, double nug, double Zmin, int err,
+			void *state);
+int predict_full_noK(unsigned int n1, double *zp, double *zpm, double *zps2,
+		     unsigned int n2, double * zz, double *zzm, double *zzs2,
+		     double **Ds2xy, unsigned int col, double **F, double **T, double tau2, 
+		     double **FF, double *b, double ss2, double nug, int err, void *state);
+void predict_noK(unsigned int n1, unsigned int col, double *zzm, double *zzs2, double **F, 
 		 double *b, double s2, double **Vb);
 void delta_sigma2_noK(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, 
-		double ss2, double denom, double **FT, double tau2, double *fT, 
-		double *IDpFTFiQx, double **FFrow, unsigned int which_i, double nug);
+		      double ss2, double denom, double **FT, double tau2, double *fT, 
+		      double *IDpFTFiQx, double **FFrow, unsigned int which_i, double nug);
 double predictive_mean_noK(unsigned int n1, unsigned int col, double *FFrow, 
 			   int i, double * b, double nug);
-void predict_data_noK(double *zmean, double *zs, unsigned int n1, unsigned int col,
+void predict_data_noK(double *zpm, double *zps2, unsigned int n1, unsigned int col,
 		      double **FFrow, double *b, double ss2, double nug);
 void delta_sigma2_noK(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, 
 		      double ss2, double denom, double **FW, double tau2, double *fW, 
@@ -59,7 +62,7 @@ void predict_help_noK(unsigned int n1,unsigned int col,double *b, double **F, do
 		      double tau2, double **FW, double **IDpFWFi, double nug);
 void delta_sigma2_linear(double *ds2xy, unsigned int n, unsigned int col, double s2, 
 			 double *Vbf, double fVbf, double **F, double nug);
-void predict_linear(unsigned int n, unsigned int col, double *zmean, double *zs, double **F, 
+void predict_linear(unsigned int n, unsigned int col, double *zm, double *zs2, double **F, 
 		    double *b, double s2, double **Vb, double **Ds2xy, double nug);
 
 

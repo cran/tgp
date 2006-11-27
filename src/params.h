@@ -52,6 +52,7 @@ class Params
   void read_ctrlfile(std::ifstream* ctrlfile);
   void read_double(double *dparams);
   void get_T_params(double *alpha, double *beta, unsigned int* minpart);
+  bool isTree(void);
   unsigned int T_minp(void);
   Base_Prior* BasePrior(void);
   void Print(FILE *outfile);
