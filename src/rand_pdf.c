@@ -33,7 +33,7 @@
 #include "rhelp.h"
 
 
-#define DEBUG
+/* #define DEBUG */
 
 /*
  * copyCovUpper:
@@ -230,7 +230,7 @@ double *p, *x, a, b;
   /* evaluate the pdf for each x */
   for(i=0; i<n; i++) {
     assert(x[i] > 0);
-    p[i] = - a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - x[i]/b; 
+    p[i] = 0.0 - a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - x[i]/b; 
   }
 }
 
@@ -270,7 +270,7 @@ double *p, *x, mu, s2;
   double diff;
   for(i=0; i<n; i++) {
     diff = (x[i] - mu);
-    p[i] = 0.0 - M_LN_SQRT_2PI - 0.5*log(s2) - 0.5/s2*(diff)*(diff);
+    p[i] = 0.0 - M_LN_SQRT_2PI - 0.5*log(s2) - 0.5*(diff*diff)/s2;
   }
 }
 
@@ -475,7 +475,7 @@ double temper(double p, double temp, int uselog)
   double tp;
 
   /* remove this later */
-  if(temp != 1.0) warning("temper(): temp = %g is not 1.0", temp);
+  /* if(temp != 1.0) warning("temper(): temp = %g is not 1.0", temp); */
 
   if(uselog) tp = temp * p;
   else {
@@ -498,11 +498,57 @@ double temper(double p, double temp, int uselog)
 void temper_invgam(double *a, double *b, double temp)
 {
   /* remove this later */
-  if(temp != 1.0) warning("temper_invgam(): temp = %g is not 1.0", temp);
+  /* if(temp != 1.0) warning("temper_invgam(): temp = %g is not 1.0", temp); */
 
   *a = temp*(*a+1.0) - 1.0;
   *b = temp * (*b);
 
   /* sanity check */
   assert(*a > 0 && *b > 0);
+}
+
+
+/*
+ * temper_gamma:
+ *
+ * apply temperature t to the alpha (a) and beta (b) parameters
+ * to the inverse gamma distribution
+ */
+
+void temper_gamma(double *a, double *b, double temp)
+{
+  /* remove this later */
+  /* if(temp != 1.0) warning("temper_gamma(): temp = %g is not 1.0", temp); */
+
+  *a = temp*(*a-1.0) + 1.0;
+  *b = temp * (*b);
+
+  /* sanity check */
+  assert(*a > 0 && *b > 0);
+}
+
+
+/*
+ * temper_wish:
+ *
+ * apply temperature t to the rho and V (col x col) 
+ * parameters to a wishart distribution
+ */
+
+void temper_wish(int *rho, double **V, unsigned int col, double temp)
+{
+  double drho;
+
+  /* remove this later */
+  /* if(temp != 1.0) warning("temper_wish(): temp = %g is not 1.0", temp); */
+
+  /* adjust rho for temperature */
+  drho = temp * (*rho) + (col + 1.0)*(1.0 - temp);
+  drho = ceil(drho);
+  assert(drho > col);
+  *rho = (int) drho;
+
+  /* adjust V for temperature */
+  assert(V);
+  scalev(V[0], col, 1.0/temp);
 }

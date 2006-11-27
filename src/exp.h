@@ -49,22 +49,24 @@ class Exp : public Corr
   Exp(unsigned int col, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~Exp(void);
-  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
+  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, 
+		      double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
-  virtual int Draw(unsigned int n, double **F, double **X, double *Z, 
-		   double *lambda, double **bmu, double **Vb, double tau2, void *state);
+  virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
+		   double **bmu, double **Vb, double tau2, double itemp, void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
   virtual double log_Prior(void);
   virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
-  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
-		       double *lambda, double **bmu, 
-		       double **Vb, double tau2, void *state);
+  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z, 
+		       double *lambda, double **bmu, double **Vb, double tau2, 
+		       double itemp, void *state);
   virtual double* Trace(unsigned int* len);
-  
+  virtual char** TraceNames(unsigned int* len);
+  virtual void Init(double *dexp);
 
   void get_delta_d(Exp* c1, Exp* c2, void *state);
   void propose_new_d(Exp* c1, Exp* c2, void *state);
@@ -103,6 +105,9 @@ class Exp_Prior : public Corr_Prior
   virtual Base_Prior* BasePrior(void);
   virtual void SetBasePrior(Base_Prior *base_prior);
   virtual double log_HierPrior(void);
+  virtual double* Trace(unsigned int* len);
+  virtual char** TraceNames(unsigned int* len);
+  virtual void Init(double *dhier);
 
   double D(void);
   double* DAlpha(void);

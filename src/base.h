@@ -52,7 +52,7 @@ class Base
   bool pcopy;                   /* is this a private copy of the prior? */
   Base_Prior *prior;            /* Base (Gaussian Process) prior module */
   
-  unsigned int d;	              /* X of input variables */
+  unsigned int d;	        /* X of input variables */
   unsigned int n;	        /* number of input data points-- rows in the design matrix */
   unsigned int nn;	        /* number of predictive input data locations */
 
@@ -61,8 +61,10 @@ class Base
   double *Z;                    /* pointer to responses Z from tree module */
   double mean;		        /* mean of the Zs */
 
+  double itemp;                 /* importance annealing inv-temperature */
+
   FILE* OUTFILE;		/* where to print tree-specific info */
-  int verb;                /* printing level (0=none, ... , 3+=verbose) */
+  int verb;                     /* printing level (0=none, ... , 3+=verbose) */
   
  public:
 
@@ -70,31 +72,39 @@ class Base
   Base(double **X, double *Z, Base *gp_old);
   virtual ~Base(void);
   BASE_MODEL BaseModel(void);
+  Base_Prior* Prior(void);
 
   virtual Base* Dup(double **X, double *Z)=0;  
   virtual void Clear(void)=0;
   virtual void ClearPred(void)=0;
   virtual void Update(double **X, unsigned int n, unsigned int d, double *Z)=0;
-  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, 
-			  double **Ds2xy)=0; 
+  virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)=0;
   virtual bool Draw(void *state)=0;
-  virtual void Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
-		       double **ds2xy, double *ego, bool err, void *state)=0;
+  virtual void Predict(unsigned int n, double *zp, double *zpm, double *zps2,
+		       unsigned int nn, double *zz, double *zzm, double *zzs2,
+		       double **ds2xy, double *improv, double Zmin, bool err, 
+		       void *state)=0;
   virtual void Match(Base* gp_old)=0;
   virtual void Combine(Base *l_gp, Base *r_gp, void *state)=0;
   virtual void Split(Base *l_gp, Base *r_gp, void *state)=0;
-  virtual double Posterior(void)=0;
   virtual void Compute(void)=0;
   virtual void ToggleLinear(void)=0;
   virtual bool Linear(void)=0;
   virtual void printFullNode(void)=0;
   virtual double Var(void)=0;
-  virtual double FullPosterior(void)=0;
+  virtual double Posterior(void)=0;
+  virtual double MarginalLikelihood(double itemp)=0;
+  virtual double FullPosterior(double itemp)=0;
+  virtual double MarginalPosterior(double itemp)=0;
+  virtual double Likelihood(double itemp)=0;
   virtual char* State(void)=0;
   virtual unsigned int sum_b(void)=0;
-  virtual void Init(void)=0;
+  virtual void Init(double *dbase)=0;
   virtual void X_to_F(unsigned int n, double **X, double **F)=0;  
-  virtual double* Trace(unsigned int* len)=0;
+  virtual double* Trace(unsigned int* len, bool full)=0;
+  virtual char** TraceNames(unsigned int* len, bool full)=0;
+  virtual double NewInvTemp(double itemp, bool isleaf)=0;
+
   unsigned int N(void);
 };
 
@@ -124,6 +134,8 @@ class Base_Prior
 
   virtual void read_ctrlfile(std::ifstream* ctrlfile)=0;
   virtual void read_double(double *dparams)=0;
+  virtual void Init(double *dhier)=0;
+
   virtual void Draw(Tree** leaves, unsigned int numLeaves, void *state)=0;
   virtual bool LLM(void)=0;
   virtual double ForceLinear(void)=0;
@@ -132,6 +144,9 @@ class Base_Prior
   virtual Base* newBase(Model *model)=0;
   virtual Base_Prior* Dup(void)=0;
   virtual double log_HierPrior(void)=0;
+  virtual double* Trace(unsigned int* len, bool full)=0;
+  virtual char** TraceNames(unsigned int* len, bool full)=0;
+  virtual double GamLin(unsigned int which)=0;
 };
 
 

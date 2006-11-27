@@ -60,6 +60,9 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
   pcopy = false;
 
   OUTFILE = model->Outfile(&verb);
+
+  /* annleaing temper comes from model */
+  itemp = model->iTemp();
 } 
 
 
@@ -85,6 +88,9 @@ Base::Base(double **X, double *Z, Base *old)
   /* prior parameters; forces a copy to be made */
   prior = old->prior->Dup();
   pcopy = true;
+
+  /* copy the importance annealing temperature */
+  itemp = old->itemp;
 
   /* things that must be NULL */
   XX = NULL;
@@ -135,6 +141,19 @@ unsigned int Base::N(void)
 BASE_MODEL Base::BaseModel(void)
 {
   return prior->BaseModel();
+}
+
+
+/*
+ * BasePrior:
+ *
+ * return the prior used by this base
+ *
+ */
+
+Base_Prior* Base::Prior(void)
+{
+  return prior;
 }
 
 

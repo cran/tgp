@@ -23,13 +23,18 @@
 
 
 "tgp.plot.slice" <-
-function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, layout="both",
-         main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, pc="pc",
-         method="loess", gridlen=40, span=0.1, ...)
+function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
+         layout="both", main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
+         pc="pc", method="loess", gridlen=40, span=0.1, ...)
 {
-  ## gather X and Z data
-  X <- rbind(as.matrix(out$X), out$XX)
-  Z.mean <- c(out$Zp.mean, out$ZZ.mean)
+  ## choose center as median or mean (i.e., X & Z data)
+  ## (this hasn't been tested since the addition of the tgp.choose.center() function
+  center <- tgp.choose.center(out, center);
+  Z.mean <- center$Z
+  cname <- center$name;
+  X <- center$X
+   
+  ## get X locations for calculating slice
   locs <- getlocs(X)
 
   ## will call stop() if something is wrong with the slice
@@ -41,14 +46,14 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, layout="both",
   if(is.null(zlab)) zlab <- out$response
   fixed <- names(out$X)[slice$x]; to <- slice$z
   slice.str <- paste("(", fixed, ") fixed to (", to, ")", sep="")
-  smain <- paste(main, " ", zlab, " mean, with ", slice.str)
-  emain <- paste(main, " ", zlab, " error, with ",  slice.str)
+  smain <- paste(main, " ", zlab, " ", cname, ", with ", slice.str, sep="")
   
   ## for ALC and EGO plotting
   as <- tgp.choose.as(out, as);
   XX <- as$X
   ZZ.q <- as$criteria
-  emain <- paste(main, zlab, as$name)
+  emain <- paste(main, " ", zlab, " ", as$name, ", with ",  slice.str, sep="")
+  ##emain <- paste(main, zlab, as$name)
 
   ## depict the slice in terms of index variables p*
   if(length(slice$x) > 1) {
@@ -85,7 +90,7 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, layout="both",
       if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$X[ppn,d[2]], pch=21)
     }
     if(layout == "both" || layout == "as") {
-      slice.imageproj(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
+      slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
                       method=method,gridlen=gridlen,span=span,...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)

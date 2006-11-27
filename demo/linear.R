@@ -2,8 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(maptree)
-graphics.off()
+##options(width=65)
+seed <- 0; set.seed(seed)
 
 
 ###################################################
@@ -32,7 +32,7 @@ abline(1,2,lty=3,col='blue')
 ### chunk number 5: 
 ###################################################
 rl <- readline("press RETURN to continue: ")
-dev.off()
+graphics.off()
 
 
 ###################################################
@@ -46,5 +46,27 @@ lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
 ###################################################
 plot(lin.gpllm, main='GP LLM,', layout='surf')
 abline(1,2,lty=4,col='blue')
+
+
+###################################################
+### chunk number 8: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
+
+
+###################################################
+### chunk number 9: 
+###################################################
+lin.gpllm.tr <- bgpllm(X=X, XX=0.5, Z=Z, pred.n=FALSE, trace=TRUE,
+                       verb=0)
+mla <- mean(lin.gpllm.tr$trace$linarea$la)
+mla
+
+
+###################################################
+### chunk number 10: 
+###################################################
+1-mean(lin.gpllm.tr$trace$XX[[1]]$b1)
 
 

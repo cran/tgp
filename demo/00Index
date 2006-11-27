@@ -1,6 +1,8 @@
 linear	Bayesian LM and GP LLM on linear data from vignette
-sin	Bayesian linear CART, GP, treed GP and treed GP LLM on sinusoidal data from vignette
+sin	Bayesian linear CART, GP, treed GP on sinusoidal data from vignette
 exp	Bayesian GP, treed GP, and treed GP LLM on exponential data from vignette
 moto	Bayesian GP, treed GP, and treed GP LLM on motorcycle accident data from vignette
 fried	Bayesian linear CART and GP LLM on first Friedman data from vignette
 as	adaptive sampling on exponential data from vignette
+traces	demonstration, visualization and interpretation of parameter traces from vignette
+pred	example of a collaborative tgp with predict.tgp from vignette

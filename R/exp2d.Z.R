@@ -25,6 +25,8 @@
 "exp2d.Z" <-
   function(X, sd=0.001)
 {
+  if(is.null(X)) return(NULL);
+  
   ## check the number of columns
   if(ncol(X) != 2)
     stop(paste("X should be a matrix (or data frame) with 2 columns, you have", ncol(X)))

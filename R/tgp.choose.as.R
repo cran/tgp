@@ -24,23 +24,52 @@
 "tgp.choose.as" <-
 function(out, as)
 {
-  # choose AS stats to plot
-  if(is.null(as)) {
-     X <- rbind(out$X, out$XX)
-     criteria <- c(out$Zp.q, out$ZZ.q)
-     name <- "error"
+  ## choose AS stats to plot
+
+  ## default quantile diffs (as=NULL), or predictive variance (as="s2")
+  if(is.null(as) || as == "s2" || as == "ks2") {
+
+    ## use fulle data, XX & X
+    X <- out$XX
+
+    ## choose quantile diffs or s2
+    if(is.null(as)) { 
+      criteria <- c(out$Zp.q, out$ZZ.q)
+      name <- "quantile diff (error)"
+      if(!is.null(out$Zp.q)) X <- rbind(out$X, X)
+    } else if(as == "ks2") {
+      criteria = c(out$Zp.ks2, out$ZZ.ks2)
+      name <- "kriging var"
+      if(!is.null(out$Zp.ks2)) X <- rbind(out$X, X)
+    } else {
+      criteria = c(out$Zp.s2, out$ZZ.s2)
+      name <- "pred var"
+      if(!is.null(out$Zp.s2)) X <- rbind(out$X, X)
+    }
+    
   } else {
-     X <- out$XX
-     criteria <- out$ZZ.q
-     name <- "ALM stats"
-     if(as == "alc") {
-       if(is.null(out$Ds2x)) cat("NOTICE: out$Ds2x is NULL, using ALM\n")
-       else { criteria <- out$Ds2x; name <- "ALC stats" }
-     } else if(as == "ego") {
-       if(is.null(out$ego)) cat("NOTICE: out$ego is NULL, using ALM\n")
-       else { criteria <- out$ego; name <- "EGO stats" }
-     }
+
+    ## only use predictive data
+    X <- out$XX
+
+    ## default choice is ALM stats (quantile diffs)
+    criteria <- out$ZZ.q
+    name <- "ALM stats"
+
+    ## choose ALC or EGO stats
+    if(as == "alc") {
+      if(is.null(out$Ds2x)) cat("NOTICE: out$Ds2x is NULL, using ALM\n")
+      else { criteria <- out$Ds2x; name <- "ALC stats" }
+    } else if(as == "improv") {
+      if(is.null(out$improv)) cat("NOTICE: out$improv is NULL, using ALM\n")
+      else { criteria <- out$improv; name <- "Improv stats" }
+    } else if(as != "alm")
+      warning(paste("as criteria \"", as, "\" not recognized; defaulting to \"alm\"", sep=""))
   }
 
+  ## there might be nothing to plot
+  if(is.null(criteria)) stop("no predictive data, so nothing to plot")
+  
+  ## return
   return(list(X=X, criteria=criteria, name=name))
 }

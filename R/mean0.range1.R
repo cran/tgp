@@ -24,25 +24,25 @@
 
 "mean0.range1" <-
 function(X.m) {
-	if(is.null(X.m)) return(NULL)
-	else if(is.null(dim(X.m))) X <- matrix(X.m, ncol=1)
-	else X <- X.m
-
-	undo <- list()
-	undo$min <- rep(0, dim(X)[2])
-	undo$max <- rep(0, dim(X)[2])
-	undo$amean <- rep(0, dim(X)[2])
-	
-	for(i in 1:(dim(X)[2])) {
-		undo$min[i] <- min(X[,i])
-		undo$max[i] <- max(X[,i])
-		X[,i] <- X[,i] / (max(X[,i]) - min(X[,i]))
-		undo$amean[i] <- mean(X[,i])
-		X[,i] <- X[,i] - mean(X[,i])
-	}
-	if(is.null(dim(X.m))) X.m <- as.vector(X)
-	else X.m <- X
-
-	return(list(X=X,undo=undo))
+  if(is.null(X.m)) return(NULL)
+  else if(is.null(dim(X.m))) X <- matrix(X.m, ncol=1)
+  else X <- X.m
+  
+  undo <- list()
+  undo$min <- rep(0, ncol(X))
+  undo$max <- rep(0, ncol(X))
+  undo$amean <- rep(0, ncol(X))
+  
+  for(i in 1:ncol(X)) {
+    undo$min[i] <- min(X[,i])
+    undo$max[i] <- max(X[,i])
+    X[,i] <- X[,i] / (max(X[,i]) - min(X[,i]))
+    undo$amean[i] <- mean(X[,i])
+    X[,i] <- X[,i] - mean(X[,i])
+  }
+  if(is.null(dim(X.m))) X.m <- as.vector(X)
+  else X.m <- X
+  
+  return(list(X=X,undo=undo))
 }
 

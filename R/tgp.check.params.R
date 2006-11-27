@@ -165,6 +165,8 @@ function(params, col)
               length(params$gamma),"\n"));
     return(NULL)
   }
+  if(!prod(params$gamma[2:3] > 0)) { cat("all params$gamma[2:3] must be positive\n"); return(NULL) }
+  if(sum(params$gamma[2:3]) >= 1.0) { cat("sum(gamma[2:3]) > 1 not allowed\n"); return(NULL) }
   p <- c(p, as.numeric(params$gamma))
 
   ## mixture of gamma (initial) prior parameters for range parameter d

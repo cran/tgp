@@ -2,7 +2,9 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-graphics.off()
+##options(width=65)
+seed <- 0; set.seed(seed)
+
 
 ###################################################
 ### chunk number 2: 
@@ -13,7 +15,7 @@ library(MASS)
 ###################################################
 ### chunk number 3: 
 ###################################################
-moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
+moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
 
 
 ###################################################
@@ -25,14 +27,14 @@ plot(moto.bgp, main='GP,', layout='surf')
 ###################################################
 ### chunk number 5: 
 ###################################################
-rl <- readline("press RETURN to continue")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
 ### chunk number 6: 
 ###################################################
-moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
+moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
 
 
 ###################################################
@@ -44,36 +46,45 @@ plot(moto.btlm, main='Bayesian CART,', layout='surf')
 ###################################################
 ### chunk number 8: 
 ###################################################
-rl <- readline("press RETURN to continue")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
 ### chunk number 9: 
 ###################################################
-p <- tgp.default.params(2)
-p$bprior <- "b0"
-p$nug.p <- c(1.0,0.1,10.0,0.1)
-moto.tgp <- tgp(X=mcycle[,1], Z=mcycle[,2], params=p,
-	   BTE=c(2000,22000,2))
+moto.btgpllm <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
+                        m0r1=TRUE, verb=0)
+moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 
 
 ###################################################
 ### chunk number 10: btgp
 ###################################################
-plot(moto.tgp, main='custom treed GP LLM,', layout='surf')
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='surf')
+plot(moto.btgpllm.p, center='km', layout='surf')
 
 
 ###################################################
 ### chunk number 11: 
 ###################################################
-rl <- readline("press RETURN to continue")
-dev.off()
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 
 ###################################################
 ### chunk number 12: btgpq
 ###################################################
-plot(moto.tgp, main='custom treed GP LLM,', layout='as')
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='as')
+plot(moto.btgpllm.p, as='ks2', layout='as')
+
+
+###################################################
+### chunk number 13: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
 
 

@@ -23,28 +23,29 @@
 
 
 "tgp.plot.proj" <-
-function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
-	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, pc="pc",
-        method="loess", gridlen=40, span=0.1, ...)
+function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
+         layout=layout,	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
+         pc="pc", method="loess", gridlen=40, span=0.1, ...)
 {
   ## will call stop() if something is wrong with the proj
   
   proj <- check.proj(proj)
 
-    # deal with axis labels
+  ## deal with axis labels
   if(is.null(xlab)) xlab <- names(out$X)[proj[1]]
   if(is.null(ylab)) ylab <- names(out$X)[proj[2]]
   if(is.null(zlab)) zlab <- out$response
-  smain <- paste(main, zlab, "mean")
 
-  # gather X and Z data
-  X <- rbind(as.matrix(out$X), out$XX)[,proj]
+  ## choose center as median or mean (i.e., X & Z data)
+  center <- tgp.choose.center(out, center);
+  Z.mean <- center$Z
+  smain <- paste(main, zlab, center$name);
+  X <- center$X[,proj]
   if(is.null(dim(X))) { nX <- length(X); dX <- 1 }
   else { nX <- dim(X)[1]; dX <- dim(X)[2] }
-    p <- seq(1,nX)
-  Z.mean <- c(out$Zp.mean, out$ZZ.mean)
+  p <- seq(1,nX)
   
-  # for ALC and EGO plotting
+  ## for ALC and EGO plotting
   as <- tgp.choose.as(out, as);
   XX <- as$X[,proj]
   ZZ.q <- as$criteria
@@ -67,7 +68,6 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, layout=layout,
     if(layout == "both" || layout == "surf") {
       plot(out$X[,proj], out$Z, xlab=xlab, ylab=zlab, main=smain, ...)
            
-
       points(out$XX[,proj], out$ZZ.mean, pch=20, cex=0.5, ...)
       Zb.q1 <- c(out$Zp.q1, out$ZZ.q1)
       Zb.q2 <- c(out$Zp.q2, out$ZZ.q2)

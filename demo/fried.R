@@ -2,7 +2,8 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-graphics.off()
+##options(width=65)
+seed <- 0; set.seed(seed)
 
 
 ###################################################
@@ -17,7 +18,7 @@ XX <- ff[,1:10]
 ###################################################
 ### chunk number 3: 
 ###################################################
-fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2,10), m0r1=TRUE)
+fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, m0r1=TRUE, verb=0)
 fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
 fr.btlm.mse
 
@@ -25,8 +26,39 @@ fr.btlm.mse
 ###################################################
 ### chunk number 4: 
 ###################################################
-fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, m0r1=TRUE)
+fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, m0r1=TRUE, verb=0)
 fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
 fr.bgpllm.mse
+
+
+###################################################
+### chunk number 5: 
+###################################################
+XX1 <- matrix(rep(0,10), nrow=1)
+fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, verb=0)
+
+
+###################################################
+### chunk number 6: 
+###################################################
+apply(fr.bgpllm.tr$trace$XX[[1]][,27:36], 2, mean)
+
+
+###################################################
+### chunk number 7: 
+###################################################
+mean(fr.bgpllm.tr$trace$linarea$ba)
+
+
+###################################################
+### chunk number 8: 
+###################################################
+summary(fr.bgpllm.tr$trace$XX[[1]][,9:10])
+
+
+###################################################
+### chunk number 9: 
+###################################################
+apply(fr.bgpllm.tr$trace$XX[[1]][,11:15], 2, mean)
 
 

@@ -25,25 +25,23 @@
 "tgp.partition" <-
 function(X, tree, i)
 {
-	# error or leaf node
-	if(dim(X)[1] == 0) { stop("dim=0 X\n") }
-	if(tree$var[i] == "<leaf>") return(list(X));
-
-	# gather the appropriate operations from the ith tree node
-	op <- as.character(tree$splits.cutright[i])
-	var <- as.integer(as.character(tree$var[i]))+1
-	op <- paste("X[,", var, "]", op, sep="")
-	gt <- (1:(dim(X)[1]))[eval(parse(text=op))]
-	leq <- setdiff(1:(dim(X)[1]), gt)
-
-	# calculate the left and right tree node rows
-	l <- (1:(dim(tree)[1]))[tree$rows == 2*tree$rows[i]]
-	r <- (1:(dim(tree)[1]))[tree$rows == 2*tree$rows[i]+1]
-
-	# recurse on left and right subtrees
-	Xl <- tgp.partition(X[leq,], tree, l)
-	Xr <- tgp.partition(X[gt,], tree, r)
-
-	return(c(Xl,Xr))
+  ## error or leaf node
+  if(dim(X)[1] == 0) { stop("dim=0 X\n") }
+  if(tree$var[i] == "<leaf>") return(list(X));
+  
+  ## gather the appropriate operations from the ith tree node
+  var <- as.integer(as.character(tree$var[i]))+1
+  gt <- (1:(dim(X)[1]))[X[,var] > tree$val[i]]
+  leq <- setdiff(1:(dim(X)[1]), gt)
+  
+  ## calculate the left and right tree node rows
+  l <- (1:(dim(tree)[1]))[tree$rows == 2*tree$rows[i]]
+  r <- (1:(dim(tree)[1]))[tree$rows == 2*tree$rows[i]+1]
+  
+  ## recurse on left and right subtrees
+  Xl <- tgp.partition(X[leq,], tree, l)
+  Xr <- tgp.partition(X[gt,], tree, r)
+  
+  return(c(Xl,Xr))
 }
 

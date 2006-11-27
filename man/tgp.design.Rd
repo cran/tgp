@@ -5,7 +5,7 @@
 \description{
   Based on the maximum a' posteriori (MAP)
   treed partition extracted from a \code{"tgp"}-class object,
-  calculate independant sequential treed D-Optimal designs in each of the regions.
+  calculate independent sequential treed D-Optimal designs in each of the regions.
 }
 
 \usage{
@@ -15,13 +15,13 @@ tgp.design(howmany, Xcand, out)
 \arguments{
   \item{howmany}{Number of new points in the design. Must
   	be less than the number of candidates contained in
-	\code{Xcand}, i.e., \code{howmany <= dim(Xcand)[1]}}
+	\code{Xcand}, i.e., \code{howmany <= nrow(Xcand)}}
   \item{Xcand}{ \code{data.frame}, \code{matrix} or vector of candidates 
-  	from which new design points are subsampled.  Must have the same
-	dimension as \code{out$X} }
-  \item{out}{ \code{"tgp"} class object which is the output of one of the
+  	from which new design points are subsampled.  Must have
+	\code{nrow(Xcand) == nrow(out$X)} }
+  \item{out}{ \code{"tgp"}-class object output from one of the
   	model functions which has tree support, e.g., \code{\link{btgpllm}},
-	\code{\link{btgp}}, \code{\link{btlm}}, or \code{\link{tgp}} }
+	\code{\link{btgp}}, \code{\link{btlm}}}
 }
 
 \details{
@@ -33,7 +33,7 @@ tgp.design(howmany, Xcand, out)
   region.  The aim is to obtain a design where new points from \code{Xcand}
   are spaced out relative to themselves, and relative to
   the existing locations (\code{out$X}) in the region.
-  The number of new points from each region is
+  The number of new points from each region of the partition is
   proportional to the number of candidates \code{Xcand} in the region.
 }
 
@@ -78,7 +78,7 @@ The example below is also part of \code{vignette("tgp")}
 }
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
-	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{tgp}}, \code{\link{plot.tgp}}, 
+	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{plot.tgp}}, 
 	\code{\link{dopt.gp}}, \code{\link{lhs}}, \code{\link{partition}}}
 
 \examples{

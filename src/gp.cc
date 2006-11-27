@@ -85,7 +85,7 @@ Gp::Gp(unsigned int d, Base_Prior *prior, Model *model) : Base(d, prior, model)
 /*
  * Gp:
  * 
- * duplication constructor; params any "new" variables are also 
+ * duplication constructor; params and "new" variables are also 
  * set to NULL values
  */
 
@@ -114,7 +114,7 @@ Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
   corr_prior = ((Gp_Prior*)prior)->CorrPrior();
       
   /* correlation function; not using a corr->Dup() function
-   * no as not to re-duplicate the correlation function 
+   * so as not to re-duplicate the correlation function 
    * prior -- so generate a new one from the copied
    * prior and then use the copy constructor */
   corr = corr_prior->newCorr();
@@ -169,32 +169,55 @@ Gp::~Gp(void)
  * tree partion
  */
 
-void Gp::Init(void)
+void Gp::Init(double *dgp)
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
-
-  /* partition parameters */
-  dupv(b, p->B(), col);
-  s2 = p->S2();
-  tau2 = p->Tau2();
-  
-  /* re-init partition */
-  Clear();
-  ClearPred();
-  
-  /* set corr and linear model */
+  /* set base and corr priors */
+  Gp_Prior *p = (Gp_Prior*) prior; 
   corr_prior = p->CorrPrior();
   assert(corr_prior->BasePrior() == prior);
-  
-  /* correlation function and variance parameters */
-  if(corr) delete corr;
-  corr = corr_prior->newCorr();
+
+  /* re-init partition */
+  /* not sure if this is necessary when dgp != NULL */
+  Clear();
+  ClearPred();
+
+  /* see if we should read the parameterization from dgp */
+  if(dgp) {
+
+    /* dgp[0] is lambda (which we're just recomputing for now) */
+    s2 = dgp[1];
+    tau2 = dgp[2];
+    dupv(b, &(dgp[3]), col);
+
+    /* dgp[3+col + col + col*col] is bmu and Vb (which we're also just
+       recomputing for now) */
+
+    if(!corr) corr = corr_prior->newCorr();
+    corr->Init(&(dgp[3+col + col + col*col]));    
+
+    /* could probably put id-Vb and zero-bmu/bmle, but don't
+       need to because the gp is always init-ed with these
+       in place anyways (base->Init(NULL) in tree constructor) */
+
+  } else {
+    /* or instead init params from the prior */
+
+    /* partition parameters */
+    dupv(b, p->B(), col);
+    s2 = p->S2();
+    tau2 = p->Tau2();
     
-  /* marginalized parameters */
-  id(Vb, this->col);
-  zerov(bmu, this->col);
-  zerov(bmle, this->col);
-  lambda = 0;  
+    /* marginalized parameters */
+    id(Vb, this->col);
+    zerov(bmu, this->col);
+    zerov(bmle, this->col);
+    lambda = 0;  
+
+    /* correlation function and variance parameters */
+    if(corr) delete corr;
+    corr = corr_prior->newCorr();
+  }
+    
 }
 
 
@@ -260,7 +283,7 @@ void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
   corr->Invert(n);
   if(((Gp_Prior*)prior)->BetaPrior() == BMLE) 
     mle_beta(bmle, n, col, F, Z);
-  mean_of_rows(&mean, &Z, 1, n);
+  wmean_of_rows(&mean, &Z, 1, n, NULL);
 }
 
 
@@ -271,7 +294,7 @@ void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
  * (leaf) node based on the current parameter settings
  */
 
-void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy)
+void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)
 {
   assert(this->XX == NULL);
   if(XX == NULL) { assert(nn == 0); return; }
@@ -306,22 +329,14 @@ void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, double **Ds2xy
 
 bool Gp::Draw(void *state)
 {
-  Gp_Prior *p = (Gp_Prior*) prior;
+  /* 
+   * start with draws from the marginal posterior of the corr function 
+   */
 
-  /* s2 */
-  if(p->BetaPrior() == BFLAT) 
-    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha()-col,p->s2Beta(), state);
-  else      
-    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
-
-  /* if beta draw is bad, just use mean, then zeros */
-  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
-  if(info != 0) b[0] = mean; 
-  
   /* correlation function */
   int success, i;
   for(i=0; i<5; i++) {
-    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, state);
+    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, state);
     if(success != -1) break;
   }
 
@@ -336,12 +351,30 @@ bool Gp::Draw(void *state)
     if(xxKxx) { delete_matrix(xxKxx); }
     xxKx = xxKxx = NULL;
   }
+
+  /* 
+   * then go to the others
+   */
+
+  Gp_Prior *p = (Gp_Prior*) prior;
+
+  /* s2 */
+  if(p->BetaPrior() == BFLAT) 
+    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha()-col,p->s2Beta(), state);
+  else      
+    s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
+
+  /* if beta draw is bad, just use mean, then zeros */
+  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
+  if(info != 0) b[0] = mean; 
   
   /* tau2: last becuase of Vb and lambda */
   if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART)
     tau2 = tau2_draw(col, p->get_Ti(), s2, b, p->get_b0(), 
 		     p->tau2Alpha(), p->tau2Beta(), state);
   
+  /* NOTE: that Compute() still needs to be called here, but we are
+     delaying it until after the draws for the hierarchical params */
   return true;
 }
 
@@ -354,8 +387,10 @@ bool Gp::Draw(void *state)
  * correct sizes
  */
 
-void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz, 
-		 double **ds2xy, double *ego, bool err, void *state)
+void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
+		 unsigned int nn, double *zz, double *zzm, double *zzs2,
+		 double **ds2xy, double *improv, double Zmin, bool err,
+		 void *state)
 {
   assert(this->n == n);
   assert(this->nn == nn);
@@ -365,13 +400,15 @@ void Gp::Predict(unsigned int n, unsigned int nn, double *z, double *zz,
   /* try to make some predictions, but first: choose LLM or Gp */
   if(corr->Linear())  {
     /* under the limiting linear */
-    predict_full_linear(n, nn, col, z, zz, Z, F, FF, bmu, s2, Vb, ds2xy, ego,
-			corr->Nug(), err, state);
+    predict_full_linear(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv,
+			Z, col, F, FF, bmu, s2, Vb, corr->Nug(), Zmin, err, 
+			state);
   } else {
     /* full Gp prediction */
-    warn = predict_full(n, nn, col, z, zz, ds2xy, ego, Z, F, corr->get_K(), 
-			corr->get_Ki(), ((Gp_Prior*)prior)->get_T(), tau2, FF, 
-			xxKx, xxKxx, bmu, s2, corr->Nug(), err, state);
+    warn = predict_full(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, 
+			Z, col, F, corr->get_K(), corr->get_Ki(), 
+			((Gp_Prior*)prior)->get_T(), tau2, FF, xxKx, xxKxx, 
+			bmu, s2, corr->Nug(), Zmin, err, state);
   }
   
   /* print warnings if there were any */
@@ -445,6 +482,7 @@ void Gp::Split(Base *l, Base *r, void *state)
 void Gp::split_tau2(double *tau2_new, void *state)
 {
   int i[2];
+  
   Gp_Prior *p = (Gp_Prior*) prior;
   /* make the larger partition more likely to get the smaller d */
   propose_indices(i, 0.5, state);
@@ -452,8 +490,7 @@ void Gp::split_tau2(double *tau2_new, void *state)
   if(p->BetaPrior() == BFLAT || p->BetaPrior() == BCART) 
     tau2_new[i[1]] = tau2;
   else 
-    inv_gamma_mult_gelman(&(tau2_new[i[1]]), p->tau2Alpha()/2, 
-			  p->tau2Beta()/2, 1, state);
+    tau2_new[i[1]] = tau2_prior_rand(p->tau2Alpha()/2, p->tau2Beta()/2, state);
 }
 
 
@@ -476,12 +513,25 @@ double combine_tau2(double l_tau2, double r_tau2, void *state)
 
 
 /*
- * posterior:
+ * Posterior:
+ *
+ * called by tree: for these Gps, the Posterior is the same as
+ * the marginal Likelihood due to the proposals coming from priors 
+ */
+
+double Gp::Posterior(void)
+{
+  return MarginalLikelihood(itemp);
+}
+
+
+/*
+ * MarginalLikelihood:
  * 
  * computes the marginalized likelihood/posterior for this (leaf) node
  */
 
-double Gp::Posterior(void)
+double Gp::MarginalLikelihood(double itemp)
 {
   assert(F != NULL);
    
@@ -489,7 +539,7 @@ double Gp::Posterior(void)
 
   /* the main posterior for the correlation function */
   double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), 
-			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta());
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
@@ -500,20 +550,102 @@ double Gp::Posterior(void)
 
 
 /*
+ * Likelihood:
+ * 
+ * computes the MVN (log) likelihood for this (leaf) node
+ */
+
+double Gp::Likelihood(double itemp)
+{
+  /* sanity check */
+  assert(F != NULL);
+   
+  /* getting the covariance matrix and its determinant */
+  double **Ki;
+  if(corr->Linear()) Ki = NULL;
+  else Ki = corr->get_Ki();
+  double log_det_K = corr->get_log_det_K();
+
+  /* the main posterior for the correlation function */
+  double llik = gp_lhood(Z, n, col, F, b, s2, Ki, log_det_K, corr->Nug(), itemp);
+  
+#ifdef DEBUG
+  if(isnan(llik)) warning("nan in likelihood");
+  if(isinf(llik)) warning("inf in likelihood");
+#endif
+  return llik;
+}
+
+
+/*
  * FullPosterior:
  *
  * return the full posterior (pdf) probability of 
  * this Gaussian Process model
  */
 
-double Gp::FullPosterior(void)
+double Gp::FullPosterior(double itemp)
 {
-  double post = Posterior() + corr->log_Prior();
-  /* add in prior for tau2 */
-  double ptau2;
+  /* calculate the likelihood of the data */
+  double post = Likelihood(itemp);
+
+  /* for adding in priors */
   Gp_Prior *p = (Gp_Prior*) prior;
-  invgampdf_log_gelman(&ptau2, &tau2, p->tau2Alpha()/2, p->tau2Beta()/2, 1);
-  post += ptau2;
+
+  /* calculate the prior on the beta regression coeffs */
+  if(p->BetaPrior() == B0 || p->BetaPrior() == BMLE) { 
+    double **V = new_dup_matrix(p->get_T(), col, col);
+    scalev(V[0], col*col, s2*tau2);
+    post += mvnpdf_log(b, p->get_b0(), V, col);
+    delete_matrix(V);
+  }
+  
+  /* add in the correllation prior */
+  post += corr->log_Prior();
+
+  /* add in prior for s2 */
+  post += log_tau2_prior_pdf(s2,  p->s2Alpha()/2.0, p->s2Beta()/2.0);
+
+  /* add in prior for tau2 */
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+    post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2.0, p->tau2Beta()/2.0);
+  }
+
+  return post;
+}
+
+
+/*
+ * MarginalPosterior:
+ *
+ * return the full marginal posterior (pdf) probability of 
+ * this Gaussian Process model -- i.e., with beta and s2 integrated out
+ */
+
+double Gp::MarginalPosterior(double itemp)
+{
+  /* for adding in priors */
+  Gp_Prior *p = (Gp_Prior*) prior;
+
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(),
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
+
+  //assert(!isinf(post));
+
+  /* don't need to include prior for beta, because
+     its alread included in the above calculation */
+  
+  /* add in the correllation prior */
+  post += corr->log_Prior();
+
+ /* don't need to include prior for beta, because
+    its alread included in the above calculation */
+
+   /* add in prior for tau2 */
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+    post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2, p->tau2Beta()/2);
+  }
+
   return post;
 }
 
@@ -527,7 +659,7 @@ double Gp::FullPosterior(void)
  * prior model.
  */
 
-void Gp::Compute()
+void Gp::Compute(void)
 {
   Gp_Prior *p = (Gp_Prior*) prior;
 
@@ -549,9 +681,9 @@ void Gp::Compute()
   
   /* compute the marginal parameters */
   if(corr->Linear())
-    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug());
+    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug(), itemp);
   else
-    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0);
+    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, itemp);
 }
 
 
@@ -659,23 +791,37 @@ void Gp::X_to_F(unsigned int n, double **X, double **F)
  * the underlying correllation function 
  */
 
-double* Gp::Trace(unsigned int* len)
+double* Gp::Trace(unsigned int* len, bool full)
 {
-  /* first get the correllation function parameters */
+  /* first get the correlation function parameters */
   unsigned int clen;
   double *c = corr->Trace(&clen);
 
   /* calculate and allocate the new trace, 
      which will include the corr trace */
-  *len = col + 2;
+  *len = col + 3;
+
+  /* add in bmu and Vb when full=TRUE */
+  if(full) *len += col + col*col;
+
+  /* allocate the trace vector */
   double* trace = new_vector(clen + *len);
 
+  /* lambda (or phi in the paper) */
+  trace[0] = lambda;
+
   /* copy sigma^2 and tau^2 */
-  trace[0] = s2;
-  trace[1] = tau2;
+  trace[1] = s2;
+  trace[2] = tau2;
 
   /* then copy beta */
-  dupv(&(trace[2]), b, col);
+  dupv(&(trace[3]), b, col);
+
+  /* add in bmu and Vb when full=TRUE */
+  if(full) {
+    dupv(&(trace[3+col]), bmu, col);
+    dupv(&(trace[3+2*col]), Vb[0], col*col);
+  }
 
   /* then copy in the corr trace */
   dupv(&(trace[*len]), c, clen);
@@ -686,6 +832,92 @@ double* Gp::Trace(unsigned int* len)
   else assert(clen == 0);
   
   return trace;
+}
+
+
+
+/*
+ * TraceNames:
+ *
+ * returns the names of the traces recorded by Gp:Trace()
+ */
+
+char** Gp::TraceNames(unsigned int* len, bool full)
+{
+  /* first get the correllation function parameters */
+  unsigned int clen;
+  char **c = corr->TraceNames(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the corr trace */
+  *len = col + 3;
+
+  /* add in bmu and Vb when full=TRUE */
+  if(full) *len += col + col*col;
+
+  /* allocate the trace vector */
+  char** trace = (char**) malloc(sizeof(char*) * (clen + *len));
+
+  /* lambda (or phi in the paper) */
+  trace[0] = strdup("lambda");
+
+  /* copy sigma^2 and tau^2 */
+  trace[1] = strdup("s2");
+  trace[2] = strdup("tau2");
+
+  /* then copy beta */
+  for(unsigned int i=0; i<col; i++) {
+    trace[3+i] = (char*) malloc(sizeof(char) * (5+col/10+1));
+    sprintf(trace[3+i], "beta%d", i);
+  }
+
+  /* add in bmu and Vb when full=TRUE */
+  if(full) {
+
+    /* bmu */
+    for(unsigned int i=0; i<col; i++) {
+      trace[3+col+i] = (char*) malloc(sizeof(char) * (4+col/10+1));
+      sprintf(trace[3+col+i], "bmu%d", i);
+    }
+
+    /* Vb */
+    for(unsigned int i=0; i<col; i++) {
+      for(unsigned int j=0; j<col; j++) {
+	trace[3+2*col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
+	sprintf(trace[3+2*col+ col*i +j], "Vb%d.%d", i, j);
+      }
+    }
+  }
+
+  /* then copy in the corr trace */
+  for(unsigned int i=0; i<clen; i++) trace[*len + i] = c[i];
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+  
+  return trace;
+}
+
+
+
+/* 
+ * NewInvTemp:
+ *
+ * set a new inv-temperature, and thence recompute
+ * the necessary marginal parameters which would
+ * change for different temperature
+ */
+
+double Gp::NewInvTemp(double itemp, bool isleaf)
+{
+  double olditemp = this->itemp;
+  if(this->itemp != itemp) {
+    this->itemp = itemp;
+    if(isleaf) Compute();
+  }
+  return olditemp;
 }
 
 
@@ -754,6 +986,29 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
     T = new_id_matrix(col);
     Tchol = new_id_matrix(col);
   }
+}
+
+
+
+/*
+ * Init
+ *
+ * copy the elements of the double* hier vector
+ * into the correct parameters
+ */
+
+void Gp_Prior::Init(double *hier)
+{
+  s2_a0 = hier[0];
+  s2_g0 = hier[1];
+  tau2_a0 = hier[2];
+  tau2_g0 = hier[3];
+  dupv(b0, &(hier[4]), col);
+  dupv(Ti[0], &(hier[4+col]), col*col);
+  if(beta_prior == B0 || beta_prior == BMLE) { 
+    inverse_chol(Ti, T, Tchol, col);
+  } else zero(T, col, col);
+  corr_prior->Init(&(hier[4+col+col*col]));
 }
 
 
@@ -898,7 +1153,7 @@ void Gp_Prior::read_double(double * dparams)
   /* read starting beta linear regression parameter vector */
   dupv(b, dparams, col);
   /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout); */
+     printVector(b, col, stdout, HUMAN); */
   dparams += col; /* reset */
 
   /* read starting (initial values) parameter */
@@ -1003,7 +1258,7 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   read_beta(line);
   myprintf(stdout, "starting beta=");
-  printVector(b, col, stdout);
+  printVector(b, col, stdout, HUMAN);
   
   /* read the s2 and tau2 initial parameter from the control file */
   ctrlfile->getline(line, BUFFMAX);
@@ -1157,7 +1412,7 @@ void Gp_Prior::read_beta(char *line)
   }
   
   /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout) */
+     printVector(b, col, stdout, HUMAN) */
 }
 
 
@@ -1329,7 +1584,7 @@ void Gp_Prior::Print(FILE* outfile)
 
   /* beta */
   /*myprintf(outfile, "starting b=");
-    printVector(b, col, outfile); */
+    printVector(b, col, outfile, HUMAN); */
 
   /* s2 and tau2 */
   // myprintf(outfile, "starting s2=%g tau2=%g\n", s2, tau2);
@@ -1365,10 +1620,11 @@ void Gp_Prior::Print(FILE* outfile)
 void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
 {
   double **b, **bmle, *s2, *tau2;
+  unsigned int *n;
   Corr **corr;
   
   /* allocate temporary parameters for each leaf node */
-  allocate_leaf_params(col, &b, &s2, &tau2, &corr, leaves, numLeaves);
+  allocate_leaf_params(col, &b, &s2, &tau2, &n, &corr, leaves, numLeaves);
   if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
   else bmle = NULL;
 
@@ -1386,23 +1642,34 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
     inverse_chol(Ti, (this->T), Tchol, col);
   }
   
+
   /* update the corr and sigma^2 prior params */
 
   /* tau2 prior first */
-  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART) {
+    unsigned int *colv = new_ones_uivector(numLeaves, col);
     sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,
-		      tau2_g0_lambda,state);
+		      tau2_g0_lambda,colv,state);
+    free(colv);
+  }
+
+  /* subtract col from n for sigma2_prior_draw when using flat BETA prior */
+  if(beta_prior == BFLAT) 
+    for(unsigned int i=0; i<numLeaves; i++) {
+      assert(n[i] >= col);
+      n[i] -= col;
+    }
 
   /* then sigma2 prior */
   if(!fix_s2)
     sigma2_prior_draw(&s2_a0,&s2_g0,s2,numLeaves,s2_a0_lambda,
-		      s2_g0_lambda,state);
+		      s2_g0_lambda,n,state);
 
   /* then corr prior */
   corr_prior->Draw(corr, numLeaves, state);
   
   /* clean up the garbage */
-  deallocate_leaf_params(b, s2, tau2, corr);
+  deallocate_leaf_params(b, s2, tau2, n, corr);
   if(beta_prior == BMLE) delete_matrix(bmle);
 }
 
@@ -1517,19 +1784,21 @@ char* Gp::State(void)
  * values at each leaf (of numLeaves) of the tree
  */
 
-void allocate_leaf_params(unsigned int col, double ***b, double **s2,
-			  double **tau2, Corr ***corr, Tree **leaves, 
+void allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2, 
+			  unsigned int **n, Corr ***corr, Tree **leaves, 
 			  unsigned int numLeaves)
 {
   *b = new_matrix(numLeaves, col);
   *s2 = new_vector(numLeaves);
   *tau2 = new_vector(numLeaves);
   *corr = (Corr **) malloc(sizeof(Corr *) * numLeaves);
+  *n = new_uivector(numLeaves);
 
   /* collect parameters from the leaves */
   for(unsigned int i=0; i<numLeaves; i++) {
     Gp* gp = (Gp*) (leaves[i]->GetBase());
     dupv((*b)[i], gp->all_params(&((*s2)[i]), &((*tau2)[i]), &((*corr)[i])), col);
+    (*n)[i] = gp->N();
   }
 }
 
@@ -1541,12 +1810,14 @@ void allocate_leaf_params(unsigned int col, double ***b, double **s2,
  * values at each leaf of numLeaves
  */
 
-void deallocate_leaf_params(double **b, double *s2, double *tau2, Corr **corr)
+void deallocate_leaf_params(double **b, double *s2, double *tau2, unsigned int *n, 
+			    Corr **corr)
 {
   delete_matrix(b); 
   free(s2); 
   free(tau2); 
   free(corr); 
+  free(n);
 }
 
 
@@ -1577,9 +1848,9 @@ double Gp_Prior::log_HierPrior(void)
   double lpdf = 0.0;
 
   /* start with the b0 prior, if this part of the model is on */
-  if(beta_prior != BFLAT) {
+  if(beta_prior == B0 || beta_prior == BMLE) { 
 
-    /* this is probably overcall because Ci is an ID matrix */
+    /* this is probably overkill because Ci is an ID matrix */
     lpdf += mvnpdf_log_dup(b0, mu, Ci, col);
 
     /* then do the wishart prior for T 
@@ -1592,7 +1863,7 @@ double Gp_Prior::log_HierPrior(void)
     lpdf += hier_prior_log(s2_a0, s2_g0, s2_a0_lambda, s2_g0_lambda);
 
   /* hierarchical Linear varaince */
-  if(!fix_tau2)
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
     lpdf += hier_prior_log(tau2_a0, tau2_g0, tau2_a0_lambda, tau2_g0_lambda);
 
   /* then add the hierarchical part for the correllation function */
@@ -1600,4 +1871,128 @@ double Gp_Prior::log_HierPrior(void)
 
   /* return the resulting log pdf*/
   return lpdf;
+}
+
+
+/*
+ * TraceNames:
+ *
+ * returns the names of the traces of the hierarchal parameters
+ * recorded in Gp_Prior::Trace()
+ */
+
+char** Gp_Prior::TraceNames(unsigned int* len, bool full)
+{
+  /* first get the correllation function parameters */
+  unsigned int clen;
+  char **c = corr_prior->TraceNames(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the corr trace */
+  *len = 4 + col;
+
+  /* if full=TRUE then add in Ti */
+  if(full) *len += col*col;
+
+  /* allocate trace vector */
+  char** trace = (char**) malloc(sizeof(char*) * (clen + *len));
+
+  /* copy sigma^2 and tau^2 */
+  trace[0] = strdup("s2.a0");
+  trace[1] = strdup("s2.g0");
+  trace[2] = strdup("tau2.a0");
+  trace[3] = strdup("tau2.g0");
+
+  /* then copy beta */
+  for(unsigned int i=0; i<col; i++) {
+    trace[4+i] = (char*) malloc(sizeof(char) * (5+col/10 + 1));
+    sprintf(trace[4+i], "beta%d", i);
+  }
+
+  /* if full=TRUE, then add in Ti */  
+  if(full) {
+    for(unsigned int i=0; i<col; i++) {
+      for(unsigned int j=0; j<col; j++) {
+	trace[4+col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
+	sprintf(trace[4+col+ col*i +j], "Ti%d.%d", i, j);
+      }
+    }
+  }
+
+  /* then copy in the corr trace */
+  for(unsigned int i=0; i<clen; i++) trace[*len + i] = c[i];
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+  
+  return trace;
+}
+
+
+
+/*
+ * Trace:
+ *
+ * returns the trace of the inv-gamma hierarchical variance parameters,
+ * and the hierarchical mean beta0, plus the trace of
+ * the underlying correllation function prior 
+ */
+
+double* Gp_Prior::Trace(unsigned int* len, bool full)
+{
+  /* first get the correllation function parameters */
+  unsigned int clen;
+  double *c = corr_prior->Trace(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the corr trace */
+  *len = 4 + col;
+
+  /* if full=TRUE, add in Ti */
+  if(full) *len += col*col; 
+
+  /* allocate the trace vector */
+  double* trace = new_vector(clen + *len);
+
+  /* copy sigma^2 and tau^2 */
+  trace[0] = s2_a0;
+  trace[1] = s2_g0;
+  trace[2] = tau2_a0;
+  trace[3] = tau2_g0;
+
+  /* then copy beta */
+  dupv(&(trace[4]), b0, col);
+
+  /* if full=TRUE, then add in Ti */
+  if(full) {
+    dupv(&(trace[4+col]), Ti[0], col*col);
+  }
+
+  /* then copy in the corr trace */
+  dupv(&(trace[*len]), c, clen);
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+  
+  return trace;
+}
+
+
+/*
+ * GamLin:
+ *
+ * return gamlin[which] from corr_prior; must have
+ * 0 <= which <= 2
+ */
+
+double Gp_Prior::GamLin(unsigned int which)
+{
+  assert(which < 3);
+
+  double *gamlin = corr_prior->GamLin();
+  return gamlin[which];
 }

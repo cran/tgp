@@ -27,6 +27,7 @@ extern "C"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"
+#include "rand_pdf.h"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "rhelp.h"
@@ -129,6 +130,32 @@ ExpSep::~ExpSep(void)
 }
 
 
+/*
+ * Init:
+ * 
+ * initialise this corr function with the parameters provided
+ * from R via the vector of doubles
+ */
+
+void ExpSep::Init(double *dexpsep)
+{
+  dupv(d, &(dexpsep[1]), col-1);
+
+  if(!prior->Linear() && prior->LLM())
+    linear_pdf_sep(pb, d, col-1, prior->GamLin());
+
+  bool lin = true;
+  for(unsigned int i=0; i<col-1; i++) {
+    b[i] = (int) dexpsep[col-1+1+i];
+    lin = lin && !b[i];
+    d_eff[i] = d[i] * b[i];
+  }
+
+  if(prior->Linear()) assert(lin);
+  NugInit(dexpsep[0], lin);
+}
+ 
+
 /* 
  * DrawNug:
  * 
@@ -138,9 +165,8 @@ ExpSep::~ExpSep(void)
  * false otherwise
  */
 
-bool ExpSep::DrawNug(unsigned int n, double **X, 
-		     double **F, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, void *state)
+bool ExpSep::DrawNug(unsigned int n, double **X,  double **F, double *Z, double *lambda, 
+		   double **bmu, double **Vb, double tau2, double itemp, void *state)
 {
   bool success = false;
   Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
@@ -149,7 +175,8 @@ bool ExpSep::DrawNug(unsigned int n, double **X,
   if(! linear) assert(n == this->n);
   
   /* with probability 0.5, skip drawing the nugget */
-  if(runi(state) > 0.5) return false;
+  double ru = runi(state);
+  if(ru > 0.5) return false;
   
   /* make the draw */
   double nug_new = 
@@ -157,7 +184,7 @@ bool ExpSep::DrawNug(unsigned int n, double **X,
 		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, 
 		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), 
 		    tau2, prior->NugAlpha(), prior->NugBeta(), gp_prior->s2Alpha(), 
-		    gp_prior->s2Beta(), (int) linear, state);
+		    gp_prior->s2Beta(), (int) linear, itemp, state);
   
   /* did we accept the draw? */
   if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
@@ -233,8 +260,8 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
   dupv(pb_new, pb, col-1);
   dupiv(b_new, b, col-1);
   
-  /* 1/3 of the time -- just draw all the ds jointly */
-  if(runi(state) < 0.3333333333) {
+  /* 1/3 of the time (or for 1-d data) -- just draw all the ds jointly */
+  if(col==2 || runi(state) < 0.3333333333) {
     
     /* RW proposal for all d-values */
     d_proposal(col-1, NULL, d_new, d, q_fwd, q_bak, state);
@@ -242,8 +269,9 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
     /* if we are allowing the LLM, then we need to draw the b_new
        conditional on d_new; otherwise just return */
     if(prior->LLM()) {
-      if(runi(state) < 0.5) /* sometimes skip drawing the bs */
-	return linear_rand_sep(b_new,pb_new,d_new,col-1,prior->GamLin(),state);
+      if(col==2 || runi(state) < 0.5) /* sometimes skip drawing the bs (unless 1-d) */
+	return linear_rand_sep(b_new,pb_new,d_new,col-1,prior->GamLin(),
+			       state);
       else return linear;
     } else return false;
     
@@ -285,7 +313,8 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
       copy_sub_vector(d_short, zero, d_new, len);
 
       /* draw new bs conditional on the new ds */
-      linear_rand_sep(b_short,pb_short,d_short,len,prior->GamLin(),state);
+      linear_rand_sep(b_short,pb_short,d_short,len,prior->GamLin(),
+		      state);
 
       /* copy the new bs and pbs into the big "new" proposals */
       copy_p_vector(pb_new, zero, pb_short, len);
@@ -320,7 +349,7 @@ bool ExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
 
 int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z, 
 		 double *lambda, double **bmu, double **Vb, double tau2, 
-		 void *state)
+		 double itemp, void *state)
 {
   int success = 0;
   bool lin_new;
@@ -337,9 +366,9 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   
   /* when the LLM is active, sometimes skip this Draw
      and only draw the nugget;  this is done for speed,
-     and to improve miding in the rest of the model */
-  if(linear && runi(state) > 0.5) 
-    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
+     and to improve mixing in the rest of the model */
+  if(linear && runi(state) > 0.5)
+    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
 
   /* proposals happen when we're not forcing the LLM */
   if(prior->Linear()) lin_new = true;
@@ -350,21 +379,31 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
     pb_new = new_vector(col-1);
 
     /* make the RW proposal for d, and then b */
-    lin_new = propose_new_d(d_new, b_new, pb_new, &q_fwd, &q_bak, state);
+    lin_new = propose_new_d(d_new, b_new, pb_new, &q_fwd, &q_bak, 
+			    state);
   }
   
   /* calculate the effective model (d_eff = d*b), 
      and allocate memory -- when we're not proposing the LLM */
   double *d_new_eff = NULL;
   if(! lin_new) {
-    d_new_eff = new_zero_vector(col-1);
-    for(unsigned int i=0; i<col-1; i++) d_new_eff[i] = d_new[i]*b_new[i];
     
-    /* allocate K_new, Ki_new, Kchol_new */
-    allocate_new(n);
-
-    /* sanity check */
-    assert(n == this->n);
+    /* calculate effective new d-vector, and determine
+       if it is the same as the old one */
+    d_new_eff = new_zero_vector(col-1);
+    bool equal = TRUE;
+    for(unsigned int i=0; i<col-1; i++) {
+      d_new_eff[i] = d_new[i]*b_new[i];
+      equal = equal && (d_new_eff[i] == d_eff[i]);
+    }
+    
+    /* no need to calculate full posterior if the d_eff's are the same */
+    if(equal) { free(d_new_eff); d_new_eff = NULL; }
+    else {
+      /* allocate K_new, Ki_new, Kchol_new, & sanity check */
+      allocate_new(n);
+      assert(n == this->n);
+    }
   }
 
   /* compute the acceptance ratio, unless we're forcing the LLM
@@ -384,7 +423,7 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
 				Vb_new, bmu_new, gp_prior->get_b0(), gp_prior->get_Ti(), 
 				gp_prior->get_T(), tau2, nug, qRatio, 
 				pRatio_log, gp_prior->s2Alpha(), gp_prior->s2Beta(), 
-				(int) lin_new, state);
+				(int) lin_new, itemp, state);
     
     /* see if the draw was accepted; if so, we need to copy (or swap)
        the contents of the new into the old */
@@ -392,23 +431,25 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
       swap_vector(&d, &d_new);
 
       /* d_eff is zero if we're in the LLM */
-      if(!lin_new) swap_vector(&d_eff, &d_new_eff);
-      else zerov(d_eff, col-1);
+      if(!lin_new && d_new_eff) swap_vector(&d_eff, &d_new_eff);
+      else if(lin_new) zerov(d_eff, col-1);
       linear = (bool) lin_new;
 
       /* copy b and pb */
       swap_ivector(&b, &b_new);
       swap_vector(&pb, &pb_new);
-      swap_new(Vb, bmu, lambda);
+
+      /* only copy if linear or a new d_eff */
+      if(linear || d_new_eff) swap_new(Vb, bmu, lambda);
     }
   }
 
-  /* if we're not forcing the LLM, then we have some cleaning up to do */
+  /* if we're not forcing the LLM, then clean up */
   if(! prior->Linear()) { free(d_new); free(pb_new); free(b_new); }
 
   /* if we didn't happen to jump to the LLM, 
      then we have more cleaning up to do */
-  if(!lin_new) free(d_new_eff);
+  if(!lin_new && d_new_eff) free(d_new_eff);
   
   /* something went wrong, abort; 
      otherwise keep track of the number of d-rejections in a row */
@@ -420,7 +461,7 @@ int ExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nugget */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
   success = success || changed;
   
   return success;
@@ -522,8 +563,10 @@ void ExpSep::propose_new_d(ExpSep* c1, ExpSep* c2, void *state)
   delete_matrix(dnew);
   
   /* propose new b for c1 and c2, conditional on the two new d parameters */
-  c1->linear = (bool) linear_rand_sep(c1->b, c1->pb, c1->d, col-1, prior->GamLin(), state);
-  c2->linear = (bool) linear_rand_sep(c2->b, c2->pb, c2->d, col-1, prior->GamLin(), state);
+  c1->linear = (bool) linear_rand_sep(c1->b, c1->pb, c1->d, col-1, prior->GamLin(), 
+				      state);
+  c2->linear = (bool) linear_rand_sep(c2->b, c2->pb, c2->d, col-1, prior->GamLin(), 
+				      state);
 
   /* compute d_eff = b*d for the two new b and d pairs */
   for(unsigned int i=0; i<col-1; i++) {
@@ -688,7 +731,7 @@ double* ExpSep::D(void)
 double* ExpSep::Trace(unsigned int* len)
 {
   /* calculate the length of the trace vector, and allocate */
-  *len = 1 + 2*(col-1);
+  *len = 1 + 2*(col-1) + 1;
   double *trace = new_vector(*len);
 
   /* copy the nugget */
@@ -704,6 +747,44 @@ double* ExpSep::Trace(unsigned int* len)
     if(linear) trace[1+col-1+i] = 0;
     else trace[1+col-1+i] = (double) b[i];
   }
+
+  /* determinant of K */
+  trace[1+2*(col-1)] = log_det_K;
+
+  return(trace);
+}
+
+
+/* 
+ * TraceNames:
+ *
+ * return the names of the parameters recorded in ExpSep::Trace()
+ */
+
+char** ExpSep::TraceNames(unsigned int* len)
+{
+  /* calculate the length of the trace vector, and allocate */
+  *len = 1 + 2*(col-1) + 1;
+  char **trace = (char**) malloc(sizeof(char*) * (*len));
+
+  /* copy the nugget */
+  trace[0] = strdup("nug");
+  
+  /* copy the d-vector of range parameters */
+  for(unsigned int i=0; i<col-1; i++) {
+    trace[1+i] = (char*) malloc(sizeof(char) * (3 + (col-1)/10 + 1));
+    sprintf(trace[1+i], "d%d", i+1);
+  }
+
+  /* copy the booleans */
+  for(unsigned int i=0; i<col-1; i++) {
+    trace[1+col-1+i] = (char*) malloc(sizeof(char) * (3 + (col-1) + 1));
+    sprintf(trace[1+col-1+i], "b%d", i+1);
+  }
+
+  /* determinant of K */
+  trace[1+2*(col-1)] = strdup("ldetK");
+
   return(trace);
 }
 
@@ -725,6 +806,26 @@ ExpSep_Prior::ExpSep_Prior(const unsigned int col) : Corr_Prior(col)
   d_beta = new_zero_matrix(col-1, 2);
   default_d_priors();	/* set d_alpha and d_beta */
   default_d_lambdas();	/* set d_alpha_lambda and d_beta_lambda */
+}
+
+
+/*
+ * Init:
+ *
+ * read hiererchial prior parameters from a double-vector
+ *
+ */
+
+void ExpSep_Prior::Init(double *dhier)
+{
+  for(unsigned int i=0; i<col-1; i++) {
+    unsigned int which = i*4;
+    d_alpha[i][0] = dhier[0+which];
+    d_beta[i][0] = dhier[1+which];
+    d_alpha[i][1] = dhier[2+which];
+    d_beta[i][1] = dhier[3+which];
+  }
+  NugInit(&(dhier[(col-1)*4]));
 }
 
 
@@ -798,7 +899,7 @@ void ExpSep_Prior::read_double(double *dparams)
   /* read the starting value(s) for the range parameter(s) */
   for(unsigned int i=0; i<col-1; i++) d[i] = dparams[1];
   /*myprintf(stdout, "starting d=");
-    printVector(d, col-1, stdout); */
+    printVector(d, col-1, stdout, HUMAN); */
 
   /* reset the d parameter to after nugget and gamlin params */
   dparams += 13;
@@ -842,7 +943,7 @@ void ExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   d[0] = atof(strtok(line, " \t\n#"));
   for(unsigned int i=1; i<col-1; i++) d[i] = d[0];
   myprintf(stdout, "starting d=", d);
-  printVector(d, col-1, stdout);
+  printVector(d, col-1, stdout, HUMAN);
 
   /* read d and nug-hierarchical parameters (mix of gammas) */
   double alpha[2], beta[2];
@@ -1015,20 +1116,22 @@ double ExpSep_Prior::log_Prior(double *d, int *b, double *pb, bool linear)
   /* if not allowing the LLM, then we're done */
   if(gamlin[0] <= 0) return prob;
 
-  /* otherwise, get the the prob of each of the booleans */
   double lin_pdf = linear_pdf_sep(pb, d, col-1, gamlin);
 
   /* either use the calculated lin_pdf value */
-  if(linear) prob += log(lin_pdf);
+  double lprob = 0.0;
+  if(linear) lprob = log(lin_pdf);
   else {
     /* or sum the individual pbs */
     for(unsigned int i=0; i<col-1; i++) {
 
       /* probability of linear, or not linear */
-      if(b[i] == 0) prob += log(pb[i]);
-      else prob += log(1.0 - pb[i]);
+      if(b[i] == 0) lprob += log(pb[i]);
+      else lprob += log(1.0 - pb[i]);
     }
   }
+  prob += lprob;
+
   return prob;
 }
 
@@ -1102,17 +1205,17 @@ void ExpSep_Prior::Print(FILE *outfile)
 
   /* range parameter */
   /* myprintf(outfile, "starting d=\n");
-     printVector(d, col-1, outfile); */
+     printVector(d, col-1, outfile, HUMAN); */
 
   /* range gamma prior, just print once */
-  myprintf(outfile, "d[a,b][0]=[%g,%g],[%g,%g]\n",
-	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][0]);
+  myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n",
+	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][1]);
 
   /* print many times, one for each dimension instead? */
-  /*for(unsigned int i=0; i<col-1; i++) {
-       myprintf(outfile, "d[a,b][%d]=[%g,%g],[%g,%g]\n", i,
-	     d_alpha[i][0], d_beta[i][0], d_alpha[i][1], d_beta[i][0]);
-    }*/
+  /* for(unsigned int i=1; i<col-1; i++) {
+       myprintf(outfile, "d[a,b][%d][0,1]=[%g,%g],[%g,%g]\n", i,
+	     d_alpha[i][0], d_beta[i][0], d_alpha[i][1], d_beta[i][1]);
+	     } */
  
   /* range gamma hyperprior */
   if(fix_d) myprintf(outfile, "d prior fixed\n");
@@ -1139,12 +1242,87 @@ double ExpSep_Prior::log_HierPrior(void)
   /* mixture prior for the range parameter, d */
   if(!fix_d) {
     for(unsigned int i=0; i<col-1; i++)
-      lpdf += mixture_hier_prior_log(d_alpha[i], d_beta[i], 
-				     d_alpha_lambda, d_beta_lambda);
+      lpdf += mixture_hier_prior_log(d_alpha[i], d_beta[i], d_alpha_lambda, 
+				     d_beta_lambda);
   }
 
   /* mixture prior for the nugget */
   lpdf += log_NugHierPrior();
 
   return lpdf;
+}
+
+
+/* 
+ * TraceNames:
+ *
+ * return the names of the traces recorded in ExpSep::Trace()
+ */
+
+char** ExpSep_Prior::TraceNames(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  char **c = NugTraceNames(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = (col-1)*4;
+  char** trace = (char**) malloc(sizeof(char*) * (clen + *len));
+
+  for(unsigned int i=0,j=0; i<col-1; i++, j+=4) {
+    trace[j] = (char*) malloc(sizeof(char) * (5+(col-1)/10 + 1));
+    sprintf(trace[j], "d%d.a0", i);
+    trace[j+1] = (char*) malloc(sizeof(char) * (5+(col-1)/10 + 1));
+    sprintf(trace[j+1], "d%d.g0", i);
+    trace[j+2] = (char*) malloc(sizeof(char) * (5+(col-1)/10 + 1));
+    sprintf(trace[j+2], "d%d.a1", i);
+    trace[j+3] = (char*) malloc(sizeof(char) * (5+(col-1)/10 + 1));
+    sprintf(trace[j+3], "d%d.g1", i);
+  }
+
+  /* then copy in the nug trace */
+  for(unsigned int i=0; i<clen; i++) trace[*len + i] = c[i];
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
+}
+
+
+/* 
+ * Trace:
+ *
+ * return the current values of the hierarchical 
+ * parameters to this correlation function: 
+ * nug(alpha,beta), d(alpha,beta), then linear
+ */
+
+double* ExpSep_Prior::Trace(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  double *c = NugTrace(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = (col-1)*4;
+  double* trace = new_vector(clen + *len);
+  for(unsigned int i=0,j=0; i<col-1; i++, j+=4) {
+    trace[j] = d_alpha[i][0]; trace[j+1] = d_beta[i][0];
+    trace[j+2] = d_alpha[i][1]; trace[j+3] = d_beta[i][1];
+  }
+
+  /* then copy in the nug trace */
+  dupv(&(trace[*len]), c, clen);
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
 }

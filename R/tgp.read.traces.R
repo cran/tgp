@@ -23,63 +23,115 @@
 
 
 "tgp.read.traces" <-
-function(nn, dim, corr, verb=1)
+  function(n, nn, d, corr, verb, rmfiles=TRUE)
 {
+  trace <- list()
+  if(verb >= 1) cat("\nGathering traces\n")
+  
+  ## read the parameter traces for each XX location
+  trace$XX <- tgp.read.XX.traces(nn, d, corr, verb, rmfiles)
 
-  ## do nothing if there is no XX trace file
-  file <- paste("./", "trace_XX_1.out", sep="")
-  if(! file.exists(file)) return(NULL)
-
-  ## calculate and count the names to the traces
-  count <- 2 + dim + 1 + 1
-  betanames <- paste("beta", 0:(dim), sep="")
-  if(corr == "expsep") {
-    count <- count + dim*2
-    dnames <- paste("d", 1:dim, sep="")
-    bnames <- paste("b", 1:dim, sep="")
-  } else {
-    count <- count + 2
-    dnames <- "d"
-    bnames <- "b"
+  ## read trace of hierarchical parameters
+  if(file.exists(paste("./", "trace_hier_1.out", sep=""))) {
+    trace$hier <- read.table("trace_hier_1.out", header=TRUE)
+    if(rmfiles) unlink("trace_hier_1.out")
+    if(verb >= 1) cat("  hier-params done\n")
+  }
+  
+  ## read trace of linear area calulations
+  if(file.exists(paste("./", "trace_linarea_1.out", sep=""))) {
+    trace$linarea <- read.table("trace_linarea_1.out", header=TRUE)
+    if(rmfiles) unlink("trace_linarea_1.out")
+    if(verb >= 1) cat("  linarea done\n")
+  }
+  
+  ## read full trace of partitions
+  if(file.exists(paste("./", "trace_parts_1.out", sep=""))) {
+    trace$parts <- read.table("trace_parts_1.out")
+    if(rmfiles) unlink("trace_parts_1.out")
+    if(verb >= 1) cat("  parts done\n")
+  }
+  
+  ## read the posteriors and weights as a function of height
+  if(file.exists(paste("./", "trace_post_1.out", sep=""))) {
+    trace$post <- read.table("trace_post_1.out", header=TRUE)
+    if(rmfiles) unlink("trace_post_1.out")
+    if(verb >= 1) cat("  posts done\n")
   }
 
-  ## read the trace file
-  ## t <- read.table(file, header=FALSE)
-
-  t <- t(matrix(scan(file, quiet=TRUE), nrow=count+2))
-  unlink(file)
-  
-  traces <- list()
-  
-  for(i in 1:nn) {
-
-    ## find those rows which correspond to XX[i,]
-    o <- t[,1] == i
-    ## print(c(sum(o), dim(t)[1]))
-
-    ## progress meter, overstimate % done, because things speed up
-    if(verb >= 1) 
-      cat(paste("  XX ", round(100*log2(sum(o))/log2(dim(t)[1])),
-                "% done   \r", sep=""))
-
-    ## save the ones for X[i,]
-    traces[[i]] <- data.frame(t[o,2:(count+2)])
-    
-    ## remove the XX[i,] ones from t
-    if(i!=nn) t <- t[!o,]
-
-    ## reorder the trace file, and get rid of first column
-    ## they could be out of order if using pthreads
-    ## indx <- c(traces[[i+1]][,1] + 1)
-    ## traces[[i+1]] <- traces[[i+1]][indx,2:(ncol-1)]
-    
-    ## assign the names
-    names(traces[[i]]) <- c("index", "s2", "tau2", betanames, "nug", dnames, bnames)
-
+  ## read the weights adjusted for ess
+  if(file.exists(paste("./", "trace_wess_1.out", sep=""))) {
+    trace$post$wess <- scan("trace_wess_1.out", quiet=TRUE)
+    if(rmfiles) unlink("trace_wess_1.out")
+    if(verb >= 1) cat("  wess done\n")
   }
 
-  if(verb >= 1) cat("\n")
+  ## predictions at data (X) locations
+  if(file.exists(paste("./", "trace_Zp_1.out", sep=""))) {
+    trace$preds$Zp <- read.table("trace_Zp_1.out", header=FALSE)
+    names(trace$preds$Zp) <- paste("X", 1:n, sep="")
+    if(rmfiles) unlink("trace_Zp_1.out")
+    if(verb >= 1) cat("  Zp done\n")
+  }
 
-  return(traces)
+  ## kriging means at data (X) locations
+  if(file.exists(paste("./", "trace_Zpkm_1.out", sep=""))) {
+    trace$preds$Zp.km <- read.table("trace_Zpkm_1.out", header=FALSE)
+    names(trace$preds$Zp.km) <- paste("X", 1:n, sep="")
+    if(rmfiles) unlink("trace_Zpkm_1.out")
+    if(verb >= 1) cat("  Zp.km done\n")
+  }
+
+  ## kriging vars at data (X) locations
+  if(file.exists(paste("./", "trace_Zpks2_1.out", sep=""))) {
+    trace$preds$Zp.ks2 <- read.table("trace_Zpks2_1.out", header=FALSE)
+    names(trace$preds$Zp.ks2) <- paste("XX", 1:n, sep="")
+    if(rmfiles) unlink("trace_Zpks2_1.out")
+    if(verb >= 1) cat("  Zp.ks2 done\n")
+  }
+  
+  ## predictions at XX locations
+  if(file.exists(paste("./", "trace_ZZ_1.out", sep="")) && nn>0) {
+    trace$preds$ZZ <- read.table("trace_ZZ_1.out", header=FALSE)
+    names(trace$preds$ZZ) <- paste("XX", 1:nn, sep="")
+    if(rmfiles) unlink("trace_ZZ_1.out")
+    if(verb >= 1) cat("  ZZ done\n")
+  }
+
+  ## kriging means at XX locations
+  if(file.exists(paste("./", "trace_ZZkm_1.out", sep="")) && nn>0) {
+    trace$preds$ZZ.km <- read.table("trace_ZZkm_1.out", header=FALSE)
+    names(trace$preds$ZZ.km) <- paste("XX", 1:nn, sep="")
+    if(rmfiles) unlink("trace_ZZkm_1.out")
+    if(verb >= 1) cat("  ZZ.km done\n")
+  }
+
+  ## kriging vars at XX locations
+  if(file.exists(paste("./", "trace_ZZks2_1.out", sep="")) && nn>0) {
+    trace$preds$ZZ.ks2 <- read.table("trace_ZZks2_1.out", header=FALSE)
+    names(trace$preds$ZZ.ks2) <- paste("XX", 1:nn, sep="")
+    if(rmfiles) unlink("trace_ZZks2_1.out")
+    if(verb >= 1) cat("  ZZ.ks2 done\n")
+  }
+
+  ## Ds2x samples at the XX locations
+  if(file.exists(paste("./", "trace_Ds2x_1.out", sep="")) && nn>0) {
+    trace$preds$Ds2x <- read.table("trace_Ds2x_1.out", header=FALSE)
+    names(trace$preds$Ds2x) <- paste("XX", 1:nn, sep="")
+    if(rmfiles) unlink("trace_Ds2x_1.out")
+    if(verb >= 1) cat("  Ds2x done\n")
+  }
+  
+  ## improv samples at the XX locations
+  if(file.exists(paste("./", "trace_improv_1.out", sep="")) && nn>0) {
+    trace$preds$improv <- read.table("trace_improv_1.out", header=FALSE)
+    names(trace$preds$improv) <- paste("XX", 1:nn, sep="")
+    if(rmfiles) unlink("trace_improv_1.out")
+    if(verb >= 1) cat("  improv done\n")
+  }
+
+  ## assign class tgptraces to the returned object
+  class(trace) <- "tgptraces"
+
+  return(trace) 
 }
-

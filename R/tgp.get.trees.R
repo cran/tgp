@@ -23,15 +23,31 @@
 
 
 "tgp.get.trees" <-
-function()
+function(X, rmfiles=TRUE)
 {
-	trees <- list()
-	tree.files <- list.files(pattern="tree_m0_[0-9]+.out")
-	for(i in 1:length(tree.files)) {
-		trees[[i]] <- read.table(tree.files[i], header=TRUE)
-		unlink(tree.files[i])
-	}
+  trees <- list()
 
-	return(trees)
+  ## get all of the names of the tree files
+  tree.files <- list.files(pattern="tree_m0_[0-9]+.out")
+
+  ## for each tree file
+  for(i in 1:length(tree.files)) {
+
+    ## read it in, then remove it
+    trees[[i]] <- read.table(tree.files[i], header=TRUE)
+    if(rmfiles) unlink(tree.files[i])
+
+    ## correct the precision of the val (split) locations
+    ## by replacing them with the closest X[,var] location
+    if(nrow(trees[[i]]) == 1) next;
+    nodes <- (1:length(trees[[i]]$var))[trees[[i]]$var != "<leaf>"]
+    for(j in 1:length(nodes)) {
+	col <- as.numeric(as.character(trees[[i]]$var[nodes[j]])) + 1
+      m <- which.min(abs(X[,col] - trees[[i]]$val[nodes[j]]))
+      trees[[i]]$val[nodes[j]] <- X[m,col]
+    }          
+  }
+  
+  return(trees)
 }
 

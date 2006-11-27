@@ -87,7 +87,7 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
   /* create the GP model */
   Base_Prior *prior = model->get_params()->BasePrior();
   base = prior->newBase(model);
-  base->Init();
+  base->Init(NULL);
 }
 
 
@@ -161,6 +161,66 @@ Tree::~Tree(void)
   if(rect) delete_rect(rect);
 };
 
+
+/*
+ * Init:
+ *
+ * update and compute for the base model in the tree;
+ * the arguments represent a tree encoded as a matrix 
+ * (where the number of rows is specified as nrow)
+ * flattened into a double vector 
+ */
+
+void Tree::Init(double *dtree, unsigned int ncol, double **rect)
+{
+  /* when no tree information is provided */
+  if(ncol == 0) {
+    /* sanity checks */
+    assert(!dtree);
+    assert(isLeaf());
+    
+    /* prepare this leaf for the big time */
+    Update();
+    Compute();
+
+  } else {
+    /* read the tree information */
+    unsigned int row = (unsigned int) dtree[0];
+
+    /* check if this should be a leaf */
+    if(dtree[1] < 0.0) { /* yes */
+   
+      /* cut off rows, var, and val before passing to base */
+      base->Init(&(dtree[3]));
+
+      /* make sure base model is ready to go @ this leaf */
+      Update();
+      Compute();
+
+    } else { /* not a leaf */
+
+      /* read split dim (var)  */
+      var = (unsigned int) dtree[1];
+
+      /* calculate normd location (val) -- should made a function */
+      double norm = fabs(rect[1][var] - rect[0][var]);
+      if(norm == 0) norm = fabs(rect[0][var]);
+      if(rect[0][var] < 0) val = (dtree[2] + fabs(rect[0][var])) / norm;
+      else val = (dtree[2] - rect[0][var]) / norm;
+
+      /* create children split at (var,val) */
+      assert(grow_children());
+      
+      /* recursively read the left and right children from dtree */
+      unsigned int left = 1;
+      while(((unsigned int)dtree[ncol*left]) != 2*row) left++;
+      leftChild->Init(&(dtree[ncol*left]), ncol, rect);
+      rightChild->Init(&(dtree[ncol*(left+1)]), ncol, rect);
+
+      /* no need to Update() or Compute() on an internal node */
+    }
+  }
+}
 
 
 /* 
@@ -311,38 +371,66 @@ void Tree::delete_XX(void)
  * recomputed and/or initialised when appropriate)
  */
 
-void Tree::Predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, bool err, void *state)
+void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ, 
+		   double *ZZm, double *ZZs2, double *Ds2x, double *Improv, 
+		   double Zmin, unsigned int wZmin, bool err, void *state)
 {
   if(!n) warning("n = %d\n", n);
   assert(isLeaf() && n);
-  if(Zpred == NULL && nn == 0) return;
+  if(Zp == NULL && nn == 0) return;
 
   /* set the partition */
-  if(nn > 0) base->UpdatePred(XX, nn, d, Ds2xy);
+  if(nn > 0) base->UpdatePred(XX, nn, d, (bool) Ds2x);
 
   /* ready the storage for predictions */
-    double *z, *zz, **ds2xy, *ego;
+  double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *improv;
+  double **ds2xy;
   
   /* allocate necessary space for predictions */
-  z = zz = NULL;
-  if(Zpred) z = new_vector(n);
-  if(nn > 0) zz = new_vector(nn);
-  assert(z != NULL || zz != NULL);
+  zp = zpm = zps2 = zz = zzm = zzs2 = NULL;
+  if(Zp) { zp = new_vector(n); zpm = new_vector(n); zps2 = new_vector(n); }
+  if(nn > 0) { zz = new_vector(nn); zzm = new_vector(nn); zzs2 = new_vector(nn); }
+  assert(zp != NULL || zz != NULL);
   
   /* allocate space for Delta-sigma */
-  ds2xy = NULL; if(Ds2xy) ds2xy = new_matrix(nn, nn);
+  ds2xy = NULL; if(Ds2x) ds2xy = new_matrix(nn, nn);
   
-  /* allocate space for EGO */
-  ego = NULL; if(Ego) ego = new_vector(nn);
+  /* allocate space for IMPROV */
+  improv = NULL; if(Improv) improv = new_vector(nn);
+
+  /* check if the wZmin index is in p */
+  if(zp) {
+    bool inp = FALSE;
+    for(unsigned int i=0; i<n && p[i]<=(int)wZmin; i++) if(p[i] == (int)wZmin) inp = TRUE;
+    if(inp) Zmin = 1e300*1e300;
+  }
 
   /* predict */
-  base->Predict(n, nn, z, zz, ds2xy, ego, err, state);
+  base->Predict(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, Zmin, err, state);
   
-  /* copy predictive statistics to the right place in their respective full matrices */
-  if(z) { copy_p_vector(Zpred, p, z, n); free(z); }
-  if(zz) { copy_p_vector(ZZ, pp, zz, nn); free(zz); }
-  if(ds2xy) { add_p_matrix(1.0, Ds2xy, pp, pp, 1.0, ds2xy, nn, nn); delete_matrix(ds2xy); }
-  if(ego) { add_p_vector(1.0, Ego, pp, 1.0, ego, nn); free(ego); }
+  /* copy data-pred stats to the right place in their respective full matrices */
+  if(zp) { 
+    copy_p_vector(Zp, p, zp, n); free(zp); 
+    copy_p_vector(Zpm, p, zpm, n); free(zpm); 
+    copy_p_vector(Zps2, p, zps2, n); free(zps2); 
+  }
+
+  /* similarly, copy new predictive location stats */ 
+  if(zz) { 
+    copy_p_vector(ZZ, pp, zz, nn); free(zz); 
+    copy_p_vector(ZZm, pp, zzm, nn); free(zzm); 
+    copy_p_vector(ZZs2, pp, zzs2, nn); free(zzs2); 
+  }
+
+  /* similarly, copy ds2x predictive stats */
+  if(ds2xy) { 
+    for(unsigned int i=0; i<nn; i++)
+      Ds2x[pp[i]] = sumv(ds2xy[i], nn); /* / nn; */
+    delete_matrix(ds2xy); 
+  }
+
+  /* finally, copy improv stats */
+  if(improv) { copy_p_vector(Improv, pp, improv, nn); free(improv); }
 
   /* multiple predictive draws predictions would be better fascilited 
    * if the following statement were moved outside this function */
@@ -356,7 +444,7 @@ void Tree::Predict(double *ZZ, double *Zpred, double **Ds2xy, double *Ego, bool 
  * return the node's depth
  */
 
-unsigned int Tree::getDepth(void)
+unsigned int Tree::getDepth(void) const
 {
   return depth;
 }
@@ -385,7 +473,7 @@ bool Tree::isLeaf(void) const
  * FALSE otherwise
  */
 
-bool Tree::isRoot(void)
+bool Tree::isRoot(void) const
 {
   if(parent == NULL) return true;
   else return false;
@@ -516,6 +604,23 @@ unsigned int Tree::swapable(Tree **first, Tree **last)
 
 
 /*
+ * isPrunable:
+ *
+ * returns true if this node is prunable:
+ * i.e., both children are leaves
+ */
+
+bool Tree::isPrunable(void) const
+{
+  if(isLeaf()) return false;
+  
+  if(leftChild->isLeaf() && rightChild->isLeaf())
+    return true;
+  else return false;
+}
+
+
+/*
  * prunable:
  * 
  * get a list of prunable nodes, where the first in list is pointed to by the 
@@ -525,8 +630,9 @@ unsigned int Tree::swapable(Tree **first, Tree **last)
 unsigned int Tree::prunable(Tree **first, Tree **last)
 {
   if(isLeaf()) return 0;
-  
-  if(leftChild->isLeaf() && rightChild->isLeaf()) {
+
+  /* if this node is prunable, then add it to the list, and return */
+  if(isPrunable()) {
     *first = this;
     *last = this;
     (*last)->next = NULL;
@@ -536,9 +642,11 @@ unsigned int Tree::prunable(Tree **first, Tree **last)
   Tree *leftFirst, *leftLast, *rightFirst, *rightLast;
   leftFirst = leftLast = rightFirst = rightLast = NULL;
   
+  /* gather lists of prunables from leftchild and rightchild */
   int left_len = leftChild->prunable(&leftFirst, &leftLast);
   int right_len = rightChild->prunable(&rightFirst, &rightLast);
   
+  /* combine the two lists */
   if(left_len == 0)  {
     if(right_len == 0) return 0;
     *first = rightFirst;
@@ -550,6 +658,7 @@ unsigned int Tree::prunable(Tree **first, Tree **last)
     return left_len;
   }
   
+  /* set the pointers to beginning and end of new combined list */
   leftLast->next = rightFirst;
   *first = leftFirst;
   *last = rightLast;
@@ -808,16 +917,18 @@ bool Tree::swap(void *state)
   
   /* posterior probabilities and acceptance ratio */
   assert(oldPRC->leavesN() + oldPLC->leavesN() == parent->leavesN());
-  double pklast = oldPRC->leavesPosterior() + oldPLC->leavesPosterior();
+  double pklast = oldPRC->leavesPosterior() 
+    + oldPLC->leavesPosterior();
+  assert(!isinf(pklast));
   double pk = parent->leavesPosterior();
+  
+  /* alpha = min(1,exp(A)) */
   double alpha = exp(pk-pklast);
-  if(alpha > 1) alpha = 1;
   
   /* accept or reject? */
-  if(runi(state) <= alpha) {
-    /* if(verb >= 1) 
-      myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
-      depth, var, val, parent->var, parent->val);*/
+  if(runi(state) < alpha) {
+    if(verb >= 3) myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
+			   depth, var, val, parent->var, parent->val);
     if(oldPRC) delete oldPRC;
     if(oldPRC) delete oldPLC;
     return true;
@@ -865,13 +976,16 @@ bool Tree::change(void *state)
   
   /* posterior probabilities and acceptance ratio */
   assert(oldLC->leavesN() + oldRC->leavesN() == this->leavesN());
-  double pklast = oldLC->leavesPosterior() + oldRC->leavesPosterior();
+  double pklast = oldLC->leavesPosterior() 
+    + oldRC->leavesPosterior();
+  assert(!isinf(pklast));
   double pk = leavesPosterior();
+
+  /* alpha = min(1,exp(A)) */
   double alpha = exp(pk-pklast);
-  if(alpha > 1) alpha = 1;
   
   /* accept or reject? */
-  if(runi(state) <= alpha) { /* accept */
+  if(runi(state) < alpha) { /* accept */
     if(oldLC) delete oldLC;
     if(oldRC) delete oldRC;
     if(tree_op == CHANGE && verb >= 4) 
@@ -977,11 +1091,10 @@ double Tree::propose_val(void *state)
   }
   assert(val != min && val != max);
   
-  double alpha = runi(state);
-  
-  if(alpha < 0.5) return min;
+  if(runi(state) < 0.5) return min;
   else return max;
 }
+
 
 /*
  * leavesPosterior:
@@ -998,9 +1111,30 @@ double Tree::leavesPosterior(void)
   double p = 0;
   while(first) {
     p += first->Posterior();
+    if(isinf(p)) break;
     first = first->next;
   }
   return p;
+}
+
+
+/*
+ * MartinalLikelihood:
+ *
+ * check to make sure the model (e.g., GP) is up to date
+ * -- has correct data size --, if not then Update it,
+ * and then copute the posterior pdf
+ */
+                                                                                
+double Tree::Posterior(void)
+{
+  unsigned int basen = base->N();
+  if(basen == 0) {
+    Update();
+    Compute();
+  } else assert(basen == n);
+                                                                                
+  return base->Posterior();
 }
 
 
@@ -1025,18 +1159,18 @@ unsigned int Tree::leavesN(void)
 }
 
 
-
 /* 
  * prune:
  * 
- * attempt to remove both children of this PRUNABLE node by deterministically 
- * combining the D and NUGGET parameters of its children.
+ * attempt to remove both children of this PRUNABLE node by 
+ * randomly choosing one of its children, and then randomly 
+ * choosing the D and NUGGET parameters a single child.
  */
 
 bool Tree::prune(double ratio, void *state)
 {
   tree_op = PRUNE;
-  double q_bak, p_log, pk, pklast, alpha;
+  double logq_bak, pk, pklast, logp_split, alpha;
   
   /* sane prune ? */
   assert(leftChild && leftChild->isLeaf());
@@ -1045,27 +1179,32 @@ bool Tree::prune(double ratio, void *state)
   /* get the marginalized posterior of the current
    * leaves of this PRUNABLE node*/
   pklast = leavesPosterior();
+  assert(!isinf(pklast));
   
-  /* compute the backwards CHANGE probability */
-  q_bak = split_prob();
-  p_log = 0.0 - log((double) (model->get_TreeRoot())->n);
+  /* compute the backwards split proposal probability */
+  logq_bak = split_prob();
   
+   /* Compute the prior for this split location (just 1/n) */
+
+  logp_split = 0.0 - log((double) (model->get_TreeRoot())->n);
+
   /* compute corr and p(Delta_corr) for corr1 and corr2 */
   base->Combine(leftChild->base, rightChild->base, state);
   
-  /* create covariance matrix, and compute posterior of new tree */
+  /* update data, create covariance matrix, and compute marginal parameters */
   Update();
   Compute();
-  pk = this->Posterior();
   assert(n == leftChild->n + rightChild->n);
   assert(nn == leftChild->nn + rightChild->nn);
+
+  /* compute posterior of new tree */
+  pk = this->Posterior();
   
   /* prior ratio and acceptance ratio */
-  alpha = ratio*exp(q_bak+pk-pklast-p_log);
-  if(alpha > 1) alpha = 1;
-  
+  alpha = ratio*exp(logq_bak+pk-pklast-logp_split);
+
   /* accept or reject? */
-  if(runi(state) <= alpha) {
+  if(runi(state) < alpha) {
     if(verb >= 1) myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var, val);
     delete leftChild; 
     delete rightChild;
@@ -1089,7 +1228,7 @@ bool Tree::grow(double ratio, void *state)
 {
   tree_op = GROW;
   bool success;
-  double q_fwd, pStar_log, pk, pklast, alpha;
+  double q_fwd, pk, pklast, logp_split, alpha;
   
   /* sane grow ? */
   assert(isLeaf());	
@@ -1100,17 +1239,18 @@ bool Tree::grow(double ratio, void *state)
     break;
   case MR_GP: var = sample_seq(1, d-1, state);
     break;
-  default: error("bad base model in tree:grow, default to GP");
-    var = sample_seq(0, d-1, state);
+  default: error("bad base model in Tree::grow, quitting tgp");
   }
   
+  /* propose the split location */
   val = propose_split(&q_fwd, state);
-  pStar_log = 0.0 - log((double) (model->get_TreeRoot())->n);
+
+  /* Compute the prior for this split location (just 1/n) */
+  logp_split =  0.0 - log((double) (model->get_TreeRoot())->n);
   
   /* grow the children; stop if partition too small */
   success = grow_children();
   if(!success) return false;
-  
  
   /* propose new correlation paramers for the new leaves */
   base->Split(leftChild->base, rightChild->base, state);
@@ -1118,12 +1258,12 @@ bool Tree::grow(double ratio, void *state)
   /* marginalized posteriors and acceptance ratio */
   pk = leftChild->Posterior() + rightChild->Posterior();
   pklast = this->Posterior();
-  alpha = ratio*exp(pk-pklast+pStar_log)/q_fwd;
-
-  if(alpha > 1) alpha = 1;
+  alpha = ratio*exp(pk-pklast+logp_split)/q_fwd;
   
+  /*myprintf(stderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
+	   var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
+	   myflush(stderr);*/
  
-
   /* accept or reject? */
   bool ret_val = true;
   if(runi(state) > alpha) {
@@ -1271,8 +1411,8 @@ void Tree::val_order_probs(double **Xo, double **probs,
  * changepoint locations (TRIANGULAR)   
  */
 
-void Tree::val_order_probs(double **Xo, double **probs,
-			   unsigned int var, double **rX, unsigned int rn)
+void Tree::val_order_probs(double **Xo, double **probs, unsigned int var, 
+			   double **rX, unsigned int rn)
 {
   unsigned int i;
   double mid = (rect->boundary[1][var] + rect->boundary[0][var]) / 2;
@@ -1288,11 +1428,14 @@ void Tree::val_order_probs(double **Xo, double **probs,
   int * one2n = iseq(1,rn);
   double sum_left, sum_right;
   sum_left = sum_right = 0;
+  
+  
   for(i=0; i<rn; i++) { 
     (*probs)[i] = 1.0/one2n[i];
     if((*Xo)[i] < mid) sum_left += (*probs)[i]; 
     else sum_right += (*probs)[i];
   }
+
   double mult;
   if(sum_left > 0 && sum_right > 0) mult = 0.5;
   else mult = 1.0;
@@ -1361,7 +1504,7 @@ double Tree::split_prob()
  * return the number of input locations, N
  */
 
-unsigned int Tree::getN(void)
+unsigned int Tree::getN(void) const
 {
   return n;
 }
@@ -1374,7 +1517,7 @@ unsigned int Tree::getN(void)
  * return the number of predictive locations locations, NN
  */
 
-unsigned int Tree::getNN(void)
+unsigned int Tree::getNN(void) const
 {
   return nn;
 }
@@ -1520,23 +1663,46 @@ Tree** Tree::buildTreeList(unsigned int len)
  *  rect and scale are for unnnormalization of split point
  */
 
-void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root)
+void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root) const
 {
-  if(isLeaf()) myprintf(outfile, "%d\t <leaf>\t", root);
-  else myprintf(outfile, "%d\t %d\t ", root, var);
-  myprintf(outfile, "%d\t 0\t %.4f\t ", n, base->Var());
+  /* print the node number, followinf by <leaf> or the splitting dimension */
+  if(isLeaf()) myprintf(outfile, "%d <leaf>\t", root);
+  else myprintf(outfile, "%d %d ", root, var);
+
+  /* print the defiance (which is just zero since this is unused)
+     and the variance (s2) in the partition */
+  myprintf(outfile, "%d 0 %.4f ", n, base->Var());
+
+  /* don't print split information if this is a leaf, but do print the params */
   if(isLeaf()) {
-    myprintf(outfile, "\"\"\t \"\"\t\n");
-    return;
+
+    /* skipping the split locations */
+    myprintf(outfile, "\"\" \"\" 0 ");
+
+  } else {
+  
+    /* unnormalize the val */
+    double vn = val / scale;
+    vn = (rect[1][var] - rect[0][var])*vn + rect[0][var];
+    
+    /* print the split locations */
+    myprintf(outfile, "\"<%-5g\" \">%-5g\" ", vn, vn);
+
+    /* print val again, this time in higher precision */
+    myprintf(outfile, "%.20f ", vn);
   }
-  
-  /* unnormalize the val */
-  double vn = val / scale;
-  vn = (rect[1][var] - rect[0][var])*vn + rect[0][var];
-  
-  myprintf(outfile, "\"<%-5g\"\t \">%-5g\"\t\n", vn, vn);
-  leftChild->PrintTree(outfile, rect, scale, 2*root);
-  rightChild->PrintTree(outfile, rect, scale, 2*root+1);
+
+  /* not skipping the printing of leaf (GP) paramerters */
+  unsigned int len;
+  double *trace = base->Trace(&len, true);
+  printVector(trace, len, outfile, MACHINE);
+  if(trace) free(trace);
+
+  /* process children */
+  if(!isLeaf()) {
+    leftChild->PrintTree(outfile, rect, scale, 2*root);
+    rightChild->PrintTree(outfile, rect, scale, 2*root+1);
+  }
 }
 
 
@@ -1573,10 +1739,12 @@ unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
  * area and > t_minp points in the partition)
  */
 
-bool Tree::wellSized(void)
+bool Tree::wellSized(void) const
 {
   // return  (n >= *t_minp) && (Area() > 0) && (!Singular());
-  return  (n >= model->get_params()->T_minp()) && (Area() > 0) && (!Singular());
+  return ((n >= model->get_params()->T_minp()) /* minimum number of points */
+	  && (Area() > 0)                      /* non-zero Area or Volume */
+	  && (!Singular()));                   /* non-singular design matrix */
 }
 
 
@@ -1587,7 +1755,7 @@ bool Tree::wellSized(void)
  * with all the same value.
  */
 
-bool Tree::Singular(void)
+bool Tree::Singular(void) const
 {
   assert(X);
   unsigned int mn=0;
@@ -1609,7 +1777,7 @@ bool Tree::Singular(void)
  * return the area of this partition
  */
 
-double Tree::Area(void)
+double Tree::Area(void) const
 {
   return rect_area(rect);
 }
@@ -1621,7 +1789,7 @@ double Tree::Area(void)
  * return a pointer to the rectangle associated with this partition
  */
 
-Rect* Tree::GetRect(void)
+Rect* Tree::GetRect(void) const
 {
   return rect;
 }
@@ -1633,7 +1801,7 @@ Rect* Tree::GetRect(void)
  * return indices into the XX array
  */
 
-int* Tree::get_pp(void)
+int* Tree::get_pp(void) const
 {
   return pp;
 }
@@ -1645,7 +1813,7 @@ int* Tree::get_pp(void)
  * return the predictive data locations: XX
  */
 
-double** Tree::get_XX(void)
+double** Tree::get_XX(void) const
 {
   return XX;
 }
@@ -1657,7 +1825,7 @@ double** Tree::get_XX(void)
  * return the data locations: X
  */
 
-double** Tree::get_X(void)
+double** Tree::get_X(void) const
 {
   return X;
 }
@@ -1669,7 +1837,7 @@ double** Tree::get_X(void)
  * return the data responses: Z
  */
 
-double* Tree::get_Z(void)
+double* Tree::get_Z(void) const
 {
   return Z;
 }
@@ -1689,8 +1857,8 @@ void Tree::cut_branch(void)
     delete rightChild;
     leftChild = rightChild = NULL;
   }
-  base->ClearPred();
-  base->Init();
+  // base->ClearPred();
+  base->Init(NULL); /* calls ClearPred() already */
   Update();
   Compute();
 }
@@ -1717,7 +1885,7 @@ void Tree::Outfile(FILE *file, int verb)
  * compute the height of the the tree
  */
 
-unsigned int Tree::Height(void)
+unsigned int Tree::Height(void) const
 {
   if(isLeaf()) return 1;
   
@@ -1731,20 +1899,31 @@ unsigned int Tree::Height(void)
 /*
  * FullPosterior:
  *
- * Calculate the full posterior of the tree
+ * Calculate the full posterior of (the leaves of) 
+ * the tree using the base models and the probability
+ * of growing (or not) at internal (leaf) nodes with
+ * process prior determined by alpha and beta
+ *
+ * returns a log posterior probability
  */
 
-double Tree::FullPosterior(double alpha, double beta)
+double Tree::FullPosterior(double itemp) 
 {
   double post;
+
+  /* get the tree process prior parameters */
+  double alpha, beta;
+  unsigned int minpart;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart);
 
   if(isLeaf()) {
 
     /* probability of not growing this branch */
     post = log(1.0 - alpha*pow(1.0+depth,0.0-beta));
 
-    /* probability of the base model at this leaf */
-    post += base->FullPosterior();
+    /* base posterior */
+    post += base->FullPosterior(itemp);
+
 
   } else {
     
@@ -1752,9 +1931,8 @@ double Tree::FullPosterior(double alpha, double beta)
     post = log(alpha) - beta*log(1.0 + depth);
 
     /* probability of the children */
-    post += leftChild->FullPosterior(alpha, beta);
-    post += rightChild->FullPosterior(alpha, beta);
-
+    post += leftChild->FullPosterior(itemp);
+    post += rightChild->FullPosterior(itemp);
   }
 
   return post;
@@ -1762,10 +1940,82 @@ double Tree::FullPosterior(double alpha, double beta)
 
 
 /*
+ * MarginalPosterior:
+ *
+ * Calculate the full (marginal) posterior of (the leaves of) 
+ * the tree using the base models and the probability
+ * of growing (or not) at internal (leaf) nodes with
+ * process prior determined by alpha and beta
+ *
+ * returns a log posterior probability
+ */
+
+double Tree::MarginalPosterior(double itemp) 
+{
+  double post;
+
+  /* get the tree process prior parameters */
+  double alpha, beta;
+  unsigned int minpart;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart);
+
+  if(isLeaf()) {
+
+    /* probability of not growing this branch */
+    post = log(1.0 - alpha*pow(1.0+depth,0.0-beta));
+
+    /* probability of the base model at this leaf */
+    post += base->MarginalPosterior(itemp);
+
+  } else {
+    
+    /* probability of growing here */
+    post = log(alpha) - beta*log(1.0 + depth);
+
+    /* probability of the children */
+    post += leftChild->MarginalPosterior(itemp);
+    post += rightChild->MarginalPosterior(itemp);
+  }
+
+  return post;
+}
+
+
+
+/*
+ * Likelihood:
+ *
+ * Calculate the likelihood of (all of the leaves of) 
+ * the tree using the base models; returns the log likelihood
+ */
+
+double Tree::Likelihood(double itemp) 
+{
+  double llik;
+
+  if(isLeaf()) {
+
+    /* likelihood of the base model at this leaf */
+    //double olditemp = base->NewInvTemp(itemp, true);
+    llik = base->Likelihood(itemp);
+    //base->NewInvTemp(olditemp, true);
+
+  } else {
+    
+    /* add in likelihoods of the children */
+    llik = leftChild->Likelihood(itemp);
+    llik += rightChild->Likelihood(itemp);
+  }
+
+  return llik;
+}
+
+
+/*
  * Update:
  *
  * calls the GP function of the same name with
- * the data for this tree in th is partition
+ * the data for this tree in this partition
  */
 
 void Tree::Update(void)
@@ -1855,7 +2105,7 @@ void Tree::ToggleLinear(void)
  * the area of the domain under the LLM
  */
 
-bool Tree::Linarea(unsigned int *sum_b, double *area)
+bool Tree::Linarea(unsigned int *sum_b, double *area) const
 {
     *sum_b = base->sum_b();
     *area = Area();
@@ -1864,34 +2114,38 @@ bool Tree::Linarea(unsigned int *sum_b, double *area)
 
 
 /* 
- * Base:
+ * GetBase:
  *
  * return the base model (e.g. gp)
  */
 
-Base* Tree::GetBase(void)
+Base* Tree::GetBase(void) const
 {
   return base;
+}
+
+/* 
+ * BasePrior:
+ *
+ * return the prior to base model (e.g. gp)
+ */
+
+Base_Prior* Tree::GetBasePrior(void) const
+{
+  return base->Prior();
 }
  
 
 /*
- * Posterior:
+ * TraceNames:
  *
- * check to make sure the model (e.g., GP) is up to date
- * -- has correct data size --, if not then Update it,
- * and then copute the posterior pdf
+ * prints the names of the traces recorded in Tree::Trace()
+ * without "index" (i.e., basically return base->TraceNames())
  */
 
-double Tree::Posterior(void)
+char** Tree::TraceNames(unsigned int *len, bool full)
 {
-  unsigned int basen = base->N();
-  if(basen == 0) {
-    Update();
-    Compute();
-  } else assert(basen == n);
-
-  return base->Posterior();
+  return base->TraceNames(len, full);
 }
 
 
@@ -1912,14 +2166,47 @@ void Tree::Trace(unsigned int index, FILE* XXTRACEFILE)
   if(!pp) return;
 
   /* get the trace */
-  trace = base->Trace(&len);
+  trace = base->Trace(&len, false);
 
   /* write to the XX trace file */
   for(unsigned int i=0; i<nn; i++) {
     myprintf(XXTRACEFILE, "%d %d ", pp[i]+1, index+1);
-    printVector(trace, len, XXTRACEFILE);
+    printVector(trace, len, XXTRACEFILE, MACHINE);
   }
 
   /* discard the trace */
   if(trace) free(trace);
+}
+
+
+/*
+ * Parent:
+ *
+ * return the parent of this node
+ */
+
+Tree* Tree::Parent(void) const
+{
+  return parent;
+}
+
+
+/*
+ * NewInvTemp:
+ *
+ * change the inv-temperature setting in the base model
+ * for this node, and all child nodes.  Be sure to
+ * tell the base node whether it is a leaf or not so
+ * it kows whether to update any of its other params
+ * if necessary 
+ */
+
+void Tree::NewInvTemp(double itemp)
+{
+  if(isLeaf()) base->NewInvTemp(itemp, true);
+  else {
+    base->NewInvTemp(itemp, false);
+    rightChild->NewInvTemp(itemp);
+    leftChild->NewInvTemp(itemp);
+  }
 }

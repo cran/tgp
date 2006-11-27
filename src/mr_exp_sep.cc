@@ -143,6 +143,19 @@ MrExpSep::~MrExpSep(void)
   free(d_eff);
 }
 
+
+/*
+ * Init:
+ * 
+ * initialise this corr function with the parameters provided
+ * from R via the vector of doubles
+ */
+
+void MrExpSep::Init(double *dmrexpsep)
+{
+  /* FOR TADDY TO FILL IN */
+}
+
 /* 
  * DrawNug:
  * 
@@ -153,7 +166,7 @@ MrExpSep::~MrExpSep(void)
  */
 
 bool MrExpSep::DrawNug(unsigned int n, double **X, double **F, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, void *state)
+		   double **bmu, double **Vb, double tau2, double itemp, void *state)
 {
   bool success = false;
   MrGp_Prior *gp_prior = (MrGp_Prior*) base_prior;
@@ -173,7 +186,8 @@ bool MrExpSep::DrawNug(unsigned int n, double **X, double **F, double *Z, double
 		       prior->NugAlpha(), prior->NugBeta(), 
 		       ((MrExpSep_Prior*) prior)->Nugf_alpha(), 
 		       ((MrExpSep_Prior*) prior)->Nugf_beta(), r, delta, 
-		       gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, state);
+		       gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, 
+		       itemp, state);
   
   /* did we accept the draw? */
   if(new_nugs[0] != nug) {
@@ -223,7 +237,6 @@ void MrExpSep::Update(unsigned int n, double **X)
 }
 
 
-
 /*
  * Update: (non-symmetric)
  * 
@@ -257,8 +270,8 @@ bool MrExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
   dupv(pb_new, pb, 2*nin);
   dupiv(b_new, b, 2*nin);
   
-  /* 1/3 of the time  -- just draw all the ds jointly */
-  if(runi(state) < 0.3333333333) {
+  /* 1/3 of the time (or for 1-d data) -- just draw all the ds jointly */
+  if(col==2 || runi(state) < 0.3333333333) {
     
     /* RW proposal for all d-values */
     d_proposal(2*nin, NULL, d_new, d, q_fwd, q_bak, state);
@@ -266,7 +279,7 @@ bool MrExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
     /* if we are allowing the LLM, then we need to draw the b_new
        conditional on d_new; otherwise just return */
     if(prior->LLM()) {
-      if(runi(state) < 0.5) /* sometimes skip drawing the bs */
+      if(col==2 || runi(state) < 0.5) /* sometimes skip drawing the bs (unless 1-d) */
 	return linear_rand_sep(b_new,pb_new,d_new,2*nin,prior->GamLin(),state);
       else return linear;
     } else return false;
@@ -341,8 +354,8 @@ bool MrExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
  * has changed; otherwise returns false
  */
 
-int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, 
-		double *lambda, double **bmu, double **Vb, double tau2, void *state)
+int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
+		   double **bmu, double **Vb, double tau2, double itemp, void *state)
 {
   int success = 0;
   bool lin_new;
@@ -361,7 +374,7 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
      and only draw the nugget;  this is done for speed,
      and to improve miding in the rest of the model */
   if(linear && runi(state) > 0.5) {
-    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);}
+    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);}
 
   /* proposals happen when we're not forcing the LLM */
   if(prior->Linear()) lin_new = true;
@@ -406,7 +419,7 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
 				Vb_new, bmu_new, gp_prior->get_b0(), gp_prior->get_Ti(), 
 		                gp_prior->get_T(), tau2, nug, nugfine, qRatio, 
 				pRatio_log, gp_prior->s2Alpha(), gp_prior->s2Beta(), 
-				(int) lin_new, state);
+				(int) lin_new, itemp, state);
    
 
     /* see if the draw was acceptedl; if so, we need to copy (or swap)
@@ -443,8 +456,8 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nuggets */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, state);
-  bool deltasuccess = DrawDelta(n, X, F, Z, lambda, bmu, Vb, tau2, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
+  bool deltasuccess = DrawDelta(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
   success = success || changed || deltasuccess;
  
   return success;
@@ -573,7 +586,7 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
 		     double *lambda_new, double **VB_new, double *bmu_new, 
 		     double *b0, double **Ti, double **T, double tau2,
 		     double nug, double nugfine, double qRatio, double pRatio_log, 
-		     double a0, double g0, int lin, void *state)
+		     double a0, double g0, int lin, double itemp, void *state)
 {
   double pd, pdlast, alpha;
   unsigned int m = 0;
@@ -585,7 +598,7 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0);
+				 F, Z, Ki_new, Ti, tau2, b0, itemp);
   } else {	/* linear */
     *log_det_K_new = 0.0;
     for(unsigned int i=0; i<n; i++){
@@ -593,27 +606,27 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
       else *log_det_K_new += log(1.0 + nug);
     }
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug);
+				     F, Z, Ti, tau2, b0, nug, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* posteriors */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
   alpha = exp(pd - pdlast + pRatio_log)*qRatio;
   if(alpha != alpha) return -1;
-  if(alpha >= 1 || runi(state) < alpha) return 1;
+  if(runi(state) < alpha) return 1;
   else return 0;
 }
 
 
 bool MrExpSep::DrawDelta(unsigned int n, double **X, double **F, double *Z,
-		       double *lambda, double **bmu, 
-		       double **Vb, double tau2, void *state)
+			 double *lambda, double **bmu, double **Vb, double tau2, 
+			 double itemp, void *state)
 {
   bool success = false;
   
@@ -637,44 +650,44 @@ bool MrExpSep::DrawDelta(unsigned int n, double **X, double **F, double *Z,
 
   /* make the draw */
 
-    double newdelta = unif_propose_pos(delta, &q_fwd, &q_bak, state);
-    // printf("%g %g\n", delta, newdelta);
-  	/* new covariace matrix based on new nug */
+  double newdelta = unif_propose_pos(delta, &q_fwd, &q_bak, state);
+  // printf("%g %g\n", delta, newdelta);
+  /* new covariace matrix based on new nug */
 
-    if(linear) {
-      log_det_K_new = 0.0;
-      for(unsigned int i=0; i<n; i++){
-	if(X[i][0]==1) log_det_K_new += log(r*r + delta + nugfine);
-	else log_det_K_new += log(1.0 + nug);
-      }
-      lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				      F, Z, gp_prior->get_Ti(), tau2, b0, nug);
+  if(linear) {
+    log_det_K_new = 0.0;
+    for(unsigned int i=0; i<n; i++){
+      if(X[i][0]==1) log_det_K_new += log(r*r + delta + nugfine);
+      else log_det_K_new += log(1.0 + nug);
     }
-    else{
-      corr_symm(K_new, nin+1, X, n, d, nug, nugfine, r, newdelta, PWR);
-      inverse_chol(K_new, Ki_new, Kchol_new, n);
-      log_det_K_new = log_determinant_chol(Kchol_new, n);
-      lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				  F, Z, Ki_new, gp_prior->get_Ti(), tau2, b0);
-    }
-    
-    if((gp_prior->get_T())[0][0] == 0) m = col;
-    
-    pnewdelta = gamma_mixture_pdf(newdelta, ep->Delta_alpha(), ep->Delta_beta());
-    pnewdelta += post_margin(n,col,lambda_new,Vb_new,log_det_K_new,a0-m,g0);
-    pdelta = gamma_mixture_pdf(delta, ep->Delta_alpha(), ep->Delta_beta());
-    pdelta += post_margin(n,col,*lambda,Vb,log_det_K,a0-m,g0);
-    
-    /* accept or reject */
-    double alpha = exp(pnewdelta - pdelta)*(q_bak/q_fwd);
-    
-    if(runi(state) < alpha) { 
-      success = true;
-      delta = newdelta;
-      swap_new(Vb, bmu, lambda); 
-    }
-    
-    return success;
+    lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z,
+				    gp_prior->get_Ti(), tau2, b0, nug, itemp);
+  }
+  else{
+    corr_symm(K_new, nin+1, X, n, d, nug, nugfine, r, newdelta, PWR);
+    inverse_chol(K_new, Ki_new, Kchol_new, n);
+    log_det_K_new = log_determinant_chol(Kchol_new, n);
+    lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, 
+				Ki_new, gp_prior->get_Ti(), tau2, b0, itemp);
+  }
+  
+  if((gp_prior->get_T())[0][0] == 0) m = col;
+  
+  pnewdelta = gamma_mixture_pdf(newdelta, ep->Delta_alpha(), ep->Delta_beta());
+  pnewdelta += post_margin(n,col,lambda_new,Vb_new,log_det_K_new,a0-m,g0,itemp);
+  pdelta = gamma_mixture_pdf(delta, ep->Delta_alpha(), ep->Delta_beta());
+  pdelta += post_margin(n,col,*lambda,Vb,log_det_K,a0-m,g0,itemp);
+  
+  /* accept or reject */
+  double alpha = exp(pnewdelta - pdelta)*(q_bak/q_fwd);
+  
+  if(runi(state) < alpha) { 
+    success = true;
+    delta = newdelta;
+    swap_new(Vb, bmu, lambda); 
+  }
+  
+  return success;
 }
 
 
@@ -972,6 +985,21 @@ double MrExpSep::Nugfine(void)
   return nugfine;
 }
 
+/* 
+ * TraceNames:
+ *
+ * return the names of the parameters recorded in MrExpSep::Trace()
+ */
+
+char** MrExpSep::TraceNames(unsigned int* len)
+{
+  *len = 0;
+
+  /* FOR TADDY TO FILL IN */
+
+  return NULL;
+}
+
 
 /* 
  * Trace:
@@ -1021,6 +1049,19 @@ MrExpSep_Prior::MrExpSep_Prior(const unsigned int col) : Corr_Prior(col)
   delta_beta = ones(2,20.0);
   nugf_alpha = ones(2,1.0);
   nugf_beta = ones(2,1.0);
+}
+
+
+/*
+ * Init:
+ *
+ * read hiererchial prior parameters from a double-vector
+ *
+ */
+
+void MrExpSep_Prior::Init(double *dhier)
+{
+  /* FOR TADDY TO FILL IN */
 }
 
 
@@ -1105,7 +1146,7 @@ void MrExpSep_Prior::read_double(double *dparams)
   /* read the starting value(s) for the range parameter(s) */
   for(unsigned int i=0; i<(2*nin); i++) d[i] = dparams[1];
   /*myprintf(stdout, "starting d=");
-    printVector(d, (2*nin), stdout); */
+    printVector(d, (2*nin), stdout, HUMAN); */
 
   /* reset the d parameter to after nugget and gamlin params */
   dparams += 13;
@@ -1130,8 +1171,8 @@ void MrExpSep_Prior::read_double(double *dparams)
   get_mix_prior_params_double(alpha, beta, dparams, "d");
   dupv(delta_alpha, alpha, 2);
   dupv(delta_beta, beta, 2);
-  //printVector(delta_alpha, 2, stdout);
-  //printVector(delta_beta, 2, stdout);
+  //printVector(delta_alpha, 2, stdout, HUMAN);
+  //printVector(delta_beta, 2, stdout, HUMAN);
   dparams +=4;
  
   get_mix_prior_params_double(alpha, beta, dparams, "d");
@@ -1173,7 +1214,7 @@ void MrExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   d[0] = atof(strtok(line, " \t\n#"));
   for(unsigned int i=1; i<(2*nin); i++) d[i] = d[0];
   myprintf(stdout, "starting d=", d);
-  printVector(d, (2*nin), stdout);
+  printVector(d, (2*nin), stdout, HUMAN);
 
   /* read d and nug-hierarchical parameters (mix of gammas) */
   double alpha[2], beta[2];
@@ -1446,16 +1487,19 @@ double MrExpSep_Prior::log_Prior(double *d, int *b, double *pb, bool linear)
   double lin_pdf = linear_pdf_sep(pb, d, (2*nin), gamlin);
 
   /* either use the calculated lin_pdf value */
-  if(linear) prob += log(lin_pdf);
+  double lprob = 0.0;
+  if(linear) lprob = log(lin_pdf);
   else {
     /* or the sum of the individual pbs */
     for(unsigned int i=0; i<(2*nin); i++) {
 
       /* probability of linear, or not linear */
-      if(b[i] == 0) prob += log(pb[i]);
-      else prob += log(1.0 - pb[i]);
+      if(b[i] == 0) lprob += log(pb[i]);
+      else lprob += log(1.0 - pb[i]);
     }
   }
+  prob += lprob;
+
   return prob;
 }
 
@@ -1529,15 +1573,15 @@ void MrExpSep_Prior::Print(FILE *outfile)
 
   /* range parameter */
   /* myprintf(outfile, "starting d=\n");
-     printVector(d, (2*nin), outfile); */
+     printVector(d, (2*nin), outfile, HUMAN); */
 
   /* range gamma prior, just print once */
-  myprintf(outfile, "d[a,b][0]=[%g,%g],[%g,%g]\n",
-	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][0]);
+  myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n",
+	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][1]);
 
   /* print many times, one for each ninension instead? */
   /*for(unsigned int i=0; i<(2*nin); i++) {
-       myprintf(outfile, "d[a,b][%d]=[%g,%g],[%g,%g]\n", i,
+       myprintf(outfile, "d[a,b][%d][0,1]=[%g,%g],[%g,%g]\n", i,
 	     d_alpha[i][0], d_beta[i][0], d_alpha[i][1], d_beta[i][0]);
     }*/
  
@@ -1567,12 +1611,87 @@ double MrExpSep_Prior::log_HierPrior(void)
   /* mixture prior for the range parameter, d */
   if(!fix_d) {
     for(unsigned int i=0; i<col-1; i++)
-      lpdf += mixture_hier_prior_log(d_alpha[i], d_beta[i], 
-				     d_alpha_lambda, d_beta_lambda);
+      lpdf += mixture_hier_prior_log(d_alpha[i], d_beta[i], d_alpha_lambda, 
+				     d_beta_lambda);
   }
 
   /* mixture prior for the nugget */
   lpdf += log_NugHierPrior();
 
   return lpdf;
+}
+
+
+/* 
+ * Trace:
+ *
+ * return the current values of the hierarchical 
+ * parameters to this correlation function: 
+ * nug(alpha,beta), d(alpha,beta), then linear
+ */
+
+double* MrExpSep_Prior::Trace(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  double *c = NugTrace(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = (col-1)*4;
+  double* trace = new_vector(clen + *len);
+  for(unsigned int i=0; i<col-1; i++) {
+    trace[i] = d_alpha[i][0]; trace[i+1] = d_beta[i][0];
+    trace[i+2] = d_alpha[i][1]; trace[i+3] = d_beta[i][1];
+  }
+
+  /* then copy in the nug trace */
+  dupv(&(trace[*len]), c, clen);
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
+}
+
+
+/* 
+ * TraceNames:
+ *
+ * return the names of the traces recorded in MrExpSep::Trace()
+ */
+
+char** MrExpSep_Prior::TraceNames(unsigned int* len)
+{
+  /* first get the hierarchical nug parameters */
+  unsigned int clen;
+  char **c = NugTraceNames(&clen);
+
+  /* calculate and allocate the new trace, 
+     which will include the nug trace */
+  *len = (col-1)*4;
+  char** trace = (char**) malloc(sizeof(char*) * (clen + *len));
+
+  for(unsigned int i=0,j=0; i<col-1; i++, j+=4) {
+    trace[j] = (char*) malloc(sizeof(char) * (5+(col-1)));
+    sprintf(trace[j], "d%d.a0", i);
+    trace[j+1] = (char*) malloc(sizeof(char) * (5+(col-1)));
+    sprintf(trace[j+1], "d%d.g0", i);
+    trace[j+2] = (char*) malloc(sizeof(char) * (5+(col-1)));
+    sprintf(trace[j+2], "d%d.a1", i);
+    trace[j+3] = (char*) malloc(sizeof(char) * (5+(col-1)));
+    sprintf(trace[j+3], "d%d.g1", i);
+  }
+
+  /* then copy in the nug trace */
+  for(unsigned int i=0; i<clen; i++) trace[*len + i] = c[i];
+
+  /* new combined length, and free c */
+  *len += clen;
+  if(c) free(c);
+  else assert(clen == 0);
+
+  return trace;
 }

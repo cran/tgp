@@ -39,7 +39,7 @@ function(parts, dx=c(1,2), what=NULL, trans=matrix(c(1,0,0,1), nrow=2),
       } 
     }
   } else {
-    indices	<- seq(1,dim(parts)[1],4);
+    indices <- seq(1,dim(parts)[1],4);
   }
   
   j <- 1
