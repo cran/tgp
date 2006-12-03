@@ -1,4 +1,7 @@
 \documentclass{article}
+%\documentclass[12pt]{article}
+%\usepackage{fullpage}
+%\usepackage{setspace}
 \usepackage{amsmath}
 \usepackage{amscd}
 \usepackage{epsfig}
@@ -12,6 +15,8 @@
 %\VignettePackage{tgp}
 
 \begin{document}
+
+%\doublespacing
 
 \setkeys{Gin}{width=0.85\textwidth}
 
@@ -44,12 +49,12 @@ options(width=65)
     tgp}-class output.
 \end{abstract}
 
-\section*{Intended audience}
+\subsection*{Intended audience}
 \label{sec:discaimer}
 
 This document is intended to familiarize a (potential) user of {\tt
   tgp} with the models and analyses available in the package.  After a
-brief overview, the brunt of this document consists of examples on
+brief overview, the bulk of this document consists of examples on
 mainly synthetic and randomly generated data which illustrate the
 various functions and methodologies implemented by the package. This
 document has been authored in {\tt Sweave} (try {\tt help(Sweave)}).
@@ -77,11 +82,12 @@ support for {\tt Pthreads} parallelization, the gathering of parameter
 traces, the verbosity of screen output, and some miscellaneous details
 of implementation.
 
+%\input{motivate}
 
 \section{What is implemented?}
 \label{sec:implement}
 
-The {\tt tgp} package contains implementations of six Bayesian
+The {\tt tgp} package contains implementations of seven Bayesian
 multivariate regression models and functions for visualizing posterior
 predictive surfaces.  These models, and the functions which implement
 them, are outlined in Section \ref{sec:breg}.  Also implemented in the
@@ -94,10 +100,10 @@ Section \ref{sec:model} and a demonstration is given in Section
 \subsection{Bayesian regression models}
 \label{sec:breg}
 
-The six regression models implemented in the package are summarized in
+The seven regression models implemented in the package are summarized in
 Table \ref{t:reg}.  They include combinations of treed partition
 models, (limiting) linear models, and Gaussian process models as
-indicated by T, LLM, \& GP in the center column of the table.  The
+indicated by T, LM/LLM, \& GP in the center column of the table.  The
 details of model specification and inference are contained in Section
 \ref{sec:model}.  Each is a fully Bayesian regression model, and in
 the table they are ordered by some notion of ``flexibility''.  These
@@ -109,8 +115,9 @@ the table they are ordered by some notion of ``flexibility''.  These
 \begin{tabular}{l|l|l}
   {\tt R} function & Ingredients & Description \\
   \hline
-  blm & LLM & Linear Model \\
-  btlm & T & Linear CART \\
+  blm & LM & Linear Model \\
+  btlm & T, LM & Treed Linear Model \\
+  bcart & T & Treed Constant Model \\
   bgp & GP & GP Regression \\
   bgpllm & GP, LLM & GP with jumps to the LLM \\
   btgp & T, GP & treed GP Regression \\
@@ -217,28 +224,35 @@ later prediction, usually requiring enormous amounts of storage, {\tt
 samples of $\bm{\theta}$ become available.  [Section \ref{sec:pred}
 and \ref{sec:llmpred} outlines the prediction equations.]  A {\tt
   predict.tgp} function is provided should it be necessary to obtain
-predictions {\tt after} the MCMC has finished.  It gives the option of
-obtaining predictive means and variances from the MAP
-parameterization, $\hat{\bm{\theta}}$ maximizing $\pi(\bm{\theta}|Y)$,
-saved in the {\tt tgp} class-output (from {\tt b*}).  In this way {\tt
-  predict.tgp} is similar to {\tt predict.lm}, etc..  Samples can also
-be obtained from the MAP--parameterized predictive distributions via
-{\tt predict.tgp}, or a re--initialization of the joint sampling of
-the posterior and posterior predictive distribution can commence
-starting from the $\hat{\bm{\theta}}$.  The output of {\tt
-  predict.tgp} is also a {\tt tgp} class object.  Appendix
-\ref{sec:apred} illustrates how these features can be useful in the
-context of passing {\tt tgp} model fits between collaborators.  There
-are other miscellaneous demonstrations in Section \ref{sec:examples}.
+predictions {\em after} the MCMC has finished.  
+
+The {\tt b*} functions save the MAP parameterization
+$\hat{\bm{\theta}}$ maximizing $\pi(\bm{\theta}|\mbox{data})$.  More
+specifically, the ``{\tt tgp}''--class object stores the MAP tree
+$\hat{{\mathcal T}}$ and corresponding GP (or LLM) parameters
+$\hat{\bm{\theta}}|\hat{\mathcal{T}}$ found while sampling from the
+joint posterior $\pi(\bm{\theta},\mathcal{T}|\mbox{data})$.  These may
+be accessed and used, via {\tt predict.tgp}, to obtain
+posterior--predictive inference through the MAP parameterization.  In
+this way {\tt predict.tgp} is similar to {\tt predict.lm}, for
+example.  Samples can also be obtained from the MAP--parameterized
+predictive distributions via {\tt predict.tgp}, or a
+re--initialization of the joint sampling of the posterior and
+posterior predictive distribution can commence starting from the
+$(\hat{\bm{\theta}},\hat{\mathcal{T}})$.
+
+The output of {\tt predict.tgp} is also a {\tt tgp} class object.
+Appendix \ref{sec:apred} illustrates how these features can be useful
+in the context of passing {\tt tgp} model fits between collaborators.
+There are other miscellaneous demonstrations in
+Section~\ref{sec:examples}.
 
 \subsubsection{Speed}
 \label{sec:speed}
 
-This is as good a place as any to make a disclaimer on the
-computational burdens of some of the modeling functions in this
-package.  Fully Bayesian analyses with MCMC are not the
-super-speediest of all statistical models.  Nor is inference for GP
-models, classical or Bayesian.  
+Fully Bayesian analyses with MCMC are not the super-speediest of all
+statistical models.  Nor is inference for GP models, classical or
+Bayesian.
 
 Great care has been taken to make the implementation of Bayesian
 inference for GP models as efficient as possible [see Appendix
@@ -271,22 +285,22 @@ facilitate the automation of adaptive sampling with {\tt tgp}-class
 models.  A detailed example is included in Section \ref{sec:as}.
 
 Arguments to {\tt b*} functions, and {\tt tgp}, which aid in adaptive
-sampling include {\tt Ds2x} and {\tt improv}.  Both are booleans, i.e.,
-should be set to {\tt TRUE} or {\tt FALSE} (the default for both is
-{\tt FALSE}).  {\tt TRUE} booleans cause the {\tt tgp}-class output
+sampling include {\tt Ds2x} and {\tt improv}.  Both are booleans,
+i.e., should be set to {\tt TRUE} or {\tt FALSE} (the default for both
+is {\tt FALSE}).  {\tt TRUE} booleans cause the {\tt tgp}-class output
 list to contain vectors of the similar names which contain statistics
 that can be used toward adaptive sampling.  When {\tt Ds2x = TRUE}
 then $\Delta \sigma^2(\mb{\tilde{x}})$ statistic is computed at each
 $\tilde{\mb{x}} \in \mbox{\tt XX}$, in accordance the ALC (Active
 Learning--Cohn) algorithm \cite{cohn:1996}.  Likewise, when {\tt
   improv = TRUE}, statistics are computed in order to asses the
-expected information gain, a.k.a, expected improvement (EI), for each
-$\tilde{\mb{x}} \in \mbox{\tt XX}$ about the global minimum
-\cite{jones:schonlau:welch:1998} .  The ALM (Active Learning--Mackay)
-algorithm \cite{mackay:1992} is implemented by default in terms of
-difference in predictive quantiles for the inputs {\tt XX}, which can
-be accessed via the {\tt ZZ.q} output field.  Details on the ALM, ALC,
-and EI algorithms are provided in Section \ref{sec:model}.
+expected improvement (EI) for each $\tilde{\mb{x}} \in \mbox{\tt XX}$
+about the global minimum \cite{jones:schonlau:welch:1998}.  The ALM
+(Active Learning--Mackay) algorithm \cite{mackay:1992} is implemented
+by default in terms of difference in predictive quantiles for the
+inputs {\tt XX}, which can be accessed via the {\tt ZZ.q} output
+field.  Details on the ALM, ALC, and EI algorithms are provided in
+Section \ref{sec:model}.
 
 Calculation of EI statistics is considered to be ``beta''
 functionality in this version of the {\tt tgp} package.  It has not
@@ -536,7 +550,7 @@ $\tilde{\mb{x}}\in\tilde{\mb{X}}$.  However, the method uses
 $\min_{i=1}^n \{Z_{\mb{x}_i}\}$, a sample from the first order
 statistic of the posterior predictive distribution at the inputs
 $\mb{x}\in\mb{X}$, in place of $f_{\mbox{\tiny min}}$.  An exception
-is when the argument \verb!pred.n = FALSE! is provided instructing
+is when the argument \verb!pred.n=FALSE! is provided instructing
 {\tt tgp} not to sample from the posterior predictive distribution of
 the input locations $\mb{X}$.  In this case, the original closed form
 EI formula (\ref{eq:ego}) is used.
@@ -812,7 +826,7 @@ a comparison between ALC and ALM using standard GPs. The EI
 minima.
 
 Choosing candidate configurations $\tilde{\mb{X}}$ ({\tt XX} in the
-{\tt tgp} package), at which to gather ALM, ALC, or EGO statistics, is
+{\tt tgp} package), at which to gather ALM, ALC, or EI statistics, is
 half of the challenge in the hybrid approach to experimental design.
 Arranging candidates so that they are well-spaced out relative to
 themselves, and relative to already sampled configurations, is clearly
@@ -894,6 +908,17 @@ glide-back booster (LGBB).
 \input{fried}
 \input{as}
 
+\subsection*{Acknowledgments}
+This work was partially supported by research subaward
+08008-002-011-000 from the Universities Space Research Association and
+NASA, NASA/University Affiliated Research Center grant SC 2003028
+NAS2-03144, Sandia National Laboratories grant 496420, and National
+Science Foundation grants DMS 0233710 and 0504851.  I would like to
+thank Matt Taddy for his contributions to recent releases of the
+package.  I am especially grateful to my thesis advisor, Herbie
+Lee, whose contributions and guidance in this project have been
+invaluable throughout.
+
 \appendix
 
 \section{Implementation notes}
@@ -920,6 +945,9 @@ g_\nu^* \sim \mbox{Unif}\left(\frac{3}{4}g_\nu, \frac{4}{3}g_\nu \right).
 Calculating the corresponding forward and backwards proposal
 probabilities for the MH acceptance ratio is straightforward.
 
+For more details about the MCMC algorithm and proposals, etc., please
+see the original technical report on {\em Bayesian treed Gaussian process
+models} \cite{gra:lee:2006}.
 
 \section{Interfaces and features}
 

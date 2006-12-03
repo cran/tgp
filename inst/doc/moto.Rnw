@@ -12,6 +12,7 @@ library(tgp)
 seed <- 0; set.seed(seed)
 @ 
 
+%\iffalse
 The Motorcycle Accident Dataset \cite{silv:1985} is a classic
 nonstationary data set used in recent literature
 \cite{rasm:ghah:nips:2002} to demonstrate the success of nonstationary
@@ -24,7 +25,13 @@ least two---perhaps three---three regions where the response exhibits
 different behavior both in terms of the correlation structure and
 noise level.
 
-The data is included as part of the {\tt MASS} library in {\tt R}.
+The data is
+%\else 
+%In this section we return to the motivating Motorcycle Accident
+%Dataset~\cite{silv:1985}, which is  
+%\fi 
+included as part of the {\tt MASS} library in
+{\tt R}.
 <<>>= 
 library(MASS)
 @ 
@@ -144,5 +151,4 @@ Motorcycle data is an exception. Moreover, when the response data is
 very noisy (i.e., low signal--to--noise ratio), {\tt tgp} can be
 expected to partition heavily under the \verb!bprior="bflat"! prior.
 In such cases, one of the other proper priors like the full
-hierarchical \verb!bprior="b0"!  or the independent
-\verb!bprior="b0tau"! might be preferred.
+hierarchical \verb!bprior="b0"!  or \verb!bprior="bmzt"! might be preferred.

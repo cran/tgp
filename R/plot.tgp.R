@@ -57,7 +57,7 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
       ## choose mean or median for center
       center <- tgp.choose.center(x, center)
       Z.mean <- center$Z;
-      smain <- paste(main, zlab, center$name)
+      smain <- paste(main, ylab, center$name)
       X <- center$X[,1]
       o <- order(X)
 

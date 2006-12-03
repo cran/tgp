@@ -1,3 +1,10 @@
+1.2-1 (03 Dec 2006)
+-----
+
+Added "cart-" option to bprior in order to allow a 
+CART style mean rather than a LM mean
+
+
 1.2 (21 Nov 2006)
 ---
 

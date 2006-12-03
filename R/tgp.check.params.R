@@ -56,13 +56,27 @@ function(params, col)
   p <- c(base, as.numeric(params$tree))
 
   ## beta linear prior model
-  if(params$bprior == "b0") { p <- c(p, 0); }
-  else if(params$bprior == "bmle") { p <- c(p, 1); }
-  else if(params$bprior == "bflat") { p <- c(p, 2); }
-  else if(params$bprior == "bcart") { p <- c(p, 3); }
-  else if(params$bprior == "b0tau") { p <- c(p, 4); }
-  else { cat(paste("params$bprior =", params$bprior, "not valid\n")); return(NULL); }
 
+  ## check if prefix is "mu-" indicating that only beta[0]=mu is estimated
+  bprior <- strsplit(params$bprior, "-")
+  if(bprior[[1]][1] == "cart") {
+    p10 <- 10;
+    if(length(bprior[[1]]) == 1) bprior <- "bflat"
+    else bprior <- bprior[[1]][2]
+  } 
+  else { p10 <- 0; bprior <- bprior[[1]][1] }
+
+  ## check the type of beta prior, and possibly augment by p0
+  if(bprior == "b0") {
+    if(p10) { cat("params$bprior = cart-b0 is not allowed\n"); return(NULL); }
+    p <- c(p, 0+p10);
+  }
+  else if(bprior == "bmle") { p <- c(p, 1+p10); }
+  else if(bprior == "bflat") { p <- c(p, 2+p10); }
+  else if(bprior == "b0not") { p <- c(p, 3+p10); }
+  else if(bprior == "bmzt") { p <- c(p, 4+p10); }
+  else { cat(paste("params$bprior =", params$bprior, "not valid\n")); return(NULL); }
+  
   ## initial settings of beta linear prior parameters for gp (base==0)
   if(length(params$beta) != col && base==0) {
     cat(paste("length of params$beta should be", col, "you have", 

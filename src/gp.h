@@ -34,7 +34,7 @@ class Tree;
 
 #define BUFFMAX 256
 
-typedef enum BETA_PRIOR {B0=801, BMLE=802, BFLAT=803, BCART=804, B0TAU=805} BETA_PRIOR;
+typedef enum BETA_PRIOR {B0=801, BMLE=802, BFLAT=803, B0NOT=804, BMZT=805} BETA_PRIOR;
 
 
 class Gp : public Base
@@ -111,6 +111,7 @@ class Gp_Prior : public Base_Prior
 {
  private:
 
+  bool cart;                 /* indicates if only b[0]=mu should be used */
   BETA_PRIOR beta_prior;	/* indicator for type of Beta Prior */  
   Corr_Prior *corr_prior;
   unsigned int col;		
@@ -186,6 +187,7 @@ class Gp_Prior : public Base_Prior
   double** get_T(void);
   double** get_Ti(void);
   double* get_b0(void);
+  bool Cart(void);
 
   Corr_Prior* CorrPrior(void);
   BETA_PRIOR BetaPrior(void);

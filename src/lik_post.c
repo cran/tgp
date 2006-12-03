@@ -46,8 +46,9 @@
  * T[col][col], Vb[col][col]
  */
 
-double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, itemp)
+double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, cart, itemp)
 unsigned int n,col;
+int cart;
 double **T, **Vb;
 double a0, g0, tau2, lambda, log_detK, itemp;
 {
@@ -58,12 +59,16 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   assert(itemp >= 0);
   if(itemp == 0) return 0.0;
   
+  /* adjust for beta[0]=mu prior */
+  if(cart) col = 1;
+
   /* log det Vb */
   log_detVB = log_determinant_dup(Vb, col);
   
   /* determine if design matrix is collinear */
   if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
     /*warning("degenerate design matrix"); */
+    /* assert(0); */
     return 0.0-1e300*1e300;
   }
 
@@ -85,8 +90,8 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   /* posterior probability */
   p = 0.5*one + two;
 
-  /* myprintf(stderr, "n=%d, one=%g, two=%g, ldVB=%g, ldK=%g, log_detT=%g, col_ltau2=%g\n",
-	     n, one, two, log_detVB, log_detK, log_detT, col*log(tau2));
+  /* myprintf(stderr, "n=%d, one=%g, two=%g, ldVB=%g, Vb00=%g, ldK=%g, ldT=%g, T00=%g, col_ltau2=%g\n",
+	     n, one, two, log_detVB, Vb[0][0], log_detK, log_detT, T[0][0], col*log(tau2));
 	     myflush(stderr); */
   
   /* make sure we got a good p */
@@ -112,8 +117,9 @@ double a0, g0, tau2, lambda, log_detK, itemp;
  * Vb[col][col]
  */
 
-double post_margin(n, col, lambda, Vb, log_detK, a0, g0, itemp)
+double post_margin(n, col, lambda, Vb, log_detK, a0, g0, cart, itemp)
 unsigned int n, col;
+int cart;
 double **Vb;
 double a0, g0, lambda, log_detK, itemp;
 {
@@ -123,6 +129,9 @@ double a0, g0, lambda, log_detK, itemp;
   assert(itemp >= 0);
   if(itemp == 0) return 0.0;
  
+  /* adjust for beta[0]=mu prior */
+  if(cart) col = 1;
+
   /* log determinant of Vb */
   log_detVB = log_determinant_dup(Vb, col);
   

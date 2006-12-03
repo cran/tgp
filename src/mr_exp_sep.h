@@ -57,7 +57,8 @@ class MrExpSep : public Corr
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, void *state);
+		   double **bmu, double **Vb, double tau2, double itemp, bool cart, 
+		   void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
@@ -65,7 +66,7 @@ class MrExpSep : public Corr
   virtual void ToggleLinear(void);
   virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double itemp, void *state);
+		       double itemp, bool cart, void *state);
   virtual double* Trace(unsigned int* len);
   virtual char** TraceNames(unsigned int* len);
   virtual void Init(double *dmrexpsep);
@@ -84,7 +85,7 @@ class MrExpSep : public Corr
 	     double *b0, double **Ti, double **T, double tau2, 
 	     double nug, double nugfine, double qRatio, 
 	     double pRatio_log, double a0, double g0, int lin, 
-	     double itemp, void *state);
+	     double itemp, bool cart, void *state);
   double *D(void);
   double Delta(void);
   double R(void);
@@ -96,7 +97,8 @@ class MrExpSep : public Corr
 		   double **X1, unsigned int n1, double **X2, unsigned int n2,
 		   double *d, double r, double delta, double pwr);
   bool DrawDelta(unsigned int n, double **X, double **F, double *Z, double *lambda, 
-		 double **bmu,  double **Vb, double tau2, double itemp, void *state);
+		 double **bmu,  double **Vb, double tau2, double itemp, bool cart, 
+		 void *state);
 };
 
 

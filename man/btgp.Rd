@@ -2,12 +2,13 @@
 \title{One of Six Bayesian Nonparametric \& Nonstationary Regression Models}
 \alias{blm}
 \alias{btlm}
+\alias{bcart}
 \alias{bgp}
 \alias{bgpllm}
 \alias{btgp}
 \alias{btgpllm}
 
-\description{ The six functions described below implement Bayesian
+\description{ The seven functions described below implement Bayesian
   regression models of varying complexity: linear model, linear CART,
   Gaussian process (GP), GP with jumps to the limiting linear model
   (LLM), treed GP, and treed GP LLM. }
@@ -18,6 +19,10 @@ blm(X, Z, XX = NULL, bprior = "bflat", BTE = c(1000, 4000, 3),
 	Ds2x = FALSE, improv = FALSE, trace = FALSE, 
 	verb = 1, ...)
 btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
+	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
+	itemps = NULL, pred.n = TRUE, Ds2x = FALSE, improv=FALSE, 
+	trace = FALSE, verb = 1, ...)
+bcart(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
 	itemps = NULL, pred.n = TRUE, Ds2x = FALSE, improv=FALSE, 
 	trace = FALSE, verb = 1, ...)
@@ -54,12 +59,14 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 	\code{ncol(XX) == ncol(X)}}
   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
     alternates include \code{"b0"} hierarchical Normal prior,
-  \code{"bmle"} empirical Bayes Normal prior, \code{"bcart"} Bayesian linear CART
-  style prior from Chipman et al., \code{"b0tau"} a independent Normal
-  prior with inverse-gamma variance.  The default \code{"bflat"} gives
+  \code{"bmle"} empirical Bayes Normal prior, \code{"b0not"} Bayesian
+  treed LM-style prior from Chipman et al. (same as \code{"b0"} but
+  without \code{tau2}), \code{"bmzt"} a independent Normal
+  prior (mean zero) with inverse-gamma variance (\code{tau2}).
+  The default \code{"bflat"} gives
   an \dQuote{improper} prior which can perform badly when the
   signal-to-noise ratio is low.  In these cases the \dQuote{proper} hierarchical
-  specification \code{"b0"} or independent \code{"b0tau"} priors may perform better}
+  specification \code{"b0"} or independent \code{"b0"} priors may perform better}
   \item{tree}{ 2-vector of tree process prior parameterization
     \code{c(alpha, beta)} specifying
     \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
@@ -132,11 +139,12 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 
 \details{
   The functions and their arguments can be categorized by whether or not
-  they use treed partitioning (T), GP models, and jumps to the LLM
+  they use treed partitioning (T), GP models, and jumps to the LLM (or LM)
 
   \tabular{lll}{
-  blm \tab - \tab Linear Model \cr
-  btlm \tab T \tab Linear CART \cr
+  blm \tab LM \tab Linear Model \cr
+  btlm \tab T, LM \tab Treed Linear Model \cr
+  bcart \tab T \tab Treed Constant Model \cr
   bgp \tab GP \tab GP Regression \cr
   bgpllm \tab GP, LLM \tab GP with jumps to the LLM \cr
   btgp \tab T, GP \tab treed GP Regression \cr
@@ -157,6 +165,10 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   GP category functions take the \code{corr} argument; and LLM category
   functions take the \code{gamma} argument.  Non-tree class functions omit
   the \code{parts} output, see below
+
+  \code{bcart} is the same as \code{btlm} except that only the
+  intercept term in the LM is estimated; the others are zero, thereby
+  implementing a Bayesian version of the original CART model
   
   Please see \code{vignette("tgp")} for detailed illustration
 }

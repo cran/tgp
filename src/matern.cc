@@ -167,7 +167,8 @@ void Matern::Init(double *dmat)
  */
 
 bool Matern::DrawNug(unsigned int n, double **X, double **F, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, void *state)
+		     double **bmu, double **Vb, double tau2, double itemp, bool cart, 
+		     void *state)
 {
   bool success = false;
   Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
@@ -180,10 +181,10 @@ bool Matern::DrawNug(unsigned int n, double **X, double **F, double *Z, double *
   /* make the draw */
   double nug_new = 
     nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
-		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, gp_prior->get_b0(), 
-		    gp_prior->get_Ti(), gp_prior->get_T(), tau2, prior->NugAlpha(), 
-		    prior->NugBeta(), gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, 
-		    itemp, state);
+		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, 
+		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
+		    prior->NugAlpha(), prior->NugBeta(), gp_prior->s2Alpha(), 
+		    gp_prior->s2Beta(), (int) linear, itemp, (int) cart, state);
   
   /* did we accept the draw? */
   if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
@@ -259,7 +260,7 @@ void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
 
 int Matern::Draw(unsigned int n, double **F, double **X, double *Z, 
 		 double *lambda, double **bmu, double **Vb, double tau2, 
-		 double itemp, void *state)
+		 double itemp, bool cart, void *state)
 {
   int success = 0;
   bool lin_new;
@@ -267,7 +268,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
 
   /* sometimes skip this Draw for linear models for speed */
   if(linear && runi(state) > 0.5) 
-    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
+    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
 
   /* proppose linear or not */
   if(prior->Linear()) lin_new = true;
@@ -302,7 +303,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
 			   gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
 			   nug, nu, bk, nb, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
 			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, itemp, 
-			   state);
+			   (int) cart, state);
   }
   
   /* did we accept the new draw? */
@@ -317,7 +318,7 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nugget */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
   success = success || changed;
   
   /* return true if anything has changed about the corr matrix */

@@ -166,7 +166,8 @@ void MrExpSep::Init(double *dmrexpsep)
  */
 
 bool MrExpSep::DrawNug(unsigned int n, double **X, double **F, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, void *state)
+		       double **bmu, double **Vb, double tau2, double itemp, bool cart, 
+		       void *state)
 {
   bool success = false;
   MrGp_Prior *gp_prior = (MrGp_Prior*) base_prior;
@@ -187,7 +188,7 @@ bool MrExpSep::DrawNug(unsigned int n, double **X, double **F, double *Z, double
 		       ((MrExpSep_Prior*) prior)->Nugf_alpha(), 
 		       ((MrExpSep_Prior*) prior)->Nugf_beta(), r, delta, 
 		       gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) linear, 
-		       itemp, state);
+		       itemp, (int) cart, state);
   
   /* did we accept the draw? */
   if(new_nugs[0] != nug) {
@@ -355,7 +356,8 @@ bool MrExpSep::propose_new_d(double* d_new, int * b_new, double *pb_new,
  */
 
 int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, void *state)
+		   double **bmu, double **Vb, double tau2, double itemp, bool cart,
+		   void *state)
 {
   int success = 0;
   bool lin_new;
@@ -374,7 +376,7 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, double *la
      and only draw the nugget;  this is done for speed,
      and to improve miding in the rest of the model */
   if(linear && runi(state) > 0.5) {
-    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);}
+    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);}
 
   /* proposals happen when we're not forcing the LLM */
   if(prior->Linear()) lin_new = true;
@@ -415,13 +417,12 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, double *la
     
     /* MH acceptance ratio for the draw */
     success = d_draw(d_new_eff, n, col, F, X, Z, log_det_K,*lambda, Vb, 
-				K_new, Ki_new, Kchol_new, &log_det_K_new, &lambda_new, 
-				Vb_new, bmu_new, gp_prior->get_b0(), gp_prior->get_Ti(), 
-		                gp_prior->get_T(), tau2, nug, nugfine, qRatio, 
-				pRatio_log, gp_prior->s2Alpha(), gp_prior->s2Beta(), 
-				(int) lin_new, itemp, state);
+		     K_new, Ki_new, Kchol_new, &log_det_K_new, &lambda_new, 
+		     Vb_new, bmu_new, gp_prior->get_b0(), gp_prior->get_Ti(), 
+		     gp_prior->get_T(), tau2, nug, nugfine, qRatio, 
+		     pRatio_log, gp_prior->s2Alpha(), gp_prior->s2Beta(), 
+		     (int) lin_new, itemp, cart, state);
    
-
     /* see if the draw was acceptedl; if so, we need to copy (or swap)
        the contents of the new into the old  */
     if(success == 1) { 
@@ -456,8 +457,8 @@ int MrExpSep::Draw(unsigned int n, double **F, double **X, double *Z, double *la
   if(dreject >= REJECTMAX) return -2;
   
   /* draw nuggets */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
-  bool deltasuccess = DrawDelta(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
+  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
+  bool deltasuccess = DrawDelta(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
   success = success || changed || deltasuccess;
  
   return success;
@@ -586,7 +587,8 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
 		     double *lambda_new, double **VB_new, double *bmu_new, 
 		     double *b0, double **Ti, double **T, double tau2,
 		     double nug, double nugfine, double qRatio, double pRatio_log, 
-		     double a0, double g0, int lin, double itemp, void *state)
+		     double a0, double g0, int lin, double itemp, bool cart, 
+		     void *state)
 {
   double pd, pdlast, alpha;
   unsigned int m = 0;
@@ -597,23 +599,23 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
     corr_symm(K_new, nin+1, X, n, d, nug, nugfine, r, delta, PWR);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
-    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, Ti, 
+				 tau2, b0, (int) cart, itemp);
   } else {	/* linear */
     *log_det_K_new = 0.0;
     for(unsigned int i=0; i<n; i++){
       if(X[i][0]==1) *log_det_K_new += log(r*r + delta + nugfine);
       else *log_det_K_new += log(1.0 + nug);
     }
-    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug, itemp);
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+				     tau2, b0, nug, (int) cart, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* posteriors */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,(int)cart,itemp);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,(int)cart,itemp);
   
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
@@ -626,7 +628,7 @@ int MrExpSep::d_draw(double *d, unsigned int n, unsigned int col, double **F,
 
 bool MrExpSep::DrawDelta(unsigned int n, double **X, double **F, double *Z,
 			 double *lambda, double **bmu, double **Vb, double tau2, 
-			 double itemp, void *state)
+			 double itemp, bool cart, void *state)
 {
   bool success = false;
   
@@ -661,22 +663,24 @@ bool MrExpSep::DrawDelta(unsigned int n, double **X, double **F, double *Z,
       else log_det_K_new += log(1.0 + nug);
     }
     lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z,
-				    gp_prior->get_Ti(), tau2, b0, nug, itemp);
+				    gp_prior->get_Ti(), tau2, b0, nug, 
+				    (int) cart, itemp);
   }
   else{
     corr_symm(K_new, nin+1, X, n, d, nug, nugfine, r, newdelta, PWR);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     log_det_K_new = log_determinant_chol(Kchol_new, n);
     lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, 
-				Ki_new, gp_prior->get_Ti(), tau2, b0, itemp);
+				Ki_new, gp_prior->get_Ti(), tau2, b0, 
+				(int) cart, itemp);
   }
   
   if((gp_prior->get_T())[0][0] == 0) m = col;
   
   pnewdelta = gamma_mixture_pdf(newdelta, ep->Delta_alpha(), ep->Delta_beta());
-  pnewdelta += post_margin(n,col,lambda_new,Vb_new,log_det_K_new,a0-m,g0,itemp);
+  pnewdelta += post_margin(n,col,lambda_new,Vb_new,log_det_K_new,a0-m,g0,(int)cart,itemp);
   pdelta = gamma_mixture_pdf(delta, ep->Delta_alpha(), ep->Delta_beta());
-  pdelta += post_margin(n,col,*lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pdelta += post_margin(n,col,*lambda,Vb,log_det_K,a0-m,g0,(int)cart,itemp);
   
   /* accept or reject */
   double alpha = exp(pnewdelta - pdelta)*(q_bak/q_fwd);
