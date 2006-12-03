@@ -32,7 +32,7 @@ function(col, base="gp", ...)
     list(
          base=base,
          tree=c(0.5,2,max(c(10,col+1))), # tree prior params <alpha>, <beta> and <minpart>
-         bprior="bflat",		# linear prior (b0, bmle, bflat, bcart or b0tau)
+         bprior="bflat",		# linear prior (b0, bmle, bflat, b0not or bmzt)
          beta=rep(0,col), 		# start vals beta (length = col = dim + 1)
          start=c(1,1), 	                # start vals for s2, and tau2
          s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>

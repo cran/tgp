@@ -31,8 +31,8 @@ tgp.default.params(col, base = "gp", ...)
    \item{bprior}{Linear (beta) prior, default is \code{"bflat"}
      which gives an \dQuote{improper} prior which can perform badly 
      when the signal-to-noise ratio is low.  In these cases the 
-     \dQuote{proper} hierarchical specification \code{"b0"} or independent 
-     \code{"b0tau"} prior may perform better
+     \dQuote{proper} hierarchical specification \code{"b0"} or
+     \code{"bmzt"} prior may perform better
      }
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range \eqn{d}{d},
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}

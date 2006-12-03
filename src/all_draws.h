@@ -28,27 +28,22 @@
 #define ALPHAMIN 0.1
 
 unsigned int beta_draw_margin(double *b, unsigned int col, double **Vb, double *bmu, 
-			      double s2, void *state);
-void beta_draw_noK(double* b, unsigned int n, unsigned int col, double **F, double *Z, 
-		   double s2, double **Ti, double tau2, double *b0, double nug,
-		   double itemp, void *state);
+			      double s2, int cart, void *state);
 double sigma2_draw_no_b_margin(unsigned int n, unsigned int col, double lambda, 
 			       double alpha0, double beta0, void *state);
-double sigma2_draw_no_b_noK(unsigned int n, unsigned int col, double **F, double *Z, 
-			    double **Ti, double tau2, double *b0, double alpha0, 
-			    double beta0, double itemp, void *state);
 double compute_lambda_noK(double** Vb, double*b, unsigned int n, unsigned int col, 
 			  double **F, double *Z, double **Ti, double tau2, double *b0, 
-			  double nug, double itemp);
+			  double nug, int cart, double itemp);
 double compute_lambda(double** Vb, double*b, unsigned int n, unsigned int col, 
 		      double **F, double *Z, double **Ki, double **Ti, double tau2,
-		      double *b0, double itemp);
+		      double *b0, int cart, double itemp);
 void compute_b_and_Vb(double **Vb, double *b, double *by, double *TiB0, unsigned int n, 
 		      unsigned int col, double **F, double *Z, double **Ki, double **Ti,
-		      double tau2, double *b0, double itemp);
+		      double tau2, double *b0, int cart, double itemp);
 void compute_b_and_Vb_noK(double **Vb, double *b, double *by, double *TiB0, 
 			  unsigned int n, unsigned int col, double **F, double *Z, 
-			  double **Ti, double tau2, double *b0, double nug, double itemp);
+			  double **Ti, double tau2, double *b0, double nug, int cart,
+			  double itemp);
 void Ti_draw(double **Ti, unsigned int col, unsigned int ch, double **b, double **bmle, 
 	     double *b0, unsigned int rho, double **V, double *s2, double *tau2, 
 	     void *state);
@@ -75,14 +70,14 @@ int d_draw_margin(unsigned int n, unsigned int col, double d, double dlast, doub
 		  double *log_det_K_new, double *lambda_new, double **VB_new, 
 		  double *bmu_new, double *b0, double **Ti, double **T, double tau2, 
 		  double nug, double pRatio, double *d_alpha, double *d_beta, double a0,
-		  double g0, int lin, double itemp, void *state);
+		  double g0, int lin, double itemp, int cart, void *state);
 int d_sep_draw_margin(double *d, unsigned int n, unsigned int col, double **F, 
 		      double **X, double *Z, double log_det_K, double lambda, 
 		      double **Vb, double **K_new, double **Ki_new, double **Kchol_new,
 		      double *log_det_K_new, double *lambda_new, double **VB_new, 
 		      double *bmu_new, double *b0, double **Ti, double **T, double tau2, 
 		      double nug, double qRatio, double pRatio_log, double a0, double g0,
-		      int lin, double itemp, void *state);
+		      int lin, double itemp, int cart, void *state);
 int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlast, 
 			 double **F, double *Z, double **DIST, double log_det_K, 
 			 double lambda, double **Vb, double **K_new, double **Ki_new, 
@@ -90,14 +85,15 @@ int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlas
 			 double **VB_new, double *bmu_new, double *b0, double **Ti, 
 			 double **T, double tau2, double nug, double nu, double *bk, 
 			 long nb, double pRatio, double *d_alpha, double *d_beta, 
-			 double a0, double g0, int lin, double itemp, void *state);
+			 double a0, double g0, int lin, double itemp, int cart,
+			 void *state);
 double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, double **F, 
 		       double *Z, double **K, double log_det_K, double lambda, 
 		       double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
 		       double *log_det_K_new, double *lambda_new, double **VB_new, 
 		       double *bmu_new, double *b0, double **Ti, double **T, double tau2, 
 		       double *nug_alpha, double *nug_beta, double a0, double g0, 
-		       int linear, double itemp, void *state);
+		       int linear, double itemp, int cart, void *state);
 double* mr_nug_draw_margin(unsigned int n, unsigned int col, double nug, double nugfine, 
 			   double **X, double **F, double *Z, double **K, 
 			   double log_det_K, double lambda, double **Vb, double **K_new, 
@@ -106,7 +102,7 @@ double* mr_nug_draw_margin(unsigned int n, unsigned int col, double nug, double 
 			   double *b0, double **Ti, double **T, double tau2, 
 			   double *nug_alpha, double *nug_beta,	double *nugf_alpha, 
 			   double *nugf_beta, double r, double delta, double a0, 
-			   double g0, int linear, double itemp, void *state);
+			   double g0, int linear, double itemp, int cart, void *state);
 void sigma2_prior_draw(double *a0, double *g0, double *s2, unsigned int nl, 
 		       double a0_lambda, double g0_lambda, unsigned int *n, void *state);
 double tau2_draw(unsigned int col, double **Ti, double s2, double *b, double *b0, 

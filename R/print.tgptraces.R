@@ -54,9 +54,9 @@ function(x, ...)
   cat("       la: area of domain under LLM\n")
   cat("       ba: area of domain under LLM weighed by dim\n")
   if(length(x$linarea) <= 0) {
-    cat("\n ** $linarea is empty since you fit either a\n")
-    cat(" ** model which either forced the LLM (btlm, blm),\n")
-    cat(" ** or disallowed it (bgp, btgp)\n")
+    cat("\n ** $linarea is empty since you fit a model which \n")
+    cat(" ** either forced the LLM (btlm, blm),  or disallowed\n")
+    cat(" **it (bgp, btgp)\n")
   }
   
   ## info about parts

@@ -314,6 +314,9 @@ void MrGp::UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)
 
 bool MrGp::Draw(void *state)
 {
+
+  MrGp_Prior *p = (MrGp_Prior*) prior;
+
   /* 
    * start with draws from the marginal posterior of the corr function 
    */
@@ -321,7 +324,7 @@ bool MrGp::Draw(void *state)
   /* correlation function */
   int success, i;
   for(i=0; i<5; i++) {
-    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, state);
+    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, p->Cart(), state);
     if(success != -1) break;
   }
 
@@ -341,8 +344,6 @@ bool MrGp::Draw(void *state)
    * then go to the others
    */
 
-  MrGp_Prior *p = (MrGp_Prior*) prior;
-
   /* s2 */
   if(p->BetaPrior() == BFLAT) 
     s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha()-col,p->s2Beta(), state);
@@ -350,12 +351,13 @@ bool MrGp::Draw(void *state)
     s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
 
   /* if beta draw is bad, just use mean, then zeros */
-  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
+  assert(p->Cart() == 0);
+  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, (int) p->Cart(), state);
   if(info != 0) b[0] = mean; 
 
   
   /* tau2: last becuase of Vb and lambda */
-  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART)
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT)
     tau2 = tau2_draw(col, p->get_Ti(), s2, b, p->get_b0(), 
 		     p->tau2Alpha(), p->tau2Beta(), state);
   
@@ -473,7 +475,7 @@ void MrGp::split_tau2(double *tau2_new, void *state)
   /* make the larger partition more likely to get the smaller d */
   propose_indices(i, 0.5, state);
   tau2_new[i[0]] = tau2;
-  if(p->BetaPrior() == BFLAT || p->BetaPrior() == BCART) 
+  if(p->BetaPrior() == BFLAT || p->BetaPrior() == B0NOT) 
     tau2_new[i[1]] = tau2;
   else 
     tau2_new[i[1]] = tau2_prior_rand(p->tau2Alpha()/2, p->tau2Beta()/2, state);
@@ -524,8 +526,8 @@ double MrGp::MarginalLikelihood(double itemp)
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* the main posterior for the correlation function */
-  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), 
-			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
+			       tau2, p->s2Alpha(), p->s2Beta(), (int) p->Cart(), itemp);
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
@@ -593,7 +595,7 @@ double MrGp::FullPosterior(double itemp)
   post += log_tau2_prior_pdf(s2,  p->s2Alpha()/2, p->s2Beta()/2);
 
   /* add in prior for tau2 */
-  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT) {
     post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2, p->tau2Beta()/2);
   }
 
@@ -613,8 +615,8 @@ double MrGp::MarginalPosterior(double itemp)
   /* for adding in priors */
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
-  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(),
-			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
+  double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
+			       tau2, p->s2Alpha(), p->s2Beta(), (int) p->Cart(), itemp);
 
   /* don't need to include prior for beta, because
      its alread included in the above calculation */
@@ -626,7 +628,7 @@ double MrGp::MarginalPosterior(double itemp)
     its alread included in the above calculation */
 
    /* add in prior for tau2 */
-  if(p->BetaPrior() != BFLAT && p->BetaPrior() != BCART) {
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT) {
     post += log_tau2_prior_pdf(tau2,  p->tau2Alpha()/2, p->tau2Beta()/2);
   }
 
@@ -658,16 +660,18 @@ void MrGp::Compute(void)
   switch(((MrGp_Prior*)prior)->BetaPrior()) {
   case BMLE: dupv(b0, bmle, col); break;
   case BFLAT: assert(b0[0] == 0.0 && Ti[0][0] == 0.0 && tau2 == 1.0); break;
-  case BCART: assert(b0[0] == 0.0 && Ti[0][0] == 1.0 && tau2 == p->Tau2()); break;
-  case B0TAU: assert(b0[0] == 0.0 && Ti[0][0] == 1.0); break;
+  case B0NOT: assert(b0[0] == 0.0 && Ti[0][0] == 1.0 && tau2 == p->Tau2()); break;
+  case BMZT: assert(b0[0] == 0.0 && Ti[0][0] == 1.0); break;
   case B0: break;
   }
   
   /* compute the marginal parameters */
   if(corr->Linear())
-    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug(), itemp);
+    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug(), 
+				(int) p->Cart(), itemp);
   else
-    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, itemp);
+    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, 
+			    (int) p->Cart(), itemp);
 }
 
 
@@ -852,7 +856,8 @@ MrGp_Prior::MrGp_Prior(unsigned int d) : Base_Prior(d)
    */
   
   corr_prior = NULL;
-  beta_prior = BFLAT; 	/* B0, BMLE (Emperical Bayes), BFLAT, or BCART, B0TAU */
+  beta_prior = BFLAT; 	/* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
+  cart = false;         /* default is to not use b[0]=mu */
   
   /* regression coefficients */
   b = new_zero_vector(col);
@@ -960,7 +965,6 @@ MrGp_Prior::MrGp_Prior(Base_Prior *prior) : Base_Prior(prior)
   assert(prior);
   assert(prior->BaseModel() == MR_GP);
   
-  
   MrGp_Prior *p = (MrGp_Prior*) prior;
 
   /* generic and tree parameters */
@@ -970,6 +974,7 @@ MrGp_Prior::MrGp_Prior(Base_Prior *prior) : Base_Prior(prior)
 
   /* linear parameters */
   beta_prior = p->beta_prior;  
+  cart = p->cart;
   s2 = p->s2;
   tau2 = p->tau2;
   b = new_dup_vector(p->b, col);
@@ -1035,14 +1040,20 @@ MrGp_Prior::~MrGp_Prior(void)
 
 void MrGp_Prior::read_double(double * dparams)
 {
+  /* if dparams[0] >= 10 then use b[0]=mu model */
+  int bp = (int) dparams[0];
+  if(bp >= 10) {
+    cart = TRUE;
+    bp = bp % 10;
+  }
  
  /* read the beta linear prior model */
-  switch ((int) dparams[0]) {
+  switch (bp) {
   case 0: beta_prior=B0; /* myprintf(stdout, "linear prior: b0 hierarchical\n"); */ break;
   case 1: beta_prior=BMLE; /* myprintf(stdout, "linear prior: emperical bayes\n"); */ break;
   case 2: beta_prior=BFLAT; /* myprintf(stdout, "linear prior: flat\n"); */ break;
-  case 3: beta_prior=BCART; /* myprintf(stdout, "linear prior: cart\n"); */ break;
-  case 4: beta_prior=B0TAU; /* myprintf(stdout, "linear prior: b0 flat with tau2\n"); */ break;
+  case 3: beta_prior=B0NOT; /* myprintf(stdout, "linear prior: cart\n"); */ break;
+  case 4: beta_prior=BMZT; /* myprintf(stdout, "linear prior: b0 flat with tau2\n"); */ break;
   default: error("bad linear prior model %d", (int)dparams[0]); break;
   }
   
@@ -1079,7 +1090,7 @@ void MrGp_Prior::read_double(double * dparams)
   }
 
   /* read tau2 hierarchical prior parameters */
-  if(beta_prior != BFLAT && beta_prior != BCART) {
+  if(beta_prior != BFLAT && beta_prior != B0NOT) {
       tau2_a0 = dparams[2];
       tau2_g0 = dparams[3];
       // myprintf(stdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
@@ -1087,7 +1098,7 @@ void MrGp_Prior::read_double(double * dparams)
   dparams += 4; /* reset */
 
   /* tau2 hierarchical lambda prior parameters */
-  if(beta_prior != BFLAT && beta_prior != BCART) {
+  if(beta_prior != BFLAT && beta_prior != B0NOT) {
     if((int) dparams[0] == -1)
       { fix_tau2 = true; /* myprintf(stdout, "fixing tau2 prior\n"); */ }
     else {
@@ -1132,10 +1143,10 @@ void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
   char line[BUFFMAX], line_copy[BUFFMAX];
 
   /* read the beta prior model */
-  /* B0, BMLE (Emperical Bayes), BFLAT, or BCART, B0TAU */
+  /* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "b0tau", 5)) {
-    beta_prior = B0TAU;
+    beta_prior = BMZT;
     myprintf(stdout, "linear prior: b0 fixed with tau2 \n");
   } else if(!strncmp(line, "bmle", 4)) {
     beta_prior = BMLE;
@@ -1144,7 +1155,7 @@ void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
     beta_prior = BFLAT;
     myprintf(stdout, "linear prior: flat \n");
   } else if(!strncmp(line, "bcart", 5)) {
-    beta_prior = BCART;
+    beta_prior = B0NOT;
     myprintf(stdout, "linear prior: cart \n");
   } else if(!strncmp(line, "b0", 2)) {
     beta_prior = B0;
@@ -1176,7 +1187,7 @@ void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
 
   /* read the tau2-prior parameters (tau2_a0, tau2_g0) from the control file */
   ctrlfile->getline(line, BUFFMAX);
-  if(beta_prior != BFLAT && beta_prior != BCART) {
+  if(beta_prior != BFLAT && beta_prior != B0NOT) {
     tau2_a0 = atof(strtok(line, " \t\n#"));
     tau2_g0 = atof(strtok(NULL, " \t\n#"));
     myprintf(stdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
@@ -1200,7 +1211,7 @@ void MrGp_Prior::read_ctrlfile(ifstream *ctrlfile)
   fix_tau2 = false;
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
-  if(beta_prior != BFLAT && beta_prior != BCART) {
+  if(beta_prior != BFLAT && beta_prior != B0NOT) {
     if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
       { fix_tau2 = true; myprintf(stdout, "fixing tau2 prior\n"); }
     else {
@@ -1486,8 +1497,8 @@ void MrGp_Prior::Print(FILE* outfile)
   case B0: myprintf(stdout, "linear prior: b0 hierarchical\n"); break;
   case BMLE: myprintf(stdout, "linear prior: emperical bayes\n"); break;
   case BFLAT: myprintf(stdout, "linear prior: flat\n"); break;
-  case BCART: myprintf(stdout, "linear prior: cart\n"); break;
-  case B0TAU: myprintf(stdout, "linear prior: b0 flat with tau2\n"); break;
+  case B0NOT: myprintf(stdout, "linear prior: cart\n"); break;
+  case BMZT: myprintf(stdout, "linear prior: b0 flat with tau2\n"); break;
   default: error("linear prior not supported");  break;
   }
 
@@ -1504,7 +1515,7 @@ void MrGp_Prior::Print(FILE* outfile)
   /* hyperpriors */
   if(fix_s2) myprintf(outfile, "s2 prior fixed\n");
   else myprintf(outfile, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
-  if(beta_prior != BFLAT && beta_prior != BCART) {
+  if(beta_prior != BFLAT && beta_prior != B0NOT) {
     myprintf(outfile, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
     if(fix_tau2) myprintf(outfile, "tau2 prior fixed\n");
     else myprintf(outfile, "tau2 lambda[a0,g0]=[%g,%g]\n", tau2_a0_lambda, tau2_g0_lambda);
@@ -1529,7 +1540,12 @@ void MrGp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
   double **b, **bmle, *s2, *tau2;
   unsigned int *n;
   Corr **corr;
-  
+
+  /* when using beta[0]=mu prior */
+  assert(!cart);
+  unsigned int col = this->col;
+  if(cart) col = 1;
+
   /* allocate temporary parameters for each leaf node */
   mr_allocate_leaf_params(col, &b, &s2, &tau2, &n, &corr, leaves, numLeaves);
   if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
@@ -1552,7 +1568,7 @@ void MrGp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
   /* update the corr and sigma^2 prior params */
 
   /* tau2 prior first */
-  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART) {
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != B0NOT) {
     unsigned int *colv = new_ones_uivector(numLeaves, col);
     sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,tau2_g0_lambda,
 		      colv, state);
@@ -1768,7 +1784,7 @@ double MrGp_Prior::log_HierPrior(void)
     lpdf += hier_prior_log(s2_a0, s2_g0, s2_a0_lambda, s2_g0_lambda);
 
   /* hierarchical Linear varaince */
-  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != BCART)
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != B0NOT)
     lpdf += hier_prior_log(tau2_a0, tau2_g0, tau2_a0_lambda, tau2_g0_lambda);
 
   /* then add the part for the correllation function */
@@ -1822,4 +1838,18 @@ double MrGp_Prior::GamLin(unsigned int which)
 
   double *gamlin = corr_prior->GamLin();
   return gamlin[which];
+}
+
+
+/*
+ * Cart:
+ *
+ * return the boolean indicating whether or not
+ * the beta prior only uses beta[0]=mu, ignoring
+ * the other parts
+ */
+
+bool MrGp_Prior::Cart(void)
+{
+  return cart;
 }

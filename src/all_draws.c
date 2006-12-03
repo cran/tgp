@@ -96,8 +96,9 @@ double **F;
  * Ti[col][col], Vb[col][col];
  */
 
-void compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp)
+void compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, cart, itemp)
 unsigned int n, col;
+int cart;
 double *Z, *b0, *b, *TiB0, *by;
 double **F, **Ti, **Vb;
 double tau2, nug, itemp;
@@ -118,7 +119,11 @@ double tau2, nug, itemp;
 
   /* Vb = inv(F'*F + Ti/tau2); is inv(aux1) */
   id(Vb, col);
-  info = linalg_dgesv(col, Vbi, Vb);
+  if(cart) {
+    Vb[0][0] = 1.0/Vbi[0][0];
+  } else {
+    info = linalg_dgesv(col, Vbi, Vb);
+  }
   delete_matrix(Vbi);
   
   /* by = Z*F/(1+g) + b0'*Ti/tau2; with tempering by = itemp*Z*F/(1+g) + b0'*Ti/tau2 */
@@ -130,7 +135,8 @@ double tau2, nug, itemp;
   linalg_dgemv(CblasTrans,n,col,itemp/(1.0+nug),F,n,Z,1,1.0/tau2,by,1);
   
   /* b = by*Vb */
-  linalg_dsymv(col,1.0,Vb,col,by,1,0.0,b,1);
+  if(cart) b[0] = by[0]*Vb[0][0];
+  else linalg_dsymv(col,1.0,Vb,col,by,1,0.0,b,1);
 }
 
 
@@ -145,8 +151,9 @@ double tau2, nug, itemp;
  * Z[n], b0[col], b[col], F[col][n], Ki[n][n], Ti[col][col], Vb[col][col];
  */
 
-double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, nug, itemp)
+double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, nug, cart, itemp)
 unsigned int n, col;
+int cart;
 double *Z, *b0, *b;
 double **F, **Ti, **Vb;
 double tau2, nug, itemp;
@@ -162,10 +169,13 @@ double tau2, nug, itemp;
   TiB0 = new_vector(col);
   by = new_vector(col);
   
-  compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp);
+  compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, cart, itemp);
   
   /* lambda = Z*Z' + b0'*Ti*b0 - B'*VBi*B; */
   /* as performed in many steps below */
+
+  /* adjust for beta[0]=mu in prior */
+  if(cart) col = 1;
   
   /* ZZ = Z'Z/(1+g) */
   ZZ = linalg_ddot(n,Z,1,Z,1);
@@ -184,8 +194,8 @@ double tau2, nug, itemp;
   /* now for lambda */
   lambda = ZZ + b0Tib0 - BVBiB;
   
-  /*myprintf(stderr, "noK: n=%d, itemp=%g, ZZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
-    n, itemp, ZZ, tau2, b0Tib0, BVBiB, lambda);*/
+  /* myprintf(stderr, "noK: n=%d, itemp=%g, ZZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
+     n, itemp, ZZ, tau2, b0Tib0, BVBiB, lambda); */
 
   /* this is here because when itemp=0 lambda should be 0, but
      sometimes there are numerical issues where we get e^-17 */
@@ -206,7 +216,7 @@ double tau2, nug, itemp;
  * Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
+void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, cart, itemp)
 unsigned int n, col;
 double *Z, *b0, *b, *TiB0, *by;
 double **F, **Ki, **Ti, **Vb;
@@ -229,7 +239,8 @@ double tau2, itemp;
   
   /* Vb = inv(F'*KiF + Ti/tau2) */
   id(Vb, col);
-  info = linalg_dgesv(col, Vbi, Vb);
+  if(cart) Vb[0][0] = 1.0/Vbi[0][0];
+  else info = linalg_dgesv(col, Vbi, Vb);
   delete_matrix(Vbi);
   
   /* by = Z*KiF + b0'*Ti/tau2 */
@@ -244,7 +255,8 @@ double tau2, itemp;
   
   /* b = by*Vb */
   zerov(b, col);
-  linalg_dsymv(col,1.0,Vb,col,by,1,0.0,b,1);
+  if(cart) b[0] = by[0]*Vb[0][0];
+  else linalg_dsymv(col,1.0,Vb,col,by,1,0.0,b,1);
 }
 
 
@@ -258,8 +270,9 @@ double tau2, itemp;
  * Z[n], b0[col], b[col]; F[col][n], Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
+double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0, cart, itemp)
 unsigned int n, col;
+int cart;
 double *Z, *b0, *b;
 double **F, **Ki, **Ti, **Vb;
 double tau2, itemp;
@@ -276,10 +289,13 @@ double tau2, itemp;
   KiZ = new_vector(n);
   by = new_vector(col);
   
-  compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, itemp);
+  compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, cart, itemp);
   
   /* lambda = Z*Ki*Z' + b0'*Ti*b0 - B'*VBi*B; */
   /* as performed in many steps below */
+
+  /* if beta[0]=mu prior */
+  if(cart) col = 1;
   
   /* KiZ = Ki * Z; when tempered KiZ = itemp * Ki * Z */
   zerov(KiZ, n);
@@ -319,8 +335,9 @@ double tau2, itemp;
  * b[col], bmu[col], Vb[col][col]
  */
 
-unsigned int beta_draw_margin(b, col, Vb, bmu, s2, state)
+unsigned int beta_draw_margin(b, col, Vb, bmu, s2, cart, state)
 unsigned int col;
+int cart;
 double *b, *bmu; 
 double **Vb;
 double s2;
@@ -330,6 +347,9 @@ void *state;
   /*double V[col][col];*/
   double **V;
   int info;
+
+  /* if beta[0]=mu, then we only need to draw the first on */
+  if(cart) col = 1;
  
   /* compute s2*Vb */
   V = new_matrix(col, col);
@@ -340,105 +360,20 @@ void *state;
   
   /* first: get the choleski decomposition */
   /* note that this changes the cov variable (s2*Vb) */
-  info = linalg_dpotrf(col, V);
+  if(col > 1) info = linalg_dpotrf(col, V);
+  else info = 0;
   
   /* now get the draw using the choleski decomposition */
   if(info != 0) zerov(b, col);
-  else mvnrnd(b, bmu, V, col, state);
+  else if(col > 1) mvnrnd(b, bmu, V, col, state);
+  else { /* when beta[0]=mu then we only need one draw */
+    rnorm_mult(b, 1, state);
+    b[0] *= sqrt(V[0][0]);
+    b[0] += bmu[0];
+  }
   
   delete_matrix(V);
   return info;
-}
-
-
-/*
- * beta_draw_noK:
- * 
- * Gibbs draw for Beta given the rest of the
- * parameters. (no dependance on K)
- *
- * Z[n], b0[col], b[col], F[col][n], Ti[col][col];
- */
-
-void beta_draw_noK(b, n, col, F, Z, s2, Ti, tau2, b0, nug, itemp, state)
-unsigned int n, col;
-double *Z, *b0, *b; 
-double **F, **Ti;
-double s2, tau2, itemp;
-double nug;
-void *state;
-{
-  unsigned int i,j;
-  /*double Vb[col][col];
-    double mu[col], by[col], TiB0[col];*/
-  double **Vb;
-  double *mu, *by, *TiB0;
-  int info;
-  
-  /* allocate some memory */
-  Vb = new_matrix(col,col);
-  mu = new_vector(col);
-  by = new_vector(col);
-  TiB0 = new_vector(col);
-
-  /* compute b and Vb without K*/
-  compute_b_and_Vb_noK(Vb, mu, by, TiB0, n, col, F, Z, Ti, tau2, b0, nug, itemp);
-  free(TiB0);
-
-  /* compute s2*Vb */
-  /*for(i=0; i<col; i++) for(j=0; j<col; j++) Vb[i][j] = s2*Vb[i][j];*/
-  for(i=0; i<col; i++) for(j=0; j<=i; j++) Vb[i][j] = s2*Vb[i][j];
-  
-  /* first: get the choleski decomposition */
-  /* note that this changes the cov variable (s2*Vb) */
-  info = linalg_dpotrf(col, Vb);
-  
-  /* now get the draw using the choleski decomposition */
-  mvnrnd(b, mu, Vb, col, state);
-  delete_matrix(Vb);
-  free(mu);
-  free(by);
-}
-
-
-/*
- * sigma2_draw_no_b_noK:
- * 
- * Uses code from margin_lik_c in order to obtain draws 
- * for sigma^2 without dependence on beta (or K)
- *
- * Z[n], b0[col], F[col][n], Ti[col][col];
- */
-
-double sigma2_draw_no_b_noK(n, col, F, Z, Ti, tau2, b0, alpha0, beta0, 
-			    itemp, state)
-unsigned int n, col;
-double *Z, *b0; 
-double **F, **Ti;
-double alpha0, beta0, tau2, itemp;
-void *state;
-{
-  double **Vb;
-  double *b;
-  double alpha, g, lambda, x;
-
-  /* compute lambda and Vb */
-  Vb = new_matrix(col, col);
-  b = new_vector(col);
-  lambda = compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, 1.0, itemp);
-  delete_matrix(Vb);
-  free(b);
-  
-  /* alpha = (alpha0 + length(Z) + length(b))/2; */
-  alpha = (alpha0 + n)/2;
-
-  /* g = (gamma0 + BLAH)/2; */
-  g = (beta0 + lambda)/2;
-
-  /* s2 = 1/gamrnd(alpha, 1/g, 1) */
-  /* return 1.0 / (1.0/g * rgamma(alpha)); */
-  inv_gamma_mult_gelman(&x, alpha, g, 1, state);
-  return x;
 }
 
 
@@ -1056,9 +991,9 @@ void *state;
 int d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, 
 		  K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 		  bmu_new,  b0, Ti, T, tau2, nug, qRatio, d_alpha, d_beta, a0, 
-		  g0, lin, itemp, state)
+		  g0, lin, itemp, cart, state)
 unsigned int n, col;
-int lin;
+int lin, cart;
 double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z;
 double d_alpha[2], d_beta[2];
@@ -1078,20 +1013,20 @@ void *state;
     dist_to_K_symm(K_new, DIST, d, nug, n);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
-    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+				 Ti, tau2, b0, cart, itemp);
   } else {	/* linear */
     *log_det_K_new = n*log(1.0 + nug);
-    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
-				     F, Z, Ti, tau2, b0, nug, itemp);
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+				     tau2, b0, nug, cart, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* start computation of posterior distribution */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,cart,itemp);
   pd += log_d_prior_pdf(d, d_alpha, d_beta);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,cart,itemp);
   pdlast += log_d_prior_pdf(dlast, d_alpha, d_beta);
   
   /* if(lin && pd > pdlast) myprintf(stderr, "pd=%g, pdlast=%g, qRatio=%g\n",
@@ -1124,9 +1059,9 @@ void *state;
 int d_sep_draw_margin(d, n, col, F, X, Z, log_det_K, lambda, Vb, 
 	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 	bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 
-	lin, itemp, state)
+	lin, itemp, cart, state)
 unsigned int n, col;
-int lin;
+int lin, cart;
 double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *d, *log_det_K_new;
 double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log, itemp;
@@ -1145,12 +1080,12 @@ void *state;
     exp_corr_sep_symm(K_new, col-1, X, n, d, nug, PWR);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
-    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+				 Ti, tau2, b0, cart, itemp);
   } else if(lin) { /* linear */
     *log_det_K_new = n*log(1.0 + nug);
-    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug, itemp);
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+				     tau2, b0, nug, cart, itemp);
   }
   
   if(d || lin) {
@@ -1158,8 +1093,8 @@ void *state;
     if(T[0][0] == 0) m = col;
   
     /* posteriors */
-    pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
-    pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+    pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,cart,itemp);
+    pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,cart,itemp);
   
     /* or, no posterior contribution */
   } else { pd = 0.0; pdlast = 0.0; }
@@ -1186,9 +1121,9 @@ void *state;
 int matern_d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, K_new,
 			 Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
 			 b0, Ti, T, tau2, nug, nu, bk, nb, qRatio, d_alpha, d_beta, a0, 
-			 g0, lin, itemp, state)
+			 g0, lin, itemp, cart, state)
 unsigned int n, col;
-int lin;
+int lin, cart;
 double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *bk;
 double d_alpha[2], d_beta[2];
@@ -1209,20 +1144,20 @@ void *state;
     matern_dist_to_K_symm(K_new, DIST, d, nu, bk, nb, nug, n);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
-    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+				 Ti, tau2, b0, cart, itemp);
   } else {	/* linear */
     *log_det_K_new = n*log(1.0 + nug);
-    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col,
-				     F, Z, Ti, tau2, b0, nug, itemp);
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+				     tau2, b0, nug, cart, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* start computation of posterior distribution */
-  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,cart,itemp);
   pd += log_d_prior_pdf(d, d_alpha, d_beta);
-  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,cart,itemp);
   pdlast += log_d_prior_pdf(dlast, d_alpha, d_beta);
   
   /* compute acceptance prob */
@@ -1246,9 +1181,10 @@ void *state;
 
 double nug_draw_margin(n, col, nuglast, F, Z, K, log_det_K, lambda, Vb, 
 	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-	b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, state)
+	b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, cart,
+	state)
 unsigned int n, col;
-int linear;
+int linear, cart;
 double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
 double *b0, *Z, *log_det_K_new; 
 double nug_alpha[2], nug_beta[2];
@@ -1266,24 +1202,24 @@ void *state;
   /* new covariace matrix based on new nug */
   if(linear) {
     *log_det_K_new = n * log(1.0 + nug);
-    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug, itemp);
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+				     tau2, b0, nug, cart, itemp);
   } else  {
     dup_matrix(K_new, K, n, n);
     for(i=0; i<n; i++) K_new[i][i] += (nug - nuglast);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
-    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+				 Ti, tau2, b0, cart, itemp);
   }
   
   if(T[0][0] == 0) m = col;
   
   /* posteriors */
   pnug = log_nug_prior_pdf(nug, nug_alpha, nug_beta);
-  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,cart,itemp);
   pnuglast = log_nug_prior_pdf(nuglast, nug_alpha, nug_beta);
-  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,cart,itemp);
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak/q_fwd);
@@ -1306,9 +1242,9 @@ void *state;
 double* mr_nug_draw_margin(n, col, nug, nugfine, X, F, Z, K, log_det_K, lambda, Vb, 
 			   K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 			   bmu_new, b0, Ti, T, tau2, nug_alpha, nug_beta, nugf_alpha, 
-			   nugf_beta, r, delta, a0, g0, linear, itemp, state)
+			   nugf_beta, r, delta, a0, g0, linear, itemp, cart, state)
 unsigned int n, col;
-int linear;
+int linear, cart;
 double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new, **X;
 double *b0, *Z, *log_det_K_new; 
 double nug_alpha[2], nug_beta[2], nugf_alpha[2], nugf_beta[2];
@@ -1321,6 +1257,8 @@ void *state;
   unsigned int m = 0;
   double* newnugs = new_vector(2);
   
+  assert(cart == 0);
+
   /* propose new d, and compute proposal probability */
   newnugs[0] = nug_draw(nug, &q_fwd, &q_bak, state);
   newnugs[1] = nug_draw(nugfine, &q_fwdf, &q_bakf, state);
@@ -1333,7 +1271,7 @@ void *state;
       else *log_det_K_new += log(1.0 + nug);
     }
     *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, 
-				     F, Z, Ti, tau2, b0, nug, itemp);
+				     F, Z, Ti, tau2, b0, nug, cart, itemp);
   } else  {
     dup_matrix(K_new, K, n, n);
     for(i=0; i<n; i++){
@@ -1343,7 +1281,7 @@ void *state;
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, 
-				 F, Z, Ki_new, Ti, tau2, b0, itemp);
+				 F, Z, Ki_new, Ti, tau2, b0, cart, itemp);
   }
   
   if(T[0][0] == 0) m = col;
@@ -1351,10 +1289,10 @@ void *state;
   /* posteriors */
   pnug = log_nug_prior_pdf(newnugs[0], nug_alpha, nug_beta);
   pnug += log_nug_prior_pdf(newnugs[1], nugf_alpha, nugf_beta);
-  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,cart,itemp);
   pnuglast = log_nug_prior_pdf(nug, nug_alpha, nug_beta);
   pnuglast += log_nug_prior_pdf(nugfine, nugf_alpha, nugf_beta);
-  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,cart,itemp);
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak*q_bakf)/(q_fwd*q_fwdf);

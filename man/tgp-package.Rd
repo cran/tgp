@@ -12,7 +12,7 @@ A Bayesian nonstationary nonparametric regression and design package
 This package implements Bayesian nonparametric and nonstationary regression
 with \dQuote{treed Gaussian process models}.
 The package contains functions which facilitate
-inference for six regression models of varying complexity using Markov chain
+inference for seven regression models of varying complexity using Markov chain
 Monte Carlo (MCMC): linear model, linear CART (Classification and Regression
 Tree), Gaussian process (GP),  GP with jumps to the limiting linear model
 (LLM), treed GP, and treed GP LLM.  R provides an interface to the C/C++

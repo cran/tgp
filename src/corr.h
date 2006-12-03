@@ -84,7 +84,8 @@ class Corr
   virtual ~Corr(void);
   virtual Corr& operator=(const Corr &c)=0;
   virtual int Draw(unsigned int n, double **F, double **X, double *Z,double *lambda, 
-		   double **bmu, double **Vb, double tau2, double temp, void *state)=0;
+		   double **bmu, double **Vb, double tau2, double temp, bool cart, 
+		   void *state)=0;
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, 
 		      double **XX)=0;
   virtual void Update(unsigned int n1, double **X)=0;
@@ -97,7 +98,7 @@ class Corr
   virtual void ToggleLinear(void)=0;
   virtual bool DrawNug(unsigned int n, double **X,  double **F, double *Z, 
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double temp, void *state)=0;
+		       double temp, bool cart, void *state)=0;
   virtual double* Trace(unsigned int *len)=0;
   virtual char** TraceNames(unsigned int *len)=0;
   virtual void Init(double *dcorr)=0;

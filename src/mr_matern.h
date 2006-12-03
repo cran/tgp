@@ -58,7 +58,8 @@ class MrMatern : public Corr
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, void *state);
+		   double **bmu, double **Vb, double tau2, double itemp, bool cart, 
+		   void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
@@ -67,7 +68,7 @@ class MrMatern : public Corr
   virtual void ToggleLinear(void);
   virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double itemp, void *state);
+		       double itemp, bool cart, void *state);
   virtual double* Trace(unsigned int* len);
   virtual char** TraceNames(unsigned int* len);
   virtual void Init(double *dmrmat);
