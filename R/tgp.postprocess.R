@@ -80,8 +80,8 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
   ## store params
   ll$params <- params
 
-  ## clear the verb, state, tree and krige fields for output
-  ll$verb <- NULL; ll$state <- NULL; ll$tree <- NULL; ll$krige <- NULL; ll$nt <- NULL
+  ## clear the verb, state, tree and MAP fields for output
+  ll$verb <- NULL; ll$state <- NULL; ll$tree <- NULL; ll$MAP <- NULL; ll$nt <- NULL
   ll$ncol <- NULL; ll$dtree <- NULL;
 
   ## consolidate itemps

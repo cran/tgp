@@ -1,3 +1,4 @@
+
 /******************************************************************************** 
  *
  * Bayesian Regression and Adaptive Sampling with Gaussian Process Trees
@@ -43,8 +44,8 @@ extern "C" {
  */
 
 Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, 
-		 double **rect, unsigned int R, bool delta_s2, bool 
-		 improv, unsigned int every)
+		 double **rect, unsigned int R, bool krige, bool delta_s2, 
+		 bool improv, unsigned int every)
 {
   Preds* preds = (Preds*) malloc(sizeof(struct preds));
   preds->nn = nn;
@@ -59,11 +60,13 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d,
   preds->w = ones(preds->R, 1.0);
   preds->itemp = ones(preds->R, 1.0);
   preds->ZZ = new_zero_matrix(preds->R, nn);
-  preds->ZZm = new_zero_matrix(preds->R, nn);
-  preds->ZZs2 = new_zero_matrix(preds->R, nn);
   preds->Zp = new_zero_matrix(preds->R, n);
-  preds->Zpm = new_zero_matrix(preds->R, n);
-  preds->Zps2 = new_zero_matrix(preds->R, n);
+  if(krige) { 
+    preds->ZZm = new_zero_matrix(preds->R, nn);
+    preds->ZZs2 = new_zero_matrix(preds->R, nn);
+    preds->Zpm = new_zero_matrix(preds->R, n);
+    preds->Zps2 = new_zero_matrix(preds->R, n);
+  } else { preds->ZZm = preds->ZZs2 = preds->Zpm = preds->Zps2 = NULL; }
   if(delta_s2) preds->Ds2x = new_zero_matrix(preds->R, nn);
   else preds->Ds2x = NULL;
   if(improv) preds->improv = new_zero_matrix(preds->R, nn);
@@ -118,7 +121,8 @@ Preds *combine_preds(Preds *to, Preds *from)
   assert(to->d == from->d); 
   assert(to->mult == from->mult);
   Preds *preds = new_preds(to->XX, to->nn, to->n, to->d, NULL, (to->R + from->R)*to->mult, 
-			   (bool) to->Ds2x, (bool) to->improv, to->mult);
+			   (bool) ((to->Zps2!=NULL) || (to->ZZs2!=NULL)), (bool) to->Ds2x, 
+			   (bool) to->improv, to->mult);
   import_preds(preds, 0, to);
   import_preds(preds, to->R, from);
   delete_preds(to);
@@ -661,6 +665,7 @@ double* update_prior(iTemps *itemps)
   return itemps->tprobs;
 }
 
+
 /*
  * lambda_ess:
  *
@@ -697,13 +702,13 @@ double lambda_ess(iTemps *itemps, double *w, double *itemp, unsigned int n)
       }
     }
 
-    copy_sub_vector(wi, p, w, len);
+    //copy_sub_vector(wi, p, w, len);
     //myprintf(stderr, "%d: itemp=%g, len=%d, ess=%g, sw=%g\n", 
     //i, itemps->itemps[i], len, ei, sumv(wi, len));
     free(wi);
     free(p);
-    tlen += len;
-    tess += len * ei;
+    //tlen += len;
+    //tess += len * ei;
   }
   //myprintf(stderr, "total len=%d, ess=%g\n", tlen, tess);
 

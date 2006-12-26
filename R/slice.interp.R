@@ -27,8 +27,8 @@ function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, method="loess", gridlen=40,
          span=0.05, ...)
 {
   # check and/or default the projection parameter p
-  if(is.null(NULL)) p <- 1:length(x)
-  if(sum(p) == 0 || length(p) != length(x))
+  if(is.null(p)) p <- 1:length(x)
+  if(sum(p) == 0) # || length(p) != length(x))
     stop("invalid p (third arg: value unknown)")
 
   # make projection

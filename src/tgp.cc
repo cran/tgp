@@ -50,7 +50,7 @@ void tgp(int* state_in,
 	 double *X_in, int *n_in, int *d_in, double *Z_in, double *XX_in, int *nn_in,
 	 int *trace_in, int *BTE_in, int* R_in, int* linburn_in, double *params_in, 
 	 double *ditemps_in, int *verb_in, double *dtree_in, double* hier_in, 
-	 int *krige_in,
+	 int *MAP_in,
 
 	 /* outputs to R */
 	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, double *ZZ_km_out,
@@ -67,16 +67,17 @@ void tgp(int* state_in,
   /* copy the input parameters to the tgp class object where all the MCMC 
      work gets done */
   tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE_in[0], BTE_in[1], BTE_in[2], *R_in, 
-		 *linburn_in, (bool) (Zp_mean_out!=NULL), (bool) (Ds2x_out!=NULL), 
+		 *linburn_in, (bool) (Zp_mean_out!=NULL), 
+		 (bool) ((Zp_ks2_out!=NULL) || (ZZ_ks2_out!=NULL)), (bool) (Ds2x_out!=NULL), 
 		 (bool) (improv_out != NULL), X_in, Z_in, XX_in, params_in, ditemps_in, 
 		 (bool) *trace_in, *verb_in, dtree_in, hier_in);
 
   /* tgp MCMC rounds are done here */
-  if(*krige_in) tgpm->Krige();
+  if(*MAP_in) tgpm->Predict();
   else tgpm->Rounds();
 
   /* gather the posterior predictive statistics from the MCMC rounds */
-  tgpm->GetStats(!((bool)*krige_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, 
+  tgpm->GetStats(!((bool)*MAP_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, 
 		 Zp_q_out, ZZ_q_out, Zp_s2_out, ZZ_s2_out, Zp_ks2_out, ZZ_ks2_out, 
 		 Zp_q1_out, Zp_median_out, Zp_q2_out, ZZ_q1_out, ZZ_median_out, 
 		 ZZ_q2_out, Ds2x_out, improv_out, ess_out);
@@ -101,10 +102,10 @@ void tgp(int* state_in,
  * function in order to get everything ready for MCMC rounds.
  */
 
-Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, 
-	 int R, int linburn, bool pred_n, bool delta_s2, bool improv, double *X, 
-	 double *Z, double *XX, double *dparams, double *ditemps, bool trace, 
-	 int verb, double *dtree, double *hier)
+Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
+	 int linburn, bool pred_n, bool krige, bool delta_s2, bool improv, 
+	 double *X,  double *Z, double *XX, double *dparams, double *ditemps, 
+	 bool trace, int verb, double *dtree, double *hier)
 {
   itime = time(NULL);
 	
@@ -129,6 +130,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E,
   this->R = R;
   this->linburn = linburn;
   this->pred_n = pred_n;
+  this->krige = krige;
   this->delta_s2 = delta_s2;
   this->improv = improv;
   assert(ditemps[0] >= 0);
@@ -200,7 +202,7 @@ void Tgp::Init(double *tree, unsigned int ncol, double *hier)
   model->Outfile(stdout, verb);
   
   /* structure for accumulating predictive information */
-  cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), delta_s2, improv, E);
+  cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), krige, delta_s2, improv, E);
   if(params->BasePrior()->BaseModel() == MR_GP)
     { for(unsigned int i=0; i<nn; i++) cumpreds->XX[i][0] = XX[i][0]; }
 
@@ -230,7 +232,7 @@ void Tgp::Rounds(void)
     model->Burnin(B, state);
 	
     /* do the MCMC rounds B,...,T */
-    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, delta_s2, improv, E);
+    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, krige, delta_s2, improv, E);
     model->Sample(preds, T-B, state);
 
     /* print tree statistics */
@@ -244,8 +246,10 @@ void Tgp::Rounds(void)
        and reset the inverse-temperatre probabilities */
     if(R > 1) {
       if(verb >= 1) myprintf(stdout, "finished repetition %d of %d\n", i+1, R);
-      model->cut_root();
-      dupv(itemps->tprobs, model->update_tprobs(), itemps->n);
+
+      /* cut_root unless importance tempering; otherwise update tprobs */
+      if(itemps->n == 1) model->cut_root();
+      else dupv(itemps->tprobs, model->update_tprobs(), itemps->n);
     }
   }
 
@@ -265,13 +269,13 @@ void Tgp::Rounds(void)
   if(trace) {
     if(nn > 0) {
       matrix_to_file("trace_ZZ_1.out", cumpreds->ZZ, cumpreds->R, nn);
-      matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
-      matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
+      if(cumpreds->ZZm) matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
+      if(cumpreds->ZZs2) matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
     }
     if(pred_n) {
       matrix_to_file("trace_Zp_1.out", cumpreds->Zp, cumpreds->R, n);
-      matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
-      matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
+      if(cumpreds->Zpm) matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
+      if(cumpreds->Zps2) matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
     }
     if(improv) matrix_to_file("trace_improv_1.out", cumpreds->improv, cumpreds->R, nn);
 
@@ -282,13 +286,13 @@ void Tgp::Rounds(void)
 
 
 /*
- * Krige: 
+ * SampleMAP: 
  *
  * Only do sampling from the posterior predictive distribution;
  * that is, don't update GP or Tree
  */
 
-void Tgp::Krige(void)
+void Tgp::Predict(void)
 {
   if(R > 1) warning("R=%d (>0) not necessary for Kriging", R);
 
@@ -297,8 +301,8 @@ void Tgp::Krige(void)
     itime = my_r_process_events(itime);
 
     /* do the MCMC rounds B,...,T */
-    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, delta_s2, improv, E);
-    model->Krige(preds, T-B, state);
+    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, krige, delta_s2, improv, E);
+    model->Predict(preds, T-B, state);
 
     /* accumulate predictive information */
     import_preds(cumpreds, preds->R * i, preds);		
@@ -329,13 +333,13 @@ void Tgp::Krige(void)
   if(trace) {
     if(nn > 0) {
       matrix_to_file("trace_ZZ_1.out", cumpreds->ZZ, cumpreds->R, nn);
-      matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
-      matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
+      if(cumpreds->ZZm) matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
+      if(cumpreds->ZZs2) matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
     }
     if(pred_n) {
       matrix_to_file("trace_Zp_1.out", cumpreds->Zp, cumpreds->R, n);
-      matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
-      matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
+      if(cumpreds->Zpm) matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
+      if(cumpreds->Zps2) matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
     }
     if(improv) matrix_to_file("trace_improv_1.out", cumpreds->improv, cumpreds->R, nn);
   }
@@ -384,14 +388,14 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean,
     wmean_of_columns(Zp_mean, cumpreds->Zp, cumpreds->R, n, w);
 
     /* kriging mean */
-    wmean_of_columns(Zp_km, cumpreds->Zpm, cumpreds->R, n, w);
+    if(Zp_km) wmean_of_columns(Zp_km, cumpreds->Zpm, cumpreds->R, n, w);
 
     /* variance (computed from samples Zp) */
     wmean_of_columns_f(Zp_s2, cumpreds->Zp, cumpreds->R, n, w, sq);
     for(unsigned int i=0; i<n; i++) Zp_s2[i] -= sq(Zp_mean[i]);
 
     /* kriging variance */
-    wmean_of_columns(Zp_ks2, cumpreds->Zps2, cumpreds->R, n, w);
+    if(Zp_ks2) wmean_of_columns(Zp_ks2, cumpreds->Zps2, cumpreds->R, n, w);
 
     /* quantiles and medians */
     Q[0] = Zp_q1; Q[1] = Zp_median; Q[2] = Zp_q2;
@@ -406,14 +410,14 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean,
     wmean_of_columns(ZZ_mean, cumpreds->ZZ, cumpreds->R, nn, w);
 
     /* kriging mean */
-    wmean_of_columns(ZZ_km, cumpreds->ZZm, cumpreds->R, nn, w);
+    if(ZZ_km) wmean_of_columns(ZZ_km, cumpreds->ZZm, cumpreds->R, nn, w);
 
     /* variance (computed from samples ZZ) */
     wmean_of_columns_f(ZZ_s2, cumpreds->ZZ, cumpreds->R, nn, w, sq);
     for(unsigned int i=0; i<nn; i++) ZZ_s2[i] -= sq(ZZ_mean[i]);
 
     /* kriging variance */
-    wmean_of_columns(ZZ_ks2, cumpreds->ZZs2, cumpreds->R, nn, w);
+    if(ZZ_ks2) wmean_of_columns(ZZ_ks2, cumpreds->ZZs2, cumpreds->R, nn, w);
 
     /* quantiles and medians */
     Q[0] = ZZ_q1; Q[1] = ZZ_median; Q[2] = ZZ_q2;
@@ -425,9 +429,14 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean,
       wmean_of_columns(Ds2x, cumpreds->Ds2x, cumpreds->R, cumpreds->nn, w);
     }
 
-    /* expected global optimum (minima) */
+    /* improv (minima) */
     if(improv) {
       assert(cumpreds->improv);
+      /* q[0] = 0.95;
+      Q[0] = improv;
+      quantiles_of_columns(Q, q, 1, cumpreds->improv, cumpreds->R, cumpreds->nn, w);
+      vector_to_file("minimprov.txt", improv, cumpreds->nn); */
+      // some stuff for tgp with oracle.  Sorry bobby, 'tis less than elegent!
       wmean_of_columns(improv, cumpreds->improv, cumpreds->R, cumpreds->nn, w);
     }
   }
@@ -511,9 +520,10 @@ void Tgp::Print(FILE *outfile)
   /* print predictive statistic types */
   if(pred_n || delta_s2 || improv) myprintf(stdout, "preds:");
   if(pred_n) myprintf(stdout, " data");
+  if(krige) myprintf(stdout, " krige");
   if(delta_s2) myprintf(stdout, " ALC");
   if(improv) myprintf(stdout, " IMPROV");
-  if(pred_n || delta_s2 || improv) myprintf(stdout, "\n");
+  if(pred_n || krige || delta_s2 || improv) myprintf(stdout, "\n");
   myflush(stdout);
 
   /* print the model, uses the internal model 

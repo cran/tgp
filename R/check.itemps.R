@@ -87,7 +87,7 @@ function(itemps, params)
       warning("recommend params$bprior == \"b0\" for itemps[,1] != 1");
 
     ## checks for tprobs
-    if(prod(tprobs > 0)!=1) stop("all probs in itemps[,1] should be positive")
+    if(prod(tprobs > 0)!=1) stop("all probs in itemps[,2] should be positive")
 
     return(data.frame(itemps=itemps, tprobs=tprobs))
   }

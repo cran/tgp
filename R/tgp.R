@@ -23,8 +23,8 @@
 
 
 "tgp" <-
-function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
-	linburn=FALSE, params=NULL, itemps=NULL, pred.n=TRUE, Ds2x=FALSE,
+function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
+	params=NULL, itemps=NULL, pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
         improv=FALSE, trace=FALSE, verb=1, rmfiles=TRUE)
 {
   ## (quitely) double-check that tgp is clean before-hand
@@ -63,7 +63,11 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
                     "\t Try reducing nrow(XX)", sep=""), immediate.=TRUE)
   }
 
-  ## check that improv and Ds2x is true or false
+  ## check that pred.n, krige, improv and Ds2x is true or false
+  if(length(pred.n) != 1 || !is.logical(pred.n))
+    stop("pred.n should be TRUE or FALSE")
+  if(length(krige) != 1 || !is.logical(krige))
+    stop("krige should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
   if(length(improv) != 1 || !is.logical(improv))
@@ -115,19 +119,19 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE,
            verb = as.integer(verb),
            tree = as.double(NULL),
            hier = as.double(NULL),
-           krige = as.integer(0),
+           MAP = as.integer(0),
 
            ## begin outputs
            Zp.mean = double(pred.n * n),
            ZZ.mean = double(nnprime),
-           Zp.km = double(pred.n * n),
-           ZZ.km = double(nnprime),
+           Zp.km = double(krige * pred.n * n),
+           ZZ.km = double(krige * nnprime),
            Zp.q = double(pred.n * n),
            ZZ.q = double(nnprime),
            Zp.s2 = double(pred.n * n),
            ZZ.s2 = double(nnprime),
-           Zp.ks2 = double(pred.n * n),
-           ZZ.ks2 = double(nnprime),
+           Zp.ks2 = double(krige * pred.n * n),
+           ZZ.ks2 = double(krige * nnprime),
            Zp.q1 = double(pred.n * n),
            Zp.med = double(pred.n * n),
            Zp.q2 = double(pred.n * n),

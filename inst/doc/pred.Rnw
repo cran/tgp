@@ -54,8 +54,7 @@ Finally, the MAP parameterization can be used as a jumping-off point
 for more sampling from the joint posterior and posterior predictive
 distribution.
 <<>>=
-out2 <- predict(out, XX, pred.n=FALSE, BTE=c(0,2000,2),
-                krige=FALSE)
+out2 <- predict(out, XX, pred.n=FALSE, BTE=c(0,2000,2), MAP=FALSE)
 @ 
 Since the return--value of a {\tt predict.tgp} call is also a
 \verb!"tgp"!--class object the process can be applied iteratively.

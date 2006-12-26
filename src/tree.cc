@@ -411,15 +411,15 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ,
   /* copy data-pred stats to the right place in their respective full matrices */
   if(zp) { 
     copy_p_vector(Zp, p, zp, n); free(zp); 
-    copy_p_vector(Zpm, p, zpm, n); free(zpm); 
-    copy_p_vector(Zps2, p, zps2, n); free(zps2); 
+    if(Zpm) { copy_p_vector(Zpm, p, zpm, n); free(zpm); }
+    if(Zps2) { copy_p_vector(Zps2, p, zps2, n); free(zps2); }
   }
 
   /* similarly, copy new predictive location stats */ 
   if(zz) { 
     copy_p_vector(ZZ, pp, zz, nn); free(zz); 
-    copy_p_vector(ZZm, pp, zzm, nn); free(zzm); 
-    copy_p_vector(ZZs2, pp, zzs2, nn); free(zzs2); 
+    if(ZZm) { copy_p_vector(ZZm, pp, zzm, nn); free(zzm); }
+    if(ZZs2) { copy_p_vector(ZZs2, pp, zzs2, nn); free(zzs2); }
   }
 
   /* similarly, copy ds2x predictive stats */

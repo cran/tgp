@@ -23,18 +23,18 @@
 
 
 "tgp.trees" <-
-function(out, which=NULL, main=NULL, ...)
+function(out, heights=NULL, main=NULL, ...)
 {
   if(require(maptree) == FALSE)
     stop("library(maptree) required for tree plotting\n");
   
-  if(is.null(which)) which <- 1:length(out$trees)
+  if(is.null(heights)) heights <- out$posts$height
   
-  howmany <- length(which)
+  howmany <- length(heights)
   
   if(howmany > 1) {
     h <- howmany
-    if(sum(out$posts$height[which] == 1) >= 1) { h <- h - 1; }
+    if(sum(out$posts$height[h] == 1) >= 1) { h <- h - 1; }
     rows <- floor(sqrt(h)); cols <- floor(h / rows)
     while(rows * cols < h) cols <- cols + 1
     par(mfrow=c(rows, cols), bty="n")
@@ -46,8 +46,9 @@ function(out, which=NULL, main=NULL, ...)
   }
   
   for(j in 1:howmany) { 
-    if(is.null(out$trees[[which[j]]])) next;
-    tgp.plot.tree(out$trees[[which[j]]], names, out$posts[which[j],], main=main, ...); 
+    if(is.null(out$trees[[heights[j]]])) next;
+    p <- (1:length(out$posts$height))[out$posts$height == heights[j]]
+    tgp.plot.tree(out$trees[[heights[j]]], names, out$posts[p,], main=main, ...); 
   }
 }
 

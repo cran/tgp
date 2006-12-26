@@ -24,9 +24,9 @@
 
 "slice.image" <-
 function(x,y,p,z,xlab="x",ylab="y",main="", xlim=NULL, ylim=NULL,
-         method="loess", gridlen=40, span=0.05, ...)
+         method="loess", gridlen=40, span=0.05, col=terrain.colors(128), ...)
 {
   g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
-  image(g, col=terrain.colors(128),xlab=xlab,ylab=ylab,main=main,...)
+  image(g, col=col,xlab=xlab,ylab=ylab,main=main,...)
 }
 

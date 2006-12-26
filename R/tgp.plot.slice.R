@@ -57,15 +57,15 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
 
   ## depict the slice in terms of index variables p*
   if(length(slice$x) > 1) {
-    p <- seq(1,dim(X)[1])[apply(X[,slice$x] == slice$z, 1, prod) == 1]
-    pp <- seq(1,dim(XX)[1])[apply(XX[,slice$x] == slice$z, 1, prod) == 1]
+    p <- seq(1,nrow(X))[apply(X[,slice$x] == slice$z, 1, prod) == 1]
+    pp <- seq(1,nrow(XX))[apply(XX[,slice$x] == slice$z, 1, prod) == 1]
     pn <- seq(1,out$n)[apply(out$X[,slice$x] == slice$z, 1, prod) == 1]
     ppn <- seq(1,out$nn)[apply(out$XX[,slice$x] == slice$z, 1, prod) == 1]
   } else {
     ppn <- seq(1,out$nn)[(out$XX[,slice$x] == slice$z)]
     pn <- seq(1,out$n)[out$X[,slice$x] == slice$z]
-    p <- seq(1,dim(X)[1])[X[,slice$x] == slice$z]
-    pp <- seq(1,dim(XX)[1])[XX[,slice$x] == slice$z]
+    p <- seq(1,nrow(X))[X[,slice$x] == slice$z]
+    pp <- seq(1,nrow(XX))[XX[,slice$x] == slice$z]
   }
   
   ## check to makes sure there is actually some data in the slice
@@ -98,7 +98,7 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
     }
   } else if(pc == "pc") {	# perspactive and image plot
     if(layout == "both" || layout == "surf")
-      slice.persp(Xd.1,Xd.2,p,Z.mean,main=smain,xlab=xlab,ylab=ylab,
+      slice.persp(Xd.1,Xd.2,p,Z.mean,main=smain,xlab=xlab,ylab=ylab,zlab=zlab,
                   method=method,gridlen=gridlen,span=span,...)
     if(layout == "both" || layout == "as") {
       slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,

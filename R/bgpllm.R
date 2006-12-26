@@ -24,7 +24,7 @@
 
 "bgpllm" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep", gamma=c(10,0.2,0.7),
-         BTE=c(1000,4000,2), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, 
+         BTE=c(1000,4000,2), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE,
 	 Ds2x=FALSE, improv=FALSE, nu=1.5, trace=FALSE, verb=1, ...)
 {
   n <- dim(X)[1]
@@ -36,6 +36,6 @@ function(X, Z, XX=NULL, bprior="bflat", corr="expsep", gamma=c(10,0.2,0.7),
   params$gamma <- gamma
   params$tree <- c(0,0,params$tree[3])	# no tree
   if(corr == "matern"){ params$nu <- nu; }
-  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,Ds2x,improv,trace,verb))
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,Ds2x,improv,trace,verb))
 }
 

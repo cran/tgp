@@ -51,6 +51,7 @@ class Tgp
 
   bool linburn;          /* initialize with treed LM before burn in? */
   bool pred_n;           /* sample from posterior predictive at data locs? */
+  bool krige;            /* gather kriging statistics? */
   bool delta_s2;         /* gather ALC statistics? */
   bool improv;           /* gather IMPROV statistics? */
   
@@ -70,12 +71,12 @@ class Tgp
  public:
 
   Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
-      int linburn, bool pred_n, bool delta_s2, bool improv, double *X, double *Z, 
-      double *XX, double *dparams, double *ditemps, bool trace, int verb, 
-      double *dtree, double *hier);
+      int linburn, bool pred_n, bool krige, bool delta_s2, bool improv, 
+      double *X, double *Z, double *XX, double *dparams, double *ditemps, 
+      bool trace, int verb, double *dtree, double *hier);
   ~Tgp(void);
   void Rounds(void);
-  void Krige(void);
+  void Predict(void);
   void GetStats(bool report, double *Zp_mean, double *ZZ_mean, 
 		double *Zp_km, double *ZZ_km, double *Zp_q, double *ZZ_q, 
 		double *Zp_s2, double *ZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
