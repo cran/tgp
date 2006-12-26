@@ -714,7 +714,7 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   myprintf(OUTFILE, "r=%d", r);
 #endif
   
-  /* this is here so that the progress meter in Krige doesn't need to print
+  /* this is here so that the progress meter in SampleMap doesn't need to print
      the same tree information each time */
   if(numLeaves > 0) {
 
@@ -1101,7 +1101,10 @@ void Model::PrintBestPartitions()
 {
   FILE *BESTPARTS;
   Tree *maxt = maxPosteriors();
-  if(!maxt) maxt = t;
+  if(!maxt) {
+    warning("not enough MCMC rounds for MAP tree, using current");
+    maxt = t;
+  }
   assert(maxt);
   BESTPARTS = OpenFile("best", "parts");
   print_parts(BESTPARTS, maxt, iface_rect);
@@ -1281,13 +1284,14 @@ void Model::DrawInvTemp(void* state)
   double ru = runi(state);
   if(ru < alpha) {
     /* myprintf(stdout, "accepted itemp %g -> %g : alpha=%g, ru=%g\n", 
-       itemp_new, get_curr_itemp(itemps), alpha, ru); */
+       get_curr_itemp(itemps), itemp_new, alpha, ru);*/
     keep_new_itemp(itemps, itemp_new);
     t->NewInvTemp(itemp_new);
   } else {
     reject_new_itemp(itemps, itemp_new);
-    /* myprintf(stdout, "rejected itemp %g -> %g : alpha=%g, ru=%g\n", 
-       itemp_new, get_curr_itemp(itemps), alpha, ru); */
+    /*if(get_curr_itemp(itemps) <= 0.25) 
+          myprintf(stdout, "rejected itemp %g -> %g : alpha=%g, ru=%g\n", 
+	  get_curr_itemp(itemps), itemp_new, alpha, ru); */
   }
 }
 
@@ -1328,7 +1332,7 @@ double Model::Posterior(bool record)
  
     /* allocate the trace files for printing posteriors*/   
     if(!POSTTRACEFILE) {
-       POSTTRACEFILE = OpenFile("trace", "post");
+      POSTTRACEFILE = OpenFile("trace", "post");
       myprintf(POSTTRACEFILE, "height lpost itemp tlpost w\n");
     }
 
@@ -1386,6 +1390,7 @@ void Model::PrintPosteriors(void)
     fclose(treefile);
 
     /* add information about height and posteriors to file */
+    assert(i+1 == posteriors->trees[i]->Height());
     myprintf(postsfile, "%d %g ", posteriors->trees[i]->Height(), posteriors->posts[i]);
     
     /* add prior parameter trace information to the posts file */
@@ -1517,13 +1522,13 @@ void Model::Sample(Preds *preds, unsigned int R, void *state)
 
 
 /*
- * Krige:
+ * Predict:
  *
  * simply predict in rounds conditional on the (MAP) parameters theta;
  * i.e., don't draw base (GP) parameters or modify tree
  */
 
-void Model::Krige(Preds *preds, unsigned int R, void *state)
+void Model::Predict(Preds *preds, unsigned int R, void *state)
 {
   if(R == 0) return;
   assert(preds);

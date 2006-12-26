@@ -10,7 +10,7 @@
   and slicing.
 }
 \usage{
-plot.tgp(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
+\method{plot}{tgp}(x, pparts = TRUE, proj = NULL, slice = NULL, map = NULL,
          as = NULL, center = "mean", layout = "both", main = NULL,
          xlab = NULL, ylab = NULL, zlab = NULL, pc = "pc",
          method = "loess", gridlen = 40, span = 0.1, ...)

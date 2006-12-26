@@ -24,8 +24,8 @@
 
 "btlm" <-
 function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2), 
-	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, Ds2x=FALSE, improv=FALSE, 
-	trace=FALSE, verb=1, ...)
+	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, Ds2x=FALSE, 
+	improv=FALSE, trace=FALSE, verb=1, ...)
 {
   n <- nrow(X)
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
@@ -34,6 +34,6 @@ function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2),
   params$bprior <- bprior
   params$tree <- c(tree,params$tree[3])
   params$gamma <- c(-1,0.2,0.7)	# no llm
-  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,Ds2x,improv,trace,verb))
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,Ds2x,improv,trace,verb))
 }
 

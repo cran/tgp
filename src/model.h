@@ -98,7 +98,7 @@ class Model
   void Linburn(unsigned int B, void *state);
   void Burnin(unsigned int B, void *state);
   void Sample(Preds *preds, unsigned int R, void *state);
-  void Krige(Preds *preds, unsigned int R, void *state);
+  void Predict(Preds *preds, unsigned int R, void *state);
   
   /* tree operations and modifications */
   bool modify_tree(void *state);

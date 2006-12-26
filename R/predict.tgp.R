@@ -23,8 +23,8 @@
 
 
 "predict.tgp" <-
-function(object, XX=NULL, BTE=c(0,1,1), pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
-         improv=FALSE, trace=FALSE, verb=0, ...)
+function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
+         Ds2x=FALSE, improv=FALSE, trace=FALSE, verb=0, ...)
 {
   ## (quitely) double-check that tgp is clean before-hand
   tgp.cleanup(message="NOTICE", verb=verb, rmfile=TRUE);
@@ -44,7 +44,13 @@ function(object, XX=NULL, BTE=c(0,1,1), pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
     if(ncol(XX) != object$d) stop("mismatched column dimension of object$X and XX");
   }
 
-  ## check that improv and Ds2x is true or false
+  ## check that pred.n, krige, MAP, improv and Ds2x is true or false
+  if(length(pred.n) != 1 || !is.logical(pred.n))
+    stop("pred.n should be TRUE or FALSE")
+  if(length(krige) != 1 || !is.logical(krige))
+    stop("krige should be TRUE or FALSE")
+  if(length(MAP) != 1 || !is.logical(MAP))
+    stop("MAP should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
   if(length(improv) != 1 || !is.logical(improv))
@@ -65,7 +71,7 @@ function(object, XX=NULL, BTE=c(0,1,1), pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
 
   ## get infor about the tree
   m <- which.max(object$posts$lpost)
-  t2c <- tree2c(object$trees[[m]])
+  t2c <- tree2c(object$trees[[object$posts$height[m]]])
   
   # RNG seed
   state <- sample(seq(0,999), 3)
@@ -83,26 +89,26 @@ function(object, XX=NULL, BTE=c(0,1,1), pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
            nn = as.integer(nn),
            trace = as.integer(trace),
            BTE = as.integer(BTE),
-           R = as.integer(1),
+           R = as.integer(R),
            linburn = as.integer(FALSE),
            dparams = as.double(object$dparams),
            itemps = as.double(c(1, 1, 1)),
            verb = as.integer(verb),
            dtree = as.double(c(ncol(t2c),t(t2c))),
            dhier = as.double(object$posts[m,3:ncol(object$posts)]),
-           krige = as.integer(krige),
+           MAP = as.integer(MAP),
            
            ## begin outputs
            Zp.mean = double(pred.n * object$n),
            ZZ.mean = double(nnprime),
-           Zp.km = double(pred.n * object$n),
-           ZZ.km = double(nnprime),
+           Zp.km = double(krige * pred.n * object$n),
+           ZZ.km = double(krige * nnprime),
            Zp.q = double(pred.n * object$n),
            ZZ.q = double(nnprime),
            Zp.s2 = double(pred.n * object$n),
            ZZ.s2 = double(nnprime),
-           Zp.ks2 = double(pred.n * object$n),
-           ZZ.ks2 = double(nnprime),
+           Zp.ks2 = double(krige * pred.n * object$n),
+           ZZ.ks2 = double(krige * nnprime),
            Zp.q1 = double(pred.n * object$n),
            Zp.med = double(pred.n * object$n),
            Zp.q2 = double(pred.n * object$n),

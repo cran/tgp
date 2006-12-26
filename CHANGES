@@ -1,3 +1,25 @@
+1.2-2 (26 Dec 2006)
+-----
+
+slice.interp bugs fixed (is.null(NULL) and plotting of
+axis labels) and tick marks added
+
+added R argument to predict.tgp and changed the krige
+argument to be called MAP
+
+added new krige argument to b* and predict.tgp to allow
+the user to control whether Z*k* kriging samples are to
+be obtained (possibly saving on memory)
+
+bug involving the order of trees read from files in the
+tgp.get.trees function is fixed; as a result the $trees
+output field in "tgp"-class objects is listed by height
+and so may contain NULL entries
+
+documented plot.tgp and predict.tgp with the method
+markup
+
+
 1.2-1 (03 Dec 2006)
 -----
 

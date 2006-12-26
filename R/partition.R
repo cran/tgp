@@ -26,7 +26,7 @@
 function(X, out)
 {
   m <- which.max(out$posts$lpost)
-  tree <- out$trees[[m]]
+  tree <- out$trees[[out$posts$height[m]]]
   
   return(tgp.partition(X, tree, 1))
 }

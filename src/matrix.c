@@ -301,6 +301,8 @@ void delete_matrix(double** m)
 void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
 {
   int i,j;
+  assert(outfile);
+  if(n > 0 && col > 0) assert(M);
   for(i=0; i<n; i++) {
     for(j=0; j<col; j++) {
 #ifdef DEBUG
@@ -323,7 +325,8 @@ void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
 void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile)
 {
   int i,j;
-  assert(M);
+  assert(outfile);
+  if(n > 0 && col > 0) assert(M);
   for(i=0; i<col; i++) {
     for(j=0; j<n; j++) {
       if(j==n-1) myprintf(outfile, "%g\n", M[j][i]);

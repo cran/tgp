@@ -13,9 +13,9 @@
 }
 
 \usage{
-predict.tgp(object, XX = NULL, BTE = c(0, 1, 1), pred.n = TRUE,
-            krige = TRUE, Ds2x = FALSE, improv = FALSE,
-            trace = FALSE, verb = 0, ...)
+\method{predict}{tgp}(object, XX = NULL, BTE = c(0, 1, 1), R = 1,
+            MAP = TRUE, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
+            improv = FALSE, trace = FALSE, verb = 0, ...)
 }
 
 \arguments{
@@ -31,17 +31,23 @@ predict.tgp(object, XX = NULL, BTE = c(0, 1, 1), pred.n = TRUE,
     at round B, stopping at T. The default \code{BTE=c(0,1,1)} is
     specified to give the kriging means and variances as outputs, plus
     one sample from the posterior predictive distribution}
-  \item{pred.n}{\code{TRUE} (default) value results in prediction at
-	the inputs \code{X}; \code{FALSE} 
-  	skips prediction at \code{X} resulting in a faster implementation}
-  \item{krige}{ When \code{TRUE} (default) predictive data (i.e.,
+  \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds,
+    default \code{R=1} is no restarts}
+  \item{MAP}{ When \code{TRUE} (default) predictive data (i.e.,
 	kriging mean and variance estimates, and samples from the
 	posterior predictive distribution) are obtained for the
 	\emph{fixed} MAP model encoded in \code{object}.  Otherwise,
-	when \code{krige=FALSE} sampling from the joint posterior
+	when \code{MAP=FALSE} sampling from the joint posterior
 	of the model parameters (i.e., tree and GPs) and the posterior
 	predictive distribution are obtained starting from the MAP model and
 	proceeding just as the \code{b*} functions}
+  \item{pred.n}{\code{TRUE} (default) value results in prediction at
+	the inputs \code{X}; \code{FALSE} 
+  	skips prediction at \code{X} resulting in a faster
+	implementation}
+  \item{krige}{\code{TRUE} (default) value results in collection of kriging
+	means and variances at predictive (and/or data) locations; \code{FALSE} 
+  	skips the gathering of kriging statistics giving a savings in storage}
   \item{Ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
         computation of expected reduction in uncertainty calculations at the
         \code{X} locations, which can be used for adaptive sampling;
@@ -68,13 +74,13 @@ predict.tgp(object, XX = NULL, BTE = c(0, 1, 1), pred.n = TRUE,
   While this function was designed with prediction in mind, it is
   actually far more general.  It allows a continuation of
   MCMC sampling where the \code{b*} function left off (when
-  \code{krige=FALSE}) with a possibly new set of predictive locations
+  \code{MAP=FALSE}) with a possibly new set of predictive locations
   \code{XX}.  The intended use of this function is to obtain quick
   kriging-style predictions for a previously-fit MAP estimate
   (contained in a \code{"tgp"}-class object)
   on a new set of predictive locations \code{XX}.  However,
   it can also be used simply to extend the search for an MAP model
-  when \code{krige=FALSE}, \code{pred.n=FALSE}, and \code{XX=NULL}
+  when \code{MAP=FALSE}, \code{pred.n=FALSE}, and \code{XX=NULL}
 }
 
 \note{
@@ -140,7 +146,7 @@ plot(out.p)
 
 ## use the MAP as a jumping-off point for more sampling
 out2 <- predict(out, XX, pred.n=FALSE, BTE=c(0,2000,2),
-                krige=FALSE, verb=1)
+                MAP=FALSE, verb=1)
 plot(out2)
 
 ## (generally you would not want to remove the file)

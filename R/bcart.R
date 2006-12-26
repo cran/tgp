@@ -24,10 +24,10 @@
 
 "bcart" <-
 function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2), 
-	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, Ds2x=FALSE, improv=FALSE, 
+	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, Ds2x=FALSE, improv=FALSE, 
 	trace=FALSE, verb=1, ...)
 {
   split <- strsplit(bprior, "-")
   if(split[[1]][1] != "cart") bprior <- paste("cart-", split[[1]][1], sep="")
-  return(btlm(X,Z,XX,bprior,tree,BTE,R,m0r1,itemps,pred.n,Ds2x,improv,trace,verb,...))
+  return(btlm(X,Z,XX,bprior,tree,BTE,R,m0r1,itemps,pred.n,krige,Ds2x,improv,trace,verb,...))
 }

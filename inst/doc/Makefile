@@ -21,7 +21,7 @@ moto.ps: tgp.dvi
 	dvips -Pwww -pp 23-28 -t letter tgp -o moto.ps
 
 fried.ps: tgp.dvi
-	dvips -Pwww -pp 28-30 -t letter tgp -o fried.ps
+	dvips -Pwww -pp 28-29 -t letter tgp -o fried.ps
 
 as.ps: tgp.dvi
 	dvips -Pwww -pp 30-33 -t letter tgp -o as.ps

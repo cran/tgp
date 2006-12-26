@@ -25,18 +25,19 @@
 "btgp" <-
 function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.5,2), 
 	BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE, itemps=NULL,
-	pred.n=TRUE, Ds2x=FALSE, improv=FALSE, nu=1.5, trace=FALSE, verb=1, ...)
-	##base="gp", ...)
+	pred.n=TRUE, krige=TRUE, Ds2x=FALSE, improv=FALSE, nu=1.5, trace=FALSE, 
+	verb=1
+	, ...)#, base="gp", ...)
 {
   n <- nrow(X)
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
   else { d <- ncol(X) }
-  params <- tgp.default.params(d+1, ...)#base=base, ...)
+  params <- tgp.default.params(d+1, ...)#, base=base, ...)
   params$bprior <- bprior
   params$corr <- corr
   params$tree <- c(tree,params$tree[3])
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu<-nu
-  return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,Ds2x,improv,trace,verb))
+  return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,Ds2x,improv,trace,verb))
 }
 

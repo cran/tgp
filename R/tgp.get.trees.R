@@ -33,18 +33,21 @@ function(X, rmfiles=TRUE)
   ## for each tree file
   for(i in 1:length(tree.files)) {
 
+    ## grab the height from the filename
+    h <- as.numeric(strsplit(tree.files[i], "[_.]")[[1]][3])
+    
     ## read it in, then remove it
-    trees[[i]] <- read.table(tree.files[i], header=TRUE)
+    trees[[h]] <- read.table(tree.files[i], header=TRUE)
     if(rmfiles) unlink(tree.files[i])
 
     ## correct the precision of the val (split) locations
     ## by replacing them with the closest X[,var] location
-    if(nrow(trees[[i]]) == 1) next;
-    nodes <- (1:length(trees[[i]]$var))[trees[[i]]$var != "<leaf>"]
+    if(nrow(trees[[h]]) == 1) next;
+    nodes <- (1:length(trees[[h]]$var))[trees[[h]]$var != "<leaf>"]
     for(j in 1:length(nodes)) {
-	col <- as.numeric(as.character(trees[[i]]$var[nodes[j]])) + 1
-      m <- which.min(abs(X[,col] - trees[[i]]$val[nodes[j]]))
-      trees[[i]]$val[nodes[j]] <- X[m,col]
+	col <- as.numeric(as.character(trees[[h]]$var[nodes[j]])) + 1
+      m <- which.min(abs(X[,col] - trees[[h]]$val[nodes[j]]))
+      trees[[h]]$val[nodes[j]] <- X[m,col]
     }          
   }
   

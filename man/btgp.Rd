@@ -16,34 +16,35 @@
 \usage{
 blm(X, Z, XX = NULL, bprior = "bflat", BTE = c(1000, 4000, 3), 
 	R = 1, m0r1 = FALSE, itemps = NULL, pred.n = TRUE, 
-	Ds2x = FALSE, improv = FALSE, trace = FALSE, 
+	krige = TRUE, Ds2x = FALSE, improv = FALSE, trace = FALSE, 
 	verb = 1, ...)
 btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, Ds2x = FALSE, improv=FALSE, 
-	trace = FALSE, verb = 1, ...)
+	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
+        improv = FALSE, trace = FALSE, verb = 1, ...)
 bcart(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, Ds2x = FALSE, improv=FALSE, 
-	trace = FALSE, verb = 1, ...)
+	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
+        improv=FALSE, trace = FALSE, verb = 1, ...)
 bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, Ds2x = FALSE, 
+	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE, 
 	improv = FALSE, nu = 1.5, trace = FALSE, verb = 1, ...)
 bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
-	m0r1 = FALSE, itemps = NULL, pred.n = TRUE, Ds2x = FALSE,
-        improv = FALSE, nu = 1.5, trace = FALSE, verb = 1, ...)
+	m0r1 = FALSE, itemps = NULL, pred.n = TRUE, krige = TRUE,
+        Ds2x = FALSE, improv = FALSE, nu = 1.5, trace = FALSE,
+        verb = 1, ...)
 btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.5, 2), BTE = c(2000, 7000, 2), R = 1, 
 	m0r1 = FALSE, linburn = FALSE, itemps = NULL, 
-	pred.n = TRUE, Ds2x = FALSE, improv = FALSE, nu = 1.5, 
-	trace = FALSE, verb = 1, ...)
+	pred.n = TRUE, krige = TRUE, Ds2x = FALSE, improv = FALSE,
+        nu = 1.5, trace = FALSE, verb = 1, ...)
 btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
 	tree = c(0.5, 2), gamma=c(10,0.2,0.7), 
 	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	linburn = FALSE, itemps = NULL, pred.n = TRUE, 
-	Ds2x = FALSE, improv = FALSE, nu = 1.5, 
+	linburn = FALSE, itemps = NULL, pred.n = TRUE,
+        krige = TRUE, Ds2x = FALSE, improv = FALSE, nu = 1.5, 
 	trace = FALSE, verb = 1, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -101,7 +102,11 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 	and \code{$tprobs}.  This is \dQuote{alpha} functionality }
   \item{pred.n}{\code{TRUE} (default) value results in prediction at
 	the inputs \code{X}; \code{FALSE} 
-  	skips prediction at \code{X} resulting in a faster implementation}
+  	skips prediction at \code{X} resulting in a faster
+	implementation}
+  \item{krige}{\code{TRUE} (default) value results in collection of kriging
+    means and variances at predictive (and/or data) locations; \code{FALSE} 
+    skips the gathering of kriging statistics giving a savings in storage}
   \item{Ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
     computation of expected reduction in uncertainty calculations at the
     \code{X} locations, which can be used for adaptive sampling;
