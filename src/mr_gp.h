@@ -82,7 +82,8 @@ class MrGp : public Base
   virtual void Combine(Base *l_mrgp, Base *r_mrgp, void *state);
   virtual void Split(Base *l_mrgp, Base *r_mrgp, void *state);
   virtual void Compute(void);
-  virtual void ToggleLinear(void);
+  virtual void ForceLinear(void);
+  virtual void ForceNonlinear(void);
   virtual bool Linear(void);
   virtual void printFullNode(void);
   virtual double Var(void);

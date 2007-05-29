@@ -28,7 +28,7 @@ function(parts, lwd=2)
   j <- 3
   if(is.null(dim(parts))) dp <- length(parts)
   else {
-    dp <- dim(parts)[1]
+    dp <- nrow(parts)
     parts <- parts[,1]
   }
   is <- seq(2, dp, by=4)

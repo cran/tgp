@@ -1,3 +1,33 @@
+Coming in version 1.3
+---------------------
+
+multi-resolution and calibration tgp
+
+importance tempering
+
+Latin hypercube sampling with respect to a Beta 
+distribution
+
+moved most of the reading of paramters out of the Tgp
+constructor and into Tgp::Init so that tgp_cleanup() can 
+safely delete the Tgp module even it it wasn't successfully 
+initialized
+
+
+1.2-5 (29 May 2007)
+-----
+
+allowing btgp to do a linburn
+
+$parts is a now a matrix, and $linburn now {TRUE,FALSE}
+
+$tree and $hier removed from tgp-class output, and
+$trace correctly removed when input trace=FALSE
+
+got rid of some hanging code fragments in documentation
+of btgp and dopt.gp
+
+
 1.2-4 (07 May 2007)
 -----
 

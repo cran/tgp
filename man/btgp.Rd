@@ -208,6 +208,7 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{Zp.q}{Vector of quantile norms \code{Zp.q2-Zp.q1}}
   \item{Zp.km}{Vector of (expected) kriging means at \code{X} locations}
   \item{Zp.ks2}{Vector of (expected) kriging variances at \code{X} locations}
+  \item{ZZ.mean}{Vector of mean predictive estimates at \code{XX} locations}
   \item{ZZ.q1}{Vector of 5\% predictive quantiles at \code{XX} locations}
   \item{ZZ.q2}{Vector of 95\% predictive quantiles at \code{XX} locations}
   \item{ZZ.q}{Vector of quantile norms \code{ZZ.q2-ZZ.q1}, used by the 
@@ -232,7 +233,10 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
     \code{XX}.  Otherwise the entry is \code{FALSE}.  See note below}
   \item{ess}{Importance tempering effective sample size (ESS).  If
     \code{itemps==NULL} this corresponds to the total number of
-    samples collected (i.e., \code{R*(BTE[2]-BTE[1])/BTE[3]}).
+    samples collected, i.e.,
+
+    \code{R*(BTE[2]-BTE[1])/BTE[3]}).
+
     Otherwise the ESS will be lower due to a non-zero coefficient of
     variation of the calculated importance tempering weights}
 }

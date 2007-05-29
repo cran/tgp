@@ -1632,20 +1632,37 @@ double* MrGp_Prior::get_b0(void)
 }
 
 
-
 /*
- * ToggleLinear:
+ * ForceLinear:
  *
- * Toggle the entire partition into and out of 
- * linear mode.  If linear, make MrGp.  If MrGp, make linear.
+ * Toggle the entire partition into LLM
  */
 
-void MrGp::ToggleLinear(void)
+void MrGp::ForceLinear(void)
 {
-  corr->ToggleLinear();
-  Update(X, n, col, Z);
-  Compute();
+  if(!Linear()) {
+    corr->ToggleLinear();
+    Update(X, n, col, Z);
+    Compute();
+  }
 }
+
+
+/*
+ * ForceNonlinear:
+ *
+ * Toggle the entire partition into MrGP
+ */
+
+void MrGp::ForceNonlinear(void)
+{
+  if(Linear()) {
+    corr->ToggleLinear();
+    Update(X, n, col, Z);
+    Compute();
+  }
+}
+
 
 
 /*

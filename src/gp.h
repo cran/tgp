@@ -85,7 +85,8 @@ class Gp : public Base
   virtual double FullPosterior(double itemp);
   virtual double MarginalPosterior(double itemp);
   virtual void Compute(void);
-  virtual void ToggleLinear(void);
+  virtual void ForceLinear(void);
+  virtual void ForceNonlinear(void);
   virtual bool Linear(void);
   virtual void printFullNode(void);
   virtual double Var(void);

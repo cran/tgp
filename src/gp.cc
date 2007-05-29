@@ -265,7 +265,7 @@ void Gp::ClearPred(void)
 void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
 {
   /*checks */
-  assert(this->col = d+1);
+  assert(this->col == d+1);
   assert(X && Z);
   if(F == NULL) assert(this->n == 0 && this->X == NULL && this->Z == NULL);
   else assert(this->n == n && this->X == X && this->Z == Z);
@@ -273,7 +273,7 @@ void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
  /* data assignments */
   this->X = X; this->n = n; this->Z = Z;
 
-  if(! corr->Linear()) corr->allocate_new(n);
+  if(! Linear()) corr->allocate_new(n);
   if(F == NULL) {
     F = new_matrix(this->col,n);
     X_to_F(n, X, F);
@@ -1728,17 +1728,33 @@ double* Gp_Prior::get_b0(void)
 
 
 /*
- * ToggleLinear:
+ * ForceLinear:
  *
- * Toggle the entire partition into and out of 
- * linear mode.  If linear, make Gp.  If Gp, make linear.
+ * Toggle the entire partition into Linear Model mode
  */
 
-void Gp::ToggleLinear(void)
+void Gp::ForceLinear(void)
 {
-  corr->ToggleLinear();
-  Update(X, n, col, Z);
-  Compute();
+  if(! Linear()) {
+    corr->ToggleLinear();
+    Update(X, n, col-1, Z);
+    Compute();
+  }
+}
+
+/*
+ * ForceNonlinear:
+ *
+ * Toggle the entire partition into GP mode
+ */
+
+void Gp::ForceNonlinear(void)
+{
+  if(Linear()) {
+    corr->ToggleLinear();
+    Update(X, n, col-1, Z);
+    Compute();
+  }
 }
 
 
