@@ -2086,22 +2086,32 @@ void Tree::Clear(void)
 
 
 /*
- * ToggleLinear:
+ * ForceLinear:
  *
  * make adjustments to toggle to the (limiting) linear
  * model (right now, this only makes sense for the
  * GP LLM)
  */
 
-void Tree::ToggleLinear(void)
+void Tree::ForceLinear(void)
 {
-   if(! base->Linear()) {
-      base->ToggleLinear();   
-    } else {
-      Update();
-      Compute();
-    }
+  base->ForceLinear();   
 }
+
+
+/*
+ * ForceNonlinear:
+ *
+ * make adjustments to toggle to the (limiting) linear
+ * model (right now, this only makes sense for the
+ * GP LLM)
+ */
+
+void Tree::ForceNonlinear(void)
+{
+  base->ForceNonlinear();   
+}
+
 
 
 /*

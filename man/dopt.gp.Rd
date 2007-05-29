@@ -20,7 +20,9 @@ dopt.gp(nn, X=NULL, Xcand, iter=5000, verb=0)
   	which are forced into (already in) the design}
   \item{Xcand}{ \code{data.frame}, \code{matrix} or vector of candidates 
   	from which new design points are subsampled.  Must have the same
-	dimension as \code{X}, i.e., \code{ncol(X) == ncol(Xcand)}}
+	dimension as \code{X}, i.e.,
+
+	\code{ncol(X) == ncol(Xcand)}}
   \item{iter}{number of iterations of stochastic accent algorithm,
     default \code{5000}}
   \item{verb}{positive integer indicating after how many rounds of

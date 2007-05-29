@@ -28,7 +28,7 @@ function(parts, dx=c(1,2), what=NULL, trans=matrix(c(1,0,0,1), nrow=2),
 {
   if(length(what) > 0) {
     indices <- c()
-    for(i in seq(1,dim(parts)[1],4)) {
+    for(i in seq(1,nrow(parts),4)) {
       opl <- i+2; opr <- i+3;
       if(parts[opl,what$x] == 104 && parts[opr,what$x] == 102
          && what$z >= parts[i,what$x] && what$z <= parts[i+1,what$x]) {

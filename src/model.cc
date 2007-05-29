@@ -1436,16 +1436,14 @@ Tree* Model::maxPosteriors(void)
 
 double Model::Linear(void)
 {
-  if(! base_prior->LLM()) return 0;
-	
-  unsigned int numLeaves = 1;
-  Tree **leaves = t->leavesList(&numLeaves);
-  
+  // if(! base_prior->LLM()) return 0;
+
   double gam = base_prior->ForceLinear();
 
-  for(unsigned int i=0; i<numLeaves; i++) {
-    leaves[i]->ToggleLinear();
-  }
+  unsigned int numLeaves = 1;
+  Tree **leaves = t->leavesList(&numLeaves);
+  for(unsigned int i=0; i<numLeaves; i++)
+    leaves[i]->ForceLinear();
   
   free(leaves);
   return gam;
@@ -1454,7 +1452,7 @@ double Model::Linear(void)
 
 
 /*
- * GP: (unlinearize)
+ * ResetLinear: (unlinearize)
  *
  * does not change all leaves to full GP models;
  * instead simply changes the prior gamma (from gamlin)
@@ -1464,6 +1462,14 @@ double Model::Linear(void)
 void Model::ResetLinear(double gam)
 {
   base_prior->ResetLinear(gam);
+
+  /* if LLM not allowed, then toggle GP in each of the leaves */
+  if(gam == 0) {
+    unsigned int numLeaves = 1;
+    Tree **leaves = t->leavesList(&numLeaves);
+    for(unsigned int i=0; i<numLeaves; i++)
+      leaves[i]->ForceNonlinear();
+  }
 }
 
 
@@ -1479,11 +1485,11 @@ void Model::ResetLinear(double gam)
 void Model::Linburn(unsigned int B, void *state)
 {
   double gam = Linear();
-  if(gam) {
+  //if(gam) {
     if(verb > 0) myprintf(OUTFILE, "\nlinear model init:\n");
     rounds(NULL, B, B, state);
     ResetLinear(gam);
-  }
+  //}
 }
 
 

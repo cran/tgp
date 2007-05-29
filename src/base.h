@@ -88,7 +88,8 @@ class Base
   virtual void Combine(Base *l_gp, Base *r_gp, void *state)=0;
   virtual void Split(Base *l_gp, Base *r_gp, void *state)=0;
   virtual void Compute(void)=0;
-  virtual void ToggleLinear(void)=0;
+  virtual void ForceLinear(void)=0;
+  virtual void ForceNonlinear(void)=0;
   virtual bool Linear(void)=0;
   virtual void printFullNode(void)=0;
   virtual double Var(void)=0;

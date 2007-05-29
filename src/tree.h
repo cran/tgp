@@ -153,7 +153,8 @@ class Tree
   /* global computation functions */
   void Update(void);
   void Compute(void);
-  void ToggleLinear(void);
+  void ForceLinear(void);
+  void ForceNonlinear(void);
   bool Linarea(unsigned int *sum_b, double *area) const;
   void NewInvTemp(double itemp);
 

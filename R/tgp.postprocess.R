@@ -64,7 +64,7 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
   
   ## gather information about partitions
   if(file.exists(paste("./", "best_parts_1.out", sep=""))) {
-    ll$parts <- read.table("best_parts_1.out")
+    ll$parts <- as.matrix(read.table("best_parts_1.out"))
     if(rmfiles) unlink("best_parts_1.out")
   } else { ll$parts <- NULL }
   
@@ -75,18 +75,22 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
 
   ## read the trace in the output files, and then delete them
   if(ll$trace) ll$trace <- tgp.read.traces(ll$n, ll$nn, ll$d, params$corr, ll$verb, rmfiles)
-  else ll$ltrace <- NULL
+  else ll$trace <- NULL
   
   ## store params
   ll$params <- params
 
   ## clear the verb, state, tree and MAP fields for output
   ll$verb <- NULL; ll$state <- NULL; ll$tree <- NULL; ll$MAP <- NULL; ll$nt <- NULL
-  ll$ncol <- NULL; ll$dtree <- NULL;
+  ll$ncol <- NULL; ll$hier <- NULL;
 
   ## consolidate itemps
   nt <- as.integer(ll$itemps[1])
   ll$itemps <- data.frame(itemps=ll$itemps[2:(nt+1)], tprobs=ll$itemps[(nt+2):(2*nt+1)])
+
+  ## change {0,1} to {TRUE,FALSE}
+  if(ll$linburn) ll$linburn <- TRUE
+  else ll$linburn <- FALSE
   
   ## undo mean0.range1
   if(!is.null(Zm0r1)) {

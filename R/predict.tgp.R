@@ -94,8 +94,8 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            dparams = as.double(object$dparams),
            itemps = as.double(c(1, 1, 1)),
            verb = as.integer(verb),
-           dtree = as.double(c(ncol(t2c),t(t2c))),
-           dhier = as.double(object$posts[m,3:ncol(object$posts)]),
+           tree = as.double(c(ncol(t2c),t(t2c))),
+           hier = as.double(object$posts[m,3:ncol(object$posts)]),
            MAP = as.integer(MAP),
            
            ## begin outputs
