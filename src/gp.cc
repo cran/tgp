@@ -398,6 +398,11 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
  
   unsigned int warn = 0;
 
+  /* when using beta[0]=mu prior */
+  Gp_Prior *p = (Gp_Prior*) prior;
+  unsigned int col = this->col;
+  if(p->Cart()) col = 1;  
+
   /* try to make some predictions, but first: choose LLM or Gp */
   if(corr->Linear())  {
     /* under the limiting linear */

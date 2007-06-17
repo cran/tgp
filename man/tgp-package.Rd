@@ -9,18 +9,19 @@ A Bayesian nonstationary nonparametric regression and design package
 	implementing an array of models of varying flexibility and complexity.
 }
 \details{
-This package implements Bayesian nonparametric and nonstationary regression
-with \dQuote{treed Gaussian process models}.
-The package contains functions which facilitate
+This package implements Bayesian nonstationary, semiparametric nonlinear
+regression with \dQuote{treed Gaussian process models} with jumps to the
+limiting linear model (LLM).  The package contains functions which facilitate
 inference for seven regression models of varying complexity using Markov chain
-Monte Carlo (MCMC): linear model, linear CART (Classification and Regression
-Tree), Gaussian process (GP),  GP with jumps to the limiting linear model
-(LLM), treed GP, and treed GP LLM.  R provides an interface to the C/C++
-backbone, and also provides a mechanism for graphically visualizing the results
-of inference and posterior predictive surfaces under the models.  A limited set
-of experimental design and adaptive sampling functions are also provided.
+Monte Carlo (MCMC): linear model, CART (Classification and Regression
+Tree), treed linear model, Gaussian process (GP),  GP with jumps to the LLM, 
+treed GP, and treed GP LLM.  R provides an interface to the C/C++ backbone, 
+and a serves as mechanism for graphically visualizing the results of inference 
+and posterior predictive surfaces under the models.  A limited set of 
+experimental design and adaptive sampling functions are also provided.
 
-For a complete list of functions, use \code{library(help="tgp")}.
+For a fuller overview including a complete list of functions, demos and
+vignettes, please use \code{help(package="tgp")}.
 }
 
 \author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}

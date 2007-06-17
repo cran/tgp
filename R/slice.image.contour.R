@@ -27,6 +27,6 @@ function(x,y,p,z,xlab="x",ylab="y", main="", xlim=NULL, ylim=NULL)
 {
 	g <- slice.interp(x,y,p,z,xlim,ylim)
 	image(g, col=terrain.colors(128),xlab=xlab,ylab=ylab,main=main,...)
-	contour(g, add=T,...)
+	contour(g, add=TRUE,...)
 }
 

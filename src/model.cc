@@ -1333,12 +1333,13 @@ double Model::Posterior(bool record)
     /* allocate the trace files for printing posteriors*/   
     if(!POSTTRACEFILE) {
       POSTTRACEFILE = OpenFile("trace", "post");
-      myprintf(POSTTRACEFILE, "height lpost itemp tlpost w\n");
+      myprintf(POSTTRACEFILE, "height leaves lpost itemp tlpost w\n");
     }
 
     /* write a line to the file recording the trace of the posteriors */
-    myprintf(POSTTRACEFILE, "%d %.20f %.20f %.20f %.20f\n", 
-	     t->Height(), full_post, get_curr_itemp(itemps), full_post_temp, w);
+    myprintf(POSTTRACEFILE, "%d %d %.20f %.20f %.20f %.20f\n", 
+	     t->Height(), t->numLeaves(), full_post, get_curr_itemp(itemps), 
+	     full_post_temp, w);
     myflush(POSTTRACEFILE);
   }
 

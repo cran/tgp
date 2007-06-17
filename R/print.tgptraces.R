@@ -68,9 +68,9 @@ function(x, ...)
   
   ## info about posts
   cat("5.) $post is a data frame with columns showing the following:\n")
-  cat("    log posterior ($lpost), tree height ($height), IS\n") 
-  cat("    weights ($w), tempered log posterior ($tlpost), inv-temp\n")
-  cat("    ($itemp), and weights adjusted for ESS ($wess)\n\n")
+  cat("    log posterior ($lpost), tree height ($height) and leaves\n") 
+  cat("    ($leaves), IS weights ($w), tempered log posterior ($tlpost),\n")
+  cat("    inv-temp ($itemp), and weights adjusted for ESS ($wess)\n\n")
   
   ## info about ZZ
   cat("6.) $preds is a list containing data.frames for samples from\n")
