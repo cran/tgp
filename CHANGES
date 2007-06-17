@@ -14,6 +14,15 @@ safely delete the Tgp module even it it wasn't successfully
 initialized
 
 
+1.2-6 (07 June 2007)
+-----
+
+added number of leaves to traces
+
+fixed CART bug in Gp::predict that was already handled in 
+v1.3, thanks to Taddy, but was bad in the CRAN version
+
+
 1.2-5 (29 May 2007)
 -----
 
