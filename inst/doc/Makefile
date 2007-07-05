@@ -1,6 +1,8 @@
-all: tgp.pdf linear.pdf sin.pdf exp.pdf moto.pdf fried.pdf as.pdf traces.pdf pred.pdf clean
+all: all.pdf clean
 
 all.pdf: tgp.pdf linear.pdf sin.pdf exp.pdf moto.pdf fried.pdf as.pdf traces.pdf pred.pdf
+
+PS: 	tgp.ps linear.ps sin.ps exp.ps moto.ps fried.ps as.ps traces.ps pred.ps
 
 TEX	= tgp.tex linear.tex sin.tex exp.tex moto.tex fried.tex as.tex traces.tex pred.tex
 tgp.dvi:  ${TEX}
@@ -28,10 +30,10 @@ as.ps: tgp.dvi
 	dvips -Pwww -pp 32-34 -t letter tgp -o as.ps
 
 traces.ps: tgp.dvi
-	dvips -Pwww -pp 35-38 -t letter tgp -o traces.ps
+	dvips -Pwww -pp 35-41 -t letter tgp -o traces.ps
 
 pred.ps: tgp.dvi
-	dvips -Pwww -pp 35-40 -t letter tgp -o pred.ps
+	dvips -Pwww -pp 41-43 -t letter tgp -o pred.ps
 
 tgp.pdf: tgp.ps
 	ps2pdf tgp.ps
@@ -61,5 +63,5 @@ pred.pdf: pred.ps
 	ps2pdf pred.ps
 
 clean: 
-	rm -f *.log *.aux *.eps *.bak *.rel *.bbl *.blg \
-		*.dvi *.ps ${TEX} *-*.pdf
+	rm -f *.log *.aux *-*.eps *.bak *.rel *.bbl *.blg \
+		*.dvi ${TEX} *-*.pdf ${PS}

@@ -677,8 +677,8 @@ double* update_prior(iTemps *itemps)
 double lambda_ess(iTemps *itemps, double *w, double *itemp, unsigned int n)
 {
   unsigned int len;
-  unsigned int tlen = 0;
-  double tess = 0;
+  // unsigned int tlen = 0;
+  // double tess = 0;
   for(unsigned int i=0; i<itemps->n; i++) {
     int *p = find(itemp, n, EQ, itemps->itemps[i], &len);
     double *wi = new_sub_vector(p, w, len);

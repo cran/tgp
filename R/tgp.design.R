@@ -23,7 +23,7 @@
 
 
 "tgp.design" <-
-function(howmany, Xcand, out)
+function(howmany, Xcand, out, iter=5000, verb=0)
 {
   ## get partitioned candidates and dat locaitons
   Xcand.parts <- partition(Xcand, out)
@@ -39,7 +39,7 @@ function(howmany, Xcand, out)
     nn <- ceiling(howmany*(dim(Xcand.parts[[i]])[1])/(dim(Xcand)[1]))
     cat(paste("dopt.gp (", i, ") choosing ", nn, " new inputs from ", 
               dim(Xcand.parts[[i]])[1], " candidates\n", sep=""))
-    dout <- dopt.gp(nn, X.parts[[i]], Xcand.parts[[i]]);
+    dout <- dopt.gp(nn, X.parts[[i]], Xcand.parts[[i]], iter, verb);
     XX <- rbind(XX, dout$XX)
   }
   

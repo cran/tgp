@@ -739,7 +739,7 @@ split.
 \input{tree_pic.pstex_t} 
 \caption{\footnotesize An example tree $\mathcal{T}$ with two splits,
   resulting in three regions, shown in a diagram ({\em left}) and
-  pictorially ({\em left}).  The notation $\mb{X}[:,u] < s$ represents
+  pictorially ({\em right}).  The notation $\mb{X}[:,u] < s$ represents
   a subsetting of the design matrix $\mb{X}$ by selecting the rows
   which have $u^{\mbox{\tiny th}}$ column less than $s$, i.e. columns
   $\{i: x_{iu} < s\}$, so that $\mb{X}_1$ has the rows $I_1$ of

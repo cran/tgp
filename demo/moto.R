@@ -10,12 +10,14 @@ seed <- 0; set.seed(seed)
 ### chunk number 2: 
 ###################################################
 library(MASS)
+X <- data.frame(times=mcycle[,1])
+Z <- data.frame(accel=mcycle[,2])
 
 
 ###################################################
 ### chunk number 3: 
 ###################################################
-moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
+moto.bgp <- bgp(X=X, Z=Z, m0r1=TRUE, verb=0)
 
 
 ###################################################
@@ -34,7 +36,7 @@ graphics.off()
 ###################################################
 ### chunk number 6: 
 ###################################################
-moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
+moto.btlm <- btlm(X=X, Z=Z, m0r1=TRUE, verb=0)
 
 
 ###################################################
@@ -53,8 +55,7 @@ graphics.off()
 ###################################################
 ### chunk number 9: 
 ###################################################
-moto.btgpllm <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-                        m0r1=TRUE, verb=0)
+moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", m0r1=TRUE, verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 
 

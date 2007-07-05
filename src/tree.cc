@@ -159,7 +159,7 @@ Tree::~Tree(void)
   if(leftChild) delete leftChild;
   if(rightChild) delete rightChild;
   if(rect) delete_rect(rect);
-};
+}
 
 
 /*
@@ -400,26 +400,32 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ,
 
   /* check if the wZmin index is in p */
   if(zp) {
-    bool inp = FALSE;
-    for(unsigned int i=0; i<n && p[i]<=(int)wZmin; i++) if(p[i] == (int)wZmin) inp = TRUE;
+    bool inp = false;
+    for(unsigned int i=0; i<n && p[i]<=(int)wZmin; i++) if(p[i] == (int)wZmin) inp = true;
     if(inp) Zmin = 1e300*1e300;
   }
-
+ 
   /* predict */
   base->Predict(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, Zmin, err, state);
   
   /* copy data-pred stats to the right place in their respective full matrices */
   if(zp) { 
-    copy_p_vector(Zp, p, zp, n); free(zp); 
-    if(Zpm) { copy_p_vector(Zpm, p, zpm, n); free(zpm); }
-    if(Zps2) { copy_p_vector(Zps2, p, zps2, n); free(zps2); }
+    copy_p_vector(Zp, p, zp, n); 
+    if(Zpm) copy_p_vector(Zpm, p, zpm, n); 
+    if(Zps2) copy_p_vector(Zps2, p, zps2, n); 
+    free(zp);
+    free(zpm);
+    free(zps2);
   }
 
   /* similarly, copy new predictive location stats */ 
   if(zz) { 
-    copy_p_vector(ZZ, pp, zz, nn); free(zz); 
-    if(ZZm) { copy_p_vector(ZZm, pp, zzm, nn); free(zzm); }
-    if(ZZs2) { copy_p_vector(ZZs2, pp, zzs2, nn); free(zzs2); }
+    copy_p_vector(ZZ, pp, zz, nn); 
+    if(ZZm) copy_p_vector(ZZm, pp, zzm, nn); 
+    if(ZZs2) copy_p_vector(ZZs2, pp, zzs2, nn);
+    free(zz); 
+    free(zzm);
+    free(zzs2);
   }
 
   /* similarly, copy ds2x predictive stats */
@@ -1719,7 +1725,7 @@ unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
   int *fi = new_ivector(N); 
   double ** Xboth = new_matrix(N+n, d);
   // dopt(Xboth, fi, X, XX, d, n, nn, N, d, nug, state);
-  dopt(Xboth, fi, X, XX, d, n, nn, N, DOPT_D(d), DOPT_NUG(), state);
+  dopt(Xboth, fi, X, XX, d, n, nn, N, DOPT_D(d), DOPT_NUG(), DOPT_ITER, 0, state);
   unsigned int *fi_ret = new_uivector(N); 
   for(unsigned int i=0; i<N; i++) {
     fi_ret[i] = pp[fi[i]-1];
