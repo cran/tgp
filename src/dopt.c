@@ -34,9 +34,8 @@
 #include <assert.h>
 
 #define PWR 2.0
-#define ITERATIONS 5000
 
-double DOPT_D(unsigned int m) { return 0.001*m; }
+double DOPT_D(unsigned int m) { return 0.001*sq(m); }
 double DOPT_NUG(void) { return 0.01; }
 
 
@@ -48,13 +47,13 @@ double DOPT_NUG(void) { return 0.01; }
  * to from the candidates to be Xcand[fi,:]
  */
 
-void dopt_gp(state_in, nn_in, X_in, n_in, m_in, Xcand_in, ncand_in, fi_out)
+void dopt_gp(state_in, nn_in, X_in, n_in, m_in, Xcand_in, ncand_in, iter_in, verb_in, fi_out)
 int *state_in;
-unsigned int *nn_in, *n_in, *m_in, *ncand_in;
+unsigned int *nn_in, *n_in, *m_in, *ncand_in, *iter_in, *verb_in;
 double *X_in, *Xcand_in;
 int *fi_out;
 {
-  unsigned int nn, n, m, ncand;
+  unsigned int nn, n, m, ncand, iter, verb;
   double **Xall, **X, **Xcand, **fixed, **rect;
   unsigned long lstate;
   void *state;
@@ -67,6 +66,8 @@ int *fi_out;
   m = (unsigned int) *m_in;
   nn = (unsigned int) *nn_in;
   ncand = (unsigned int) *ncand_in;
+  iter = (unsigned int) *iter_in;
+  verb = (unsigned int) *verb_in;
   
   Xall = new_matrix(n+ncand, m);
   dupv(Xall[0], X_in, n*m);
@@ -86,7 +87,7 @@ int *fi_out;
   
   /* call dopt */
   dopt(X, fi_out, fixed, Xcand, m, n, ncand, nn, DOPT_D((unsigned)m), 
-       DOPT_NUG(), state);
+       DOPT_NUG(), iter, verb, state);
   
   delete_matrix(X);
   if(fixed) delete_matrix(fixed);
@@ -107,8 +108,8 @@ int *fi_out;
  * the last n1 rows of X
  */
 
-void dopt(X, fi, fixed, Xcand, m, n1, n2, n, d, nug, state)
-unsigned int m,n1,n2,n;
+void dopt(X, fi, fixed, Xcand, m, n1, n2, n, d, nug, iter, verb, state)
+unsigned int m,n1,n2,n,iter,verb;
 /*double fixed[n1][m], Xcand[n2][m], X[n+n1][m], fi[n];*/
 double **fixed, **Xcand, **X;
 int *fi;	
@@ -116,7 +117,7 @@ double d, nug;
 void *state;
 /* remember, column major! */
 {
-  unsigned int i,j, ai, fii;
+  unsigned int i,j, ai, fii, changes;
   double *aprobs, *fprobs;
   unsigned int *o, *avail;
   double **DIST, **K;
@@ -124,6 +125,7 @@ void *state;
   int a, f;
   
   assert(n2 >= n);
+  /* myprintf(stderr, "d=%g, nug=%g\n", d, nug); */
 
   /* set fixed into X */
   dup_matrix(X, fixed, n1, m);
@@ -165,9 +167,13 @@ void *state;
    */
 
   if(n2 > n) { /* no need to do iterations if ncand == n */
-    for(i=0; i<ITERATIONS; i++) {
+    changes = 0;
+    for(i=0; i<iter; i++) {
       
       /* choose random used and available X row */
+      if(verb && (i+1) % verb == 0)
+	myprintf(stdout, "dopt round %d of %d, changes=%d, ldet=%g\n", 
+		 i+1, iter, changes, log_det);
       
       /* [f, fi] = sample(1, free, fprobs, seeds(1)); */
       isample(&f, &fii, 1, n, fi, fprobs, state);
@@ -196,9 +202,13 @@ void *state;
       /*
        * see if its worth doing the new one
        */
+
+      /* myprintf(stdout, "i=%d, n+n1=%d, log_det=%.20f, new=%.20f\n", 
+	 i, n+n1, log_det, log_det_new); */
       
       if(log_det < log_det_new) {
 	log_det = log_det_new;
+	changes++;
       } else {
 	/* free(fi) = f; avail(ai) = a; */
 	fi[fii] = f; avail[ai] = a;

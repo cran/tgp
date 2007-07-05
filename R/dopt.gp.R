@@ -23,10 +23,18 @@
 
 
 "dopt.gp" <-
-function(nn, X=NULL, Xcand)
+function(nn, X=NULL, Xcand, iter=5000, verb=0)
 {
   if(nn == 0) return(NULL);
 
+  ## check iterations
+  if(length(iter) != 1 && iter <= 0)
+    stop("iter must be a positive integer")
+
+  ## check Kverbiterations
+  if(length(verb) != 1 && iter < 0)
+    stop("verb must be a non-negative integer")
+  
   ## check X inputs
   Xnames <- names(X)
   X <- check.matrix(X)$X
@@ -64,6 +72,8 @@ function(nn, X=NULL, Xcand)
            m = as.integer(m),
            Xcand = as.double(t(Xcand)),
            ncand = as.integer(ncand),
+           iter = as.integer(iter),
+           verb = as.integer(verb),
            fi = integer(nn),
            PACKAGE="tgp"
            )

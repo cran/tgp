@@ -32,8 +32,8 @@ function(n, rect)
 
   ## get and check the rectangle dimensions
   if(is.null(dim(rect))) { ncol <- length(rect); d <- 1 }
-  else { ncol <- dim(rect)[2]; d <- dim(rect)[1] }
-  if(ncol != 2) stop("dim(rect)[2] must be 2")
+  else { ncol <- ncol(rect); d <- dim(rect)[1] }
+  if(ncol != 2) stop("ncol(rect) must be 2")
   
   ## choose a random state for the C code
   state <- sample(seq(0,999), 3)

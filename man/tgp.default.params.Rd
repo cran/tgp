@@ -25,6 +25,10 @@ tgp.default.params(col, base = "gp", ...)
 \value{
    The output is the following list of \code{params}...
 
+   \item{base}{input argument \code{base}}
+   \item{tree}{\code{c(0.5,2,max(c(10,col+1)),1)} indicating the tree prior
+     parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
+          and \emph{splitmin}}
    \item{corr}{\code{"expsep"} separable power exponential family
      correlation model; alternate is \code{"exp"} isotropic power
      family, or \code{"matern"}}
@@ -50,7 +54,7 @@ tgp.default.params(col, base = "gp", ...)
    \item{d.p}{c(1.0,20.0,10.0,10.0) Mixture of gamma prior parameter (initial values)
      for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters}
-   \item{d.p}{\code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values)
+   \item{nug.p}{\code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values)
      for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior}
    \item{gamma}{\code{c(10,0.2,10)}

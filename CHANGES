@@ -1,5 +1,20 @@
+1.2-4 (07 May 2007)
+-----
+
+fixed a leak when krige=FALSE appearing in Tree::Predict
+
+fixed sub-vignette cutting for preds and traces
+
+corrected documentation of nug.p in tgp.default.params()
+
+added verbosity and iter arguments to dopt and thus
+dopt.gp and tgp.design
+
+
 1.2-3 (09 Apr 2007)
 -----
+
+updates to the vignette for the JSS publication
 
 check.matrix modified to allow one-column matrix Z
 arguments which have column-name information

@@ -9,7 +9,7 @@
 }
 
 \usage{
-tgp.design(howmany, Xcand, out)
+tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
 }
 
 \arguments{
@@ -22,6 +22,12 @@ tgp.design(howmany, Xcand, out)
   \item{out}{ \code{"tgp"}-class object output from one of the
   	model functions which has tree support, e.g., \code{\link{btgpllm}},
 	\code{\link{btgp}}, \code{\link{btlm}}}
+  \item{iter}{number of iterations of stochastic accent algorithm,
+    default \code{5000}}
+  \item{verb}{positive integer indicating after how many rounds of
+    stochastic approximation in \code{\link{dopt.gp}}
+    to print each progress statement;
+	default \code{verb=0} results in no printing}
 }
 
 \details{

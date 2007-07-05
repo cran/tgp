@@ -25,11 +25,14 @@
 #ifndef __DOPT_H__
 #define __DOPT_H__
 
+#define DOPT_ITER 5000
+
 double DOPT_D(unsigned int m);
 double DOPT_NUG(void);
 
 void dopt(double **X, int *fi, double **fixed, double **Xcand, 
-	unsigned int m, unsigned int n1, unsigned int n2, unsigned int n, 
-	double d, double nug, void *state);
+	  unsigned int m, unsigned int n1, unsigned int n2, unsigned int n, 
+	  double d, double nug, unsigned int iter, unsigned int verb,
+	  void *state);
 
 #endif

@@ -9,7 +9,7 @@
   candidates
 }
 \usage{
-dopt.gp(nn, X=NULL, Xcand)
+dopt.gp(nn, X=NULL, Xcand, iter=5000, verb=0)
 }
 
 \arguments{
@@ -21,6 +21,11 @@ dopt.gp(nn, X=NULL, Xcand)
   \item{Xcand}{ \code{data.frame}, \code{matrix} or vector of candidates 
   	from which new design points are subsampled.  Must have the same
 	dimension as \code{X}, i.e., \code{ncol(X) == ncol(Xcand)}}
+  \item{iter}{number of iterations of stochastic accent algorithm,
+    default \code{5000}}
+  \item{verb}{positive integer indicating after how many rounds of
+    stochastic approximation to print each progress statement;
+	default \code{verb=0} results in no printing}
 }
 \details{
   Design is based on a stationary Gaussian process model with stationary isotropic
