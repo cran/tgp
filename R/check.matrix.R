@@ -35,7 +35,8 @@ function(X, Z=NULL)
   if(!is.null(Z)) {
     
     ## format Z
-    Z <- as.vector(matrix(Z, ncol=1)[,1])
+    ## Z <- as.vector(matrix(Z, ncol=1)[,1])
+    Z <- as.vector(as.matrix(Z))
     if(length(Z) != n) stop("mismatched row dimension in X and Z")
     
     ## calculate locations of NAs NaNs and Infs in Z

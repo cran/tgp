@@ -15,7 +15,7 @@ seed <- 0; set.seed(seed)
 
 Traces of (almost) all parameters to the {\tt tgp} model can be
 collected by supplying {\tt trace=TRUE} to the {\tt b*} functions.
-In the current version traces for the linear prior correlation matrix
+In the current version, traces for the linear prior correlation matrix
 ($\mb{W}$) are not provided.  I shall illustrate the gathering and
 analyzing of traces through example.  But first, a few notes and
 cautions.
@@ -65,8 +65,7 @@ out <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", bprior="b0",
 <<>>=
 out$trace
 @
-\caption{\footnotesize Listing the contents of
-  {\tt "tgptraces"}--class objects.}
+\caption{Listing the contents of {\tt "tgptraces"}--class objects.}
 \label{f:tgptraces}
 \end{figure} 
 Figure \ref{f:tgptraces} shows a dump of \verb!out$trace! which is a
@@ -100,7 +99,7 @@ legend("bottomleft", names, col=1:ltrXX, lty=1:ltrXX)
 graphics.off()
 @
 \includegraphics[trim=55 25 65 20]{traces-XXd}
-\caption{\footnotesize Traces of the (log of the) first range
+\caption{Traces of the (log of the) first range
   parameter for each of the three {\tt XX} locations}
 \label{f:XXd}
 \end{figure} 
@@ -128,7 +127,7 @@ graphics.off()
 @
 \includegraphics[trim=0 0 0 20]{traces-la}
 \vspace{-0.5cm}
-\caption{\footnotesize Histogram of proportions of the area of the input 
+\caption{Histogram of proportions of the area of the input 
   domain under the LLM}
 \label{f:la}
 \end{figure} 
@@ -170,7 +169,7 @@ legend("bottomright", names, col=1:ltrXX, lty=1:ltrXX)
 graphics.off()
 @
 \includegraphics[trim=55 25 65 20]{traces-alc}
-\caption{\footnotesize Traces of the (log of the) samples
+\caption{Traces of the (log of the) samples
          for the ALC statistic  $\Delta \sigma^2(\tilde{\mb{x}})$
          at for each of the three {\tt XX} locations}
 \label{f:preds}

@@ -78,7 +78,8 @@ $\bm{\beta}$ estimates provided below will be on the original scale.
 A summary of the parameter traces show that the
 Markov chain had the following (average) configuration for the booleans.
 <<>>=
-apply(fr.bgpllm.tr$trace$XX[[1]][,27:36], 2, mean)
+trace <- fr.bgpllm.tr$trace$XX[[1]]
+apply(trace[,27:36], 2, mean)
 @ 
 Therefore the GP LLM model correctly identified that only the first three
 input variables interact only linearly with
@@ -92,9 +93,9 @@ that the GP LLM correctly identified the linear regression
 coefficients associated with the fourth and fifth input covariates
 (from (\ref{eq:f1}))
 <<>>=
-summary(fr.bgpllm.tr$trace$XX[[1]][,9:10])
+summary(trace[,9:10])
 @ 
 and that the rest are much closer to zero.
 <<>>=
-apply(fr.bgpllm.tr$trace$XX[[1]][,11:15], 2, mean)
+apply(trace[,11:15], 2, mean)
 @ 

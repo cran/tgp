@@ -34,7 +34,7 @@ function(out, heights=NULL, main=NULL, ...)
   
   if(howmany > 1) {
     h <- howmany
-    if(sum(out$posts$height[h] == 1) >= 1) { h <- h - 1; }
+    if(sum(out$posts$height == 1) >= 1) { h <- h - 1; }
     rows <- floor(sqrt(h)); cols <- floor(h / rows)
     while(rows * cols < h) cols <- cols + 1
     par(mfrow=c(rows, cols), bty="n")

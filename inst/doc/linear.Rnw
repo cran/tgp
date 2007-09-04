@@ -45,7 +45,7 @@ graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{linear-blm}
 %\vspace{-0.5cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt blm} on
+\caption{Posterior predictive distribution using {\tt blm} on
   synthetic linear data: mean and 90\% credible interval.  The actual
   generating lines are shown as blue-dotted.}
 \label{f:lin:blm}
@@ -88,7 +88,7 @@ graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{linear-gplm}
 %\vspace{-0.5cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt
+\caption{Posterior predictive distribution using {\tt
     bgpllm} on synthetic linear data: mean and 90\% credible interval.
   The actual generating lines are shown as blue-dotted.}
 \label{f:lin:gpllm}
@@ -98,7 +98,7 @@ under the LLM in that round, and the GP otherwise.  A plot of the
 resulting surface is shown in Figure \ref{f:lin:gpllm} for comparison.
 Since the data is linear, the resulting predictive surfaces should
 look strikingly similar to one another.  On occasion, the GP LLM may
-find some bendy--ness in the surface.  This happens rarely with samples
+find some ``bendyness'' in the surface.  This happens rarely with samples
 as large as $N=50$, but is quite a bit more common for $N<20$.
 
 To see the proportion of time the Markov chain spent in the LLM
