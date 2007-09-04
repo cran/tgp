@@ -38,7 +38,7 @@ exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", verb=0)
 @ 
 \begin{figure}[ht!]
 \centering
-<<label=mapt,fig=TRUE,echo=TRUE,width=6,height=5,include=FALSE>>=
+<<label=mapt,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
 tgp.trees(exp1)
 @
 <<echo=false,results=hide>>=
@@ -46,7 +46,7 @@ graphics.off()
 @
 \includegraphics[trim=50 50 50 20]{as-mapt}
 \vspace{-1cm}
-\caption{\footnotesize MAP trees of each height encountered in the
+\caption{MAP trees of each height encountered in the
   Markov chain for the exponential data, showing $\hat{\sigma}^2$ and
   the number of observations $n$ at the leaves.  $\hat{\mathcal{T}}$
   is the one with the maximum $\log(p)$ above.}
@@ -81,7 +81,7 @@ graphics.off()
 @
 \includegraphics[trim=0 0 0 45]{as-cands}
 \vspace{-0.5cm}
-\caption{\footnotesize Treed $D$--optimal candidate locations {\tt XX}
+\caption{Treed $D$--optimal candidate locations {\tt XX}
   (circles), input locations {\tt X} (dots), and MAP tree
   $\hat{\mathcal{T}}$}
 \label{f:cands}
@@ -118,7 +118,7 @@ graphics.off()
 % do the including over here instead
 \includegraphics[trim=75 0 75 20]{as-expas}
 \vspace{-0.5cm}
-\caption{\footnotesize {\em Left}: Image plots of adaptive sampling
+\caption{{\em Left}: Image plots of adaptive sampling
   statistics and MAP trees $\hat{\mathcal{T}}$; {\em Left}; ALM
   adaptive sampling image for (only) candidate locations {\tt XX} (circles);
   {\em center}: ALC; and {\em right:} EI.}

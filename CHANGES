@@ -1,4 +1,14 @@
-1.2-2 (26 Dec 2006)
+1.2-3 (09 Apr 2007)
+-----
+
+check.matrix modified to allow one-column matrix Z
+arguments which have column-name information
+
+tgp.trees calculation of rows and columns corrected for
+situations when there is a height 1 tree
+
+
+1.2-2 (19 Dec 2006)
 -----
 
 slice.interp bugs fixed (is.null(NULL) and plotting of

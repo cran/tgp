@@ -54,7 +54,7 @@ graphics.off()
 @
 \includegraphics[trim=0 35 0 25]{exp-bgp}
 %\vspace{-0.5cm}
-\caption{\footnotesize {\em Left:} posterior predictive mean using
+\caption{{\em Left:} posterior predictive mean using
   {\tt bgp} on synthetic exponential data; {\em right} image plot of
   posterior predictive variance with data locations {\tt X} (dots) and
   predictive locations {\tt XX} (circles).}
@@ -86,7 +86,7 @@ graphics.off()
 @
 \includegraphics[trim=0 35 0 25]{exp-btgp}
 %\vspace{-0.25cm}
-<<label=btgptrees,fig=TRUE,echo=TRUE,width=6,height=5,include=FALSE>>=
+<<label=btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
 tgp.trees(exp.btgp)
 @
 <<echo=false,results=hide>>=
@@ -94,7 +94,7 @@ graphics.off()
 @
 \includegraphics[trim=50 65 50 10]{exp-btgptrees}
 \vspace{-0.5cm}
-\caption{\footnotesize {\em Top-Left:} posterior predictive mean using
+\caption{{\em Top-Left:} posterior predictive mean using
   {\tt btgp} on synthetic exponential data; {\em top-right} image plot
   of posterior predictive variance with data locations {\tt X} (dots)
   and predictive locations {\tt XX} (circles).  {\tt Bottom:} MAP
@@ -127,7 +127,7 @@ graphics.off()
 @
 \includegraphics[trim=0 35 0 25]{exp-btgpllm}
 %\vspace{-0.5cm}
-\caption{\footnotesize {\em Left:} posterior predictive mean using
+\caption{{\em Left:} posterior predictive mean using
   {\tt btgpllm} on synthetic exponential data; {\em right} image plot
   of posterior predictive variance with data locations {\tt X} (dots)
   and predictive locations {\tt XX} (circles).}
@@ -136,7 +136,9 @@ graphics.off()
 Progress indicators show where the LLM ({\tt corr=0($d$)}) or the GP
 is active.  Figure \ref{f:exp:btgpllm} shows how similar the resulting
 posterior predictive surfaces are compared to the treed GP (without
-LLM).
+LLM).  Appendix \ref{sec:traces} shows how parameter traces can be used
+to calculate the posterior probabilities of regional and
+location--specific linearity in this example.
 
 \begin{figure}[ht!]
 \centering
@@ -165,7 +167,7 @@ second.}
 \end{figure}
 
 Finally, viewing 1-d projections of {\tt tgp}-class output is possible
-by supplying a 1--vector {\tt proj} argument to the {\tt plot.tgp}.
+by supplying a scalar {\tt proj} argument to the {\tt plot.tgp}.
 Figure \ref{f:exp:1dbtgpllm} shows the two projections for {\tt
   exp.btgpllm}.  In the {\em left} surface plots the open circles
 indicate the mean of posterior predictive distribution.  Red lines

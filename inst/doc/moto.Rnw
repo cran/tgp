@@ -34,13 +34,15 @@ included as part of the {\tt MASS} library in
 {\tt R}.
 <<>>= 
 library(MASS)
+X <- data.frame(times=mcycle[,1])
+Z <- data.frame(accel=mcycle[,2])
 @ 
 Figure \ref{f:moto:bgp} shows how a stationary GP is able to capture
 the nonlinearity in the response but fails to capture the input
 dependent noise and increased smoothness (perhaps linearity) in
 parts of the input space.
 <<echo=TRUE,results=HIDE>>=
-moto.bgp <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
+moto.bgp <- bgp(X=X, Z=Z, m0r1=TRUE, verb=0)
 @ 
 Since the responses in this data have a wide range, it helps to
 translate and rescale them so that they have a mean of zero and a
@@ -56,7 +58,7 @@ graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{moto-bgp}
 %\vspace{-0.5cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt
+\caption{Posterior predictive distribution using {\tt
     bgp} on the motorcycle accident data: mean and 90\% credible
   interval}
 \label{f:moto:bgp}
@@ -66,7 +68,7 @@ A Bayesian Linear CART model is able to capture the input dependent
 noise but fails to capture the waviness of the
 ``whiplash''---center--- segment of the response.
 <<echo=TRUE,results=HIDE>>=
-moto.btlm <- btlm(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE, verb=0)
+moto.btlm <- btlm(X=X, Z=Z, m0r1=TRUE, verb=0)
 @ 
 Figure \ref{f:moto:btlm} shows the resulting piecewise linear
 predictive surface and MAP partition ($\hat{\mathcal{T}}$).
@@ -80,7 +82,7 @@ graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{moto-btlm}
 %\vspace{-0.5cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt
+\caption{Posterior predictive distribution using {\tt
     btlm} on the motorcycle accident data: mean and 90\% credible
   interval}
 \label{f:moto:btlm}
@@ -94,8 +96,7 @@ also linear, perhaps with the same mean as the left--hand region, only
 with higher noise.  The {\tt b*} functions can force
 an i.i.d.~hierarchical linear model by setting \verb!bprior="b0"!.
 <<echo=TRUE,results=HIDE>>=
-moto.btgpllm <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-                        m0r1=TRUE, verb=0)
+moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", m0r1=TRUE, verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 @ 
 The {\tt predict.tgp} function obtains posterior predictive estimates
@@ -125,10 +126,10 @@ graphics.off()
 \includegraphics[trim=50 25 50 20]{moto-btgpq}
 
 %\vspace{-0.5cm}
-\caption{\footnotesize {\em top} Posterior predictive distribution
+\caption{{\em Top}: Posterior predictive distribution
   using treed GP LLM on the motorcycle accident data. The {\em
     left}--hand panes how mean and 90\% credible interval; {\em
-    bottom} Quantile-norm (90\%-5\%) showing input-dependent noise.
+    bottom}: Quantile-norm (90\%-5\%) showing input-dependent noise.
     The {\em right}--hand panes show similar {\em kriging} surfaces
   for the MAP parameterization.}
 \label{f:moto:tgp}
@@ -144,7 +145,7 @@ the {\tt predict.tgp} function.
 The {\tt tgp}--default \verb!bprior="bflat"! implies an improper prior
 on the regression coefficients $\bm{\beta}$.  It essentially forces
 $\mb{W}=\mb{\infty}$, thus eliminating the need to specify priors on
-$\bm{\beta}_0$ of $\mb{W}^{-1}$ in (\ref{eq:model}).  This was chosen
+$\bm{\beta}_0$ and $\mb{W}^{-1}$ in (\ref{eq:model}).  This was chosen
 as the default because it works well in many examples, and leads to a
 simpler overall model and a faster implementation.  However, the
 Motorcycle data is an exception. Moreover, when the response data is
@@ -152,3 +153,13 @@ very noisy (i.e., low signal--to--noise ratio), {\tt tgp} can be
 expected to partition heavily under the \verb!bprior="bflat"! prior.
 In such cases, one of the other proper priors like the full
 hierarchical \verb!bprior="b0"!  or \verb!bprior="bmzt"! might be preferred.
+
+An anonymous reviewer pointed out a shortcoming of the treed GP model
+on this data.  The sharp spike in predictive variance near the first
+regime shift suggests that the symmetric Gaussian noise model may be
+inappropriate.  A log Gaussian process might offer an improvement, at
+least locally.  Running the treed GP MCMC for longer will eventually
+result in the finding of a partition near time=17, just after the
+first regime change.  The variance is still poorly modeled in this
+region.  Since it is isolated by the tree it could potentially be fit
+with a different noise model.

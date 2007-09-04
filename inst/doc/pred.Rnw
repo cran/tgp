@@ -17,8 +17,8 @@ seed <- 0; set.seed(seed)
 In this section I revisit the motorcycle accident data in order to
 demonstrate how the {\tt predict.tgp} function can be helpful in
 collaborative uses of {\tt tgp}. Consider a fit of the motorcycle
-data, and suppose that we do inference for the model parameters only
-(obtaining no samples from the posterior predictive distribution.  The
+data, and suppose that infer the model parameters only (obtaining no
+samples from the posterior predictive distribution).  The
 \verb!"tgp"!-class output object can be saved to a file using the {\tt
   R}--internal {\tt save} function.
 <<>>=
@@ -85,7 +85,7 @@ plot(out2)
 graphics.off()
 @
 \includegraphics[trim=50 30 50 25]{pred-2}
-\caption{\footnotesize Predictive surfaces ({\em left}) and
+\caption{Predictive surfaces ({\em left}) and
   error/variance plots ({\em right}) resulting
   from three different uses of the {\tt predict.tgp} function:
   MAP kriging ({\em top}), sampling from the MAP ({\em middle}),
@@ -94,16 +94,16 @@ graphics.off()
 \label{f:pred}
 \end{figure} 
 Figure \ref{f:pred} plots the posterior predictive surfaces for each
-of the three calls to {\tt predict.tgp} above.  The kriging surfaces are
-smooth within regions of the partition, but the process is
+of the three calls to {\tt predict.tgp} above.  The kriging surfaces
+are smooth within regions of the partition, but the process is
 discontinuous across partition boundaries.  The middle surface is
 simply a Monte Carlo--sample summarization of the kriging one above
 it.  The final surface summarizes samples from the posterior
-predictive distribution when obtained jointly with
+predictive distribution when obtained jointly with samples from
 $\mathcal{T}|\bm{\theta}$ and $\bm{\theta}|\mathcal{T}$.  Though these
 summaries are still ``noisy'' they depict a process with smoother
 transitions across partition boundaries than ones conditioned only on
-the MAP.
+the MAP parameterization.
 
 The {\tt predict.tgp} function can also sample from the ALC statistic and
 calculate expected improvements (EI) at the {\tt XX} locations.  

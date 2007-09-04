@@ -30,14 +30,14 @@ also created.
 <<>>=
 X <- seq(0,20,length=100)
 XX <- seq(0,20,length=99)
-Z <- (sin(pi*X/5) + 0.2*cos(4*pi*X/5)) * (X <= 9.6)
+Ztrue <- (sin(pi*X/5) + 0.2*cos(4*pi*X/5)) * (X <= 9.6)
 lin <- X>9.6; 
-Z[lin] <- -1 + X[lin]/10
-Z <- Z + rnorm(length(Z), sd=0.1)
+Ztrue[lin] <- -1 + X[lin]/10
+Z <- Ztrue + rnorm(length(Ztrue), sd=0.1)
 @ 
 
-By design, the data is clearly nonstationary.  Perhaps not knowing
-this, a good first model choice for this data might be a GP.
+By design, the data is clearly nonstationary in its mean.  Perhaps not
+knowing this, a good first model choice for this data might be a GP.
 <<>>=
 sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
 @ 
@@ -45,22 +45,23 @@ sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
 \centering
 <<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(sin.bgp, main='GP,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{sin-bgp}
 %\vspace{-0.25cm}
-\caption{\footnotesize Posterior predictive distribution using {\tt
-    bgp} on synthetic sinusoidal data: mean and 90\% credible
-  interval}
+\caption{Posterior predictive distribution using {\tt
+    bgp} on synthetic sinusoidal data: mean and 90\% pointwise credible
+  interval.  The true mean is overlayed with a dashed line.}
 \label{f:sin:bgp}
 \end{figure}
 Figure \ref{f:sin:bgp} shows the resulting posterior predictive
 surface under the GP.  Notice how the (stationary) GP gets the
 wiggliness of the sinusoidal region, but fails to capture the
-smoothness of the linear region.  This is because the data comes from
-a process that is nonstationary.
+smoothness of the linear region.  The true mean (\ref{e:sindata}) is
+overlayed with a dashed line.
 
 So one might consider a Bayesian treed linear model (LM) instead.
 <<>>=
@@ -75,6 +76,7 @@ operations, i.e., {\em change}, {\em swap}, and {\em rotate}.
 \centering
 <<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(sin.btlm, main='treed LM,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
 @
 <<echo=false,results=hide>>=
 graphics.off()
@@ -88,10 +90,11 @@ tgp.trees(sin.btlm)
 graphics.off()
 @
 \vspace{-1cm}
-\caption{\footnotesize {\em Top:} Posterior predictive distribution
+\caption{{\em Top:} Posterior predictive distribution
   using {\tt btlm} on synthetic sinusoidal data: mean and 90\%
-  credible interval, and MAP partition ($\hat{\mathcal{T}}$); {\em
-    Bottom} MAP trees for each height encountered in the Markov
+  pointwise credible interval, and MAP partition ($\hat{\mathcal{T}}$).
+  The true mean is overlayed with a dashed line. {\em
+    Bottom:} MAP trees for each height encountered in the Markov
   chain showing $\hat{\sigma}^2$ and the number of observation $n$,
   at each leaf.}
 \label{f:sin:btlm}
@@ -112,22 +115,28 @@ sin.btgp <- btgp(X=X, Z=Z, XX=XX, verb=0)
 \centering
 <<label=btgp,fig=TRUE,echo=FALSE,width=7,height=5,include=FALSE>>=
 plot(sin.btgp, main='treed GP,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
 \includegraphics[trim=0 25 0 25]{sin-btgp}
 %\vspace{-1cm}
-\caption{\footnotesize Posterior predictive distribution
+\caption{Posterior predictive distribution
   using {\tt btgp} on synthetic sinusoidal data: mean and 90\%
-  credible interval, and MAP partition ($\hat{\mathcal{T}}$)
-    \label{f:sin:btgp}}
+  pointwise credible interval, and MAP partition ($\hat{\mathcal{T}}$)
+  \label{f:sin:btgp}.  The true mean is overlayed with a dashed line.}
 \end{figure}
 Figure \ref{f:sin:btgp} shows the resulting posterior predictive
 surface ({\em top}) and MAP $\hat{\mathcal{T}}$ with height=2.
 
 Finally, speedups can be obtained if the GP is allowed to jump to the
-LLM \cite{gra:lee:2006}, since half of the response surface is
-{\em very} smooth, or linear.  This is not shown here since the results
-are very similar to those above, replacing {\tt btgp} with {\tt btgpllm}.
-The example in the next subsection offers a comparison for 2-d data.
+LLM \cite{gra:lee:2006}, since half of the response surface is {\em
+  very} smooth, or linear.  This is not shown here since the results
+are very similar to those above, replacing {\tt btgp} with {\tt
+  btgpllm}.  Each of the models fit in this section is a special case
+of the treed GP LLM, so a model comparison is facilitated by fitting
+this more general model.  The example in the next subsection offers
+such a comparison for 2-d data.  A followup in Appendix
+\ref{sec:traces} shows how to use parameter traces to extract the
+posterior probability of linearity in regions of the input space.

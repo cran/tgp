@@ -218,6 +218,7 @@ double tau2, nug, itemp;
 
 void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, cart, itemp)
 unsigned int n, col;
+int cart;
 double *Z, *b0, *b, *TiB0, *by;
 double **F, **Ki, **Ti, **Vb;
 double tau2, itemp;
