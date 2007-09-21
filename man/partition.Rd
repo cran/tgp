@@ -30,7 +30,10 @@ partition(X, out)
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \seealso{ \code{\link{tgp.design}}, \code{\link{tgp.trees}} }
 

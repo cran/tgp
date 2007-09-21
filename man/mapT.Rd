@@ -48,7 +48,10 @@ mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2, ...)
 	of the MAP tree.
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \references{
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}

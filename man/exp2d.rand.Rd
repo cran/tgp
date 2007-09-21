@@ -70,7 +70,10 @@
 	responses \code{Z} and \code{ZZ}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \references{
 Gramacy, R. B., Lee, H. K. H. (2006).
@@ -146,3 +149,4 @@ abline(v=2, col=2, lty=2, lwd=2)
 }
 
 \keyword{datasets}
+\keyword{datagen}

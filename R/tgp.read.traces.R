@@ -22,6 +22,12 @@
 #*******************************************************************************
 
 
+## tgp.read.traces:
+##
+## read the traces contained in the files written by the tgp C-side,
+## process them as appropriate, and then delete the trace files
+## returning a tgptraces-class object
+
 "tgp.read.traces" <-
   function(n, nn, d, corr, verb, rmfiles=TRUE)
 {
@@ -60,10 +66,10 @@
   }
 
   ## read the weights adjusted for ess
-  if(file.exists(paste("./", "trace_wess_1.out", sep=""))) {
-    trace$post$wess <- scan("trace_wess_1.out", quiet=TRUE)
-    if(rmfiles) unlink("trace_wess_1.out")
-    if(verb >= 1) cat("  wess done\n")
+  if(file.exists(paste("./", "trace_wlambda_1.out", sep=""))) {
+    trace$post$wlambda <- scan("trace_wlambda_1.out", quiet=TRUE)
+    if(rmfiles) unlink("trace_wlambda_1.out")
+    if(verb >= 1) cat("  lambda done\n")
   }
 
   ## predictions at data (X) locations
@@ -134,4 +140,76 @@
   class(trace) <- "tgptraces"
 
   return(trace) 
+}
+
+
+## tgp.read.XX.traces
+##
+## particular function for reading the trace_XX_1.out file
+## which contains traces of all GP (Base Model) parameters
+## according to each XX location -- and then removes the file.
+
+"tgp.read.XX.traces" <-
+function(nn, dim, corr, verb=1, rmfiles=TRUE)
+{
+
+  ## do nothing if there is no XX trace file
+  file <- paste("./", "trace_XX_1.out", sep="")
+  if(! file.exists(file)) return(NULL)
+    
+  ## calculate and count the names to the traces
+  names <- names(read.table(file, nrows=0, header=TRUE))
+  count <- length(names)
+  names <- names[2:length(names)]
+
+  ## read the rest of the trace file
+  t <- t(matrix(scan(file, quiet=TRUE, skip=1), nrow=count))
+  if(rmfiles) unlink(file)
+
+  if(nn > 0) {
+    
+    traces <- list()
+
+    for(i in 1:nn) {
+
+      ## make t into a matrix if it has only one entry (vector)
+      if(is.null(dim(t))) t <- matrix(t, nrow=1)
+      
+      ## find those rows which correspond to XX[i,]
+      o <- t[,1] == i
+      ## print(c(sum(o), dim(t)[1]))
+      
+      ## progress meter, overstimate % done, because things speed up
+      if(verb >= 1) {
+        if(i==nn) cat("  XX 100% done  \r")
+        else cat(paste("  XX ", round(100*log2(sum(o))/log2(dim(t)[1])),
+                       "% done   \r", sep=""))
+      }
+      
+      ## save the ones for X[i,]
+      traces[[i]] <- data.frame(t[o,2:count])
+      
+      ## remove the XX[i,] ones from t
+      if(i!=nn) t <- t[!o,]
+      
+      ## reorder the trace file, and get rid of first column
+      ## they could be out of order if using pthreads
+      ## indx <- c(traces[[i+1]][,1] + 1)
+      ## traces[[i+1]] <- traces[[i+1]][indx,2:(ncol-1)]
+      
+      ## assign the names
+      if(sum(o) == 1) traces[[i]] <- t(traces[[i]])
+      names(traces[[i]]) <- names       
+    }
+
+    if(verb >= 1) cat("\n")
+    
+  } else {
+    if(verb >= 1) {
+        cat(paste("  no XX ", "traces\n", sep=""))
+      }
+    traces <- NULL;
+  }
+
+  return(traces)
 }

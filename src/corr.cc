@@ -1,4 +1,4 @@
-#/******************************************************************************** 
+/******************************************************************************** 
  *
  * Bayesian Regression and Adaptive Sampling with Gaussian Process Trees
  * Copyright (C) 2005, University of California
@@ -47,13 +47,14 @@ using namespace std;
  * the usual constructor function
  */
 
-Corr::Corr(unsigned int col, Base_Prior *base_prior)
+Corr::Corr(unsigned int dim, Base_Prior *base_prior)
 {
-  this->col = col;
+  this->dim = dim;
+  col = base_prior->Col();
   n = 0;
   linear = true;
 
-  Vb_new = new_matrix(this->col, this->col);
+  Vb_new = new_matrix(col, col);
   bmu_new = new_vector(col);
   K = Ki = Kchol = K_new = Kchol_new = Ki_new = NULL;
   log_det_K = log_det_K_new = 0.0;
@@ -348,7 +349,7 @@ double Corr::log_NugPrior(void)
 /*
  * printCorr
  *
- * now prints only covariance matrix K
+ * prints only covariance matrix K
  */
 
 void Corr::printCorr(unsigned int n)
@@ -376,9 +377,10 @@ void Corr::printCorr(unsigned int n)
  * parameterized with a nugget
  */
 
-Corr_Prior::Corr_Prior(const unsigned int col)
+Corr_Prior::Corr_Prior(const unsigned int dim)
 {
-  this->col = col;
+  this->dim = dim;
+
   base_prior = NULL;
   
   gamlin[0] = 10;		/* gamma for the linear pdf */
@@ -400,7 +402,7 @@ Corr_Prior::Corr_Prior(const unsigned int col)
 
 Corr_Prior::Corr_Prior(Corr_Prior *c)
 {
-  col = c->col;
+  dim = c->dim;
   nug = c->nug;
   fix_nug = c->fix_nug;
   dupv(nug_alpha, c->nug_alpha, 2);
@@ -628,7 +630,7 @@ double Corr_Prior::NugDraw(void *state)
  * contained in the params module
  */
 
-void Corr_Prior::DrawNug(Corr **corr, unsigned int howmany, void *state)
+void Corr_Prior::DrawNugHier(Corr **corr, unsigned int howmany, void *state)
 {
   if(!fix_nug) {
     double *nug = new_vector(howmany);
@@ -695,7 +697,7 @@ bool Corr_Prior::LLM(void)
  * ForceLinear:
  *
  * make the prior force the linear model by setting the
- * gamma (gamlin[0]) parameter to -1; return the old
+ * gamma (gamlin[0]) parameter to -1; return the new
  * gamma parameter
  */ 
 
@@ -718,6 +720,7 @@ void Corr_Prior::ResetLinear(double gam)
 {
   gamlin[0] = gam;
 }
+
 
 /*
  * GamLin

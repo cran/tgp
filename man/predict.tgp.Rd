@@ -14,8 +14,9 @@
 
 \usage{
 \method{predict}{tgp}(object, XX = NULL, BTE = c(0, 1, 1), R = 1,
-            MAP = TRUE, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
-            improv = FALSE, trace = FALSE, verb = 0, ...)
+            MAP = TRUE, pred.n = TRUE, krige = TRUE, zcov = FALSE,
+            Ds2x = FALSE, improv = FALSE, sens.p = NULL, trace = FALSE,
+            verb = 0, ...)
 }
 
 \arguments{
@@ -47,17 +48,32 @@
 	implementation}
   \item{krige}{\code{TRUE} (default) value results in collection of kriging
 	means and variances at predictive (and/or data) locations; \code{FALSE} 
-  	skips the gathering of kriging statistics giving a savings in storage}
+  	skips the gathering of kriging statistics giving a savings in
+	storage}
+  \item{zcov}{If \code{TRUE} then the predictive covariance matrix is
+    calculated-- can be computationally (and memory) intensive if
+    \code{X} or \code{XX} is large.  Otherwise only the variances
+    (diagonal of covariance matrices) are calculated (default).  See
+    outputs \code{Zp.s2}, \code{ZZ.s2}, etc., below}
   \item{Ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
         computation of expected reduction in uncertainty calculations at the
         \code{X} locations, which can be used for adaptive sampling;
         \code{FALSE} (default) skips this computation, resulting in
 	a faster implementation}
-  \item{improv}{ \code{TRUE} results in samples from the expected 
-        improvement (in reduction of uncertainty) at locations \code{XX} 
-        about the global minimum which can be used for adaptive sampling; 
-        \code{FALSE} (default) skips this computation, resulting in a faster 
-        implementation}
+  \item{improv}{ \code{TRUE} results in samples from the
+	improvement at locations \code{XX} with respect to the observed
+	data minimum. These samples are used to calculate the expected
+	improvement over \code{XX}, as well as to rank all of the points in
+	\code{XX} in the order that they should be sampled to minimize the
+	expected multivariate improvement.
+	Alternatively, \code{improv} can be set to any positive integer 'g',
+	in which case the ranking is performed with respect to the expectation
+	for improvement raised to the power 'g'. Increasing 'g' leads to
+	rankings that are more oriented towards a global optimization.  The option \code{FALSE}
+	(default) skips these computations, resulting in a faster implementation.}
+  \item{sens.p}{ Either \code{NULL} or a vector of parameters for sensitivity analysis,
+  	       built by the function \code{sens}.  Refer there
+	       for details.}
   \item{trace}{ \code{TRUE} results in a saving of samples from the
         posterior distribution for most of the parameters in the model.  The
         default is \code{FALSE} for speed/storage reasons. See note below }
@@ -65,7 +81,7 @@
         (default: none); 1 which shows the \dQuote{progress meter}; 2
         includes an echo of initialization parameters; up to 3 and 4 (max)
         with more info about successful tree operations}
-  \item{...}{ Elipses are not used in the current version
+  \item{...}{ Ellipses are not used in the current version
   	of \code{predict.tgp}.  They are are only included in order to 
 	maintain S3 generic/method consistency }
     }
@@ -105,7 +121,10 @@
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu} }
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \seealso{ \code{\link{predict}}, \code{\link{blm}}, \code{\link{btlm}},
   \code{\link{bgp}}, \code{\link{btgp}}, \code{\link{bgpllm}},

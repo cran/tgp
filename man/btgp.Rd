@@ -1,5 +1,5 @@
 \name{btgp}
-\title{One of Six Bayesian Nonparametric \& Nonstationary Regression Models}
+\title{Bayesian Nonparametric \& Nonstationary Regression Models}
 \alias{blm}
 \alias{btlm}
 \alias{bcart}
@@ -14,38 +14,41 @@
   (LLM), treed GP, and treed GP LLM. }
 
 \usage{
-blm(X, Z, XX = NULL, bprior = "bflat", BTE = c(1000, 4000, 3), 
-	R = 1, m0r1 = FALSE, itemps = NULL, pred.n = TRUE, 
-	krige = TRUE, Ds2x = FALSE, improv = FALSE, trace = FALSE, 
-	verb = 1, ...)
-btlm(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
-	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
-        improv = FALSE, trace = FALSE, verb = 1, ...)
-bcart(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2), 
-	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE,
-        improv=FALSE, trace = FALSE, verb = 1, ...)
-bgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
-	itemps = NULL, pred.n = TRUE, krige = TRUE, Ds2x = FALSE, 
-	improv = FALSE, nu = 1.5, trace = FALSE, verb = 1, ...)
-bgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2), R = 1, 
-	m0r1 = FALSE, itemps = NULL, pred.n = TRUE, krige = TRUE,
-        Ds2x = FALSE, improv = FALSE, nu = 1.5, trace = FALSE,
+blm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        BTE = c(1000, 4000, 3), R = 1, m0r1 = FALSE, itemps = NULL,
+        pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
+        improv = FALSE, sens.p = NULL, trace = FALSE, verb = 1, ...)
+btlm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        tree = c(0.5, 2), BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
+	itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
+        Ds2x = FALSE, improv = FALSE, sens.p = NULL, trace = FALSE,
         verb = 1, ...)
-btgp(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	tree = c(0.5, 2), BTE = c(2000, 7000, 2), R = 1, 
-	m0r1 = FALSE, linburn = FALSE, itemps = NULL, 
-	pred.n = TRUE, krige = TRUE, Ds2x = FALSE, improv = FALSE,
-        nu = 1.5, trace = FALSE, verb = 1, ...)
-btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep", 
-	tree = c(0.5, 2), gamma=c(10,0.2,0.7), 
-	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
-	linburn = FALSE, itemps = NULL, pred.n = TRUE,
-        krige = TRUE, Ds2x = FALSE, improv = FALSE, nu = 1.5, 
-	trace = FALSE, verb = 1, ...)
+bcart(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2),
+        BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, itemps = NULL,
+        pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
+        improv=FALSE, sens.p = NULL, trace = FALSE, verb = 1, ...)
+bgp(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        corr = "expsep", BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
+	itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
+        Ds2x = FALSE, improv = FALSE, sens.p = NULL, nu = 1.5,
+        trace = FALSE, verb = 1, ...)
+bgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        corr = "expsep", gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2),
+        R = 1, m0r1 = FALSE, itemps = NULL, pred.n = TRUE,
+        krige = TRUE, zcov = FALSE, Ds2x = FALSE, improv = FALSE,
+        sens.p = NULL, nu = 1.5, trace = FALSE, verb = 1, ...)
+btgp(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        corr = "expsep", tree = c(0.5, 2), BTE = c(2000, 7000, 2),
+        R = 1, m0r1 = FALSE, linburn = FALSE, itemps = NULL, 
+	pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
+        improv = FALSE, sens.p = NULL, nu = 1.5, trace = FALSE,
+        verb = 1, ...)
+btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
+        corr = "expsep", tree = c(0.5, 2), gamma=c(10,0.2,0.7), 
+	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, linburn = FALSE,
+        itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
+        Ds2x = FALSE, improv = FALSE, sens.p = NULL, nu = 1.5,
+        trace = FALSE, verb = 1, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -58,6 +61,14 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
 	or vector of predictive input locations 
   	with the same number of columns as \code{X}, i.e.,
 	\code{ncol(XX) == ncol(X)}}
+  \item{meanfn}{ A choice of mean function for the process.  When
+    \code{meanfn = "linear"} (default), then we have the process
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{
+      Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+  where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
+  part of the model (if present).  Otherwise, when
+  \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
+    Z = beta0 + W(X).}}
   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
     alternates include \code{"b0"} hierarchical Normal prior,
   \code{"bmle"} empirical Bayes Normal prior, \code{"b0not"} Bayesian
@@ -84,7 +95,14 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
-	the isotropic Matern (\code{"matern"}) as \dQuote{beta} functionality}
+	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
+	functionality.  The option \code{"mrexpsep"} uses a version of
+	the multi-resolution GP model described in Kennedy and O'Hagan
+	(2000).  To use this option, the first column of the design
+	matrices \code{X} and \code{XX} must contain an indicator for
+	'fine' (1) or 'coarse' (0) fidelity.  At this time, \code{"mrexpsep"} is only
+	available with the \code{btgp} and \code{bgp} models, and
+	\code{linburn=TRUE} is not allowed.  See details below. }
   \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and
     (E)very. Predictive samples are saved every E MCMC rounds starting
     at round B, stopping at T. }
@@ -94,29 +112,42 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   	zero and a range of 1; default is \code{FALSE}}
   \item{linburn}{If \code{TRUE} initializes MCMC with \code{B} (additional) 
   	rounds of Bayesian Linear CART (\code{btlm}); default is \code{FALSE} }
-  \item{itemps}{ Importance tempering inverse temperature ladder, 
-  	or powers to improve mixing.  Can be a vector (\code{0 < itemps})
-	which assumes a uniform prior over temperatures; or a \code{matrix}
-	with two columns where the second gives the distribution; or a \code{list}
-	(or \code{data.frame}) with entries (columns) named \code{$itemps} 
-	and \code{$tprobs}.  This is \dQuote{alpha} functionality }
+  \item{itemps}{ Importance tempering (IT) inverse temperature ladder, 
+    or powers to improve mixing.  See \code{\link{default.itemps}}.
+    The default is no IT \code{itemps = NULL}}
   \item{pred.n}{\code{TRUE} (default) value results in prediction at
 	the inputs \code{X}; \code{FALSE} 
   	skips prediction at \code{X} resulting in a faster
 	implementation}
   \item{krige}{\code{TRUE} (default) value results in collection of kriging
     means and variances at predictive (and/or data) locations; \code{FALSE} 
-    skips the gathering of kriging statistics giving a savings in storage}
+    skips the gathering of kriging statistics giving a savings in
+    storage}
+  \item{zcov}{If \code{TRUE} then the predictive covariance matrix is
+    calculated-- can be computationally (and memory) intensive if
+    \code{X} or \code{XX} is large.  Otherwise only the variances
+    (diagonal of covariance matrices) are calculated (default).  See
+    outputs \code{Zp.s2}, \code{ZZ.s2}, etc., below}
   \item{Ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
     computation of expected reduction in uncertainty calculations at the
     \code{X} locations, which can be used for adaptive sampling;
     \code{FALSE} (default) skips this computation, resulting in
-	a faster implementation}
-  \item{improv}{ \code{TRUE} results in samples from the expected 
-    improvement (in reduction of uncertainty) at locations \code{XX} 
-    about the global minimum which can be used for adaptive sampling; 
-    \code{FALSE} (default) skips this computation, resulting in a faster 
-    implementation}
+    a faster implementation}
+  \item{improv}{\code{TRUE} results in samples from the
+    improvement at locations \code{XX} with respect to the observed
+    data minimum. These samples are used to calculate the expected
+    improvement over \code{XX}, as well as to rank all of the points in
+    \code{XX} in the order that they should be sampled to minimize the
+    expected multivariate improvement (refer to Schonlau et al, 1998).
+    Alternatively, \code{improv} can be set to any positive integer 'g',
+    in which case the ranking is performed with respect to the expectation
+    for improvement raised to the power 'g'. Increasing 'g' leads to
+    rankings that are more oriented towards a global optimization.
+    The option \code{FALSE} (default) skips these computations,
+    resulting in a faster implementation.}
+  \item{sens.p}{ Either \code{NULL} or a vector of parameters for
+    sensitivity analysis, built by the function \code{\link{sens}}.
+    Refer there for details.}
   \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for
     the Matern correlation function; nu+0.5 times differentiable
     predictive surfaces result}
@@ -132,14 +163,14 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
     
     \code{params <- \link{tgp.default.params}(ncol(X)+1)}.
 
-    You may use these to specify
-    a custom setting of any of default parameters in the output list \code{params}
+    You may use these to specify a custom setting of any of default
+    parameters in the output list \code{params}
     except those for which a specific argument is already provided
     (e.g., \code{params$corr} or \code{params$bprior}) or those which contradict
     the type of \code{b*} function being called (e.g.,
     \code{params$tree} or \code{params$gamma}); these redundant or
-    possibly conflicting specifications will be ignored}
-    
+    possibly conflicting specifications will be ignored.  Refer to
+    \code{tgp.default.params} for details on the prior specification. }
 }
 
 \details{
@@ -174,17 +205,50 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \code{bcart} is the same as \code{btlm} except that only the
   intercept term in the LM is estimated; the others are zero, thereby
   implementing a Bayesian version of the original CART model
+
+  The \code{sens.p} argument contains a vector of parameters for 
+  sensitivity analysis.  It should be \code{NULL} unless created by the 
+  \code{sens} function.  Refer to \code{help(sens)} for details.
+
+  If \code{corr="mrexpsep"} and the matrices X and XX are properly
+  formatted with an indicator first column (0='coarse', 1='fine'),
+  the stationary GP model fit within each partition has:
+  \deqn{
+    Z_{\mbox{\tiny coarse}} \sim m(x) + \mbox{GP}(\sigma^2 + K_c)
+  }{
+    Z[coarse] ~ 'meanfn' + GP(sigma^2 * K[c])
+  } and
+  \deqn{
+    Z_{\mbox{\tiny fine}} \sim Z_{\mbox{\tiny coarse}} +
+    \mbox{GP}(\sigma^2 \delta + K_f)
+  }{
+      Z[fine]  ~  Z_coarse + GP(sigma^2 * delta * K[f])
+  }
+  Where each matrix \eqn{K_c}{K[c]} and \eqn{K_f}{K[f]} are based on the
+  same separable power exponential family plus a nugget effect that is
+  used for \code{corr="expsep"}.
+
+  If \code{itemps =! NULL} then importance tempering (IT) is performed
+  to get better mixing.  After each restart (when \code{R > 1}) the
+  observation counts are used to update the pseudo-prior.  Stochastic
+  approximation is performed in the first burn-in rounds (for \code{B-T}
+  rounds, not \code{B}) when \code{c0} and \code{n0} are positive.
+  Every subsequent burn-in after the first restart is for \code{B}
+  rounds in order to settle-in after using the observation counts.  See
+  \code{\link{default.itemps}} for more details and an example
   
-  Please see \code{vignette("tgp")} for detailed illustration
+  Please see \code{vignette("tgp")} for detailed illustration.
 }
 
 \value{
-  \code{bgp} returns an object of class \code{"tgp"}.  The function \code{\link{plot.tgp}}
+  \code{bgp} returns an object of class \code{"tgp"}.
+  The function \code{\link{plot.tgp}}
   can be used to help visualize results.
 
-  An object of class \code{"tgp"} is a list containing at least the following
-  components...  The code{parts} output is unique to the T (tree) category functions.
-  Tree viewing is supported by \code{\link{tgp.trees}}
+  An object of class \code{"tgp"} is a list containing at least the
+  following components...  The code{parts} output is unique to the T
+  (tree) category functions. Tree viewing is supported by
+  \code{\link{tgp.trees}}
 
   \item{X}{Input argument: \code{data.frame} of inputs \code{X}}
   \item{n}{Number of rows in \code{X}, i.e., \code{nrow(X)}}
@@ -199,13 +263,22 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
     \code{\link{tgp.default.params}} and subsequently modified according
     to the calling \code{b*} function and its arguments}
   \item{dparams}{Double-representation of model input parameters used by the C-code}
-  \item{itemps}{Input argument: \code{data.frame} of inverse
-    temperatures (\code{$itemps}) (temperature ladder) and prior
-    probability distribution (\code{$tprobs}) used for importance tempering}
+  \item{itemps}{\code{data.frame} containing the importance tempering
+    ladders and pseudo-prior: \code{$k} has inverse
+    inverse temperatures (from the input argument), \code{$k} has an
+    \emph{updated} pseudo-prior based on observation
+    counts and (possibly) stochastic approximation during burn-in
+    and (input) stochastic approximation parameters \eqn{c_0}{c0} and
+    \eqn{n_0}{n0}.  See \code{\link{default.itemps}} for more info}
   \item{Zp.mean}{Vector of mean predictive estimates at \code{X} locations}
   \item{Zp.q1}{Vector of 5\% predictive quantiles at \code{X} locations}
   \item{Zp.q2}{Vector of 95\% predictive quantiles at \code{X} locations}
   \item{Zp.q}{Vector of quantile norms \code{Zp.q2-Zp.q1}}
+  \item{Zp.s2}{If input \code{zcov = TRUE}, then this is a predictive
+    covariance matrix for the inputs at locations \code{X};  otherwise
+    then this is a vector of predictive variances at the \code{X}
+    locations (diagonal of the predictive covariance matrix).  Only
+    appears when input \code{pred.n = TRUE}}
   \item{Zp.km}{Vector of (expected) kriging means at \code{X} locations}
   \item{Zp.ks2}{Vector of (expected) kriging variances at \code{X} locations}
   \item{ZZ.mean}{Vector of mean predictive estimates at \code{XX} locations}
@@ -213,12 +286,25 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   \item{ZZ.q2}{Vector of 95\% predictive quantiles at \code{XX} locations}
   \item{ZZ.q}{Vector of quantile norms \code{ZZ.q2-ZZ.q1}, used by the 
     ALM adaptive sampling algorithm}
+  \item{ZZ.s2}{If input \code{zcov = TRUE}, then this is a predictive
+    covariance matrix for predictive locations \code{XX};  otherwise
+    then this is a vector of predictive variances at the \code{XX}
+    locations (diagonal of the predictive covariance matrix).  Only
+    appears when input \code{XX != NULL}}
+  \item{ZpZZ.s2}{If input \code{zcov = TRUE}, then this is a predictive
+    \code{n * nn} covariance matrix between locations in \code{X} and
+    \code{XX}; Only appears when \code{zcov = TRUE} and both
+    \code{pred.n = TRUE} and \code{XX != NULL}}
   \item{ZZ.km}{Vector of (expected) kriging means at \code{XX} locations}
   \item{ZZ.ks2}{Vector of (expected) kriging variances at \code{XX} locations}
   \item{Ds2x}{If argument \code{Ds2x=TRUE}, this vector contains ALC
     statistics for \code{XX} locations}
-  \item{improv}{If argument \code{improv=TRUE}, this vector contains expected
-  	improvement (about the global minimum) statistics for \code{XX} locations}
+  \item{improv}{If argument \code{improv} is \code{TRUE} or a
+    positive integer, this is a 'matrix' with first column set to the expected
+    improvement statistics for \code{XX} locations, and the second
+    column set to a ranking in the order that they should be sampled to
+    minimize the expected multivariate improvement raised to a power
+    determined by the argument \code{improv}}
   \item{response}{Name of response \code{Z} if supplied by \code{data.frame} 
   	in argument, or "z" if none provided}
   \item{parts}{Internal representation of the regions depicted by partitions of
@@ -228,20 +314,25 @@ btgpllm(X, Z, XX = NULL, bprior = "bflat", corr = "expsep",
   	of each tree height sampled between MCMC rounds \code{B} and
   	\code{T}}
   \item{trace}{If \code{trace==TRUE}, this \code{list}
-    contains traces of most of the model
-    parameters and posterior predictive distributions at input locations
+    contains traces of most of the model parameters and posterior
+    predictive distributions at input locations
     \code{XX}.  Otherwise the entry is \code{FALSE}.  See note below}
   \item{ess}{Importance tempering effective sample size (ESS).  If
     \code{itemps==NULL} this corresponds to the total number of
-    samples collected, i.e.,
+    samples collected, i.e..
 
-    \code{R*(BTE[2]-BTE[1])/BTE[3]}).
+    \code{R*(BTE[2]-BTE[1])/BTE[3]}.
 
     Otherwise the ESS will be lower due to a non-zero coefficient of
     variation of the calculated importance tempering weights}
+  \item{sens}{ See \code{\link{sens}} documentation for more details. }
 }
 
 \references{
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{19}(9).
+\url{http://www.jstatsoft.org/v19/i09}
+
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Bayesian treed Gaussian process models.}
 Available as UCSC Technical Report ams2006-01.
@@ -259,10 +350,22 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
+Kennedy, M.C. and O'Hagan, A. (2000).
+\emph{Predicting the output from a complex computer code when fast approximations are available.}
+Biometrika, \bold{87}, 1--13.
+
+M. Schonlau and Jones, D.R. and Welch, W.J. (1998).
+\emph{Global versus local search in constrained optimization of computer models.}
+In "New Developments and applications in experimental design", 
+IMS Lecture Notes - Monograph Series 34.  11--25.
+
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu} }
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \note{ Inputs \code{X, XX, Z} containing \code{NaN, NA}, or \code{Inf} are
 discarded with non-fatal warnings
@@ -278,6 +381,18 @@ button in the \R-GUI.  When this happens, interrupt messages will
 indicate which required cleanup measures completed before returning
 control to \R.
 
+Whereas most of the \pkg{tgp} models will work reasonably well with
+little or no change to the default prior specification, GP's with the
+\code{"mrexpsep"} correlation imply a very specific relationship between
+fine and coarse data, and a careful prior specification is usually
+required.
+
+The ranks provided in the second column of the \code{improv} field
+of a \code{tgp} object are based on the expectation of a multivariate
+improvement that may or may not be raised to a positive integer power.
+They can thus differ significantly from a simple ranking of the first
+column of expected univariate improvement values.
+
 Regarding \code{trace=TRUE}: Samples from the posterior will be
 collected for all parameters in the model.  GP parameters are collected
 with reference to the locations in \code{XX}, resulting
@@ -288,10 +403,11 @@ the tree partitions, areas under the LLM, log posterior (as a function
 of tree height), and samples from the posterior predictive
 distributions. Note that since some traces are stored in
 files, multiple \code{tgp}/\R sessions in the same working
-directory can clobber the trace files of other sessions
+directory can clobber the trace files of other sessions.
 }
 
-\seealso{  \code{\link{plot.tgp}},  \code{\link{tgp.trees}}, \code{\link{predict.tgp}}}
+\seealso{  \code{\link{plot.tgp}},  \code{\link{tgp.trees}},
+  \code{\link{predict.tgp}}, \code{\link{sens}}, \code{\link{default.itemps}}}
 
 \examples{
 ##
@@ -368,17 +484,63 @@ plot(out)			# plot the surface
 # try a treed GP LLM
 # best to use the "b0" beta linear prior to capture common
 # common linear process throughout all regions (using the
-# elipses "...") 
+# ellipses "...") 
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
 	       m0r1=TRUE)
 plot(out)			# plot the surface
 tgp.trees(out)		 	# plot the MAP trees
 
-# for other examples try the demos or the vignette
+
+##
+## Begin Multi-resolution TGP (mrtgp) examples
+##
+
+# Two-Fidelity model with corr="mrexpsep", 1D example:
+# Fit and plot a simple 2 resolution model where we
+# have very little 'fine' level data.
+N <- 25
+X <- runif(N)
+Y <- 2*X
+ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
+Z <- Y + ind*sin(12*X)*.75 + rnorm(N,0,.1)
+b <- btgp(X=cbind(ind,X), Z=Z, XX=cbind(rep(1,40),
+          seq(0,1,length=40)), corr="mrexpsep", m0r1=TRUE,
+          BTE=c(5000,10000,10))
+plot(b)
+
+# Fit a standard tgp to the 'fine' data only, and plot
+# the fit for comparison.
+Xf <- X[ind==1]
+Zf <- Z[ind==1]
+bf <- btgp(Xf, Zf, XX=seq(0,1,length=40), corr="expsep",
+           m0r1=TRUE)
+points(Xf, Zf)
+lines(bf$XX[,1], bf$ZZ.mean, lty=1, col=3)
+lines(bf$XX[,1], bf$ZZ.q1, lty=3, col=3)
+lines(bf$XX[,1], bf$ZZ.q2, lty=3, col=3)
+
+# Two-Fidelity model with corr="mrexpsep", 2D example:
+# Use the exp2d data as the coarse function, and add
+# a sin term to get the fine level.
+N <- 45
+exp2d.data <- exp2d.rand(n1=30, n2=15, lh=200)
+X <- exp2d.data$X; Z <- exp2d.data$Z
+XX <- cbind(ind=rep(1,200), exp2d.data$XX)
+XX <- rbind(XX, cbind(ind=rep(0,200), exp2d.data$XX))
+ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
+Z <- Z + (ind/10)*sin(X[,1]*X[,2])
+b2 <- btgp(X=cbind(ind,X), Z=Z, XX=XX, corr="mrexpsep",
+           m0r1=TRUE, meanfn="constant")
+
+# Plots focusing on the different resolutions
+plot(b2) # Plot both fine and coarse fits.
+plot(b2, mrlayout="fine") # Plot fine only.
+plot(b2, mrlayout="coarse") # Plot coarse only.
 }
 \keyword{ nonparametric }
 \keyword{ nonlinear }
 \keyword{ smooth }
 \keyword{ models }
+\keyword{ regression }
 \keyword{ spatial }
 \keyword{ tree }

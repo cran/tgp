@@ -51,6 +51,7 @@ double *FFrow, *KKrow, *KiZmFb, *b;
 {
   double zzm;
 	
+  /* Note that KKrow has been passed without any jitter. */
   /* f(x)' * beta */
   zzm = linalg_ddot(col, FFrow, 1, b, 1);
 
@@ -78,49 +79,24 @@ double *FFrow, *KKrow, *KiZmFb, *b;
  * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
  */
 
-void predict_data(zpm,zps2,n1,col,FFrow,K,b,ss2,nug,KiZmFb)
+void predict_data(zpm,zps2,n1,col,FFrow,K,b,ss2,zpjitter,KiZmFb)
 unsigned int n1, col;
-double *b, *KiZmFb, *zpm, *zps2;
+double *b, *KiZmFb, *zpm, *zps2, *zpjitter;
 double **FFrow, **K;
-double ss2, nug;
+double ss2;
 {
   int i;
-	
-  /* for each point at which we want a prediction */
-  for(i=0; i<n1; i++) {
-    zpm[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
-    zps2[i] = ss2*nug;
-  }
-}
 
-
-/*
- * mr_predict_data:
- *
- * used by the mr_predict_full funtion below to fill
- * zmean and zs [n1] with predicted mean and var values 
- * at the input data locations, X
- *
- * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
- */
-
-void mr_predict_data(zpm,zps2,n1,col,X,FFrow,K,b,ss2,nug,nugfine,KiZmFb)
-unsigned int n1, col;
-double *b, *KiZmFb, *zpm, *zps2;
-double **FFrow, **K, **X;
-double ss2, nug, nugfine;
-{
-  int i;
+  /* Note that now K is passed with jitter included.
+     This was previously removed in the predict_full fn. */
+  /* printf("zp: "); printVector(zpjitter,5,stdout, HUMAN); */
   
   /* for each point at which we want a prediction */
   for(i=0; i<n1; i++) {
-
-    /* same as non-mr predictive_mean */
+    K[i][i] += -zpjitter[i];
     zpm[i] = predictive_mean(n1, col, FFrow[i], K[i], b, KiZmFb);
-
-    /* decide whether to use coarse or fine nugget */
-    if(X[i][0]==1) zps2[i] = ss2*nugfine;
-    else zps2[i] = ss2*nug;
+    K[i][i] += zpjitter[i];
+    zps2[i] = zpjitter[i]*ss2;    
   }
 }
 
@@ -199,15 +175,15 @@ double **FW, **FFrow, **KKrow, **xxKxx;
  * KpFWFi[n1][n1], W[col][col];
  */
 
-double predictive_var(n1, col, Q, rhs, Wf, s2cor, ss2, k, f, FW, W, tau2, KpFWFi, var)
-unsigned int n1, col;
+double predictive_var(n1, col, Q, rhs, Wf, s2cor, ss2, k, f, FW, W, tau2, KpFWFi, corr_diag)
+     unsigned int n1, col;
 double *Q, *rhs, *Wf, *k, *f, *s2cor;
 double **FW, **KpFWFi, **W;
-double ss2, var, tau2;
+double ss2, corr_diag, tau2;
 {
   double s2, kappa, fWf, last;
 
-  /* Var[Z(x)] = s2*[1 + nug + fWf - Q (K + FWF)^{-1} Q] */
+  /* Var[Z(x)] = s2*[KKii + jitter + fWf - Q (K + FWF)^{-1} Q] */
   /* where Q = k + FWf */
   
   /* Q = k + tau2*FW*f(x); */
@@ -228,17 +204,17 @@ double ss2, var, tau2;
   fWf = linalg_ddot(col, f, 1, Wf, 1);	
   
   /* finish off the variance */
-  /* Var[Z(x)] = s2*[1 + nug + fWf - Q (K + FWF)^{-1} Q] */
+  /* Var[Z(x)] = s2*[KKii + jitter + fWf - Q (K + FWF)^{-1} Q] */
   /* Var[Z(x)] = s2*[kappa - Q C^{-1} Q] */
   
-  /* var is 1.0 + nug, for non-mr_tgp */
-  kappa = var + tau2*fWf;
+  /* of course corr_diag =  1.0 + nug, for non-mr_tgp & non calibration */
+  kappa =  corr_diag + tau2*fWf;
   *s2cor = kappa - last;
   s2 = ss2*(*s2cor);
   
   /* this is to catch bad s2 calculations;
-      nore that var = 1.0 + nug for non-mr_tgp */
-  if(s2 <= 0) { s2 = 0; *s2cor = var - 1.0; }
+      note that jitter = nug for non-mr_tgp */
+  if(s2 <= 0) { s2 = 0; *s2cor = corr_diag-1.0; }
   
   return s2;
 }
@@ -262,11 +238,11 @@ double ss2, var, tau2;
  */
 
 void predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,KKrow,xxKxx,KpFWFi,b,
-		ss2,nug,KiZmFb)
+		ss2, zzjitter,KiZmFb)
 unsigned int n1, n2, col;
-double *b, *KiZmFb, *zzm, *zzs2;
+double *b, *KiZmFb, *zzm, *zzs2, *zzjitter;
 double **FFrow, **KKrow, **xxKxx, **KpFWFi, **FW, **W, **Ds2xy;
-double ss2, nug, tau2;
+double ss2, tau2;
 {
   int i;
   double s2cor;
@@ -284,7 +260,7 @@ double ss2, nug, tau2;
     /* predictive mean and variance */
     zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
     zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, 
-				KKrow[i], FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug);
+			     KKrow[i], FFrow[i], FW, W, tau2, KpFWFi, xxKxx[i][i] + zzjitter[i]);
     
     /* compute the ith row of the Ds2xy matrix */
     delta_sigma2(Ds2xy[i], n1, n2, col, ss2, s2cor, FW, tau2, Wf, rhs, 
@@ -294,58 +270,6 @@ double ss2, nug, tau2;
   /* clean up */
   free(rhs); free(Wf); free(Q);
 }
-
-
-/*
- * mr_predict_no_delta: 
- *
- * used by the mr_predict_full function below to fill
- * zmean and zs [n2] with predicted mean and var values 
- * at the predictive locations, XX, using the 
- * multi-resolution version of tgp.
- *
- * does not call delta_sigma2, so it also has fewer arguments
- *
- * b[col], KiZmFb[n1], z[n2], FFrow[n2][col], KKrow[n2][n1], 
- * KpFWFi[n1][n1], FW[col][n1], W[col][col];
- */
-
-void mr_predict_no_delta(zzm,zzs2,n1,n2,col,XX,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
-			 nug,nugfine,r,delta,KiZmFb)
-unsigned int n1, n2, col;
-double *b, *KiZmFb, *zzm, *zzs2;
-double **FFrow, **KKrow, **KpFWFi, **FW, **W, **XX;
-double ss2, nug, nugfine, r, delta, tau2;
-{
-  int i;
-  double s2cor, var;
-  /*double Q[n1], rhs[n1], Wf[col];*/
-  double *Q, *rhs, *Wf;
-  
-  /* zero stuff out before starting the for-loop */
-  rhs = new_zero_vector(n1);
-  Wf = new_zero_vector(col);
-  Q = new_vector(n1);
-  
-  /* for each point at which we want a prediction */
-  for(i=0; i<n2; i++) {
-    
-    /* predictive mean and variance */
-    zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
-
-    /* compute the var parameter (1 + nugget) across coarse and fine levels */
-    if(XX[i][0]==1) var = r*r + delta + nugfine;
-    else var = 1.0 + nug;
-
-    /* calculate the predictive standard deviation */
-    zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
-				FFrow[i], FW, W, tau2, KpFWFi, var);
-  }
-
-  /* clean up */
-  free(rhs); free(Wf); free(Q);
-}
-
 
 /*
  * predict_no_delta:
@@ -361,12 +285,13 @@ double ss2, nug, nugfine, r, delta, tau2;
  * KpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
-		      nug,KiZmFb)
+void predict_no_delta(zzm,zzs2,  
+		      n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
+		      KKdiag,KiZmFb)
 unsigned int n1, n2, col;
-double *b, *KiZmFb, *zzm, *zzs2;
+double *b, *KiZmFb, *zzm, *zzs2, *KKdiag;
 double **FFrow, **KKrow, **KpFWFi, **FW, **W;
-double ss2, nug, tau2;
+double ss2, tau2;
 {
   int i;
   double s2cor;
@@ -377,16 +302,14 @@ double ss2, nug, tau2;
   rhs = new_zero_vector(n1);
   Wf = new_zero_vector(col);
   Q = new_vector(n1);
-  
   /* for each point at which we want a prediction */
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
     zzm[i] = predictive_mean(n1, col, FFrow[i], KKrow[i], b, KiZmFb);
-
-    /* var parameter is 1+nug for non-mr_tgp */
+    /* jitter = nug for non-mr_tgp */
     zzs2[i] = predictive_var(n1, col, Q, rhs, Wf, &s2cor, ss2, KKrow[i], 
-				FFrow[i], FW, W, tau2, KpFWFi, 1.0+nug);
+			     FFrow[i], FW, W, tau2, KpFWFi, KKdiag[i]);
   }
 
   /*clean up */
@@ -496,14 +419,14 @@ int err;
  * returns the number of warnings
  */
 
-int predict_full(n1, zp, zpm, zps2, n2, zz, zzm, zzs2, Ds2xy, improv, 
-		 Z, col, F, K, Ki, W, tau2, FF, xxKx, xxKxx, b, ss2, 
-		 nug, Zmin, err, state)
+int predict_full(n1, zp, zpm, zps2, zpjitter, n2, zz, zzm, zzs2, zzjitter, 
+		 Ds2xy, improv, Z, col, F, K, Ki, W, tau2, FF, 
+		 xxKx, xxKxx, KKdiag,  b, ss2, Zmin, err, state)
 unsigned int n1, n2, col;
 int err;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *b, *improv;
+double *zp, *zpm, *zps2, *zpjitter, *zz, *zzm, *zzs2, *zzjitter, *Z, *b, *improv, *KKdiag;
 double **F, **K, **Ki, **W, **FF, **xxKx, **xxKxx, **Ds2xy;
-double ss2, nug, tau2, Zmin;
+double ss2, tau2, Zmin;
 void *state;
 {
   /*double KiZmFb[n1]; 
@@ -511,7 +434,7 @@ void *state;
            Frow[n1][col];*/
   double *KiZmFb;
   double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
-  int i, warn;
+  int /*i,*/ warn;
 	
   /* sanity checks */
   if(!(zp || zz)) { assert(n2 == 0); return 0; }
@@ -537,14 +460,14 @@ void *state;
 		
     if(Ds2xy) { 
       /* yes, compute Delta-sigma for all pairs of new locations */
-      assert(xxKxx);
+      assert(xxKxx && !KKdiag);
       predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
-		    KKrow,xxKxx,KpFWFi,b,ss2,nug,KiZmFb);
+		    KKrow,xxKxx,KpFWFi,b,ss2,zzjitter,KiZmFb);
     } else { 
       /* just predict, don't compute Delta-sigma */
-      assert(xxKxx == NULL);
+      assert(KKdiag && !xxKxx);
       predict_no_delta(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,KKrow,
-		       KpFWFi,b,ss2,nug,KiZmFb);
+		       KpFWFi,b,ss2,KKdiag,KiZmFb);
     }
     
     /* clean up */
@@ -556,23 +479,20 @@ void *state;
 
   if(zp) {    /* predicting at the data locations */
 	 
-    /* take away the nugget for prediction */
-    for(i=0; i<n1; i++) K[i][i] -= nug;
+    /* the nugget is removed within predict_data */
     
     /* transpose F so we can get at its rows */
     Frow = new_t_matrix(F, col, n1);
 
     /* calculate the necessary means and vars for prediction */
-    predict_data(zpm,zps2,n1,col,Frow,K,b,ss2,nug,KiZmFb);
-    
+    predict_data(zpm,zps2,n1,col,Frow,K,b,ss2,zpjitter,KiZmFb);
+
     /* clean up the transposed F-matrix */
     delete_matrix(Frow);
 
-    /* add the nugget back in */
-    for(i=0; i<n1; i++) K[i][i] += nug;
-    
     /* draw from the posterior predictive distribution */
     warn += predict_draw(n1, zp, zpm, zps2, err, state);
+    
   }
 
   /* compute IMPROV statistic */
@@ -587,118 +507,6 @@ void *state;
   free(KiZmFb);
 
   /* return the count of warnings encountered */
-  return warn;
-}
-
-
-/*
- * mr_predict_full:
- *
- * predicts at the given data locations (X (n1 x col): F, K, Ki) 
- * and the NEW predictive locations (XX (n2 x col): FF, KK) 
- * under the multiresolution tgp model, given the current values 
- * of the parameters b, s2, d, nug;
- *
- * returns the number of warnings
- */
-
-int mr_predict_full(n1, zp, zpm, zps2, n2, zz, zzm, zzs2, Ds2xy, improv, 
-		    Z, col, X, F, K, Ki, W, tau2, XX, FF, xxKx, xxKxx, b, 
-		    ss2, nug, nugfine, r, delta, Zmin, err, state)
-unsigned int n1, n2, col;
-int err;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *b, *improv;
-double **X, **F, **K, **Ki, **W, **XX, **FF, **xxKx, **xxKxx, **Ds2xy;
-double ss2, nug, nugfine, r, delta, tau2, Zmin;
-void *state;
-{
-  /*double KiZmFb[n1]; 
-    double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], 
-           Frow[n1][col];*/
-  double *KiZmFb;
-  double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
-  int i, warn;
-	
-  /* sanity checks */
-  if(!(zp || zz)) { assert(n2 == 0); return 0; }
-  assert(K && Ki && F && Z && W);
-
-  /* init */
-  FW = new_matrix(col, n1);
-  KpFWFi = new_matrix(n1, n1);
-  KiZmFb = new_vector(n1);
-  predict_help(n1,col,b,F,Z,W,tau2,K,Ki,FW,KpFWFi,KiZmFb);
-  
-  /* tally the number of warnings */
-  warn = 0;
-
-  if(zz) {  /* predicting and Delta-sigming at the predictive locations */
-
-    /* sanity check */
-    assert(FF && xxKx);
-		
-    /* transpose the FF and KK matrices */
-    KKrow = new_t_matrix(xxKx, n1, n2);
-    FFrow = new_t_matrix(FF, col, n2);
-    
-    if(Ds2xy) { 
-      /* yes, compute Delta-sigma for all pairs of new locations */
-      assert(xxKxx);
-      predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
-		    KKrow,xxKxx,KpFWFi,b,ss2,nug,KiZmFb);
-    } else { 
-      /* just predict, don't compute Delta-sigma */
-      assert(xxKxx == NULL);
-      mr_predict_no_delta(zzm,zzs2,n1,n2,col,XX, FFrow,FW,W,tau2,KKrow,
-			  KpFWFi,b,ss2,nug,nugfine,r,delta,KiZmFb);
-    }
-
-    /* clean up */
-    delete_matrix(KKrow); delete_matrix(FFrow);
-		
-    /* draw from the posterior predictive distribution */
-    warn += predict_draw(n2, zz, zzm, zzs2, err, state);
-  }
-  
-  if(zp) {  /* predict at the data locations */
-
-    /* subtract the nugget at both levels for prediction */
-    for(i=0; i<n1; i++){ 
-      if(X[i][0]==1) K[i][i] -= nugfine;
-      else  K[i][i] -= nug;
-    }
- 
-    /* transpose the F matrix so we can get a tthe rows */
-    Frow = new_t_matrix(F, col, n1);
-    
-    /* calculate the necessart means and vars for sampling */
-    mr_predict_data(zpm,zps2,n1,col,X,Frow,K,b,ss2,nug,nugfine,KiZmFb);
-
-    /* clean up the F-transpose matrix */
-    delete_matrix(Frow);
-
-    /* add the nugget(s) back in */
-    for(i=0; i<n1; i++){ 
-      if(X[i][0]==1) K[i][i] += nugfine;
-      else  K[i][i] += nug;
-    }
-    
-    /* draw from the posterior predictive distribution */
-    warn += predict_draw(n1, zp, zpm, zps2, err, state);    
-  }
-
-  /* compute IMPROV statistic */
-  if(improv) { 
-    if(zp) predicted_improv(n1, n2, improv, Zmin, zp, zz);
-    else expected_improv(n1, n2, improv, Zmin, zzm, zzs2);
-  }
-  
-  /* clean up */
-  delete_matrix(FW);
-  delete_matrix(KpFWFi);
-  free(KiZmFb);
-
-  /* return a count of the number of warnings */
   return warn;
 }
 
@@ -790,7 +598,6 @@ void predicted_improv(n, nn, improv, Zmin, zp, zz)
 
   /* calculate best minimum so far */
   fmin = min(zp, n, &which);
-  /* myprintf(stderr, "fmin = %g, Zmin = %g, min(zz) = %g\n", fmin, Zmin, min(zz, nn, &which));*/
   if(Zmin < fmin) fmin = Zmin;
 
   for(i=0; i<nn; i++) {
@@ -800,4 +607,154 @@ void predicted_improv(n, nn, improv, Zmin, zp, zz)
     if (diff > 0) improv[i] = diff;
     else improv[i] = 0.0;
   }
+}
+
+
+/*
+ * GetImprovRank:
+ *
+ * implements Matt Taddy's heuristic for determining the order
+ * in which the nn points -- whose improv samples are recorded
+ * in the cols of Imat_in over R rounds -- should be added into
+ * the design in order to get the largest expected improvement.
+ * w are R importance tempering (IT) weights
+ */
+
+unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w)
+{
+  /* duplicate Imat, since it will be modified by this method */
+  unsigned int j, i, k, m, maxj;
+  double *colmean, *maxcol;
+  double maxmean;
+  double **Imat = new_dup_matrix(Imat_in, R, nn); 
+  unsigned int* pntind = new_zero_uivector(nn);
+  
+  /* first, raise improv to the appropriate power */
+  for (j=0; j<nn; j++){
+    for (i=0; i<R; i++){
+      if(g<0 && Imat[i][j] > 0.0) Imat[i][j] = 1.0; 
+      else for(k=1; k<g; k++) Imat[i][j] *= Imat_in[i][j];
+    }
+  }
+
+  /* Compute the sum (mean actually) of each row */
+  colmean = new_vector(nn);
+  wmean_of_columns(colmean, Imat, R, nn, w);
+  
+  /* which column yields the maximum improvement */
+  maxj = 0;
+  maxmean = max(colmean, nn, &maxj);
+
+  /* the maxj-th input is ranked first */
+  pntind[maxj] = 1;
+  
+  /* grab column of data corresponding to the max sum of SI */
+  maxcol= new_vector(R);
+  for (i=0; i<R; i++) maxcol[i] = Imat[i][maxj];
+
+  /* a counter for placing zero-imrov indices */
+  m=0;
+  
+  /* Now loop and find appropriate index vector pntind */
+  for (k=1; k<nn; k++) {
+
+    /* adjust Imat to account for the first k-1 locations
+       chosen to reduce improv */
+    for (j=0; j<nn; j++)
+      for (i=0; i<R; i++)
+	Imat[i][j] = myfmax(maxcol[i], Imat[i][j]);
+  
+    /* compute the mean of each row */
+    wmean_of_columns(colmean, Imat, R, nn, w);
+
+    /* which column yeilds the maximum improvement */
+    maxmean = max(colmean, nn, &maxj);
+
+    /* the maxj-th column is ranked k+1st */
+    /* make sure that pntind[maxj] is not already filled */
+    if(pntind[maxj] != 0) {
+      for(; m<nn; m++) if(pntind[m] == 0) { maxj = m; break; }
+    }
+    pntind[maxj] = k+1;
+    
+    /* grab the colum of data corresponding to the max sum of SI */
+    for (i=0; i<R; i++) maxcol[i] = Imat[i][maxj];
+  }
+  
+  /* clean up */
+  delete_matrix(Imat);
+  free(colmean);
+  free(maxcol);
+ 
+  /* return the vector of ranks */
+  return pntind;
+}
+
+
+/* 
+ * move_avg:
+ * 
+ * simple moving average smoothing.  Uses a squared difference weight function.
+ */
+ 
+void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac){
+
+  /* frac is the portion of the data in the moving average window
+     and q is the number of points in this window */
+
+  assert( 0.0 < frac && frac < 1.0);
+  int q = (int) floor( frac*((double) n));
+  if(q < 2) q=2;
+  if(n < q) q=n;
+
+  double *w = new_vector(n);
+  int i, j, l, u, search;
+  double dist;
+  double range;
+  double sumW;
+  double temp;
+
+  /* assume that XX is already in ascending order... */
+  double *Xordered, *Yordered;
+  Xordered = new_dup_vector(X, n);
+  Yordered = new_dup_vector(Y, n);
+
+  for(i=0; i<n; i++){
+    for(j=i; j<n; j++){ 
+      if(Xordered[i] > Xordered[j]){
+	temp = Xordered[i];
+	Xordered[i] = Xordered[j];
+	Xordered[j] = temp;
+	temp = Yordered[i];
+	Yordered[i] = Yordered[j];
+	Yordered[j] = temp;
+      }
+    }
+  }
+
+  l = 0;
+  u = q-1;
+  for(i=0; i<nn; i++){
+    search=1;
+    while(search){
+      if(u==(n-1)) search = 0;
+      else if( myfmax(fabs(XX[i]-Xordered[l+1]), fabs(XX[i]-Xordered[u+1])) > 
+               myfmax(fabs(XX[i]-Xordered[l]), fabs(XX[i]-Xordered[u]))) search = 0;
+      else{ l++; u++; }
+    }
+    /*printf("l=%d, u=%d, Xordered[l]=%g, Xordered[u]=%g, XX[i]=%g \n", l, u, Xordered[l],Xordered[u],XX[i]);*/
+    range = myfmax(fabs(XX[i]-Xordered[l]), fabs(XX[i]-Xordered[u]));
+    zerov(w,n);
+    for(j=l; j<=u; j++){
+      dist = fabs(XX[i]-Xordered[j])/range;
+      w[j] = (1.0-dist)*(1.0-dist);
+    }
+    sumW = sumv(w, n);
+    YY[i] = vmult(w, Yordered, n)/sumW;
+    /*printf("YY = "); printVector(YY, nn, stdout, HUMAN);*/
+  }
+  
+  free(w);
+  free(Xordered);
+  free(Yordered);
 }

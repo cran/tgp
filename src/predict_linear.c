@@ -44,10 +44,9 @@
  * FFrow[col], b[col]
  */
 
-double predictive_mean_noK(n1, col, FFrow, i, b, nug)
+double predictive_mean_noK(n1, col, FFrow, i, b)
 unsigned int n1, col;
 int i;
-double nug;
 double *FFrow, *b;
 {
   double zm;
@@ -56,7 +55,7 @@ double *FFrow, *b;
   zm = linalg_ddot(col, FFrow, 1, b, 1);
   
 #ifdef DEBUG
-  /* checking for a old bug, where predictions went wild */
+  /* checking for an old bug, where predictions went wild */
   if(abs(zz) > 10e10) 
     warning("(predict) abs(zz)=%g > 10e10", zm);
 #endif
@@ -70,24 +69,24 @@ double *FFrow, *b;
  * 
  * used by the predict_full funtion below to fill
  * z[n1] with predicted values based on the input coded in
- * terms of Frow,FW,W,xxKx,IDpFWF,IDpFWFi,b,ss2,nug
+ * terms of Frow,FW,W,xxKx,IDpFWF,IDpFWFi,b,ss2,Kdiag
  * returns the number of warnings
  *
  * b[col], z[n1], FFrow[n1][col];
  */
 
-void predict_data_noK(zpm,zps2,n1,col,FFrow,b,ss2,nug)
+void predict_data_noK(zpm,zps2,n1,col,FFrow,b,ss2,Kdiag)
 unsigned int n1, col;
-double *b, *zpm, *zps2;
+double *b, *zpm, *zps2, *Kdiag;
 double **FFrow;
-double ss2, nug;
+double ss2;
 {
   int i;
   
   /* for each point at which we want a prediction */
   for(i=0; i<n1; i++) {
-    zpm[i] = predictive_mean_noK(n1, col, FFrow[i], i, b, nug);
-    zps2[i] = ss2*nug;
+    zpm[i] = predictive_mean_noK(n1, col, FFrow[i], i, b);
+    zps2[i] = ss2*(Kdiag[i]-1.0);
   }
 }
 
@@ -101,9 +100,9 @@ double ss2, nug;
  */
 
 void delta_sigma2_noK(Ds2xy, n1, n2, col, ss2, denom, FW, tau2, fW, 
-		IDpFWFiQx, FFrow, which_i, nug)
+		IDpFWFiQx, FFrow, which_i, corr_diag)
 unsigned int n1, n2, col, which_i;
-double ss2, denom, tau2, nug;
+double ss2, denom, tau2, corr_diag;
 double *Ds2xy, *fW, *IDpFWFiQx;
 double **FW, **FFrow;
 {
@@ -121,7 +120,7 @@ double **FW, **FFrow;
     zerov(Qy, n1);
     linalg_dgemv(CblasNoTrans, n1,col,tau2,FW,n1,FFrow[i],1,0.0,Qy,1);
     
-    /*  Qy (Id+nug + FWF)^{-1} Qx */
+    /*  Qy (corr_diag + FWF)^{-1} Qx */
     /* last = Qy*KpFWFiQx = Qy*KpFWFi*Qx */
     last = linalg_ddot(n1, Qy, 1, IDpFWFiQx, 1);
     
@@ -129,8 +128,9 @@ double **FW, **FFrow;
     fxWfy = tau2 * linalg_ddot(col, fW, 1, FFrow[i], 1);	
     
     /* now kappa(x,y) */
+    /* corr_diag = 1.0 + nug for non-mr tgp */
     kappa = fxWfy;
-    if(which_i == i) kappa += 1.0 + nug;
+    if(which_i == i) kappa += corr_diag;
     
     /* now use the Delta-s2 formula from the ALC paper */
     diff = (last - kappa);
@@ -166,15 +166,15 @@ double **FW, **FFrow;
  * IDpFWFi[n1][n1], W[col][col];
  */
 
-double predictive_var_noK(n1, col, Q, rhs, Wf, s2cor, ss2, f, FW, W, tau2, IDpFWFi, nug)
+double predictive_var_noK(n1, col, Q, rhs, Wf, s2cor, ss2, f, FW, W, tau2, IDpFWFi, corr_diag)
 unsigned int n1, col;
 double *Q, *rhs, *Wf, *f, *s2cor;
 double **FW, **IDpFWFi, **W;
-double nug, ss2, tau2;
+double corr_diag, ss2, tau2;
 {
   double s2, kappa, fWf, last;
   
-  /* Var[Z(x)] = s2*[1 + nug + fWf - Q (K + FWF)^{-1} Q] */
+  /* Var[Z(x)] = s2*[corr_diag + fWf - Q (K + FWF)^{-1} Q] */
   /* where Q = k + FWf */
   
   /* Q = tau2*FW*f(x); */
@@ -195,16 +195,15 @@ double nug, ss2, tau2;
   fWf = linalg_ddot(col, f, 1, Wf, 1);	
   
   /* finish off the variance */
-  /* Var[Z(x)] = s2*[1 + nug + fWf - Q (Id + FWF)^{-1} Q] */
+  /* Var[Z(x)] = s2*[corr_diag + fWf - Q (Id + FWF)^{-1} Q] */
   /* Var[Z(x)] = s2*[kappa - Q C^{-1} Q] */
   
-  kappa = 1.0 + nug + tau2*fWf;
+  kappa = corr_diag + tau2*fWf;
   *s2cor = kappa - last;
   s2 = ss2*(*s2cor);
   
-  /* this is to catch bad s2 calculations;
-      nore that var = 1.0 + nug for non-mr_tgp */
-  if(s2 <= 0) { s2 = 0; *s2cor = nug; }
+  /* this is to catch bad s2 calculations; */
+  if(s2 <= 0) { s2 = 0; *s2cor = corr_diag-1.0; }
   
   return s2;
 }
@@ -216,7 +215,7 @@ double nug, ss2, tau2;
  * used by the predict_full funtion below to fill
  * zmean and zs [n2] with predicted mean and var
  * values based on the input coded in
- * terms of FF,FW,W,xxKx,IDpFWF,IDpFWFi,b,ss2,nug
+ * terms of FF,FW,W,xxKx,IDpFWF,IDpFWFi,b,ss2,Kdiag
  *
  * Also calls delta_sigma2 at each predictive location,
  * becuase it uses many of the same computed quantaties 
@@ -226,11 +225,11 @@ double nug, ss2, tau2;
  * FW[col][n1], W[col][col], Ds2xy[n2][n2];
  */
 
-void predict_delta_noK(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,nug)
+void predict_delta_noK(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,KKdiag)
 unsigned int n1, n2, col;
-double *b, *zzm, *zzs2;
+double *b, *zzm, *zzs2, *KKdiag;
 double **FFrow, **IDpFWFi, **FW, **W, **Ds2xy;
-double ss2, nug, tau2;
+double ss2, tau2;
 {
   int i;
   double s2cor;
@@ -246,13 +245,13 @@ double ss2, nug, tau2;
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
-    zzm[i] = predictive_mean_noK(n1, col, FFrow[i], -1, b, nug);
+    zzm[i] = predictive_mean_noK(n1, col, FFrow[i], -1, b);
     zzs2[i] = predictive_var_noK(n1, col, Q, rhs, Wf, &s2cor, ss2, FFrow[i], 
-				    FW, W, tau2, IDpFWFi, nug);
+				    FW, W, tau2, IDpFWFi, KKdiag[i]);
     
     /* compute the ith row of the Ds2xy matrix */
     delta_sigma2_noK(Ds2xy[i], n1, n2, col, ss2, s2cor, FW, tau2, Wf, 
-		     rhs, FFrow, i, nug);
+		     rhs, FFrow, i,KKdiag[i]);
   }
   
   /* clean up */
@@ -274,11 +273,11 @@ double ss2, nug, tau2;
  * IDpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta_noK(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,nug)
+void predict_no_delta_noK(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,KKdiag)
 unsigned int n1, n2, col;
-double *b, *zzm, *zzs2;
+double *b, *zzm, *zzs2, *KKdiag;
 double **FFrow, **IDpFWFi, **FW, **W;
-double ss2, nug, tau2;
+double ss2,  tau2;
 {
   int i;
   double s2cor;
@@ -294,9 +293,9 @@ double ss2, nug, tau2;
   for(i=0; i<n2; i++) {
     
     /* predictive mean and variance */
-    zzm[i] = predictive_mean_noK(n1, col, FFrow[i], -1, b, nug);
+    zzm[i] = predictive_mean_noK(n1, col, FFrow[i], -1, b);
     zzs2[i] = predictive_var_noK(n1, col, Q, rhs, Wf, &s2cor, ss2, 
-				    FFrow[i], FW, W, tau2, IDpFWFi, nug);
+			FFrow[i], FW, W, tau2, IDpFWFi, KKdiag[i]);
     
   }
   
@@ -316,11 +315,11 @@ double ss2, nug, tau2;
  * IDpFWFi[n1][n1], b[col];
  */
 
-void predict_help_noK(n1,col,b,F,W,tau2,FW,IDpFWFi,nug)
+void predict_help_noK(n1,col,b,F,W,tau2,FW,IDpFWFi,Kdiag)
 unsigned int n1, col;
 double **F, **W, **FW, **IDpFWFi; 
-double *b;
-double tau2, nug;
+double *b,  *Kdiag;
+double tau2;
 {
   /*double IDpFWF[n1][n1];
     int p[n1]; */
@@ -335,7 +334,7 @@ double tau2, nug;
   IDpFWF = new_zero_matrix(n1, n1);
   linalg_dgemm(CblasNoTrans,CblasTrans,n1,n1,col,
 	       tau2,FW,n1,F,n1,0.0,IDpFWF,n1);
-  for(i=0; i<n1; i++) IDpFWF[i][i] += 1.0+nug;
+  for(i=0; i<n1; i++) IDpFWF[i][i] += Kdiag[i];
   
   /* IDpFWFi = inv(K + FWF') */
   id(IDpFWFi, n1);
@@ -389,11 +388,11 @@ double **F;
  * predict using only the linear part of the GP model
  */
 
-void predict_linear(n, col, zm, zs2, F, b, s2, Vb, Ds2xy, nug)
+void predict_linear(n, col, zm, zs2, F, b, s2, Vb, Ds2xy, Kdiag)
 unsigned int n, col;
-double *b, *zm, *zs2;
+double *b, *zm, *zs2, *Kdiag;
 double **Vb, **F, **Ds2xy;
-double s2, nug;
+double s2;
 {
   unsigned int i, j;
   double *f, *Vbf;
@@ -424,7 +423,7 @@ double s2, nug;
     fVbf = linalg_ddot(col, Vbf, 1, f, 1);	
     
     /* compute delta sigma */
-    if(Ds2xy) delta_sigma2_linear(Ds2xy[i], n, col, s2, Vbf, fVbf, F, nug);
+    if(Ds2xy) delta_sigma2_linear(Ds2xy[i], n, col, s2, Vbf, fVbf, F, Kdiag[i]);
     
     /* normal deviates with correct variance */
     zs2[i] = s2 * (1.0 + fVbf);
@@ -442,12 +441,14 @@ double s2, nug;
  * and do delta_sigma_linear on them too, if applicable
  */
 
-int predict_full_linear(n, zp, zpm, zps2, nn, zz, zzm, zzs2, Ds2xy, improv,
-			Z, col, F, FF, bmu, s2, Vb, nug, Zmin, err, state)
+int predict_full_linear(n, zp, zpm, zps2, Kdiag,
+			nn, zz, zzm, zzs2, KKdiag,
+			Ds2xy, improv,
+			Z, col, F, FF, bmu, s2, Vb, Zmin, err, state)
 unsigned int n, nn, col;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *bmu, *improv;
+double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *bmu, *improv, *Kdiag, *KKdiag;
 double **F, **FF, **Vb, **Ds2xy;
-double s2, nug, Zmin;
+double s2, Zmin;
 int err;
 void *state;
 {
@@ -460,7 +461,9 @@ void *state;
      none of these statements do anything for n or nn = 0 ?? */
  
   /* calculate the necessary means and vars for prediction */
-  predict_linear(n, col, zpm, zps2, F, bmu, s2, Vb, NULL, 0.0);
+  double *zero = new_zero_vector(n);
+  predict_linear(n, col, zpm, zps2, F, bmu, s2, Vb, NULL, zero);
+  free(zero);
 
   /* draw from the posterior predictive distribution */
   warn += predict_draw(n, zp, zpm, zps2, err, state);
@@ -468,7 +471,7 @@ void *state;
   /* predict at the new predictive locations */
 
   /* calculate the necessary means and vars for predicition */
-  predict_linear(nn, col, zzm, zzs2, FF, bmu, s2, Vb, Ds2xy, nug);
+  predict_linear(nn, col, zzm, zzs2, FF, bmu, s2, Vb, Ds2xy, KKdiag);
   
   /* draw from the posterior predicitive distribtution */
   warn += predict_draw(nn, zz, zzm, zzs2, err, state);
@@ -494,13 +497,13 @@ void *state;
  * returns the number of warnings
  */
 
-int predict_full_noK(n1, zp, zpm, zps2, n2, zz, zzm, zzs2, Ds2xy, 
-		     col, F, W, tau2, FF, b, ss2, nug, err, state)
+int predict_full_noK(n1, zp, zpm, zps2, Kdiag, n2, zz, zzm, zzs2, KKdiag, Ds2xy, 
+		     col, F, W, tau2, FF, b, ss2, err, state)
 unsigned int n1, n2, col;
 int err;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *b; 
+double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *b, *Kdiag, *KKdiag; 
 double **F, **W, **FF, **Ds2xy;
-double ss2, nug, tau2;
+double ss2, tau2;
 void *state;
 {
   /*double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], Frow[n1][col];*/
@@ -514,7 +517,7 @@ void *state;
   /* init */
   FW = new_matrix(col, n1);
   IDpFWFi = new_matrix(n1, n1);
-  predict_help_noK(n1,col,b,F,W,tau2,FW,IDpFWFi,nug);
+  predict_help_noK(n1,col,b,F,W,tau2,FW,IDpFWFi,Kdiag);
   
   if(zz) { 
     /* predicting and Delta-sigming at the predictive locations */
@@ -527,11 +530,11 @@ void *state;
     if(Ds2xy) { 
       /* yes, compute Delta-sigma for all pairs of new locations */
       predict_delta_noK(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,
-			IDpFWFi,b,ss2,nug);
+			IDpFWFi,b,ss2,KKdiag);
     } else { 
       /* just predict, don't compute Delta-sigma */
       predict_no_delta_noK(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,
-			   IDpFWFi,b,ss2,nug);
+			   IDpFWFi,b,ss2,KKdiag);
     }		
     
     /* use means and vars to get normal draws */
@@ -545,7 +548,7 @@ void *state;
     
     /* get data location posterior predictive means and vars */
     Frow = new_t_matrix(F, col, n1);
-    predict_data_noK(zzm,zzs2,n1,col,Frow,b,ss2,nug);
+    predict_data_noK(zpm,zps2,n1,col,Frow,b,ss2,Kdiag);
     delete_matrix(Frow);
     
     /* use means and vars to get normal draws */

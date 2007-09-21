@@ -36,7 +36,7 @@ extern "C"
 //#define PRINTNUG
 #define REJECTMAX 1000
 typedef enum CORR_MODEL 
-  {EXP=701, EXPSEP=702, MATERN=703, MREXP=704, MREXPSEP=705, MRMATERN=706} CORR_MODEL;
+  {EXP=701, EXPSEP=702, MATERN=703, MREXPSEP=704} CORR_MODEL;
 
 class Model;  /* not including model.h */
 class Corr_Prior;
@@ -54,10 +54,11 @@ class Corr
 
  protected:
 
-  Base_Prior *base_prior;/* Base (eg Gp) prior module */
+  Base_Prior *base_prior;/* Base  prior module */
   Corr_Prior *prior;     /* generic prior parameterization for nugget */
 
-  unsigned int col;	/* # of columns in the design matrix X, plus 1 */
+  unsigned int dim;	/* # of columns in the matrix X */
+  unsigned int col;     /* # of columns in the design matrix F */
   unsigned int n;	/* number of input data points-- rows in the design matrix */
   
   /* actual current covariance matrices */
@@ -80,11 +81,11 @@ class Corr
   
  public:
 
-  Corr(unsigned int col, Base_Prior* base_prior);
+  Corr(unsigned int dim, Base_Prior* base_prior);
   virtual ~Corr(void);
   virtual Corr& operator=(const Corr &c)=0;
   virtual int Draw(unsigned int n, double **F, double **X, double *Z,double *lambda, 
-		   double **bmu, double **Vb, double tau2, double temp, bool cart, 
+		   double **bmu, double **Vb, double tau2, double temp, 
 		   void *state)=0;
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, 
 		      double **XX)=0;
@@ -96,14 +97,24 @@ class Corr
   virtual double log_Prior(void)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void ToggleLinear(void)=0;
-  virtual bool DrawNug(unsigned int n, double **X,  double **F, double *Z, 
+  virtual bool DrawNugs(unsigned int n, double **X,  double **F, double *Z, 
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double temp, bool cart, void *state)=0;
+		       double temp, void *state)=0;
   virtual double* Trace(unsigned int *len)=0;
   virtual char** TraceNames(unsigned int *len)=0;
   virtual void Init(double *dcorr)=0;
+  virtual double* Jitter(unsigned int n1, double **X)=0;
+  virtual double* CorrDiag(unsigned int n1, double **X)=0;
 
   unsigned int N();
+  double** get_Ki(void);
+  double** get_K(void);
+  double get_log_det_K(void);
+  bool Linear(void);
+  void Cov(Corr *cc);
+  void printCorr(unsigned int n);
+
+  // Move all this to the member classes 
   double get_delta_nug(Corr* c1, Corr* c2, void *state);
   void propose_new_nug(Corr* c1, Corr* c2, void *state);
   void CombineNug(Corr *c1, Corr *c2, void *state);
@@ -113,14 +124,9 @@ class Corr
   void Invert(unsigned int n);
   void deallocate_new(void);
   double Nug(void);
-  double** get_Ki(void);
-  double** get_K(void);
-  double get_log_det_K(void);
-  bool Linear(void);
-  void Cov(Corr *cc);
   double log_NugPrior(void);
-  void printCorr(unsigned int n);
   void NugInit(double nug, bool linear);
+
 };
 
 
@@ -146,13 +152,14 @@ class Corr_Prior
  protected:
 
   CORR_MODEL corr_model;	/* indicator for type of correllation model */
-  Base_Prior *base_prior;       /* prior for the base (eg Gp) model */
-  unsigned int col;
+  Base_Prior *base_prior;       /* prior for the base  model */
+  unsigned int dim;
+
   double gamlin[3];	        /* gamma for the linear pdf */
 
  public:
   
-  Corr_Prior(const unsigned int col);
+  Corr_Prior(const unsigned int dim);
   Corr_Prior(Corr_Prior *c);
   virtual ~Corr_Prior(void);
   CORR_MODEL CorrModel(void);
@@ -175,7 +182,7 @@ class Corr_Prior
   double log_NugPrior(double nug);
   double log_NugHierPrior(void);
   double Nug(void);
-  void DrawNug(Corr **corr, unsigned int howmany, void *state);
+  void DrawNugHier(Corr **corr, unsigned int howmany, void *state);
   void default_nug_priors(void);
   void default_nug_lambdas(void);
   void fix_nug_prior(void);

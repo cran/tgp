@@ -8,15 +8,27 @@
   modeling
 }
 \usage{
-tgp.default.params(col, base = "gp", ...)
+tgp.default.params(d, meanfn = c("linear", "constant"),
+                   corr = "expsep", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{col}{ number of input dimensions \code{ncol(X)+1}}
-  \item{base}{ Base model to be used.  Right now, the only supported
-    option is the default, \code{base = "gp"}.  Future versions of
-    this package will support other base models.}
-  \item{...}{ These elipses arguments are interpreted as augmentations
+  \item{d}{ number of input dimensions \code{ncol(X)}}
+  \item{meanfn}{ A choice of mean function for the process.  When
+    \code{meanfn = "linear"} (default), then we have the process
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{
+      Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+  where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
+  part of the model (if present).  Otherwise, when
+  \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
+    Z = beta0 + W(X).}}
+  \item{corr}{ Gaussian process correlation model. Choose between the isotropic
+  	power exponential family (\code{"exp"}) or the separable power exponential 
+	family (\code{"expsep"}, default); the current version also supports 
+	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
+	functionality.  The option \code{"mrexpsep"} uses a
+	multi-resolution GP model.}
+  \item{...}{ These ellipses arguments are interpreted as augmentations
     to the prior specification. You may use these to specify
     a custom setting of any of default parameters in the output list 
     detailed below}
@@ -25,13 +37,14 @@ tgp.default.params(col, base = "gp", ...)
 \value{
    The output is the following list of \code{params}...
 
-   \item{base}{input argument \code{base}}
    \item{tree}{\code{c(0.5,2,max(c(10,col+1)),1)} indicating the tree prior
      parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
-          and \emph{splitmin}}
-   \item{corr}{\code{"expsep"} separable power exponential family
-     correlation model; alternate is \code{"exp"} isotropic power
-     family, or \code{"matern"}}
+     and \emph{splitmin}}
+   \item{col}{dimension of regression coefficients \eqn{\mbox{\boldmath
+	 $\beta$}}{beta}: 1 for input \code{meanfn = "constant"}, or
+     \code{ncol(X)+1} for \code{meanfn = "linear"}}
+   \item{meanfn}{ copied from the inputs }
+   \item{corr}{ copied from the inputs }
    \item{bprior}{Linear (beta) prior, default is \code{"bflat"}
      which gives an \dQuote{improper} prior which can perform badly 
      when the signal-to-noise ratio is low.  In these cases the 
@@ -52,10 +65,15 @@ tgp.default.params(col, base = "gp", ...)
       \item{tau2.p}{\code{c(5,10)} \eqn{\tau^2}{tau2} inverse-gamma
 	prior parameters \code{c(a0, g0)} where \code{g0} is scale (1/rate) parameter}
    \item{d.p}{c(1.0,20.0,10.0,10.0) Mixture of gamma prior parameter (initial values)
-     for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
-     \code{g2} are scale (1/rate) parameters}
+     for the range parameter(s) \code{c(a1,g1,a2,g2)} where \code{g1} and
+     \code{g2} are scale (1/rate) parameters.  If
+     \code{corr="mrexpsep"}, then this is a vector of length 8: The
+     first four parameters remain the same and correspond to the
+     "coarse" process, and the
+     second set of four values, which default to \code{c(1,10,1,10)},
+     are the equivalent prior parameters for the range parameter(s) in the residual "fine" process.}
    \item{nug.p}{\code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values)
-     for the range parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
+     for the nugget parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior}
    \item{gamma}{\code{c(10,0.2,10)}
         LLM parameters c(g, t1, t2), with growth parameter \code{g > 0}
@@ -80,10 +98,24 @@ tgp.default.params(col, base = "gp", ...)
      \code{a0} and \code{g0} of the prior distribution for the s2
      parameter \code{tau2.p}; \code{"fixed"} indicates that the
      hierarchical prior is \dQuote{turned off}}
+   \item{delta.p}{\code{c(1,1,1,1)}  Parameters in the mixture of gammas prior
+     on the delta scaling parameter for \code{corr="mrexpsep"}:
+     \code{c(a1,g1,a2,g2)} where \code{g1} and
+     \code{g2} are scale (1/rate) parameters; default reduces to simple
+     exponential prior.  Delta scales the variance of the residual "fine" process with respect to
+     the variance of the underlying "coarse" process. }
+   \item{nugf.p}{\code{c(1,1,1,1)}  Parameters in the mixture of gammas prior
+       on the residual "fine" process nugget parameter for
+       \code{corr="mrexpsep"}: \code{c(a1,g1,a2,g2)} where \code{g1} and
+     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior. }
 }
 
 
 \references{
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{19}(9).
+
+\url{http://www.jstatsoft.org/v19/i09}
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Bayesian treed Gaussian process models.}
 Available as UCSC Technical Report ams2006-01. 
@@ -91,10 +123,13 @@ Available as UCSC Technical Report ams2006-01.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
-\note{Please refer to the examples for the functions in the 
-"See Also" list below and \code{vignette("tgp")}
+\note{Please refer to the examples for the functions in
+"See Also" below and \code{vignette("tgp")}
 }
 
 \seealso{ \code{\link{blm}}, \code{\link{btlm}}, \code{\link{bgp}},

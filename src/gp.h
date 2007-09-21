@@ -35,15 +35,14 @@ class Tree;
 #define BUFFMAX 256
 
 typedef enum BETA_PRIOR {B0=801, BMLE=802, BFLAT=803, B0NOT=804, BMZT=805} BETA_PRIOR;
-
+typedef enum MEAN_FN {LINEAR=901, CONSTANT=902, TWOLEVEL=903} MEAN_FN;
 
 class Gp : public Base
 {
  private:
 
-  double **F;		        /* col x n, matrix (1,X) */
-  double **FF;		        /* col x nn, matrix (1,XX) */
-  unsigned int col;	        
+  double **F;		        /* col x n, matrix  */
+  double **FF;		        /* col x nn, matrix */       
 
   double **xxKx;		/* nn x n, cross covariance between XX and X */
   double **xxKxx;		/* nn x nn, cross covariance between XX and XX */
@@ -60,13 +59,14 @@ class Gp : public Base
   double *bmu;		        /* mean of gibbs beta step */
   double *bmle;		        /* linear coefficients mle w/o Gp */
    
+  
   double lambda;		/* parameter in marginalized beta */
   
  public:
   Gp(unsigned int d, Base_Prior *prior, Model *model);
-  Gp(double **X, double *Z, Base *gp_old);
+  Gp(double **X, double *Z, Base *gp_old, bool economy);
   virtual ~Gp(void);
-  virtual Base* Dup(double **X, double *Z); 
+  virtual Base* Dup(double **X, double *Z, bool economy); 
   virtual void Clear(void);
   virtual void ClearPred(void);
   virtual void Update(double **X, unsigned int n, unsigned int d, double *Z);
@@ -112,15 +112,14 @@ class Gp_Prior : public Base_Prior
 {
  private:
 
-  bool cart;                 /* indicates if only b[0]=mu should be used */
   BETA_PRIOR beta_prior;	/* indicator for type of Beta Prior */  
+  MEAN_FN mean_fn;
   Corr_Prior *corr_prior;
-  unsigned int col;		
+		
 
   double *b;		        /* starting: col, GP linear regression coefficients */
   double s2;		        /* starting: GP variance parameter */
   double tau2;		        /* starting: GP linear variance parameter */
-
   double *b0;		        /* hierarchical non-tree parameter b0 */
   
   /* (the T matrix is called W in the paper) */
@@ -151,7 +150,7 @@ class Gp_Prior : public Base_Prior
  public:
   
   /* start public functions */
-  Gp_Prior(unsigned int d);
+  Gp_Prior(unsigned int d,  MEAN_FN mean_fn);
   Gp_Prior(Base_Prior* prior);
   virtual ~Gp_Prior(void);
 
@@ -188,10 +187,12 @@ class Gp_Prior : public Base_Prior
   double** get_T(void);
   double** get_Ti(void);
   double* get_b0(void);
-  bool Cart(void);
+
 
   Corr_Prior* CorrPrior(void);
   BETA_PRIOR BetaPrior(void);
+  MEAN_FN MeanFn(void);
+  
 };
 
 void allocate_leaf_params(unsigned int col, double ***b, double **s2, double **tau2, 

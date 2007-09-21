@@ -142,7 +142,7 @@ double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
     assert(M == NULL);
     return NULL;
   }
-  
+ 
   m = new_matrix(n1, n2);
   dup_matrix(m, M, n1, n2);
   return m;
@@ -373,7 +373,7 @@ void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v,
  * wmean_of_columns:
  *
  * fill mean[n1] with the weighted mean of the columns of M (n1 x n2);
- * weight vector should have length n1; weight should be pre-normalized
+ * weight vector should have length n1;
  */
 
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2,
@@ -381,10 +381,10 @@ void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2
 {
   unsigned int i,j;
   double sw;
-
+ 
   /* sanity checks */
-  assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
+  assert(mean && M);
   
   /* find normailzation constant */
   if(weight) sw = sumv(weight, n1); 
@@ -405,7 +405,7 @@ void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2
  *
  * fill mean[n1] with the weighted mean of the columns of M (n1 x n2);
  * weight vector should have length n1 -- each element of which is
- * sent through function f() first; weight should be pre-normalized
+ * sent through function f() first;
  */
 
 void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2,
@@ -415,8 +415,8 @@ void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int 
   double sw;
 
   /* sanity checks */
-  assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
+  assert(mean && M);
   
   /* find normailzation constant */
   if(weight) sw = sumv(weight, n1);
@@ -437,7 +437,7 @@ void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int 
  *
  * fill mean[n1] with the weighted mean of the rows of M (n1 x n2);
  * weight vector should have length n2 -- each element of which is
- * sent through function f() first; weight should be pre-normalized
+ * sent through function f() first; 
  */
 
 void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2,
@@ -447,8 +447,8 @@ void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2,
   double sw;
 
   /* sanity checks */
-  assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
+  assert(mean && M);
 
   /* calculate the normalization constant */
   if(weight) sw = sumv(weight, n2);
@@ -468,7 +468,7 @@ void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2,
  * wmean_of_rows_f:
  *
  * fill mean[n1] with the weighted mean of the rows of M (n1 x n2);
- * weight vector should have length n2; weight should be pre-normalized
+ * weight vector should have length n2;
  */
 
 void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2,
@@ -478,8 +478,8 @@ void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2,
   double sw;
 
   /* sanity checks */
-  assert(mean && M);
   if(n1 <= 0 || n2 <= 0) {return;}
+  assert(mean && M);
 
   /* calculate the normalization constant */
   if(weight) sw =  sumv(weight, n2);
@@ -491,6 +491,90 @@ void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2,
     if(weight) for(j=0; j<n2; j++) mean[i] += weight[j] * M[i][j];	
     else for(j=0; j<n2; j++) mean[i] += M[i][j];	
     mean[i] = mean[i] / sw;
+  }
+}
+
+
+/*
+ * wcov_of_columns:
+ *
+ * fill cov[n1,n1] with the weighted covariance of the columns of M (n1 x n2);
+ * weight vector should have length n1;
+ */
+
+void wcov_of_columns(double **cov, double **M, double *mean, unsigned int n1, 
+		      unsigned int n2, double *weight)
+{
+  unsigned int i,j,t;
+  double sw;
+ 
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(cov && M && mean);
+  
+  /* find normailzation constant */
+  if(weight) sw = sumv(weight, n1); 
+  else sw = (double) n1;
+
+  /* calculate mean of columns */
+  for(i=0; i<n2; i++) {
+    zerov(cov[i], n2);
+    if(weight) {
+      for(t=0; t<n1; t++) {
+	for(j=i; j<n2; j++) /* using weights */
+	  cov[i][j] += weight[t] * (M[t][i]*M[t][j] - M[t][i]*mean[j] - M[t][j]*mean[i]) + mean[i]*mean[j];
+      }
+    } else {
+      for(t=0; t<n1; t++) {
+	for(j=i; j<n2; j++) /*  not using weights */
+	  cov[i][j] += M[t][i]*M[t][j] - M[t][i]*mean[j] - M[t][j]*mean[i] + mean[i]*mean[j];
+      }
+    }
+    scalev(cov[i], n2, 1.0/sw);
+
+    /* fill in the other half */
+    for(j=0; j<i; j++) cov[i][j] = cov[j][i]; 
+  }
+}
+
+
+
+/*
+ * wcovx_of_columns:
+ *
+ * fill mean[n1] with the weighted covariance of the columns of M1 (T x n1)
+ * to those of M2 (T x n2); weight vector should have length T;
+ */
+
+void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, double *mean2, 
+		      unsigned int T,  unsigned int n1, unsigned int n2, double *weight)
+{
+  unsigned int i,j,t;
+  double sw;
+ 
+  /* sanity checks */
+  if(T <= 0 || n1 <= 0 || n2 <= 0) {return;}
+  assert(cov && M1 && M2 && mean1 && mean2);
+  
+  /* find normailzation constant */
+  if(weight) sw = sumv(weight, T); 
+  else sw = (double) T;
+
+  /* calculate mean of columns */
+  for(i=0; i<n1; i++) {
+    zerov(cov[i], n2);
+    if(weight) {
+      for(t=0; t<T; t++) {
+	for(j=0; j<n2; j++) /* using weights */
+	  cov[i][j] += weight[t] * (M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - M2[t][j]*mean1[i]) + mean1[i]*mean2[j];
+      }
+    } else {
+      for(t=0; t<T; t++) {
+	for(j=0; j<n2; j++) /*  not using weights */
+	  cov[i][j] += M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - M2[t][j]*mean1[i] + mean1[i]*mean2[j];
+      }
+    }
+    scalev(cov[i], n2, 1.0/sw);
   }
 }
 
@@ -587,7 +671,7 @@ void quantiles(double *qs, double *q, unsigned int m, double *v,
       wsamp[i]->x = v[i];
     }
 
-    /* sort by v; and implicity reported the associated weights w */
+    /* sort by v; and implicity report the associated weights w */
     qsort((void*)wsamp, n, sizeof(Wsamp*), compareWsamp);
   } else wsamp = NULL;
 
@@ -615,7 +699,7 @@ void quantiles(double *qs, double *q, unsigned int m, double *v,
       for(; i<n; i++) {
 	
 	/* to cover the special case where n<=m */
-	if(wsum >= q[j]) { qs[j] = wsamp[i-1]->x; break; }
+	if(i > 0 && wsum >= q[j]) { qs[j] = wsamp[i-1]->x; break; }
 
 	/* increment with the next weight */
 	wsum += wsamp[i]->w;
@@ -1530,6 +1614,18 @@ void dupiv(int *iv_new, int *iv, unsigned int n)
 
 
 /*
+ * zeros out v
+ * (assumes that it has already been allocated)
+ */
+
+void zeroiv(int*v, unsigned int n)
+{
+  unsigned int i;
+  for(i=0; i<n; i++) v[i] = 0;
+}
+
+
+/*
  * swaps the pointer of v2 to v1, and vice-versa
  * (avoids copying via dupv)
  */
@@ -1566,6 +1662,18 @@ int *new_ones_ivector(unsigned int n, int scale)
 {
   int *iv = new_ivector(n);
   iones(iv, n, scale);
+  return iv;
+}
+
+
+/*
+ * create a new integer vector of length n, fill it with zeros
+ */
+
+int *new_zero_ivector(unsigned int n)
+{
+  int *iv = new_ivector(n);
+  zeroiv(iv, n);
   return iv;
 }
 
@@ -1665,8 +1773,14 @@ unsigned int *new_dup_uivector(unsigned int *iv, unsigned int n)
 unsigned int *new_ones_uivector(unsigned int n, unsigned int scale)
 { return (unsigned int*) new_ones_ivector(n, (int) scale); }
 
+unsigned int *new_zero_uivector(unsigned int n)
+{ return (unsigned int*) new_zero_ivector(n); }
+
 void uiones(unsigned int *iv, unsigned int n, unsigned int scale)
 { iones((int*) iv, n, (int) scale); }
+
+void zerouiv(unsigned int *iv, unsigned int n)
+{ zeroiv((int*) iv, n); }
 
 void printUIVector(unsigned int *iv, unsigned int n, FILE *outfile)
 { printIVector((int*) iv, n, outfile); }
@@ -1693,4 +1807,33 @@ unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n)
 double sq(double x)
 {
   return x*x;
+}
+
+
+/*
+ * myfmax:
+ *
+ * seems like some systems are missing the prototype
+ * for the fmax function which should be in math.h --
+ * so I wrote my own
+ */
+
+double myfmax(double a, double b)
+{
+  if(a >= b) return a;
+  else return b;
+}
+
+
+/*
+ * vmult returns the product of its arguments
+ *
+ */
+
+double vmult(double *v1, double *v2, int n)
+{
+  double v = 0.0;
+  int i;
+  for(i=0; i<n; i++) v += v1[i]*v2[i]; 
+  return v;
 }

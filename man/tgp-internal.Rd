@@ -14,7 +14,6 @@
 \alias{tgp.check.params}
 \alias{tgp.partition}
 \alias{tgp.get.trees}
-\alias{tgp.locations}
 \alias{tgp.plot.tree}
 \alias{tgp.plot.parts.1d}
 \alias{tgp.plot.parts.2d}
@@ -29,11 +28,17 @@
 \alias{mean0.range1}
 \alias{undo.mean0.range1}
 \alias{check.matrix}
+\alias{mr.checkrez}
 \alias{check.itemps}
 \alias{check.slice}
 \alias{check.proj}
+\alias{check.sens}
 \alias{getlocs}
 \alias{print.tgp}
+\alias{sens.plot}
+\alias{mr.plot}
+\alias{mr.checkres}
+\alias{hist2bar}
 %% </LIST>
 %% Currently (?) exported as used in the grid.layout.Rd \example ...
 %% <LIST>

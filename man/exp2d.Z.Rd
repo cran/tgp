@@ -34,9 +34,16 @@
   responses \code{Z} and \code{ZZ}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \references{
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{19}(9).
+\url{http://www.jstatsoft.org/v19/i09}
+
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Bayesian treed Gaussian process models.}
 Available as UCSC Technical Report ams2006-01.
@@ -56,4 +63,4 @@ persp(x,x,matrix(Zdata$Ztrue, nrow=N), theta=-30, phi=20,
       main="Z true", xlab="x1", ylab="x2", zlab="Ztrue")
 }
       
-\keyword{datasets}
+\keyword{datagen}

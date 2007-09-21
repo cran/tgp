@@ -95,11 +95,13 @@ Tree::Tree(double **X, int* p, unsigned int n, unsigned int d,
  * Tree:
  * 
  * duplication constructor function only copies information about X (not XX)
- * then generates XX stuff from rect, and params.  Any "new" variables are i
- * also set to NULL values
+ * then generates XX stuff from rect, and params.  Any "new" variables are
+ * also set to NULL values -- the economy argument is passed to the base model
+ * duplicator and meant to indicate a memory efficient copy (i.e., don't 
+ * copy the GP covariance matrices as these can be re-generated)
  */
 
-Tree::Tree(const Tree *told)
+Tree::Tree(const Tree *told, bool economy)
 {
   /* simple non-pointer copies */
   d = told->d;
@@ -130,14 +132,14 @@ Tree::Tree(const Tree *told)
   /* there should be a switch statement here, or
      maybe I should use a copy constructor */
   model = told->model;
-  base = told->base->Dup(X, Z);
+  base = told->base->Dup(X, Z, economy);
    
   OUTFILE = told->OUTFILE;
   
   /* recurse down the leaves */
   if(! told->isLeaf()) {
-    leftChild =  new Tree(told->leftChild);
-    rightChild =  new Tree(told->rightChild);
+    leftChild =  new Tree(told->leftChild, economy);
+    rightChild =  new Tree(told->rightChild, economy);
   }
 }
 
@@ -233,6 +235,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
 
 unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int d_pred)
 {
+  // fprintf(stderr, "d_pred = %d, d = %d\n", d_pred, d);
   assert(d_pred == d);
   assert(isLeaf());
   
@@ -275,7 +278,9 @@ void Tree::new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned in
   base->Clear();
   
   int *p_new = new_ivector(n_new);
+ 
   n = matrix_constrained(p_new, X_new, n_new, d, rect);
+
   assert(n > 0);
   X = new_matrix(n, d);
   Z = new_vector(n);
@@ -845,14 +850,14 @@ bool Tree::rotate(void *state)
 
 double Tree::pT_rotate(Tree* low, Tree* high)
 {
-  unsigned int low_ni, low_nl, high_ni, high_nl, i, t_minpart;
+  unsigned int low_ni, low_nl, high_ni, high_nl, i, t_minpart, splitmin;
   Tree** low_i = low->internalsList(&low_ni);
   Tree** low_l = low->leavesList(&low_nl);
   Tree** high_i = high->internalsList(&high_ni);
   Tree** high_l = high->leavesList(&high_nl);
  
   double t_alpha, t_beta;
-  model->get_params()->get_T_params(&t_alpha, &t_beta, &t_minpart);
+  model->get_params()->get_T_params(&t_alpha, &t_beta, &t_minpart, &splitmin);
  
   double pT_log = 0;
   for(i=0; i<low_ni; i++) pT_log += log(t_alpha)-t_beta*log(1.0+low_i[i]->depth);
@@ -892,7 +897,7 @@ bool Tree::swap(void *state)
     bool success =  rotate(state);
     if(success && verb >= 3) 
       myprintf(OUTFILE, "**ROTATE** @depth %d, var=%d, val=%g\n", 
-	       depth, var, val);
+	       depth, var+1, val);
     return success;
   }
   
@@ -934,7 +939,7 @@ bool Tree::swap(void *state)
   /* accept or reject? */
   if(runi(state) < alpha) {
     if(verb >= 3) myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
-			   depth, var, val, parent->var, parent->val);
+			   depth, var+1, val, (parent->var)+1, parent->val);
     if(oldPRC) delete oldPRC;
     if(oldPRC) delete oldPLC;
     return true;
@@ -982,8 +987,7 @@ bool Tree::change(void *state)
   
   /* posterior probabilities and acceptance ratio */
   assert(oldLC->leavesN() + oldRC->leavesN() == this->leavesN());
-  double pklast = oldLC->leavesPosterior() 
-    + oldRC->leavesPosterior();
+  double pklast = oldLC->leavesPosterior() + oldRC->leavesPosterior();
   assert(!isinf(pklast));
   double pk = leavesPosterior();
 
@@ -996,10 +1000,10 @@ bool Tree::change(void *state)
     if(oldRC) delete oldRC;
     if(tree_op == CHANGE && verb >= 4) 
       myprintf(OUTFILE, "**CHANGE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
-	       depth, var, old_val, val, leftChild->n, rightChild->n);
+	       depth, var+1, old_val, val, leftChild->n, rightChild->n);
     else if(tree_op == CPRUNE && verb >= 1)
       myprintf(OUTFILE, "**CPRUNE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
-	       depth, var, old_val, val, leftChild->n, rightChild->n);
+	       depth, var+1, old_val, val, leftChild->n, rightChild->n);
     return true;
   } else { /* reject */
     try_revert(false, oldLC, oldRC, var, old_val);
@@ -1085,9 +1089,8 @@ bool Tree::try_revert(bool success, Tree* oldLC, Tree* oldRC,
 double Tree::propose_val(void *state)
 {
   double min, max;
-  Tree* root = model->get_TreeRoot();
-  double **locs = root->X;
-  unsigned int N = root->n;
+  unsigned int N;
+  double **locs = model->get_Xsplit(&N);
   min = 1e300*1e300;
   max = -1e300*1e300;
   for(unsigned int i=0; i<N; i++) {
@@ -1190,9 +1193,10 @@ bool Tree::prune(double ratio, void *state)
   /* compute the backwards split proposal probability */
   logq_bak = split_prob();
   
-   /* Compute the prior for this split location (just 1/n) */
-
-  logp_split = 0.0 - log((double) (model->get_TreeRoot())->n);
+  /* calculate the prior probability of this split (just 1/n) */
+  unsigned int nsplit;
+  model->get_Xsplit(&nsplit);
+  logp_split = 0.0 - log((double) nsplit);
 
   /* compute corr and p(Delta_corr) for corr1 and corr2 */
   base->Combine(leftChild->base, rightChild->base, state);
@@ -1211,7 +1215,7 @@ bool Tree::prune(double ratio, void *state)
 
   /* accept or reject? */
   if(runi(state) < alpha) {
-    if(verb >= 1) myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var, val);
+    if(verb >= 1) myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var+1, val);
     delete leftChild; 
     delete rightChild;
     leftChild = rightChild = NULL;
@@ -1240,19 +1244,17 @@ bool Tree::grow(double ratio, void *state)
   assert(isLeaf());	
   
   /* propose the next tree, by choosing the split point */
-  switch(base->BaseModel()){
-  case GP: var = sample_seq(0, d-1, state);
-    break;
-  case MR_GP: var = sample_seq(1, d-1, state);
-    break;
-  default: error("bad base model in Tree::grow, quitting tgp");
-  }
+  unsigned int mn = model->get_params()->T_smin();
+  // We only partition on variables > splitmin
+  var = sample_seq(mn, d-1, state);
   
   /* propose the split location */
   val = propose_split(&q_fwd, state);
 
   /* Compute the prior for this split location (just 1/n) */
-  logp_split =  0.0 - log((double) (model->get_TreeRoot())->n);
+  unsigned int nsplit;
+  model->get_Xsplit(&nsplit);
+  logp_split =  0.0 - log((double) nsplit);
   
   /* grow the children; stop if partition too small */
   success = grow_children();
@@ -1281,7 +1283,7 @@ bool Tree::grow(double ratio, void *state)
     Clear();
     if(verb >= 1) 
       myprintf(OUTFILE, "**GROW** @depth %d: [%d,%g], n=(%d,%d)\n", 
-	       depth, var, val, leftChild->n, rightChild->n);
+	       depth, var+1, val, leftChild->n, rightChild->n);
   }
   return ret_val;
 }
@@ -1435,7 +1437,6 @@ void Tree::val_order_probs(double **Xo, double **probs, unsigned int var,
   double sum_left, sum_right;
   sum_left = sum_right = 0;
   
-  
   for(i=0; i<rn; i++) { 
     (*probs)[i] = 1.0/one2n[i];
     if((*Xo)[i] < mid) sum_left += (*probs)[i]; 
@@ -1465,12 +1466,9 @@ void Tree::val_order_probs(double **Xo, double **probs, unsigned int var,
 double Tree::propose_split(double *p, void *state)
 {
   double *Xo, *probs;
-  double **locs;
   double val;
   unsigned int indx, N;
-  Tree* root = model->get_TreeRoot();
-  locs = root->X;
-  N = root->n;
+  double **locs = model->get_Xsplit(&N);
   val_order_probs(&Xo, &probs, var, locs, N);
   dsample(&val, &indx, 1, N, Xo, probs, state);
   *p = probs[indx];
@@ -1489,12 +1487,9 @@ double Tree::propose_split(double *p, void *state)
 double Tree::split_prob()
 {
   double *Xo, *probs; 
-  double **locs;
   double p;
   unsigned int find_len, N;
-  Tree* root = model->get_TreeRoot();
-  locs = root->X;
-  N = root->n;
+  double **locs = model->get_Xsplit(&N);
   val_order_probs(&Xo, &probs, var, locs, N);
   int *indx = find(Xo, N, EQ, val, &find_len);
   assert(find_len >= 1 && indx[0] >= 0);
@@ -1718,14 +1713,14 @@ void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root) const
  * return the indices of N d-optimal draws from XX (of size nn);
  */
 
-unsigned int* Tree::dopt_from_XX(unsigned int N, void *state)
+unsigned int* Tree::dopt_from_XX(unsigned int N, unsigned int iter, void *state)
 {
   assert(N <= nn);
   assert(XX);
   int *fi = new_ivector(N); 
   double ** Xboth = new_matrix(N+n, d);
-  // dopt(Xboth, fi, X, XX, d, n, nn, N, d, nug, state);
-  dopt(Xboth, fi, X, XX, d, n, nn, N, DOPT_D(d), DOPT_NUG(), DOPT_ITER, 0, state);
+  // dopt(Xboth, fi, X, XX, d, n, nn, N, d, nug, iter, 0, state);
+  dopt(Xboth, fi, X, XX, d, n, nn, N, DOPT_D(d), DOPT_NUG(), iter, 0, state);
   unsigned int *fi_ret = new_uivector(N); 
   for(unsigned int i=0; i<N; i++) {
     fi_ret[i] = pp[fi[i]-1];
@@ -1764,9 +1759,8 @@ bool Tree::wellSized(void) const
 bool Tree::Singular(void) const
 {
   assert(X);
-  unsigned int mn=0;
-  if(base->BaseModel()==MR_GP) mn=1;
-
+  unsigned int mn = model->get_params()->T_smin();
+  // We only partition on variables > splitmin
   for(unsigned int i=mn; i<d; i++) {
     double f = X[0][i];
     unsigned int j = 0;
@@ -1902,6 +1896,51 @@ unsigned int Tree::Height(void) const
 }
 
 
+
+/*
+ * Prior:
+ *
+ * Calculate the tree process prior, possibly
+ * tempered.
+ *
+ * returns a log probability
+ */
+
+double Tree::Prior(double itemp)
+{
+  double prior;
+
+  /* get the tree process prior parameters */
+  double alpha, beta;
+  unsigned int minpart, splitmin;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
+
+  if(isLeaf()) {
+
+    /* probability of not growing this branch */
+    prior = log(1.0 - alpha*pow(1.0+depth,0.0-beta));
+
+    /* temper, in log space uselog=1 */
+    prior = temper(prior, itemp, 1);
+
+  } else {
+    
+    /* probability of growing here */
+    prior = log(alpha) - beta*log(1.0 + depth);
+
+    /* temper, in log space uselog=1 */
+    prior = temper(prior, itemp, 1);
+
+    /* probability of the children */
+    prior += leftChild->Prior(itemp);
+    prior += rightChild->Prior(itemp);
+  }
+
+  return prior;
+}
+
+
+
 /*
  * FullPosterior:
  *
@@ -1913,32 +1952,37 @@ unsigned int Tree::Height(void) const
  * returns a log posterior probability
  */
 
-double Tree::FullPosterior(double itemp) 
+double Tree::FullPosterior(double itemp, bool tprior)
 {
   double post;
 
   /* get the tree process prior parameters */
   double alpha, beta;
-  unsigned int minpart;
-  model->get_params()->get_T_params(&alpha, &beta, &minpart);
+  unsigned int minpart, splitmin;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
 
   if(isLeaf()) {
 
     /* probability of not growing this branch */
     post = log(1.0 - alpha*pow(1.0+depth,0.0-beta));
 
+    /* temper, in log space uselog=1 */
+    if(tprior) post = temper(post, itemp, 1);
+
     /* base posterior */
     post += base->FullPosterior(itemp);
-
 
   } else {
     
     /* probability of growing here */
     post = log(alpha) - beta*log(1.0 + depth);
 
+    /* temper, in log space uselog=1 */
+    if(tprior) post = temper(post, itemp, 1);
+
     /* probability of the children */
-    post += leftChild->FullPosterior(itemp);
-    post += rightChild->FullPosterior(itemp);
+    post += leftChild->FullPosterior(itemp, tprior);
+    post += rightChild->FullPosterior(itemp, tprior);
   }
 
   return post;
@@ -1954,6 +1998,8 @@ double Tree::FullPosterior(double itemp)
  * process prior determined by alpha and beta
  *
  * returns a log posterior probability
+ * 
+ * SHOULD ADD tprior ARGUMENT!
  */
 
 double Tree::MarginalPosterior(double itemp) 
@@ -1962,8 +2008,8 @@ double Tree::MarginalPosterior(double itemp)
 
   /* get the tree process prior parameters */
   double alpha, beta;
-  unsigned int minpart;
-  model->get_params()->get_T_params(&alpha, &beta, &minpart);
+  unsigned int minpart, splitmin;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
 
   if(isLeaf()) {
 
@@ -2111,7 +2157,6 @@ void Tree::ForceNonlinear(void)
 {
   base->ForceNonlinear();   
 }
-
 
 
 /*

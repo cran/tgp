@@ -22,6 +22,40 @@
 #*******************************************************************************
 
 
+## exp2d.Z:
+##
+## sample from he 2-d exponential data at locations X with
+## normal mean-zero random deviates with sd specified
+
+"exp2d.Z" <-
+  function(X, sd=0.001)
+{
+  if(is.null(X)) return(NULL);
+  if(is.null(ncol(X))) X <- matrix(X, ncol=length(X))
+  
+  ## check the number of columns
+  if(ncol(X) != 2)
+    stop(paste("X should be a matrix (or data frame) with 2 columns, you have",
+               ncol(X)))
+  
+  ## calculate the Z data
+  Ztrue <- X[,1] * exp(- X[,1]^2 - X[,2]^2)
+
+  ## add randomness for random sample
+  Z <- Ztrue + rnorm(nrow(X),mean=0,sd=sd)
+
+  ## return a data frame object
+  return(data.frame(Z=Z,Ztrue=Ztrue))
+}
+
+
+## exp2d.rand:
+##
+## samplig from the 2-d exponential data using the data file
+## or a d-optimal (and/or) LH design and random evaluations from
+## the exp2d.Z function.  n1 samples are taken from the interesting
+## region, and n2 from outside.
+
 "exp2d.rand" <-
 function(n1=50, n2=30, lh=NULL, dopt=1)
 {

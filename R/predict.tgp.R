@@ -22,9 +22,17 @@
 #*******************************************************************************
 
 
+## predict.tgp:
+##
+## generic the master tgp R function which takes most of its inputs
+## from a tgp-object.  Most of the changeable outputs have to do with
+## sampling from the posterior predictive distribution (hence a predict
+## method).  It checks for valid inputs and then calls the C-side via .C
+## on those inputs -- and then calls the post-processing code accordingly
+
 "predict.tgp" <-
 function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
-         Ds2x=FALSE, improv=FALSE, trace=FALSE, verb=0, ...)
+         zcov=FALSE, Ds2x=FALSE, improv=FALSE, sens.p=NULL, trace=FALSE, verb=0, ...)
 {
   ## (quitely) double-check that tgp is clean before-hand
   tgp.cleanup(message="NOTICE", verb=verb, rmfile=TRUE);
@@ -32,13 +40,16 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
   ## what to do if fatally interrupted?
   on.exit(tgp.cleanup(verb=verb, rmfile=TRUE))
 
+  if(object$params$corr == "mrexpsep" && !is.null(sens.p))
+    stop("Sorry, sensitivity analysis is not yet available for corr=\"mrexpsep\"")
+
   ## get names
   Xnames <- names(object$X)
   response <- names(object$Z)
 
   ## check XX
   XX <- check.matrix(XX)$X
-  if(is.null(XX)) { nn <- 0; XX <- matrix(0); nnprime <- 1 }
+  if(is.null(XX)) { nn <- 0; XX<- matrix(0);  nnprime <- 0 }
   else { 
     nn <- nrow(XX); nnprime <- nn 
     if(ncol(XX) != object$d) stop("mismatched column dimension of object$X and XX");
@@ -49,12 +60,16 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
     stop("pred.n should be TRUE or FALSE")
   if(length(krige) != 1 || !is.logical(krige))
     stop("krige should be TRUE or FALSE")
+  if(length(zcov) != 1 || !is.logical(zcov))
+    stop("zcov should be TRUE or FALSE")
   if(length(MAP) != 1 || !is.logical(MAP))
     stop("MAP should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
-  if(length(improv) != 1 || !is.logical(improv))
-    stop("improv should be TRUE or FALSE")
+  if(length(improv) != 1 || !(is.logical(improv) || is.numeric(improv)) ||
+     (is.numeric(improv) && improv <= 0))
+    stop("improv should be TRUE, FALSE, or a positive integer (power)")
+  g <- as.numeric(improv)
 
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
@@ -76,6 +91,27 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
   # RNG seed
   state <- sample(seq(0,999), 3)
 
+  ## get itemps from object
+  ## Bobby: consider setting c0n0 <- c(0,0) for prediction
+  ## so no stochastic approx happens
+  itemps <- check.itemps(object$itemps, object$params)
+
+  ## If SENS, set up XX ##
+  
+  if(!is.null(sens.p)){
+    nnprime <- 0
+    sens.par <- check.sens(sens.p, object$d)
+    nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX
+    ngrid <- sens.par$ngrid; span <- sens.par$span
+    MainEffectGrid <- as.double(sens.par$MainEffectGrid)
+    if(verb >= 1) 
+      cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
+  }
+  else{ nn.lhs <- 0; ngrid <- 0; MainEffectGrid <- NULL; span=NULL}
+
+  ## calculate the number of sampling rounds
+  S = R*(BTE[2]-BTE[1])/BTE[3]
+
   ## run the C code
   ll <- .C("tgp",
 
@@ -91,13 +127,18 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            BTE = as.integer(BTE),
            R = as.integer(R),
            linburn = as.integer(FALSE),
+           zcov = as.integer(zcov),
+           g = as.integer(g),
            dparams = as.double(object$dparams),
-           itemps = as.double(c(1, 1, 1)),
+           itemps = as.double(itemps),
            verb = as.integer(verb),
            tree = as.double(c(ncol(t2c),t(t2c))),
            hier = as.double(object$posts[m,3:ncol(object$posts)]),
            MAP = as.integer(MAP),
-           
+           sens.ngrid = as.integer(ngrid),
+           sens.span = as.double(span),
+           sens.Xgrid = MainEffectGrid,
+
            ## begin outputs
            Zp.mean = double(pred.n * object$n),
            ZZ.mean = double(nnprime),
@@ -105,8 +146,9 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            ZZ.km = double(krige * nnprime),
            Zp.q = double(pred.n * object$n),
            ZZ.q = double(nnprime),
-           Zp.s2 = double(pred.n * object$n),
-           ZZ.s2 = double(nnprime),
+           Zp.s2 = double(pred.n * (zcov*object$n^2) + (!zcov)*object$n),
+           ZZ.s2 = double(zcov*nnprime^2 + (!zcov)*nnprime^2),
+           ZpZZ.s2 = double(pred.n * object$n * nnprime * zcov),
            Zp.ks2 = double(krige * pred.n * object$n),
            ZZ.ks2 = double(krige * nnprime),
            Zp.q1 = double(pred.n * object$n),
@@ -116,12 +158,47 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            ZZ.med = double(nnprime),
            ZZ.q2 = double(nnprime),
            Ds2x = double(Ds2x * nnprime),
-           improv = double(improv * nnprime),
+           improv = double(as.logical(improv) * nnprime),
+           irank = integer(as.logical(improv) * nnprime),
            ess = double(1),
-           
+           sens.ZZ.mean = double(ngrid*object$d),
+           sens.ZZ.q1 = double(ngrid*object$d),
+           sens.ZZ.q2 = double(ngrid*object$d),
+           sens.S = double(object$d*S*!is.null(sens.p)),
+           sens.T = double(object$d*S*!is.null(sens.p)),
+
+           ## end outputs
            PACKAGE = "tgp")
 
-
-  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, object$params, TRUE)
+  ## post-process before returning
+  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, sens.p,
+                        Zm0r1, object$params, TRUE)
   return(ll)
 }
+
+
+## tree2c
+##
+## converts the list-and-data.frame style tree contained in
+## the tgp-class object into a C-style double-vector so that
+## the C-side can start from the MAP tree contained in the object
+
+"tree2c" <-
+function(t) {
+
+  ## change var into a numeric vector
+  var <- as.character(t$var)
+  var[var == "<leaf>"] <- -1
+  var <- as.numeric(var)
+  
+  ## to return
+  tr <- data.frame(rows=t$rows, var=var)
+  tr <- cbind(tr, t[,8:ncol(t)])
+
+  ## order the rows by the row column
+  o <- order(tr[,1])
+  tr <- tr[o,]
+
+  return(as.matrix(tr))
+}
+

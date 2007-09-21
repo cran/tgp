@@ -25,54 +25,46 @@
 #ifndef __PREDICT_H__
 #define __PREDICT_H__
 
-int predict_full(unsigned int n1, double *zp, double *zpm, double *zps2, 
-		 unsigned int n2, double *zz, double *zzm, double *zzs2,
+int predict_full(unsigned int n1, double *zp, double *zpm, double *zps2, double *zpjitter,
+		 unsigned int n2, double *zz, double *zzm, double *zzs2, double *zzjitter,
 		 double **Ds2xy, double *improv, double *Z, unsigned int col, double **F, 
 		 double **K, double **Ki, double **W, double tau2, double **FF, double **xxKx, 
-		 double ** xxKxx, double *b, double ss2, double nug, double Zmin, int err, 
+		 double ** xxKxx, double *KKdiag, double *b, double ss2, double Zmin, int err, 
 		 void *state);
-int mr_predict_full(unsigned int n1, double *zp, double *zpm, double *zps2, 
-		    unsigned int n2, double *zz, double *zzm, double *zzs2,
-		    double **Ds2xy, double *improv, double *Z, unsigned int col, double **X, 
-		    double **F, double **K, double **Ki, double **W, double tau2, double **XX, 
-		    double **FF, double **xxKx, double ** xxKxx, double *b,  double ss2, 
-		    double nug, double nugfine, double r, double delta, double Zmin, int err, 
-		    void *state);
 void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, 
-		  double ss2, double denom, double **FW, double tau2, double *fW, double *KpFWFiQx, 
-		  double **FFrow, double **KKrow, double **xxKxx, unsigned int which_i);
+		  double ss2, double denom, double **FW, double tau2, double *fW, 
+		  double *KpFWFiQx, double **FFrow, double **KKrow, double **xxKxx, 
+		  unsigned int which_i);
 int predict_draw(unsigned int n, double *z, double *mean, double *s, 
 		 int err, void *state);
-void expected_improv(unsigned int n, unsigned int nn, double *improv, double Zmin, double *zzmean, 
-			    double *s);
+void expected_improv(unsigned int n, unsigned int nn, double *improv, double Zmin, 
+		     double *zzmean, double *s);
 void predicted_improv(unsigned int n, unsigned int nn, double *improv, double Zmin, double *z, 
 		      double *zz);
 double predictive_var(unsigned int n1, unsigned int col, double *Q, double *rhs, double *Wf, 
 		      double *s2cor, double ss2, double *k, double *f, double **FW, double **W, 
-		      double tau2, double **KpFWFi, double var);
+		      double tau2, double **KpFWFi, double corr_diag);
 double predictive_mean(unsigned int n1, unsigned int col, double *FFrow, double *KKrow, 
 		       double *b, double *KiZmFb);
-void predict_data(double *zmean, double *zs, unsigned int n1, unsigned int col, double **FFrow,
-		  double **K, double *b, double ss2, double nug, double *KiZmFb);
-void mr_predict_data(double *zmean, double *zs, unsigned int n1, unsigned int col, double **X, 
-		     double **FFrow, double **K, double *b, double ss2, double nug, double nugfine, 
-		     double *KiZmFb);
-void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, double ss2, 
-		  double denom, double **FW, double tau2, double *fW, double *KpFWFiQx, 
-		  double **FFrow, double ** KKrow, double **xxKxx, unsigned int which_i);
-void predict_delta(double *zmean, double *zs, double **Ds2xy, unsigned int n1, unsigned int n2,
+void predict_data(double *zmean, double *zs, unsigned int n1, unsigned int col, double **FFrow, 
+		  double **K, double *b, double ss2, double *zpjitter, double *KiZmFb);
+void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col,
+		  double ss2, double denom, double **FW, double tau2, double *fW, 
+		  double *KpFWFiQx, double **FFrow, double ** KKrow, double **xxKxx, 
+		  unsigned int which_i);
+void predict_delta(double *zzm, double *zzs2, double **Ds2xy, unsigned int n1, unsigned int n2,
 		   unsigned int col, double **FFrow, double **FW, double **W, double tau2,
 		   double ** KKrow, double **xxKxx, double **KpFWFi, double *b,	double ss2, 
-		   double nug, double *KiZmFb);
-void mr_predict_delta(double *zmean, double *zs, double **Ds2xy, unsigned int n1, unsigned int n2,
-		      unsigned int col, double **FFrow, double **FW, double **W, double tau2,
-		      double ** KKrow, double **xxKxx, double **KpFWFi, double *b,	double ss2, 
-		      double nug, double nugfine, double *KiZmFb);
-void predict_no_delta(double *zmean, double *zs, unsigned int n1, unsigned int n2, unsigned int col,
-		      double **FFrow, double **FW, double **W, double tau2, double **KKrow, 
-		      double **KpFWFi, double *b, double ss2, double nug, double *KiZmFb);
-void predict_help(unsigned int n1, unsigned int col, double *b, double **F, double *Z, double **W,
-		  double tau2, double **K, double **Ki, double **FW, double **KpFWFi, double *KiZmFb);
+		   double *zzjitter, double *KiZmFb);
+void predict_no_delta(double *zzm, double *zzs2, unsigned int n1, unsigned int n2, 
+		      unsigned int col, double **FFrow, double **FW, double **W, double tau2, 
+		      double **KKrow, double **KpFWFi, double *b, double ss2, double *KKdiag, 
+		      double *KiZmFb);
+void predict_help(unsigned int n1, unsigned int col, double *b, double **F, double *Z, 
+		  double **W, double tau2, double **K, double **Ki, double **FW, 
+		  double **KpFWFi, double *KiZmFb);
 int predict_draw(unsigned int n, double *z, double *mean, double *s, int err, void *state);
+unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w);
+void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac);
 
 #endif

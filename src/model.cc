@@ -24,6 +24,7 @@
 
 extern "C"
 {
+#include "lh.h"
 #include "matrix.h"
 #include "all_draws.h"
 #include "rand_draws.h"
@@ -102,9 +103,12 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
    * one so that when we pass "this" model to tree, it won't be
    * only partially allocated */
   t = NULL;
+  Xsplit = NULL;
+  nsplit = 0;
 
   /* default inv-temperature is 1.0 */
-  itemps = NULL;
+  its = NULL;
+  tprior = true;
 }
 
 
@@ -123,7 +127,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
  * what base (hierarchal) prior.
  */
 
-void Model::Init(double **X, unsigned int n, unsigned int d, double *Z, iTemps *itemps,
+void Model::Init(double **X, unsigned int n, unsigned int d, double *Z, Temper *its,
 		 double *dtree, unsigned int ncol, double *dhier)
 {
   assert(d == this->d);
@@ -135,8 +139,11 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z, iTemps *
   if(dhier) base_prior->Init(dhier);
 
   /* make sure the first col still indicates the coarse or fine process */
-  if(base_prior->BaseModel() == MR_GP)
-    for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
+  if(base_prior->BaseModel() == GP){
+    if( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == MREXPSEP ){ 
+      for(unsigned int i=0; i<n; i++) assert(Xc[i][0] == X[i][0]); 
+    }
+  }
 
   /* handle Z inputs */
   double *Zc = new_dup_vector(Z, n);
@@ -155,7 +162,7 @@ void Model::Init(double **X, unsigned int n, unsigned int d, double *Z, iTemps *
 
   /* set the starting inv-temperature */
   /* it is important that this happens before new Tree() */
-  this->itemps = new_dup_itemps(itemps);
+  this->its = new Temper(its);
 
   /* initialization of the (main) tree part of the model */
   int *p = iseq(0,n-1);
@@ -185,12 +192,13 @@ Model::~Model(void)
   }
 
   /* delete the tree model & params */
-  delete_matrix(iface_rect);
-  delete t;
-  delete params;
+  if(iface_rect) delete_matrix(iface_rect);
+  if(t) delete t;
+  if(Xsplit) delete_matrix(Xsplit);
+  if(params) delete params;
 
   /* delete the inv-temperature structure */
-  if(itemps) delete_itemps(itemps);
+  if(its) delete its;
 
   /* delete linarea and posterior */
   if(posteriors) delete_posteriors(posteriors);
@@ -245,7 +253,7 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   for(int r=0; r<(int)T; r++) {
 
     /* draw a new temperature */
-    DrawInvTemp(state);
+    if((r+1)%4 == 0) DrawInvTemp(state);
 
     /* propose tree changes */
     bool treemod = false;
@@ -262,7 +270,7 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
       
       /* draws for the parameters at the leaves of the tree */
       if(!(success = leaves[i]->Draw(state))) break;     
-      /* note that Compte still needs to be called on each leaf, below */
+      /* note that Compute still needs to be called on each leaf, below */
     }
     
     /* check to see if draws from leaves was successful */
@@ -292,7 +300,15 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
 
       /* keep track of MAP, and calculate importance sampling weight */
       preds->w[index/preds->mult] = Posterior(true);
-      preds->itemp[index/preds->mult] = get_curr_itemp(itemps);
+      preds->itemp[index/preds->mult] = its->Itemp();
+
+      /* For random XX (eg sensitivity analysis), draw the predictive locations */
+      if(preds->nm > 0){
+	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, preds->mode, state); 
+	dupv(preds->M[index/preds->mult], preds->XX[0], preds->d * preds->nm);
+	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
+	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
+      }
 
       /* predict for each leaf */
       /* make sure to do this after calculation of preds->w[r], above */
@@ -480,7 +496,7 @@ bool Model::change_tree(void *state)
 
 bool Model::prune_tree(void *state)
 {
-  unsigned int len, t_minpart;
+  unsigned int len, t_minpart, t_splitmin;
   Tree** nodes = t->prunableList(&len);
   if(len == 0) return false;
 
@@ -488,7 +504,7 @@ bool Model::prune_tree(void *state)
   double q_bak = 1.0/(t->numLeaves()-1);
   
   double t_alpha, t_beta;
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart); 
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin); 
   
   unsigned int k = (unsigned int) sample_seq(0,len-1, state);
   unsigned int depth = nodes[k]->getDepth() + 1;
@@ -498,7 +514,7 @@ bool Model::prune_tree(void *state)
   double pTreeRatio =  (1-pEtaPT) / ((diff*diff) * pEtaPT);
 
   /* temper the tree probabilities in non-log space ==> uselog=0 */
-  // pTreeRatio = temper(pTreeRatio, get_curr_itemp(itemps), 0);
+  if(tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
 
   /* attempt a prune */
   bool success = nodes[k]->prune((q_bak/q_fwd)*pTreeRatio, state);
@@ -518,10 +534,10 @@ bool Model::prune_tree(void *state)
 
 bool Model::grow_tree(void *state)
 {
-  unsigned int len, t_minpart;
+  unsigned int len, t_minpart, t_splitmin;
   double t_alpha, t_beta;
 
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart);
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin);
   if(t_alpha == 0 || t_beta == 0) return false;
 	
   Tree** nodes = t->leavesList(&len);
@@ -555,7 +571,7 @@ bool Model::grow_tree(void *state)
   double pTreeRatio =  pEtaT * (diff*diff) / (1-pEtaT);
 
   /* temper the tree probabilities in non-log space ==> uselog=0 */
-  // pTreeRatio = temper(pTreeRatio, get_curr_itemp(itemps), 0);
+  if(tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
 
   /* attempt a grow */
   bool success = nodes[k]->grow((q_bak/q_fwd)*pTreeRatio, state);
@@ -623,7 +639,7 @@ void Model::cut_root(void)
 
 double *Model::update_tprobs(void)
 {
-  return update_prior(itemps);
+  return its->UpdatePrior();
 }
 
 
@@ -638,12 +654,11 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
 {
   /* copy input and predictive data; and NORMALIZE */
   double **Xc = new_normd_matrix(X,n,d,rect,NORMSCALE);
-  if(base_prior->BaseModel() == MR_GP) { 
-    
-    /* make sure that the first column is still indicates
-       the coarse or fine process */
-    for(unsigned int i=0; i<n; i++) Xc[i][0] = X[i][0]; 
-    // printMatrix(Xc, n, d, stdout); 
+  /* make sure the first col still indicates the coarse or fine process */
+  if(base_prior->BaseModel() == GP){
+    if( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == MREXPSEP ){ 
+      for(unsigned int i=0; i<n; i++) assert(Xc[i][0] == X[i][0]); 
+    }
   }
 
   double *Zc = new_dup_vector(Z, n); 
@@ -685,6 +700,58 @@ Tree* Model::get_TreeRoot(void)
 
 
 /*
+ * get_Xsplit:
+ * 
+ * return the locations at which the tree can make splits;
+ * either Xsplit, or t->X if Xsplit is NULL -- pass back the
+ * number of locations (nsplit)
+ */
+
+double** Model::get_Xsplit(unsigned int *nsplit)
+{
+  /* calling this function only makes sense if 
+     treed partitioning is allowed */
+  assert(params->isTree());
+
+  if(Xsplit) {
+    *nsplit = this->nsplit;
+    return Xsplit;
+  } else {
+    assert(t);
+    *nsplit = t->getN();
+    return t->get_X();
+  }
+}
+
+/*
+ * set_Xsplit:
+ *
+ * set the locations at which the tree can make splits;
+ * NULL indicates that the locations should be t->X
+ */
+
+void Model::set_Xsplit(double **X, unsigned int n, unsigned int d)
+{
+  /* calling this function only makes sense if 
+     treed partitioning is allowed */
+  assert(params->isTree());
+
+  /* make sure X dims match up */
+  assert(d == this->d);
+
+  if(Xsplit) delete_matrix(Xsplit);
+  if(! X) {
+    assert(nsplit == 0);
+    Xsplit = NULL;
+    nsplit = 0;
+  } else {
+    Xsplit = new_normd_matrix(X,n,d,iface_rect,NORMSCALE);
+    nsplit = n;
+  }
+}
+
+
+/*
  * set_TreeRoot:
  * 
  * return the root of the tree in this model
@@ -692,7 +759,7 @@ Tree* Model::get_TreeRoot(void)
 
 void Model::set_TreeRoot(Tree *t)
 {
-	this->t = t;
+  this->t = t;
 }
 
 
@@ -746,8 +813,7 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   }
 
   /* cap off the printing */
-  if(itemps->n > 1 || get_curr_itemp(itemps) != 1.0)
-    myprintf(OUTFILE, " itemp=%g", get_curr_itemp(itemps));
+  if(its->Numit() > 1) myprintf(OUTFILE, " k=%g", its->Itemp());
   myprintf(OUTFILE, "\n");
   myflush(OUTFILE);  
 }
@@ -855,7 +921,7 @@ void Model::init_parallel_preds(void)
 void Model::predict_producer(Tree *leaf, Preds *preds, int index, bool dnorm)
 {
 #ifdef PARALLEL
-  Tree *newleaf = new Tree(leaf);
+  Tree *newleaf = new Tree(leaf, false);
   newleaf->add_XX(preds->XX, preds->nn, d);
   LArgs *largs = (LArgs*) malloc(sizeof(struct largs));
   fill_larg(largs, newleaf, preds, index, dnorm);
@@ -1081,7 +1147,7 @@ Tree** Model::CopyPartitions(unsigned int *numLeaves)
   Tree** leaves = maxt->leavesList(numLeaves);
   Tree** copies = (Tree**) malloc(sizeof(Tree*) * *numLeaves);
   for(unsigned int i=0; i<*numLeaves; i++) {
-    copies[i] = new Tree(leaves[i]);
+    copies[i] = new Tree(leaves[i], true);
     copies[i]->Clear();
   }
   free(leaves);
@@ -1254,45 +1320,49 @@ void Model::PrintTree(FILE* outfile)
 void Model::DrawInvTemp(void* state)
 {
   /* don't do anything if there is only one temperature */
-  if(itemps->n == 1) return;
+  if(its->Numit() == 1) return;
 
   /* propose a new inv-temperature */
   double q_fwd, q_bak;
-  double itemp_new = propose_itemp(itemps, &q_fwd, &q_bak, state);
+  double itemp_new = its->Propose(&q_fwd, &q_bak, state);
 
   /* calculate the posterior probability under both temperatures */
-  //double p = t->FullPosterior(itemp);
-  //double pnew = t->FullPosterior(itemp_new);
+  //double p = t->FullPosterior(itemp, tprior);
+  //double pnew = t->FullPosterior(itemp_new, tprior);
 
   /* calculate the log likelihood under both temperatures */
-  double ll = t->Likelihood(get_curr_itemp(itemps));
+  double ll = t->Likelihood(its->Itemp());
   double llnew = t->Likelihood(itemp_new);
+
+  /* add in a tempered version of the tree prior, or not */
+  if(tprior) {
+    ll += t->Prior(its->Itemp());
+    llnew += t->Prior(itemp_new);
+  }
 
   /* sanity check that the priors don't matter */
   //double diff_post = pnew - p;
   double diff_lik =  llnew - ll;
 
   //myprintf(stderr, "diff=%g\n", diff_post-diff_lik);
-  // assert(diff_post == diff_lik);
+  //assert(diff_post == diff_lik);
 
   /* add in the priors for the itemp (weights) */
-  double diff_p_itemp = log(get_proposed_prob(itemps)) - log(get_curr_prob(itemps));
+  double diff_p_itemp = log(its->ProposedProb()) - log(its->Prob());
   
   /* Calcculate the MH acceptance ratio */
   //double alpha = exp(diff_post + diff_p_itemp)*q_bak/q_fwd;
   double alpha = exp(diff_lik + diff_p_itemp)*q_bak/q_fwd;
   double ru = runi(state);
   if(ru < alpha) {
-    /* myprintf(stdout, "accepted itemp %g -> %g : alpha=%g, ru=%g\n", 
-       get_curr_itemp(itemps), itemp_new, alpha, ru);*/
-    keep_new_itemp(itemps, itemp_new);
+    its->Keep(itemp_new);
     t->NewInvTemp(itemp_new);
   } else {
-    reject_new_itemp(itemps, itemp_new);
-    /*if(get_curr_itemp(itemps) <= 0.25) 
-          myprintf(stdout, "rejected itemp %g -> %g : alpha=%g, ru=%g\n", 
-	  get_curr_itemp(itemps), itemp_new, alpha, ru); */
+    its->Reject(itemp_new);
   }
+
+  /* stochastic approximation update of psuedo-prior */
+  its->StochApprox();
 }
 
 
@@ -1310,8 +1380,8 @@ void Model::DrawInvTemp(void* state)
 double Model::Posterior(bool record)
 {
   /* tempered and untemepered posteriors, from tree on down */
-  double full_post_temp = t->FullPosterior(get_curr_itemp(itemps));
-  double full_post = t->FullPosterior(1.0);
+  double full_post_temp = t->FullPosterior(its->Itemp(), tprior);
+  double full_post = t->FullPosterior(1.0, tprior);
 
   /* include priors hierarchical (linear) params W, B0, etc. 
      and the hierarchical corr prior priors in the Base module */
@@ -1321,7 +1391,7 @@ double Model::Posterior(bool record)
 
   /* importance sampling weight */
   double w = exp(full_post - full_post_temp);
-  if(get_curr_itemp(itemps) == 1.0) assert(w==1.0);
+  /* if(get_curr_itemp(itemps) == 1.0) assert(w==1.0); */
 
   /* see if this is (untempered) the MAP model; if so then record */
   register_posterior(posteriors, t, full_post);
@@ -1338,7 +1408,7 @@ double Model::Posterior(bool record)
 
     /* write a line to the file recording the trace of the posteriors */
     myprintf(POSTTRACEFILE, "%d %d %.20f %.20f %.20f %.20f\n", 
-	     t->Height(), t->numLeaves(), full_post, get_curr_itemp(itemps), 
+	     t->Height(), t->numLeaves(), full_post, its->Itemp(), 
 	     full_post_temp, w);
     myflush(POSTTRACEFILE);
   }
@@ -1365,9 +1435,9 @@ void Model::PrintPosteriors(void)
   myprintf(postsfile, "height lpost ");
   PriorTraceNames(postsfile, true);
 
-  /* unsigned int t_minpart;
+  /* unsigned int t_minpart, t_splitmin;
   double t_alpha, t_beta;
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart); */
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin); */
   
   for(unsigned int i=0; i<posteriors->maxd; i++) {
     if(posteriors->trees[i] == NULL) continue;
@@ -1430,22 +1500,22 @@ Tree* Model::maxPosteriors(void)
 /*
  * Linear:
  *
- * change prior to preferr all linear models force leaves (partitions) 
+ * change prior to prefer all linear models force leaves (partitions) 
  * to use the linear model; if gamlin[0] == 0, then do nothing and 
- * return 0, becuase the linear is model not allowed
+ * return 0, because the linear is model not allowed
  */
 
 double Model::Linear(void)
 {
-  // if(! base_prior->LLM()) return 0;
-
+  //if(! base_prior->LLM()) return 0;
   double gam = base_prior->ForceLinear();
 
+  /* toggle linear in each of the leaves */
   unsigned int numLeaves = 1;
   Tree **leaves = t->leavesList(&numLeaves);
   for(unsigned int i=0; i<numLeaves; i++)
     leaves[i]->ForceLinear();
-  
+ 
   free(leaves);
   return gam;
 }
@@ -1463,7 +1533,7 @@ double Model::Linear(void)
 void Model::ResetLinear(double gam)
 {
   base_prior->ResetLinear(gam);
-
+  
   /* if LLM not allowed, then toggle GP in each of the leaves */
   if(gam == 0) {
     unsigned int numLeaves = 1;
@@ -1497,12 +1567,32 @@ void Model::Linburn(unsigned int B, void *state)
 /*
  * Burnin:
  *
- * B rounds of burning (with NULL preds)
+ * B rounds of burn in (with NULL preds)
  */
 
 void Model::Burnin(unsigned int B, void *state)
 {
   if(verb >= 1 && B>0) myprintf(OUTFILE, "\nburn in:\n");
+  rounds(NULL, B, B, state);
+}
+
+
+/*
+ * StochApprox:
+ *
+ * B rounds of "burn-in" (with NULL preds), and stochastic
+ * approximation turned on for jump-starting the pseudo-prior
+ * for Simulated Tempering
+ */
+
+void Model::StochApprox(unsigned int B, void *state)
+{
+  if(!its->DoStochApprox()) return;
+  if(verb >= 1 && B>0) 
+    myprintf(OUTFILE, "\nburn in: [with stoch approx (c0,n0)=(%g,%g)]\n",
+	     its->C0(), its->N0());
+
+  its->ResetSA();
   rounds(NULL, B, B, state);
 }
 
@@ -1561,9 +1651,17 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
   /* process full posterior, and calculate linear area */
     if(r % preds->mult == 0) {
 
+      /* For random XX (eg sensitivity analysis), draw the predictive locations */
+      if(preds->nm > 0){
+	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, preds->mode, state); 
+	dupv(preds->M[r/preds->mult], preds->XX[0], preds->d * preds->nm);
+	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
+	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
+      }
+
       /* keep track of MAP, and calculate importance sampling weight */
       preds->w[r/preds->mult] = 1.0; //Posterior(false);
-      preds->itemp[r/preds->mult] = get_curr_itemp(itemps);
+      preds->itemp[r/preds->mult] = its->Itemp();
 
       /* predict for each leaf */
       /* make sure to do this after calculation of preds->w[r], above */
@@ -1598,7 +1696,6 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
 
 void Model::Print(void)
 {
-  myprintf(stderr, "anneal itemp = %g\n", get_curr_itemp(itemps));
   params->Print(OUTFILE);
   base_prior->Print(OUTFILE);
 }
@@ -1696,7 +1793,21 @@ void Model::Trace(Tree *leaf, unsigned int index)
 
 double Model::iTemp(void)
 {
-  return get_curr_itemp(itemps);
+  return its->Itemp();
+}
+
+
+/* 
+ * DupItemps:
+ *
+ * duplicate the importance annealing temperature
+ * structure known by the model to one provided
+ * in the argument
+ */
+
+void Model::DupItemps(Temper *new_its)
+{
+  new_its = its;
 }
 
 

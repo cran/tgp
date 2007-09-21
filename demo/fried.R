@@ -41,7 +41,8 @@ fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, verb=0)
 ###################################################
 ### chunk number 6: 
 ###################################################
-apply(fr.bgpllm.tr$trace$XX[[1]][,27:36], 2, mean)
+trace <- fr.bgpllm.tr$trace$XX[[1]]
+apply(trace[,27:36], 2, mean)
 
 
 ###################################################
@@ -53,12 +54,12 @@ mean(fr.bgpllm.tr$trace$linarea$ba)
 ###################################################
 ### chunk number 8: 
 ###################################################
-summary(fr.bgpllm.tr$trace$XX[[1]][,9:10])
+summary(trace[,9:10])
 
 
 ###################################################
 ### chunk number 9: 
 ###################################################
-apply(fr.bgpllm.tr$trace$XX[[1]][,11:15], 2, mean)
+apply(trace[,11:15], 2, mean)
 
 

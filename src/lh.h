@@ -27,8 +27,10 @@
 
 #include <stdio.h>
 
+void sens_sample(double **XX, int nn, int d, double **bnds, double *shape, double *mode, void *state);
 double** rect_sample(int dim, int n, void *state);
 double** rect_sample_lh(int dim, int n, double** rect, int er, void *state);
+double** beta_sample_lh(int dim, int n, double** rect, double* shape, double* mode, void *state);
 void rect_scale(double** z, int n, int d, double** rect);
 double** readRect(char* rect, unsigned int *d);
 void errorBadRect(void);

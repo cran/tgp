@@ -22,6 +22,12 @@
 #*******************************************************************************
 
 
+## tgp.cleanup
+##
+## gets called when the C-side is aborted by the R-side and enables
+## the R-side to clean up the memory still allocaed to the C-side,
+## as well as whatever files were left open on the C-side
+
 "tgp.cleanup" <-
   function(message="INTERRUPT", verb, rmfiles=TRUE)
 {
@@ -50,9 +56,9 @@
       unlink("trace_post_1.out")
     }
     
-    if(file.exists(paste("./", "trace_wess_1.out", sep=""))) {
-      if(verb >= 1) cat(paste(message, ": removed trace_wess_1.out\n", sep=""))
-      unlink("trace_wess_1.out")
+    if(file.exists(paste("./", "trace_wlambda_1.out", sep=""))) {
+      if(verb >= 1) cat(paste(message, ": removed trace_wlambda_1.out\n", sep=""))
+      unlink("trace_wlambda_1.out")
     } 
     
     if(file.exists(paste("./", "trace_hier_1.out", sep=""))) {
