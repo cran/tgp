@@ -44,26 +44,27 @@ class ExpSep : public Corr
   double *pb;		/* prob of dimension-wize linearization */
   unsigned int dreject; /* d rejection counter */
  public:
-  ExpSep(unsigned int col, Base_Prior *base_prior);
+  ExpSep(unsigned int dim, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~ExpSep(void);
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, bool cart,
-		   void *state);
+		   double **bmu, double **Vb, double tau2, double itemp, void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
    virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
-  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
+  virtual bool DrawNugs(unsigned int n, double **X, double **F, double *Z,
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double itemp, bool cart, void *state);
+		       double itemp, void *state);
   virtual double* Trace(unsigned int* len);
   virtual char** TraceNames(unsigned int* len);
   virtual void Init(double *dexpsep);
+  virtual double* Jitter(unsigned int n1, double **X);
+  virtual double* CorrDiag(unsigned int n1, double **X);
 
   void get_delta_d(ExpSep* c1, ExpSep* c2, void *state);
   void propose_new_d(ExpSep* c1, ExpSep* c2, void *state);
@@ -94,7 +95,7 @@ class ExpSep_Prior : public Corr_Prior
 
  public:
 
-  ExpSep_Prior(unsigned int col);
+  ExpSep_Prior(unsigned int dim);
   ExpSep_Prior(Corr_Prior *c);
   virtual ~ExpSep_Prior(void);
   virtual void read_double(double *dprior);

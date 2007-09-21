@@ -22,22 +22,153 @@
 #*******************************************************************************
 
 
+## btgp:
+##
+## tgp implementation of the Bayesian treed Gaussian process model
+
 "btgp" <-
-function(X, Z, XX=NULL, bprior="bflat", corr="expsep", tree=c(0.5,2), 
+function(X, Z, XX=NULL,
+        meanfn="linear", bprior="bflat", corr="expsep", tree=c(0.5,2), 
 	BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE, itemps=NULL,
-	pred.n=TRUE, krige=TRUE, Ds2x=FALSE, improv=FALSE, nu=1.5, trace=FALSE, 
-	verb=1
-	, ...)#, base="gp", ...)
+	pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, 
+        sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
 {
   n <- nrow(X)
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
   else { d <- ncol(X) }
-  params <- tgp.default.params(d+1, ...)#, base=base, ...)
+  params <- tgp.default.params(d, meanfn=meanfn, corr=corr, ...)
   params$bprior <- bprior
-  params$corr <- corr
-  params$tree <- c(tree,params$tree[3])
+  params$tree <- c(tree,params$tree[3:4])
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu<-nu
-  return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,Ds2x,improv,trace,verb))
+  return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov, 
+             Ds2x,improv,sens.p,trace,verb))
+}
+
+
+## bcart:
+##
+## tgp implementation of the Bayesian CART model of Chipman et al
+
+"bcart" <-
+function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2), 
+	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE, 
+	Ds2x=FALSE, improv=FALSE, sens.p=NULL, trace=FALSE, verb=1, ...)
+{
+  return(btlm(X,Z,XX,meanfn="constant", bprior,tree,BTE,R,m0r1,itemps,pred.n,krige,
+              zcov,Ds2x,improv,sens.p,trace,verb,...))
+}
+
+
+## bgp:
+##
+## tgp implementation of a Bayesian Gaussian process model
+
+"bgp" <-
+function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
+         BTE=c(1000,4000,2), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, 
+         krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, sens.p=NULL, nu=1.5,
+         trace=FALSE, verb=1,  ... )
+{
+  n <- dim(X)[1]
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- dim(X)[2] }
+  params <- tgp.default.params(d, meanfn=meanfn, corr=corr,...)
+  params$bprior <- bprior
+  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  params$gamma <- c(0,0.2,0.7)	# no llm
+  if(corr == "matern") params$nu <- nu
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,Ds2x,
+             improv,sens.p,trace,verb))
+}
+
+
+## bgpllm:
+##
+## tgp implementation of a Bayesian Gaussian Process with
+## jumps to the Limiting Linear Model
+
+"bgpllm" <-
+function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
+         gamma=c(10,0.2,0.7), BTE=c(1000,4000,2), R=1, m0r1=FALSE,
+         itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE,
+	 Ds2x=FALSE, improv=FALSE, sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
+{
+  n <- dim(X)[1]
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- dim(X)[2] }
+  params <- tgp.default.params(d, meanfn=meanfn, corr=corr, ...)
+  params$bprior <- bprior
+  params$gamma <- gamma
+  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  if(corr == "matern"){ params$nu <- nu; }
+  if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,Ds2x,
+             improv,sens.p,trace, verb))
+}
+
+
+## blm:
+##
+## tgp implementation of a Bayesian hierarchical Linear Model
+
+"blm" <-
+function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
+         BTE=c(1000,4000,3), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, 
+         krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, sens.p=NULL, trace=FALSE, 
+	 verb=1, ...)
+{
+  n <- dim(X)[1]
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- dim(X)[2] }
+  params <- tgp.default.params(d, meanfn=meanfn, ...)
+  params$bprior <- bprior
+  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  params$gamma <- c(-1,0.2,0.7)	# force llm
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,
+             zcov,krige,Ds2x,improv,sens.p,trace,verb))
+}
+
+
+## btgpllm:
+##
+## tgp implementation of a Bayesian treed Gaussian Process model
+## with jumps to the Limiting Linear Model
+
+"btgpllm" <-
+function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
+         tree=c(0.5,2), gamma=c(10,0.2,0.7), BTE=c(2000,7000,2), R=1, m0r1=FALSE,
+         linburn=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, 
+	 improv=FALSE, sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
+{
+  n <- nrow(X)
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- ncol(X) }
+  params <- tgp.default.params(d, meanfn=meanfn, corr=corr,...)
+  params$bprior <- bprior
+  params$tree <- c(tree,params$tree[3:4])
+  params$gamma <- gamma
+  if(corr == "matern"){ params$nu <- nu }
+  if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
+  return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov,
+             Ds2x,improv,sens.p,trace,verb))
+}
+
+
+"btlm" <-
+function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
+         tree=c(0.5,2), BTE=c(2000,7000,2), R=1, m0r1=FALSE, itemps=NULL, 
+         pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, 
+         sens.p=NULL, trace=FALSE, verb=1, ...)
+{
+  n <- nrow(X)
+  if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n); d <- 1 }
+  else { d <- ncol(X) }
+  params <- tgp.default.params(d, meanfn=meanfn, ...)
+  params$bprior <- bprior
+  params$tree <- c(tree,params$tree[3:4])
+  params$gamma <- c(-1,0.2,0.7)	# no llm
+  return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,
+             Ds2x,improv,sens.p, trace,verb))
 }
 

@@ -27,7 +27,6 @@
 
 #include <fstream>
 #include "gp.h"
-#include "mr_gp.h"
 #include "base.h"
 
 //#define BUFFMAX 256
@@ -40,6 +39,7 @@ class Params
   double t_alpha;		/* tree prior parameter alpha */
   double t_beta;  	/* tree prior parameter beta */
   unsigned int t_minpart; /* tree prior parameter minpart, smallest partition */
+  unsigned int t_splitmin; /* data column where we start partitioning */
 	
   Base_Prior *prior;
 
@@ -51,9 +51,10 @@ class Params
   ~Params(void);
   void read_ctrlfile(std::ifstream* ctrlfile);
   void read_double(double *dparams);
-  void get_T_params(double *alpha, double *beta, unsigned int* minpart);
+  void get_T_params(double *alpha, double *beta, unsigned int* minpart, unsigned int* splitmin);
   bool isTree(void);
   unsigned int T_minp(void);
+  unsigned int T_smin(void);
   Base_Prior* BasePrior(void);
   void Print(FILE *outfile);
 };

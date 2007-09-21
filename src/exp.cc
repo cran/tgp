@@ -54,8 +54,8 @@ using namespace std;
  * constructor function
  */
 
-Exp::Exp(unsigned int col, Base_Prior *base_prior)
-  : Corr(col, base_prior)
+Exp::Exp(unsigned int dim, Base_Prior *base_prior)
+  : Corr(dim, base_prior)
 {
   assert(base_prior->BaseModel() == GP);
   prior = ((Gp_Prior*) base_prior)->CorrPrior();
@@ -90,8 +90,9 @@ Corr& Exp::operator=(const Corr &c)
   assert(prior->CorrModel() == EXP);
   assert(prior == ((Gp_Prior*) base_prior)->CorrPrior());
   
-  /* copy the covariance matrices */
-  Cov(e);
+  /* copy the covariance matrices -- no longer performed due to 
+     the economy argument in Gp/Base */
+  // Cov(e);
   
   return *this;
 }
@@ -123,18 +124,50 @@ void Exp::Init(double *dexp)
   NugInit(dexp[0], ! (bool) dexp[2]);
 }
  
+/*
+ * Jitter:
+ *
+ * fill jitter[ ] with the variance inflation factor.  That is,
+ * the variance for an observation with covariates in the i'th
+ * row of X will be s2*(1.0 + jitter[i]).  In standard tgp, the
+ * jitter is simply the nugget.  But for calibration and mr tgp,
+ * the jitter value depends upon X (eg real or simulated data).
+ * 
+ */
+
+double* Exp::Jitter(unsigned int n1, double **X)
+{
+  double *jitter = new_vector(n1);
+  for(unsigned int i=0; i<n1; i++) jitter[i] = nug;
+  return(jitter);
+}
+
+/*
+ * CorrDiag:
+ *
+ * Return the diagonal of the corr matrix K corresponding to X
+ *
+ */
+
+double* Exp::CorrDiag(unsigned int n1, double **X)
+{
+  double *corrdiag = new_vector(n1);
+  for(unsigned int i=0; i<n1; i++) corrdiag[i] = 1.0 + nug;
+  return(corrdiag);
+}
+
 
 /* 
- * DrawNug:
+ * DrawNugs:
  * 
  * draw for the nugget; 
  * rebuilding K, Ki, and marginal params, if necessary 
  * return true if the correlation matrix has changed; false otherwise
  */
 
-bool Exp::DrawNug(unsigned int n, double **X, double **F,  double *Z, 
+bool Exp::DrawNugs(unsigned int n, double **X, double **F,  double *Z, 
 		  double *lambda, double **bmu, double **Vb, double tau2, 
-		  double itemp, bool cart, void *state)
+		  double itemp, void *state)
 {
   bool success = false;
   Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
@@ -152,7 +185,7 @@ bool Exp::DrawNug(unsigned int n, double **X, double **F,  double *Z,
 		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, 
 		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), 
 		    tau2, prior->NugAlpha(), prior->NugBeta(), gp_prior->s2Alpha(), 
-		    gp_prior->s2Beta(), (int) linear, itemp, (int) cart, state);
+		    gp_prior->s2Beta(), (int) linear, itemp, state);
   
   /* did we accept the draw? */
   if(nug_new != nug) { nug = nug_new; success = true; swap_new(Vb, bmu, lambda); }
@@ -175,7 +208,7 @@ void Exp::Update(unsigned int n, double **X)
     xDISTx = new_matrix(n, n);
     nd = n;
   }
-  dist_symm(xDISTx, col-1, X, n, PWR);
+  dist_symm(xDISTx, dim, X, n, PWR);
   dist_to_K_symm(K, xDISTx, d, nug, n);
   //delete_matrix(xDISTx);
 }
@@ -191,7 +224,7 @@ void Exp::Update(unsigned int n, double **X)
 void Exp::Update(unsigned int n, double **K, double **X)
 {
   double ** xDISTx = new_matrix(n, n);
-  dist_symm(xDISTx, col-1, X, n, PWR);
+  dist_symm(xDISTx, dim, X, n, PWR);
   dist_to_K_symm(K, xDISTx, d, nug, n);
   delete_matrix(xDISTx);
 }
@@ -207,7 +240,7 @@ void Exp::Update(unsigned int n, double **K, double **X)
 void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
 {
   double **xxDISTx = new_matrix(n2, n1);
-  dist(xxDISTx, col-1, XX, n1, X, n2, PWR);
+  dist(xxDISTx, dim, XX, n1, X, n2, PWR);
   dist_to_K(K, xxDISTx, d, 0.0, n1, n2);
   delete_matrix(xxDISTx);
 }
@@ -223,7 +256,7 @@ void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, doubl
 
 int Exp::Draw(unsigned int n, double **F, double **X, double *Z, 
 	      double *lambda, double **bmu, double **Vb, double tau2, 
-	      double itemp, bool cart, void *state)
+	      double itemp, void *state)
 {
   int success = 0;
   bool lin_new;
@@ -232,7 +265,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   /* sometimes skip this Draw for linear models for speed,
    and only draw the nugget */
   if(linear && runi(state) > 0.5) 
-    return DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
+    return DrawNugs(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
 
   /* proppose linear or not */
   if(prior->Linear()) lin_new = true;
@@ -251,13 +284,13 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
       xDISTx = new_matrix(n, n);
       nd = n;
     }
-    dist_symm(xDISTx, col-1, X, n, PWR);
+    dist_symm(xDISTx, dim, X, n, PWR);
     allocate_new(n); 
     assert(n == this->n);
   }
   
   /* d; rebuilding K, Ki, and marginal params, if necessary */
-  if(prior->Linear()) d_new = d;
+  if(prior->Linear()) { d_new = d; success = 1; }
   else {
     Exp_Prior* ep = (Exp_Prior*) prior;
     Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
@@ -267,7 +300,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
 		    Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
 		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
 		    nug, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), gp_prior->s2Alpha(), 
-		    gp_prior->s2Beta(), (int) lin_new, itemp, (int) cart, state);
+		    gp_prior->s2Beta(), (int) lin_new, itemp, state);
   }
   
   /* did we accept the new draw? */
@@ -282,7 +315,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   if(dreject >= REJECTMAX) return -2;
 
   /* draw nugget */
-  bool changed = DrawNug(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, cart, state);
+  bool changed = DrawNugs(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
   success = success || changed;
   
   return success;
@@ -501,7 +534,7 @@ double* Exp::Trace(unsigned int* len)
 
 Corr* Exp_Prior::newCorr(void)
 {
-  return new Exp(col, base_prior);
+  return new Exp(dim, base_prior);
 }
 
 
@@ -512,7 +545,7 @@ Corr* Exp_Prior::newCorr(void)
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(unsigned int col) : Corr_Prior(col)
+Exp_Prior::Exp_Prior(unsigned int dim) : Corr_Prior(dim)
 {
   corr_model = EXP;
 
@@ -749,7 +782,7 @@ void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
   }
   
   /* hierarchical prior draws for the nugget */
-  DrawNug(corr, howmany, state);
+  DrawNugHier(corr, howmany, state);
 }
 
 

@@ -48,6 +48,8 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
   this->n = 0;
   this->d = d;
   nn = 0;
+ 
+  col = prior->Col();
 
   /* null everything */
 
@@ -70,14 +72,15 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
  * Base:
  * 
  * duplication constructor; params any "new" variables are also 
- * set to NULL values
+ * set to NULL values; the economy argument is not used here
  */
 
-Base::Base(double **X, double *Z, Base *old)
+Base::Base(double **X, double *Z, Base *old, bool economy)
 {
   /* simple non-pointer copies */
   
   d = old->d;
+  col = old->col;
   n = old->n;
  
   /* pointers to data */
@@ -181,7 +184,8 @@ Base_Prior::Base_Prior(Base_Prior *p)
   base_model = p->base_model;
 
   /* generic and tree parameters */
-  d = p->d;   
+  d = p->d;  
+  col = p->col;
 }
 
 
@@ -194,6 +198,16 @@ Base_Prior::Base_Prior(Base_Prior *p)
 BASE_MODEL Base_Prior::BaseModel(void)
 {
   return base_model;
+}
+
+/*
+ * Col
+ *
+ */
+
+unsigned int Base_Prior::Col(void)
+{
+  return col;
 }
 
 

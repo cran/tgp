@@ -38,6 +38,7 @@ extern "C"
 #include "exp.h"
 #include "exp_sep.h"
 #include "matern.h"
+#include "mr_exp_sep.h"
 #include "tree.h"
 #include "model.h"
 #include "gp.h"
@@ -63,11 +64,10 @@ class Gp_Prior;
 
 Gp::Gp(unsigned int d, Base_Prior *prior, Model *model) : Base(d, prior, model)
 {
-  /* data size */
-  this->n = 0;
+  /* data size; alread done in Base */
+  /* this->n = 0;
   this->d = d;
-  col = d+1;
-  nn = 0;
+  nn = 0; */
 
   /* null everything */
   F = FF = xxKx = xxKxx = NULL;
@@ -85,15 +85,17 @@ Gp::Gp(unsigned int d, Base_Prior *prior, Model *model) : Base(d, prior, model)
 /*
  * Gp:
  * 
- * duplication constructor; params and "new" variables are also 
- * set to NULL values
+ * duplication constructor; params and "new" variables are also set to
+ * NULL values; the economy argument allows a memory efficient
+ * duplication which does not copy the covariance matrices, as these
+ * can be recreated as necessary.
  */
 
-Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
+Gp::Gp(double **X, double *Z, Base *old, bool economy) : Base(X, Z, old, economy)
 {
   assert(old->BaseModel() == GP);
   Gp* gp_old = (Gp*) old;
-  col = gp_old->col;
+  
   /* F; copied from tree -- this should prolly be regenerated from scratch */
   if(gp_old->F) F = new_dup_matrix(gp_old->F, col, n);
   else F =  NULL;
@@ -119,6 +121,10 @@ Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
    * prior and then use the copy constructor */
   corr = corr_prior->newCorr();
   *corr = *(gp_old->corr);
+
+  /* if we're not being economical about memory, then copy the
+     covariance matrices, etc., from the old correlation module */
+  if(!economy) corr->Cov(gp_old->corr);
   
   /* things that must be NULL */
   FF = xxKx = xxKxx = NULL;
@@ -131,15 +137,17 @@ Gp::Gp(double **X, double *Z, Base *old) : Base(X, Z, old)
  * create a new Gp base model from an old one; cannot use old->X 
  * and old->Z becuase they are pointers to the old copy of the 
  * treed partition from which this function is likely to have been
- * called.
+ * called.  The economy argument allows a memory efficient 
+ * duplication which does not copy the covariance matrices, as these
+ * can be recreated as necessary.
  *
  * This function basically allows tree to duplicate the base model
  * without knowing what it is.
  */
 
-Base* Gp::Dup(double **X, double *Z)
+Base* Gp::Dup(double **X, double *Z, bool economy)
 {
-  return new Gp(X, Z, this);
+  return new Gp(X, Z, this, economy);
 }
 
 
@@ -265,7 +273,7 @@ void Gp::ClearPred(void)
 void Gp::Update(double **X, unsigned int n, unsigned int d, double *Z)
 {
   /*checks */
-  assert(this->col == d+1);
+
   assert(X && Z);
   if(F == NULL) assert(this->n == 0 && this->X == NULL && this->Z == NULL);
   else assert(this->n == n && this->X == X && this->Z == Z);
@@ -300,18 +308,18 @@ void Gp::UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)
   if(XX == NULL) { assert(nn == 0); return; }
   this->XX = XX;
   this->nn = nn;
-  assert(this->col == d+1);
+  
   
   assert(!FF && !xxKx);
   FF = new_matrix(this->col,nn);
   X_to_F(nn, XX, FF);
   
-  if(! corr->Linear()) {
+  if(! Linear()) {
     xxKx = new_matrix(n,nn);
     corr->Update(nn, n, xxKx, X, XX);
   }
   
-  if(Ds2xy && ! corr->Linear()) {
+  if(Ds2xy && ! Linear()) {
     assert(!xxKxx);
     xxKxx = new_matrix(nn,nn);
     corr->Update(nn, xxKxx, XX);
@@ -339,7 +347,7 @@ bool Gp::Draw(void *state)
   /* correlation function */
   int success, i;
   for(i=0; i<5; i++) {
-    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, p->Cart(), state);
+    success = corr->Draw(n, F, X, Z, &lambda, &bmu, Vb, tau2, itemp, state);
     if(success != -1) break;
   }
 
@@ -366,7 +374,7 @@ bool Gp::Draw(void *state)
     s2 = sigma2_draw_no_b_margin(n, col, lambda, p->s2Alpha(), p->s2Beta(), state);
 
   /* if beta draw is bad, just use mean, then zeros */
-  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, (int) p->Cart(), state);
+  unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
   if(info != 0) b[0] = mean; 
   
   /* tau2: last becuase of Vb and lambda */
@@ -397,25 +405,32 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
   assert(this->nn == nn);
  
   unsigned int warn = 0;
-
-  /* when using beta[0]=mu prior */
-  Gp_Prior *p = (Gp_Prior*) prior;
-  unsigned int col = this->col;
-  if(p->Cart()) col = 1;  
-
+  
   /* try to make some predictions, but first: choose LLM or Gp */
-  if(corr->Linear())  {
+  if(Linear())  {
     /* under the limiting linear */
-    predict_full_linear(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv,
-			Z, col, F, FF, bmu, s2, Vb, corr->Nug(), Zmin, err, 
-			state);
+    double *Kdiag = corr->CorrDiag(n,X);
+    double *KKdiag = corr->CorrDiag(nn,XX);
+    predict_full_linear(n, zp, zpm, zps2, Kdiag, nn, zz, zzm, zzs2, KKdiag,
+			ds2xy, improv, Z, col, F, FF, bmu, s2, Vb, Zmin, err, state);
+    if(Kdiag) free(Kdiag);
+    if(KKdiag) free(KKdiag);
   } else {
     /* full Gp prediction */
-    warn = predict_full(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, 
-			Z, col, F, corr->get_K(), corr->get_Ki(), 
-			((Gp_Prior*)prior)->get_T(), tau2, FF, xxKx, xxKxx, 
-			bmu, s2, corr->Nug(), Zmin, err, state);
+    double *zpjitter = corr->Jitter(n, X);
+    double *zzjitter = corr->Jitter(nn, XX);
+    double *KKdiag;
+    if(!xxKxx) KKdiag = corr->CorrDiag(nn,XX);
+    else KKdiag = NULL;
+    warn = predict_full(n, zp, zpm, zps2, zpjitter, nn, zz, zzm, zzs2, zzjitter,
+			ds2xy, improv, Z, col, F, corr->get_K(), corr->get_Ki(), 
+			((Gp_Prior*)prior)->get_T(), tau2, FF, xxKx, xxKxx, KKdiag,
+			bmu, s2, Zmin, err, state);
+    if(zpjitter) free(zpjitter);
+    if(zzjitter) free(zzjitter); 
+    if(KKdiag) free(KKdiag);
   }
+
   
   /* print warnings if there were any */
   if(warn) warning("(%d) from predict_full: n=%d, nn=%d", warn, n, nn);
@@ -545,8 +560,7 @@ double Gp::MarginalLikelihood(double itemp)
 
   /* the main posterior for the correlation function */
   double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(),
-			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), 
-			       (int) p->Cart(), itemp);
+			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
@@ -569,13 +583,24 @@ double Gp::Likelihood(double itemp)
    
   /* getting the covariance matrix and its determinant */
   double **Ki;
-  if(corr->Linear()) Ki = NULL;
-  else Ki = corr->get_Ki();
+  double *Kdiag;
+  if(Linear()){ 
+    Ki = NULL;
+    Kdiag = corr->CorrDiag(n, X);
+  }
+  else {
+    Ki = corr->get_Ki();
+    Kdiag = NULL;
+  }
   double log_det_K = corr->get_log_det_K();
 
-  /* the main posterior for the correlation function */
-  double llik = gp_lhood(Z, n, col, F, b, s2, Ki, log_det_K, corr->Nug(), itemp);
   
+
+  /* the main posterior for the correlation function */
+  double llik = gp_lhood(Z, n, col, F, b, s2, Ki, log_det_K, Kdiag, itemp);
+  
+  if(Kdiag) free(Kdiag);
+
 #ifdef DEBUG
   if(isnan(llik)) warning("nan in likelihood");
   if(isinf(llik)) warning("inf in likelihood");
@@ -635,11 +660,11 @@ double Gp::MarginalPosterior(double itemp)
   Gp_Prior *p = (Gp_Prior*) prior;
 
   double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
-			       tau2, p->s2Alpha(), p->s2Beta(), (int) p->Cart(), itemp);
+			       tau2, p->s2Alpha(), p->s2Beta(), itemp);
 
   //assert(!isinf(post));
 
-  /* don't need to include prior for beta, because
+  /* don't need to include prior for beta or s2, because
      its alread included in the above calculation */
   
   /* add in the correllation prior */
@@ -687,12 +712,13 @@ void Gp::Compute(void)
   }
   
   /* compute the marginal parameters */
-  if(corr->Linear())
-    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, corr->Nug(), 
-				(int) p->Cart(), itemp);
+  if(Linear()){
+    double *Kdiag = corr->CorrDiag(n, X);
+    lambda = compute_lambda_noK(Vb, bmu, n, col, F, Z, Ti, tau2, b0, Kdiag, itemp);
+    free(Kdiag);
+  }
   else
-    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, 
-			    (int) p->Cart(), itemp);
+    lambda = compute_lambda(Vb, bmu, n, col, F, Z, corr->get_Ki(), Ti, tau2, b0, itemp);
 }
 
 
@@ -785,11 +811,21 @@ double Gp::Var(void)
 void Gp::X_to_F(unsigned int n, double **X, double **F)
 
 {
-	unsigned int i,j;
-	for(i=0; i<n; i++) {
-		F[0][i] = 1;
-		for(j=1; j<col; j++) F[j][i] = X[i][j-1];
-	}
+  unsigned int i,j;
+  switch( ((Gp_Prior*) prior)->MeanFn() ){
+  case LINEAR: 
+    for(i=0; i<n; i++) {
+      F[0][i] = 1;
+      for(j=1; j<col; j++) F[j][i] = X[i][j-1];
+    } 
+    break;
+  case CONSTANT:
+    for(i=0; i<n; i++) F[0][i] = 1;
+    break;
+  default: error("bad mean function in X to F");
+  }
+
+    
 }
 
 
@@ -936,12 +972,11 @@ double Gp::NewInvTemp(double itemp, bool isleaf)
  * the usual constructor function
  */
 
-Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
+Gp_Prior::Gp_Prior(unsigned int d,  MEAN_FN mean_fn) : Base_Prior(d)
 {
-  /* set the name of the base model and its dimesnion (+1) */
+  /* set the name & dim of the base model  */
   base_model = GP;
-  col = d+1;
-
+ 
   /*
    * the rest of the parameters will be read in
    * from the control file (Gp_Prior::read_ctrlfile), or
@@ -950,8 +985,15 @@ Gp_Prior::Gp_Prior(unsigned int d) : Base_Prior(d)
   
   corr_prior = NULL;
   beta_prior = BFLAT; 	/* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
-  cart = false;         /* default is to not use b[0]=mu */
-  
+
+  /* LINEAR, CONSTANT, or 2LEVEL, which determines col */
+  this->mean_fn = mean_fn; 
+  switch(mean_fn) {
+  case CONSTANT: col = 1; break;
+  case LINEAR: col = d+1; break;
+  default: error("unrecognized mean function: %d", mean_fn);
+  }
+
   /* regression coefficients */
   b = new_zero_vector(col);
   s2 = 1.0;		/* variance parammer */
@@ -1072,13 +1114,11 @@ Gp_Prior::Gp_Prior(Base_Prior *prior) : Base_Prior(prior)
   assert(prior->BaseModel() == GP);
     
   Gp_Prior *p = (Gp_Prior*) prior;
-  d = p->d;
-  /* generic and tree parameters */
-  col = p->col;
+
 
   /* linear parameters */
+  mean_fn = p->mean_fn;
   beta_prior = p->beta_prior;  
-  cart = p->cart;
   s2 = p->s2;
   tau2 = p->tau2;
   b = new_dup_vector(p->b, col);
@@ -1144,13 +1184,8 @@ Gp_Prior::~Gp_Prior(void)
 
 void Gp_Prior::read_double(double * dparams)
 {
-  /* if dparams[0] >= 10 then use b[0]=mu model */
+ 
   int bp = (int) dparams[0];
-  if(bp >= 10) {
-    cart = TRUE;
-    bp = bp % 10;
-  }
-
  /* read the beta linear prior model */
   switch (bp) {
   case 0: beta_prior=B0; /* myprintf(stdout, "linear prior: b0 hierarchical\n"); */ break;
@@ -1216,14 +1251,17 @@ void Gp_Prior::read_double(double * dparams)
 
   /* read the corr model */
   switch ((int) dparams[0]) {
-  case 0: corr_prior = new Exp_Prior(col);
-    //myprintf(stdout, "correlation: isotropic power exponential\n");
+  case 0: corr_prior = new Exp_Prior(d);
+      //myprintf(stdout, "correlation: isotropic power exponential\n");
     break;
-  case 1: corr_prior = new ExpSep_Prior(col);
-    //myprintf(stdout, "correlation: separable power exponential\n");
+  case 1: corr_prior = new ExpSep_Prior(d);
+      //myprintf(stdout, "correlation: separable power exponential\n");
     break;
-  case 2: corr_prior = new Matern_Prior(col);
-    //myprintf(stdout, "correlation: isotropic matern\n");
+  case 2: corr_prior = new Matern_Prior(d);
+      //myprintf(stdout, "correlation: isotropic matern\n");
+    break;
+  case 3: corr_prior = new MrExpSep_Prior(d-1);
+      //myprintf(stdout, "correlation: two-level seperable power mixture\n");
     break;
   default: error("bad corr model %d", (int)dparams[0]);
   }
@@ -1246,26 +1284,34 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
 {
   char line[BUFFMAX], line_copy[BUFFMAX];
 
+  /* check that col is valid for the mean function */
+  /* later we will just enforce this inside the C code, rather than reading
+     col through the control file */
+  if(mean_fn == LINEAR && col != d+1) 
+    error("col should be d+1 for linear mean function");
+  else if(mean_fn == CONSTANT && col != 1)
+    error("col should be 1 for constant mean function");
+
   /* read the beta prior model */
   /* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
   ctrlfile->getline(line, BUFFMAX);
-  if(!strncmp(line, "b0tau", 5)) {
+  if(!strncmp(line, "bmzt", 5)) {
     beta_prior = BMZT;
-    myprintf(stdout, "linear prior: b0 fixed with tau2 \n");
+    myprintf(stdout, "beta prior: b0 fixed with tau2 \n");
   } else if(!strncmp(line, "bmle", 4)) {
     beta_prior = BMLE;
-    myprintf(stdout, "linear prior: emperical bayes\n");
+    myprintf(stdout, "beta prior: emperical bayes\n");
   } else if(!strncmp(line, "bflat", 5)) {
     beta_prior = BFLAT;
-    myprintf(stdout, "linear prior: flat \n");
-  } else if(!strncmp(line, "bcart", 5)) {
+    myprintf(stdout, "beta prior: flat \n");
+  } else if(!strncmp(line, "b0not", 5)) {
     beta_prior = B0NOT;
-    myprintf(stdout, "linear prior: cart \n");
+    myprintf(stdout, "beta prior: cart \n");
   } else if(!strncmp(line, "b0", 2)) {
     beta_prior = B0;
-    myprintf(stdout, "linear prior: b0 hierarchical \n");
+    myprintf(stdout, "beta prior: b0 hierarchical \n");
   } else {
-    error("%s is not a valid linear prior", strtok(line, "\t\n#"));
+    error("%s is not a valid beta prior", strtok(line, "\t\n#"));
   }
 
   /* must properly initialize T, based on beta_prior */
@@ -1328,17 +1374,20 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   }
 
   /* read the correlation model type */
-  /* EXP, EXPSEP or MATERN */
+  /* EXP, EXPSEP, MATERN or MREXPSEP */
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "expsep", 6)) {
-    corr_prior = new ExpSep_Prior(col);
+    corr_prior = new ExpSep_Prior(d);
     // myprintf(stdout, "correlation: separable power exponential\n");
   } else if(!strncmp(line, "exp", 3)) {
-    corr_prior = new Exp_Prior(col);
+    corr_prior = new Exp_Prior(d);
     // myprintf(stdout, "correlation: isotropic power exponential\n");
   } else if(!strncmp(line, "matern", 6)) {
-    corr_prior = new Matern_Prior(col);
+    corr_prior = new Matern_Prior(d);
     // myprintf(stdout, "correlation: isotropic matern\n");
+  } else if(!strncmp(line, "mrexpsep", 8)) {
+    corr_prior = new MrExpSep_Prior(d-1);
+    // myprintf(stdout, "correlation: multi-res seperable power\n");
   } else {
     error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }
@@ -1430,6 +1479,17 @@ void Gp_Prior::read_beta(char *line)
   
   /* myprintf(stdout, "starting beta=");
      printVector(b, col, stdout, HUMAN) */
+}
+
+/*
+ * MeanFn:
+ * 
+ * return the current Mean Function indicator
+ */
+
+MEAN_FN Gp_Prior::MeanFn(void)
+{
+  return mean_fn;
 }
 
 
@@ -1589,14 +1649,22 @@ void Gp_Prior::ResetLinear(double gam)
 
 void Gp_Prior::Print(FILE* outfile)
 {
+
+/* beta prior */
+  switch (mean_fn) {
+  case LINEAR: myprintf(stdout, "mean function: linear\n"); break;
+  case CONSTANT: myprintf(stdout, "mean function: constant\n"); break;
+  case TWOLEVEL: myprintf(stdout, "mean function: two-level\n"); break;
+  default: error("mean function not recognized");  break;
+  }
   /* beta prior */
   switch (beta_prior) {
-  case B0: myprintf(stdout, "linear prior: b0 hierarchical\n"); break;
-  case BMLE: myprintf(stdout, "linear prior: emperical bayes\n"); break;
-  case BFLAT: myprintf(stdout, "linear prior: flat\n"); break;
-  case B0NOT: myprintf(stdout, "linear prior: cart\n"); break;
-  case BMZT: myprintf(stdout, "linear prior: b0 flat with tau2\n"); break;
-  default: error("linear prior not supported");  break;
+  case B0: myprintf(stdout, "beta prior: b0 hierarchical\n"); break;
+  case BMLE: myprintf(stdout, "beta prior: emperical bayes\n"); break;
+  case BFLAT: myprintf(stdout, "beta prior: flat\n"); break;
+  case B0NOT: myprintf(stdout, "beta prior: cart\n"); break;
+  case BMZT: myprintf(stdout, "beta prior: b0 flat with tau2\n"); break;
+  default: error("beta prior not supported");  break;
   }
 
   /* beta */
@@ -1640,10 +1708,6 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
   unsigned int *n;
   Corr **corr;
 
-  /* when using beta[0]=mu prior */
-  unsigned int col = this->col;
-  if(cart) col = 1;  
-
   /* allocate temporary parameters for each leaf node */
   allocate_leaf_params(col, &b, &s2, &tau2, &n, &corr, leaves, numLeaves);
   if(beta_prior == BMLE) bmle = new_matrix(numLeaves, col);
@@ -1660,7 +1724,7 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
   if(beta_prior == B0 || beta_prior == BMLE) { 
     b0_draw(b0, col, numLeaves, b, s2, Ti, tau2, mu, Ci, state);
     Ti_draw(Ti, col, numLeaves, b, bmle, b0, rho, V, s2, tau2, state);
-    if(cart) this->T[0][0] = 1.0/Ti[0][0];
+    if(mean_fn == CONSTANT) this->T[0][0] = 1.0/Ti[0][0];
     else inverse_chol(Ti, (this->T), Tchol, col);
   }
 
@@ -1742,7 +1806,7 @@ void Gp::ForceLinear(void)
 {
   if(! Linear()) {
     corr->ToggleLinear();
-    Update(X, n, col-1, Z);
+    Update(X, n, d, Z);
     Compute();
   }
 }
@@ -1753,14 +1817,16 @@ void Gp::ForceLinear(void)
  * Toggle the entire partition into GP mode
  */
 
+
 void Gp::ForceNonlinear(void)
 {
   if(Linear()) {
     corr->ToggleLinear();
-    Update(X, n, col-1, Z);
+    Update(X, n, d, Z);
     Compute();
   }
 }
+
 
 
 /*
@@ -1867,7 +1933,7 @@ void deallocate_leaf_params(double **b, double *s2, double *tau2, unsigned int *
 
 Base* Gp_Prior::newBase(Model *model)
 {
-  return new Gp(col-1, (Base_Prior*) this, model);
+  return new Gp(d, (Base_Prior*) this, model);
 }
 
 
@@ -2032,18 +2098,4 @@ double Gp_Prior::GamLin(unsigned int which)
 
   double *gamlin = corr_prior->GamLin();
   return gamlin[which];
-}
-
-
-/*
- * Cart:
- *
- * return the boolean indicating whether or not
- * the beta prior only uses beta[0]=mu, ignoring
- * the other parts
- */
-
-bool Gp_Prior::Cart(void)
-{
-  return cart;
 }

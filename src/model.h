@@ -29,6 +29,7 @@
 #include "list.h"
 #include "params.h"
 #include "mstructs.h"
+#include "temper.h"
 
 
 /*#define PARALLEL*/ 		/* should prediction be done with pthreads */
@@ -49,10 +50,12 @@ class Model
   Base_Prior *base_prior;               /* base model (e.g., GP) prior module */
   
   Tree* t;		                /* root of the partition tree */
+  double **Xsplit;                      /* locations at which trees can split */
+  unsigned int nsplit;                  /* number of locations in Xsplit */
   
   double Zmin;                          /* global minimum Z-value used in EGO/Improve calculations */
   unsigned int wZmin;                   /* index of minimum Z-value in Z-vector */
-
+ 
   /* for computing acceptance proportions of tree proposals */
   int swap,change,grow,prune,swap_try,grow_try,change_try,prune_try;
   
@@ -82,7 +85,8 @@ class Model
   Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
   Linarea *lin_area;			/* if so, we need a pointer to the area structure */
 
-  iTemps *itemps;                         /* inv-temperature for importance-tempering */
+  Temper *its;                           /* inv-temperature for importance-tempering */
+  bool tprior;                          /* whether to temper the (tree) prior or not */
   
  public:
   
@@ -90,13 +94,14 @@ class Model
   Model(Params *params, unsigned int d, double **rect, int Id, bool trace,
 	void *state_to_init_conumer);
   ~Model(void);
-  void Init(double **X, unsigned int d, unsigned int n, double *Z, iTemps *itemps,
+  void Init(double **X, unsigned int d, unsigned int n, double *Z, Temper *it,
 	    double *dtree, unsigned int ncol, double* hier);
   
   /* MCMC */
   void rounds(Preds *preds, unsigned int B, unsigned int T, void *state);
   void Linburn(unsigned int B, void *state);
   void Burnin(unsigned int B, void *state);
+  void StochApprox(unsigned int B, void *state);
   void Sample(Preds *preds, unsigned int R, void *state);
   void Predict(Preds *preds, unsigned int R, void *state);
   
@@ -109,6 +114,8 @@ class Model
   void set_TreeRoot(Tree *t);
   Params* get_params(void);
   Tree* get_TreeRoot(void);
+  double** get_Xsplit(unsigned int *nsplit);
+  void set_Xsplit(double **X, unsigned int n, unsigned int d);
   void predict_master(Tree *leaf, Preds *preds, int index, void* state);
   void Predict(Tree* leaf, Preds* preds, unsigned int index, bool dnorm, void *state);
   Tree** CopyPartitions(unsigned int *numLeaves);
@@ -158,6 +165,7 @@ class Model
   double iTemp(void);
   void DrawInvTemp(void* state);
   double* update_tprobs(void);
+  void DupItemps(Temper *its);
 };
 
 

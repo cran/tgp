@@ -117,7 +117,7 @@ class Tree
   /* constructor, destructor and misc partition initialization */
   Tree(double **X, int *p, unsigned int n, unsigned int d, double *Z, 
        Rect* rect, Tree* parent, Model* model);
-  Tree(const Tree *oldt);
+  Tree(const Tree *oldt, bool economy);
   void Init(double *dtree, unsigned int nrow, double **iface_rect);
   ~Tree(void);
   void delete_XX(void);
@@ -190,10 +190,11 @@ class Tree
   /* seperating prediction from estimation */
   unsigned int add_XX(double **X_pred, unsigned int n_pred, unsigned int d_new);
   void new_XZ(double **X_new, double *Z_new, unsigned int n_new, unsigned int d_new);
-  unsigned int* dopt_from_XX(unsigned int N, void *state);
+  unsigned int* dopt_from_XX(unsigned int N, unsigned int iter, void *state);
   
   /* computing the full posterior or likelihood of the tree */
-  double FullPosterior(double itemp);
+  double Prior(double itemp);
+  double FullPosterior(double itemp, bool tprior);
   double MarginalPosterior(double itemp);
   double Likelihood(double itemp);
 

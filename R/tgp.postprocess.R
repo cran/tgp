@@ -23,7 +23,7 @@
 
 
 "tgp.postprocess" <-
-function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE)
+function(ll, Xnames, response, pred.n, Ds2x, improv, sens.p, Zm0r1, params, rmfiles=TRUE)
 {
   ## deal with X, and names of X
   ll$X <- framify.X(ll$X, Xnames, ll$d)
@@ -34,20 +34,19 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
 
   ## remove from the list if not requested
   if(Ds2x == FALSE) { ll$Ds2x <- NULL; }
-  if(improv == FALSE) { ll$improv <- NULL; }
+  if(is.null(improv)) { ll$improv <- NULL; }
   
   ## deal with predictive data locations (ZZ)
-  if(ll$nn == 0) { 
-    ll$XX <- NULL; ll$ZZ.mean <- NULL; ll$ZZ.s2 <- NULL;
-    ll$ZZ.q <- NULL; ll$ZZ.km <- NULL; ll$ZZ.ks2 <- NULL;
-    ll$ZZ.q1 <- NULL; ll$ZZ.med <- NULL; ll$ZZ.q2 <- NULL; 
-    ll$Ds2x <- NULL; ll$improv <- NULL
+
+  if(ll$nn == 0 || (ll$BTE[2]-ll$BTE[1])==0 || !is.null(sens.p)) { 
+    ll$XX <- ll$ZZ.mean <- ll$ZZ.s2 <-  ll$ZZ.q <- ll$ZZ.km <- ll$ZZ.ks2 <- NULL
+    ll$ZZ.q1 <- ll$ZZ.med <- ll$ZZ.q2 <- ll$ZpZZ.s2 <- ll$Ds2x <- ll$improv <- NULL
   } else {
     ## do predictive input/output processing
     
     ## replace NaN's in improv with zeros
     ## shouldn't happen because check have been moved to C code
-    if(improv && sum(is.nan(ll$improv) > 0)) {
+    if((!is.null(improv)) && sum(is.nan(ll$improv) > 0)) {
       warning(paste("encountered", sum(is.nan(ll$improv)),
                     "NaN in Improv, replaced with zeros"), call.=FALSE)
       ll$improv[is.nan(ll$improv)] <- 0
@@ -56,10 +55,16 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
     ## make sure XX has the correct output format
     ll$XX <- framify.X(ll$XX, Xnames, ll$d)
   }
-  if(pred.n == FALSE) {
-    ll$Zp.mean <- NULL; ll$Zp.q <- NULL; ll$Zp.q1 <- NULL;
-    ll$Zp.q2 <- NULL; ll$Zp.s2 <- NULL; ll$Zp.km <- NULL;
-    ll$Zp.ks2 <- NULL; ll$Zp.med <- NULL
+
+  ## turn improv into a data.frame where the second column is the rankings
+  if(!is.null(improv)){
+    ll$improv <- data.frame(improv=ll$improv, rank=ll$irank)
+  }
+
+  ## NULL-out data-predictive output if unused
+  if(pred.n == FALSE || ll$BTE[2]-ll$BTE[1] == 0) {
+    ll$Zp.mean <- ll$Zp.q <- ll$Zp.q1 <- ll$Zp.q2 <- NULL;
+    ll$Zp.s2 <- ll$ZpZZ.s2 <-  ll$Zp.km <-  ll$Zp.ks2 <- ll$Zp.med <- NULL
   }
   
   ## gather information about partitions
@@ -69,8 +74,9 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
   } else { ll$parts <- NULL }
   
   ## gather information about MAP trees as a function of height
-  ll$trees <- tgp.get.trees(ll$X, rmfiles)
+  ll$trees <- tgp.get.trees(rbind(ll$X, ll$XX), rmfiles)
   ll$posts <- read.table("tree_m0_posts.out", header=TRUE)
+  if(ll$BTE[2] - ll$BTE[1] == 0) ll$posts <- NULL
   if(rmfiles) unlink("tree_m0_posts.out")
 
   ## read the trace in the output files, and then delete them
@@ -82,15 +88,44 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
 
   ## clear the verb, state, tree and MAP fields for output
   ll$verb <- NULL; ll$state <- NULL; ll$tree <- NULL; ll$MAP <- NULL; ll$nt <- NULL
-  ll$ncol <- NULL; ll$hier <- NULL;
+  ll$ncol <- NULL; ll$hier <- NULL; 
 
   ## consolidate itemps
   nt <- as.integer(ll$itemps[1])
-  ll$itemps <- data.frame(itemps=ll$itemps[2:(nt+1)], tprobs=ll$itemps[(nt+2):(2*nt+1)])
+  lambda <- ll$itemps[length(ll$itemps)]
+  if(lambda == 1) lambda <- "opt"
+  else if(lambda == 2) lambda <- "naive"
+  else if(lambda == 3) lambda <- "st"
+  else stop(paste("bad lambda = ", lambda, sep=""))
+  ll$itemps <- list(c0n0=as.integer(ll$itemps[2:3]), k=ll$itemps[4:(nt+3)],
+                    pk=ll$itemps[(nt+4):(2*nt+3)], lambda=lambda)
 
   ## change {0,1} to {TRUE,FALSE}
   if(ll$linburn) ll$linburn <- TRUE
   else ll$linburn <- FALSE
+
+  ## deal with sensitivity analysis outputs
+  if(!is.null(sens.p)){
+    names(sens.p) <- NULL
+    sens.par <- list(nn.lhs=sens.p[1], rect=matrix(sens.p[2:(ll$d*2+1)], nrow=2),
+                 shape=sens.p[(ll$d*2+2):(ll$d*3+1)], mode=sens.p[(ll$d*3+2):(ll$d*4+1)],
+                 ngrid=ll$sens.ngrid, span=ll$sens.span)
+    sens <- list()
+    sens$par <- sens.par
+    sens$ngrid <- NULL
+    sens$span <- NULL
+    sens$Xgrid <- matrix(ll$sens.Xgrid, ncol=ll$d)
+    sens$ZZ.mean <- matrix(ll$sens.ZZ.mean, ncol=ll$d)
+    sens$ZZ.q1 <- matrix(ll$sens.ZZ.q1, ncol=ll$d)
+    sens$ZZ.q2 <- matrix(ll$sens.ZZ.q2, ncol=ll$d)
+    sens$S <- matrix(ll$sens.S, ncol=ll$d, byrow=TRUE)
+    sens$T <- matrix(ll$sens.T, ncol=ll$d, byrow=TRUE)
+  } else{ sens <- NULL }
+
+  ## clear ll$sens.* and replace with single list
+  ll$sens.Xgrid <- ll$sens.ZZ.mean <- ll$sens.ZZ.q1 <- ll$sens.ZZ.q2 <- NULL
+  ll$sens.ngrid <- ll$sens.span <- ll$sens.S <- ll$sens.T <- NULL
+  ll$sens <- sens
   
   ## undo mean0.range1
   if(!is.null(Zm0r1)) {
@@ -101,6 +136,7 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
     ll$ZZ.km <- undo.mean0.range1(ll$ZZ.km,Zm0r1$undo)
     ll$Zp.ks2 <- undo.mean0.range1(ll$Zp.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
     ll$ZZ.ks2 <- undo.mean0.range1(ll$ZZ.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
+    ll$ZpZZ.ks2 <- undo.mean0.range1(ll$ZpZZ.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
     ll$Zp.q <- undo.mean0.range1(ll$Zp.q,Zm0r1$undo, nomean=TRUE)
     ll$ZZ.q <- undo.mean0.range1(ll$ZZ.q,Zm0r1$undo, nomean=TRUE)
     ll$Zp.s2 <- undo.mean0.range1(ll$Zp.s2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
@@ -111,10 +147,58 @@ function(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1, params, rmfiles=TRUE
     ll$ZZ.q1 <- undo.mean0.range1(ll$ZZ.q1,Zm0r1$undo)
     ll$ZZ.med <- undo.mean0.range1(ll$ZZ.med,Zm0r1$undo)
     ll$ZZ.q2 <- undo.mean0.range1(ll$ZZ.q2,Zm0r1$undo)
+    for(j in 1:ll$d){
+      ll$sens.ZZ.mean[,j] <- undo.mean0.range1(ll$sens.ZZ.mean[,j],Zm0r1$undo)
+      ll$sens.ZZ.q1[,j] <- undo.mean0.range1(ll$sens.ZZ.q1[,j],Zm0r1$undo)
+      ll$sens.ZZ.q2[,j] <- undo.mean0.range1(ll$sens.ZZ.q2[,j],Zm0r1$undo)
+    }
     ll$m0r1 <- TRUE
   } else { ll$m0r1 <- FALSE }
-  
+
+  ## turn Z*.s2 into a matrix (covariance matrix)
+  if(!is.null(ll$Zp.s2) && ll$zcov) ll$Zp.s2 <- matrix(ll$Zp.s2, ncol=ll$n)
+  if(!is.null(ll$ZZ.s2) && ll$zcov) ll$ZZ.s2 <- matrix(ll$ZZ.s2, ncol=ll$nn)
+  if(!is.null(ll$ZpZZ.s2) && ll$zcov) ll$ZpZZ.s2 <- t(matrix(ll$ZpZZ.s2, ncol=ll$n))
+  else ll$ZpZZ.s2 <- NULL
+  ll$zcov <- NULL
+
   ## set class information and return
   class(ll) <- "tgp"
   return(ll)
+}
+
+
+"tgp.get.trees" <-
+function(X, rmfiles=TRUE)
+{
+  trees <- list()
+
+  ## get all of the names of the tree files
+  tree.files <- list.files(pattern="tree_m0_[0-9]+.out")
+
+  ## return no trees if the run was only burn-in
+  if(length(tree.files) == 0) return(NULL)
+
+  ## for each tree file
+  for(i in 1:length(tree.files)) {
+
+    ## grab the height from the filename
+    h <- as.numeric(strsplit(tree.files[i], "[_.]")[[1]][3])
+    
+    ## read it in, then remove it
+    trees[[h]] <- read.table(tree.files[i], header=TRUE)
+    if(rmfiles) unlink(tree.files[i])
+
+    ## correct the precision of the val (split) locations
+    ## by replacing them with the closest X[,var] location
+    if(nrow(trees[[h]]) == 1) next;
+    nodes <- (1:length(trees[[h]]$var))[trees[[h]]$var != "<leaf>"]
+    for(j in 1:length(nodes)) {
+	col <- as.numeric(as.character(trees[[h]]$var[nodes[j]])) + 1
+      m <- which.min(abs(X[,col] - trees[[h]]$val[nodes[j]]))
+      trees[[h]]$val[nodes[j]] <- X[m,col]
+    }          
+  }
+  
+  return(trees)
 }

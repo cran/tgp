@@ -4,17 +4,19 @@ bgp			Bayesian Gaussian process model
 bgpllm			Bayesian Gaussian process with jumps to the limiting linear model (LLM)
 btgp                    Bayesian treed Gaussian process model
 btgpllm			Bayesian treed Gaussian process with jumps to the LLM
-dopt.gp                 Sequential D-Optimal Design for a Stationary Gaussian Process
-exp2d                   2-d Exponential Data, for examples
-exp2d.rand              Randomly subsampled 2-d Exponential Data, for examples
-exp2d.Z	                Z-values for 2-d Exponential Data, for examples
+dopt.gp                 Sequential D-optimal design for a stationary Gaussian process
+exp2d                   2-d exponential Data, for examples
+exp2d.rand              Randomly subsampled 2-d exponential Data, for examples
+exp2d.Z	                Z-values for 2-d exponential Data, for examples
 friedman.1.data		First Friedman dataset, for examples
+interp.loess            Loess based interpolation of spatial data onto a regular grid
 lhs			Latin Hypercube sampling
 mapT			Plot the MAP partition, or add one to an existing plot
 partition      		Partition data according to the MAP tree
-plot.tgp                Plotting for Treed Gaussian Process Models
-predict.tgp             Prediction for (MAP estimates of) Treed Gaussian Process Models
+plot.tgp                Plotting for treed Gaussian process Models
+predict.tgp             Prediction for (MAP estimates of) treed GP Models
+sens                    Bayesian Monte Carlo sensitivity analysis for treed GP Models
 tgp                     Generic interface to treed Gaussian process models
-tgp.default.params      Default Treed Gaussian Process Model Parameters
-tgp.design              Sequential Treed D-Optimal Design for Treed Gaussian Process Models
-tgp.trees               Plot MAP Tree for each height encountered by the Markov Chain
+tgp.default.params      Default treed Gaussian process model parameters
+tgp.design              Sequential treed D-Optimal design for treed Gaussian process models
+tgp.trees               Plot MAP tree for each height encountered by the Markov chain

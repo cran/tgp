@@ -27,10 +27,11 @@
 
 double post_margin_rj(unsigned int n, unsigned int col, double lambda, double **Vb,
 		      double log_detK, double **T, double tau2, double a0, double g0, 
-		      int cart, double temp);
+		      double temp);
 double post_margin(unsigned int n, unsigned int col, double lambda, double **Vb, 
-		   double log_detK, double a0, double g0, int cart, double temp);
+		   double log_detK, double a0, double g0, double temp);
 double gp_lhood(double *Z, unsigned int n, unsigned int col, double **F, double *beta, 
-		double s2, double **Ki, double log_det_K, double nug, double temp);
+		double s2, double **Ki, double log_det_K, double *Kdiag, double temp);
 
 #endif
+

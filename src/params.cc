@@ -29,7 +29,6 @@ extern "C"
 }
 #include "params.h"
 #include "gp.h"
-#include "mr_gp.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -47,7 +46,6 @@ using namespace std;
 Params::Params(unsigned int dim)
 {
   d = dim;
-  col = dim+1;
 
   /*
    * the rest of the parameters will be read in
@@ -55,9 +53,11 @@ Params::Params(unsigned int dim)
    * from a double vector passed from R (Params::read_double)
    */
   
+  col = dim+1;
   t_alpha = 0.95; 	/* alpha: tree priors */
   t_beta = 2; 		/* beta: tree priors */
   t_minpart = 5; 	/* minpart: tree priors, smallest partition */
+  t_splitmin = 0;       /* data column where we start partitioning */
 
   prior = NULL;
 }
@@ -75,29 +75,15 @@ Params::Params(Params *params)
   d = params->d;
   col = params->col;
 
-  if(params->prior->BaseModel() == MR_GP) assert(col=d);
   t_alpha = params->t_alpha;
   t_beta = params->t_beta;
   t_minpart = params->t_minpart;
+  t_splitmin = params->t_splitmin;
   
   assert(params->prior);
   
-  switch( params->prior->BaseModel() ) {
-  case GP: 
-    prior = new Gp_Prior(params->prior);
-    ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);
-    break;
-  case MR_GP:
-    prior = new MrGp_Prior(params->prior);
-    ((MrGp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);
-    break;
-  default: 
-    error("bad base model, default to GP"); 
-    prior = new Gp_Prior(params->prior);
-    ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);    
-    break;
-  }
-  
+  prior = new Gp_Prior(params->prior);
+  ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);   
 }
 
 
@@ -120,30 +106,28 @@ Params::~Params(void)
  * for use with communication with R
  */
 
-void Params::read_double(double * dparams)
+void Params::read_double(double *dparams)
 {
- 
-  switch ((int) dparams[0]) {
-  case 0: prior = new Gp_Prior(d);
-    col = d+1;
-    break;
-  case 1: prior = new MrGp_Prior(d);
-    col = d;
-    break;
-  default: error("bad base model %d, default to GP", (int)dparams[0]);
-    prior = new Gp_Prior(d);
-    col = d+1;
+  /* read tree prior values */
+  //printVector(dparams, 6, stdout, HUMAN);
+  t_alpha = dparams[0];
+  t_beta = dparams[1];
+  t_minpart = (unsigned int) dparams[2];
+  t_splitmin = (unsigned int) dparams[3];
+  assert(t_splitmin < d);
+
+ /* read the mean function form */
+  int mf = (int) dparams[4];
+  MEAN_FN mean_fn = LINEAR;
+  switch (mf) {
+  case 0: mean_fn=LINEAR; /* myprintf(stdout, "linear mean\n"); */ break;
+  case 1: mean_fn=CONSTANT;/*  myprintf(stdout, "constant mean\n");*/  break;
+  default: error("bad mean function %d", (int)dparams[4]); break;
   }
 
-  /* read tree prior values */
-  t_alpha = dparams[1];
-  t_beta = dparams[2];
-  t_minpart = (unsigned int) dparams[3];
-
- 
-
+  prior = new Gp_Prior(d,  mean_fn);
   /* read the rest of the parameters into the corr prior module */
-  prior->read_double(&(dparams[4]));
+  prior->read_double(&(dparams[5]));
 }
 
 
@@ -157,31 +141,34 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 {
   char line[BUFFMAX];
 
-  ctrlfile->getline(line, BUFFMAX);
-  int p = (int) atof(strtok(line, " \t\n#"));
-  switch (p) {
-  case 0: prior = new Gp_Prior(d);
-    col = d+1;
-    break;
-  case 1: prior = new MrGp_Prior(d);
-    col = d;
-    break;
-  default: error("bad base model %d, default to GP", p);
-    prior = new Gp_Prior(d);
-    col = d+1;
-  }
-
   /* read the tree-parameters (alpha, beta) from the control file */
   ctrlfile->getline(line, BUFFMAX);
   t_alpha = atof(strtok(line, " \t\n#"));
   t_beta = atof(strtok(NULL, " \t\n#"));
   t_minpart = atoi(strtok(NULL, " \t\n#"));
   assert(t_minpart > 1);
+  t_splitmin = atoi(strtok(NULL, " \t\n#"));
+  assert(t_splitmin < d);
+
+  /* read the mean function form */
+  /* LINEAR, CONSTANT, or TWOLEVEL */
+  MEAN_FN mean_fn = LINEAR;
+  ctrlfile->getline(line, BUFFMAX);
+  if(!strncmp(line, "linear", 6)) {
+    mean_fn = LINEAR;
+    myprintf(stdout, "mean function: linear\n");
+  } else if(!strncmp(line, "constant", 8)) {
+    mean_fn = CONSTANT;
+    myprintf(stdout, "mean function: constant\n");
+  } else {
+    error("%s is not a valid mean function", strtok(line, "\t\n#"));
+  }
+
+  /* This will be needed for MrTgp */
+  prior = new Gp_Prior(d,  mean_fn);
 
   /* prints the tree prior parameter settings */
   Print(stdout);
-
-
 
   /* read the rest of the parameters into the corr prior module */
   prior->read_ctrlfile(ctrlfile);
@@ -195,18 +182,19 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
  * t_alpha nad t_beta
  */
 
-void Params::get_T_params(double *alpha, double *beta, unsigned int *minpart)
+void Params::get_T_params(double *alpha, double *beta, unsigned int *minpart, unsigned int *splitmin)
 {
   *alpha = t_alpha;
   *beta = t_beta;
   *minpart = t_minpart;
+  *splitmin = t_splitmin;
 }
 
 
 /*
  * isTree:
  *
- * return true if the tree-proir allows tree growth,
+ * return true if the tree-prior allows tree growth,
  * and false otherwise
  */
 
@@ -226,6 +214,17 @@ bool Params::isTree(void)
 unsigned int Params::T_minp(void)
 {
   return t_minpart;
+}
+
+/*
+ * T_smin:
+ *
+ * return minimim partition data number
+ */
+
+unsigned int Params::T_smin(void)
+{
+  return t_splitmin;
 }
 
 
@@ -285,6 +284,6 @@ Base_Prior* Params::BasePrior(void)
 
 void Params::Print(FILE *outfile)
 {
-  myprintf(outfile, "tree[alpha,beta,nmin]=[%g,%g,%d]\n", 
-	   t_alpha, t_beta, t_minpart);
+  myprintf(outfile, "T[alpha,beta,nmin,smin]=[%g,%g,%d,%d]\n", 
+	   t_alpha, t_beta, t_minpart, t_splitmin);
 }

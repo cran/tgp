@@ -59,7 +59,10 @@ dopt.gp(nn, X=NULL, Xcand, iter=5000, verb=0)
   Statist. Sci., 10, (pp. 273--304).
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \note{
 Inputs \code{X, Xcand} containing \code{NaN, NA, Inf} are discarded with non-fatal

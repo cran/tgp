@@ -25,7 +25,7 @@
 "tgp.plot.proj" <-
 function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
          layout=layout,	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", method="loess", gridlen=40, span=0.1, ...)
+         pc="pc", method="loess", gridlen=40, span=0.1, rankmax=20,...)
 {
   ## will call stop() if something is wrong with the proj
   
@@ -53,7 +53,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
   if(is.null(dim(XX))) { nXX <- length(XX); dXX <- 1 }
   else { nXX <- dim(XX)[1]; dXX <- dim(XX)[2] }
   pp <- seq(1,nXX);
-  
+    
   # if no data then do nothing
   if(length(Z.mean) == 0) {
     cat("NOTICE: no predictive data; nothing to plot\n")
@@ -93,6 +93,11 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
+      if(substr(as$name,1,1) == "I"){
+        ranks <- out$improv[,2] <= rankmax
+        text(out$XX[ranks,proj[1]], out$XX[ranks,proj[2]],
+             labels=out$improv[ranks,2], pos=3, font=2,...)
+      }
     }
   } else if(pc == "c") { # double-image plot
     if(layout == "both" || layout == "surf") {
@@ -110,7 +115,25 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
       points(out$X[,proj],pch=20, ...)
       if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
+      if(substr(as$name,1,1) == "I"){
+        ranks <- out$improv[,2] <= rankmax
+        text(out$XX[ranks,proj[1]], out$XX[ranks,proj[2]], labels=out$improv[ranks,2],
+             pos=3, font=2,...)
+      }
     }
   } else { stop(paste(pc, "not a valid plot option\n")) }
 }
 
+
+"check.proj" <- 
+function(proj)
+{
+  if(is.null(proj)) proj <- c(1,2)
+    if(length(proj) > 2) {
+      stop(paste("length(proj) = ", length(proj), "should be <= 2\n"))
+    }
+  
+  ## will stop if the proj is not ok,
+  ## otherwise returns the (possibly modified) proj
+  return(proj)
+}

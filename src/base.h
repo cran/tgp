@@ -32,7 +32,7 @@ extern "C"
 #include <fstream>
 using namespace std;
 
-typedef enum BASE_MODEL {GP=901, MR_GP=902} BASE_MODEL;
+typedef enum BASE_MODEL {GP=901} BASE_MODEL;
 
 class Model;
 class Tree;
@@ -52,7 +52,9 @@ class Base
   bool pcopy;                   /* is this a private copy of the prior? */
   Base_Prior *prior;            /* Base (Gaussian Process) prior module */
   
-  unsigned int d;	        /* X of input variables */
+  unsigned int d;	        /* dim for X of input variables */
+  unsigned int col;             /* dim for design */
+
   unsigned int n;	        /* number of input data points-- rows in the design matrix */
   unsigned int nn;	        /* number of predictive input data locations */
 
@@ -69,12 +71,12 @@ class Base
  public:
 
   Base(unsigned int d, Base_Prior *prior, Model *model);
-  Base(double **X, double *Z, Base *gp_old);
+  Base(double **X, double *Z, Base *gp_old, bool economy);
   virtual ~Base(void);
   BASE_MODEL BaseModel(void);
   Base_Prior* Prior(void);
 
-  virtual Base* Dup(double **X, double *Z)=0;  
+  virtual Base* Dup(double **X, double *Z, bool economy)=0;  
   virtual void Clear(void)=0;
   virtual void ClearPred(void)=0;
   virtual void Update(double **X, unsigned int n, unsigned int d, double *Z)=0;
@@ -122,16 +124,18 @@ class Base_Prior
  protected:
   
   unsigned int d;	        /* col dimension of the data */
+  unsigned int col;             /* col dimension of the design (eg F for GP) */
   BASE_MODEL base_model;	/* indicator for type of model (e.g., GP) */
 
   
  public:
 
   /* start public functions */
-  Base_Prior(unsigned int d);
+  Base_Prior(unsigned int d); 
   Base_Prior(Base_Prior* prior);
   virtual ~Base_Prior(void);
   BASE_MODEL BaseModel(void);
+  unsigned int Col(void);
 
   virtual void read_ctrlfile(std::ifstream* ctrlfile)=0;
   virtual void read_double(double *dparams)=0;

@@ -49,6 +49,10 @@ tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
 }
 
 \references{
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{19}(9).
+\url{http://www.jstatsoft.org/v19/i09}
+
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Bayesian treed Gaussian process models.}
 Available as UCSC Technical Report ams2006-01. 
@@ -64,7 +68,10 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \note{
 Input \code{Xcand} containing \code{NaN, NA, Inf} are discarded with non-fatal

@@ -53,6 +53,13 @@ typedef struct preds
   double **Zps2;        /* Normal predictive var at X */
   double **improv;      /* expected global optimization */
   double **Ds2x;	/* delta-sigma calculation for XX */
+  double **rect;        /* data rect */
+  double **bnds;        /* uncertainty bounds */
+  double *mode;         /* lhs beta modes */
+  double *shape;        /* lhs beta shapes */
+  double **M;           /* LHS sample locations for sensitivity analysis */
+  unsigned int nm;      /* # of lhs locations stored at each iteration */
+
 } Preds;
 
 
@@ -100,28 +107,12 @@ typedef struct largs
 
 
 /*
- * structure for keeping track of annealed importance
- * sampling temperature (elements of the temperature ladder)
- */
-
-typedef struct inv_temps
-{
-  double *itemps;
-  double *tprobs;
-  unsigned int *tcounts;
-  unsigned int n;
-  int k;
-  int knew;
-} iTemps;
-
-
-/*
  * function prototypes 
  */
 
 Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, 
 		 double **rect, unsigned int R, bool krige, bool delta_s2, 
-		 bool ego, unsigned int every);
+		 bool improv, bool sens, unsigned int every);
 void delete_preds(Preds* preds);
 void import_preds(Preds* to, unsigned int where, Preds *from);
 Preds *combine_preds(Preds *to, Preds *from);
@@ -137,22 +128,5 @@ void delete_linarea(Linarea* lin_area);
 void process_linarea(Linarea* lin_area, unsigned int numLeaves, Tree** leaves);
 void reset_linarea(Linarea* lin_area);
 void print_linarea(Linarea* lin_area, FILE *outfile);
-
-iTemps* new_itemps(double *ditemps, double *tprobs, unsigned int n);
-iTemps* new_itemps_double(double *ditemps);
-iTemps* new_dup_itemps(iTemps *itemp);
-void delete_itemps(iTemps *itemp);
-double get_curr_itemp(iTemps *itemp);
-double get_curr_prob(iTemps *itemps);
-double get_proposed_prob(iTemps *itemps);
-double propose_itemp(iTemps* itemp, double *q_fwd, double *q_bak, void* state);
-void keep_new_itemp(iTemps *itemp, double itemp_new);
-void reject_new_itemp(iTemps *itemps, double itemp_new);
-double *update_prior(iTemps *itemps);
-
-double ess(double *w, unsigned int n);
-double lambda_ess(iTemps* itemps, double *w, double *itemp, unsigned int n);
-double cv2(double *w, unsigned int n);
-
 
 #endif

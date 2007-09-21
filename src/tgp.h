@@ -29,7 +29,7 @@
 #include <time.h>
 #include "model.h"
 #include "params.h"
-
+#include "temper.h"
 
 class Tgp
 {
@@ -46,14 +46,20 @@ class Tgp
   unsigned int T;        /* total number of MCMC rounds (including burn-in) */
   unsigned int E;        /* sample from posterior (E)very somany rounds */
   unsigned int R;        /* number of times to (Re-) start over (>=1) */
-  iTemps *itemps;        /* set of inv-temperatures for importance tempering */
   int verb;              /* indicates the verbosity of print statements */
+  double *tree;		 /* double-vector tree representation */
+  unsigned int treecol;  /* number of cols in double-vector tree representation */
+  double *hier;		 /* double-vector hierarchical prior representation */
+  double *dparams;       /* double-vector of user-specified parameterization */
+
+  Temper *its;           /* set of inv-temperatures for importance tempering */
 
   bool linburn;          /* initialize with treed LM before burn in? */
   bool pred_n;           /* sample from posterior predictive at data locs? */
   bool krige;            /* gather kriging statistics? */
   bool delta_s2;         /* gather ALC statistics? */
-  bool improv;           /* gather IMPROV statistics? */
+  int improv;            /* gather IMPROV statistics -- at what power? */
+  bool sens;             /* is this a Sensitivity Analysis? */
   
   double **X;            /* n-by-d input (design matrix) data */
   double *Z;             /* response vector of length n */
@@ -65,30 +71,43 @@ class Tgp
   Preds *cumpreds;       /* data structure for gathering posterior pred samples */
   Preds *preds;          /* inv-temporary for posteior pred samples */
 
-  /* a function that should only be called from constructor */  
-  void Init(double *tree, unsigned int ncol, double *hier);       
-
  public:
 
+  /* constructor and destructor */
   Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
-      int linburn, bool pred_n, bool krige, bool delta_s2, bool improv, 
+      int linburn, bool pred_n, bool krige, bool delta_s2, int improv, bool sens, 
       double *X, double *Z, double *XX, double *dparams, double *ditemps, 
       bool trace, int verb, double *dtree, double *hier);
   ~Tgp(void);
+
+  /* a function that should only be called just after constructor */  
+  void Init(void);
+
+  /* functions that do all the TGP modelling work */
   void Rounds(void);
   void Predict(void);
-  void GetStats(bool report, double *Zp_mean, double *ZZ_mean, 
-		double *Zp_km, double *ZZ_km, double *Zp_q, double *ZZ_q, 
-		double *Zp_s2, double *ZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
+
+  void GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, 
+		double *ZZ_km, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
+		double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
-		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improv,
-		double *ess);
+		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
+		int* iorder, double *ess);
+
+  /* Sensitivity Analysis */
+  void Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_mean, double *sens_ZZ_q1,double *sens_ZZ_q2, 
+	 double *sens_S,  double *sens_T);
+
+  /* printing */
   void Print(FILE *outfile);
   int Verb(void);
-  iTemps* get_iTemps(void);
+
+  /* importance tempering */
+  void GetPseudoPrior(double *ditemps);
 };
 
-void norm_Ds2xy(double **Ds2xy, double R, unsigned int n);
+
+/* input and output data processing */
 double ** getXdataRect(double **X, unsigned int n, unsigned int d, double **XX, 
 		       unsigned int nn);
 

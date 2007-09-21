@@ -70,16 +70,47 @@ double** rect_sample(int dim, int n, void *state)
 }
 
 
+void sens_sample(double **XX, int nn, int d, double **bnds, double *shape, double *mode, void *state)
+{
+  double **M1, **M2;
+  int i,j;
+  
+  int n = nn/(d+2);
+  assert((n*(d+2))==nn);  /* make sure that d+2 divides nn. */
+  M1 = beta_sample_lh(d, n, bnds, shape, mode, state);
+  M2 = beta_sample_lh(d, n, bnds, shape, mode, state);
+  
+  assert(XX);
+  assert(M1);
+  assert(M2);
+
+  dup_matrix(XX,M1,n, d);
+  dupv(XX[n],M2[0],n*d);
+
+
+  for(j=0;j<d;j++) dup_matrix(&XX[n*(2+j)],M2,n,d);
+
+  /* replace each M2 with the appropriate column to get Nj */
+  for(j=0;j<d;j++){
+    for(i=0;i<n;i++){
+      XX[n*(2+j)+i][j] = M1[i][j];
+    }
+  }
+
+  delete_matrix(M1);
+  delete_matrix(M2);
+}
+
 /*
  * lh_sample:
  *
- * this function is the R-gateway to LH sampling
- * it simply calls rect_sample_lh with the appropriately
+ * this function is the gateway to LH sampling
+ * it simply calls *_sample_lh with the appropriately
  * transformed inputs, and copied outputs
  */
 
 void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
-	       double *s_out)
+	       double* shape, double* mode, double *s_out)
 {
   void *state;
   double **rect, **s;
@@ -96,7 +127,9 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
   /* printMatrix(rect, 2, *dim_in, stdout); */
 
   /* get the latin hypercube sample */
-  s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
+  if(shape == NULL) s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
+  else s = beta_sample_lh(*dim_in, *n_in, rect, shape, mode, state);
+
   dupv(s_out, s[0], (*n_in)*(*dim_in));
   
   /* clean up */
@@ -105,6 +138,93 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
   delete_matrix(s);
 }
 
+
+/*
+ * beta_sample_lh:
+ *
+ * returns a latin hypercube sample of (n) points
+ * within a regular (dim)-dimensional cube, proportional
+ * to independant scaled beta distributions over the cube,
+ * with specified modes and shape parameters.
+ */
+
+double** beta_sample_lh(int dim, int n, double** rect, double* shape, double* mode, void *state)
+{
+  int i,j;
+  double **z, **s, **zout;
+  double** e;
+  int **r;
+  Rank ** sr;
+
+  double alpha, mscaled;
+  
+  assert(n >= 0);
+  if(n == 0) return NULL;
+  z = e = s = NULL;
+  
+  /* We could just draw random permutations of (1..n) here, 
+     which is effectively what we are doing. 
+     This ranking scheme could be valuable, though, 
+     in drawing lhs for correlated variables.
+     In that case, s would instead be a sample from the correct
+     joint distribution, and the quantile functions at the end
+     would have to correspond to the marginal distributions
+     for each variable.  See Stein, 1987 (Technometrics).
+     This would have to be coded on a case to case basis though. */
+
+  /* get initial sample */
+  s = rect_sample(dim, n, state);
+  
+  /* get ranks */
+  r = (int**) malloc(sizeof(int*) * dim);
+  for(i=0; i<dim; i++) {
+    sr = (Rank**) malloc(sizeof(Rank*) * n);
+    r[i] = new_ivector(n);
+    for(j=0; j<n; j++) {
+      sr[j] = (Rank*) malloc(sizeof(Rank));
+      sr[j]->s = s[i][j];
+      sr[j]->r = j;
+    }
+    
+    qsort((void*)sr, n, sizeof(Rank*), compareRank);
+    
+    /* assign ranks	*/
+    for(j=0; j<n; j++) {
+      r[i][sr[j]->r] = j+1;
+      free(sr[j]);
+    }
+    free(sr);
+  }
+  
+  /* Draw random variates */
+  e = rect_sample(dim, n, state);
+  /* Obtain latin hypercube sample on the unit cube:
+   The alpha parameters for each beta quantile function are calculated
+   from the (re-scaled) mode and the shape parameter.  */
+  z = new_matrix(dim,n);
+  for(i=0; i<dim; i++) {
+    if(mode==NULL) mscaled = 0.5;
+    else mscaled = (mode[i]-rect[0][i])/(rect[1][i] - rect[0][i]);
+    if( 0 > mscaled || 1 < mscaled ) mscaled=0.5;
+    if(shape[i] < 1) shape[i] = 1; /* only concave betas, else uniform */
+    alpha = (1 + mscaled*(shape[i]-2))/(1-mscaled);
+    assert( alpha > 0 );
+    for(j=0; j<n; j++) {
+      z[i][j] = qbeta( ( ((double)r[i][j]) - e[i][j]) / n, alpha, shape[i], 1, 0);
+    }
+    free(r[i]);
+  }
+    /* Shift and scale from the unit cube to rect */
+  rect_scale(z, dim, n, rect);
+
+  /* Wrap up */
+  free(r);
+  delete_matrix(s);
+  delete_matrix(e);
+  zout = new_t_matrix(z, dim, n);
+  delete_matrix(z);
+  return zout;
+}
 
 /*
  * rect_sample_lh:

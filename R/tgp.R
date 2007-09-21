@@ -22,17 +22,26 @@
 #*******************************************************************************
 
 
+## tgp:
+##
+## the master tgp R function which checks for valid inputs and
+## calls the C-side via .C on those inputs -- and then calls the
+## post-processing code accordingly
+
 "tgp" <-
 function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
-	params=NULL, itemps=NULL, pred.n=TRUE, krige=TRUE, Ds2x=FALSE,
-        improv=FALSE, trace=FALSE, verb=1, rmfiles=TRUE)
+         params=NULL, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE,
+         Ds2x=FALSE, improv=TRUE, sens.p=NULL, trace=FALSE, verb=1, rmfiles=TRUE)
 {
   ## (quitely) double-check that tgp is clean before-hand
   tgp.cleanup(message="NOTICE", verb=verb, rmfile=TRUE);
-  
+
   # what to do if fatally interrupted?
   on.exit(tgp.cleanup(verb=verb, rmfiles=rmfiles))
-  
+
+  if(params$corr == "mrexpsep" && linburn){ stop("Sorry, the linear burn-in is not yet available for corr=\"mrexpsep\"")}
+  if(params$corr == "mrexpsep" && !is.null(sens.p)){ stop("Sorry, sensitivity analysis is not yet available for corr=\"mrexpsep\"")}
+
   ## get names
   Xnames <- names(X)
   response <- names(Z)
@@ -45,7 +54,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   
   ## check XX
   XX <- check.matrix(XX)$X
-  if(is.null(XX)) { nn <- 0; XX <- matrix(0); nnprime <- 1 }
+  if(is.null(XX)) { nn <- 0; XX <- matrix(0); nnprime <- 0 }
   else { 
     nn <- nrow(XX); nnprime <- nn 
     if(ncol(XX) != d) stop("mismatched column dimension of X and XX");
@@ -68,25 +77,29 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
     stop("pred.n should be TRUE or FALSE")
   if(length(krige) != 1 || !is.logical(krige))
     stop("krige should be TRUE or FALSE")
+  if(length(zcov) != 1 || !is.logical(zcov))
+    stop("zcov should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
-  if(length(improv) != 1 || !is.logical(improv))
-    stop("improv should be TRUE or FALSE")
-
+  if(length(improv) != 1 || !(is.logical(improv) || is.numeric(improv)) || (is.numeric(improv) && improv <= 0))
+    stop(paste("improv [", improv, "] should be TRUE, FALSE, or a positive integer (power)", sep=""))
+  g <- as.numeric(improv) 
+  
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
-    warning("need to specify XX locations for Ds2x and improv")
+    warning("need to specify XX locations for Ds2x and improv, and at least empty XX for SENS.")
 
   ## check the sanity of input arguments
   if(nn > 0 && sum(dim(XX)) > 0 && ncol(XX) != d) stop("XX has bad dimensions")
   if(length(Z) != n) stop("Z does not have length == nrow(Z)")
-  if(BTE[1] < 0 || BTE[2] <= 0 || BTE[1] >= BTE[2]) stop("bad B and T: must have 0<=B<T")
-  if(BTE[3] <= 0 || BTE[2]-BTE[1] < BTE[3]) stop("bad E arg: must have T-B>=E")
+  if(BTE[1] < 0 || BTE[2] <= 0 || BTE[1] > BTE[2]) stop("bad B and T: must have 0<=B<=T")
+  if(BTE[3] <= 0 || ((BTE[2]-BTE[1] != 0) && (BTE[2]-BTE[1] < BTE[3])))
+    stop("bad E arg: if T-B>0, then must have T-B>=E")
   if(R < 0) stop("R must be positive")
   
   ## deal with params
-  if(is.null(params)) params <- tgp.default.params(d+1)
-  dparams <- tgp.check.params(params, d+1);
+  if(is.null(params)) params <- tgp.default.params(d)
+  dparams <- tgp.check.params(params, d);
   if(is.null(dparams)) stop("Bad Parameter List")
 
   ## check starting importance-tempering inv-temp
@@ -96,6 +109,21 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   if(m0r1) { Zm0r1 <- mean0.range1(Z); Z <- Zm0r1$X }
   else Zm0r1 <- NULL
 
+  ## If SENS, set up XX ##
+  if(!is.null(sens.p)){
+    nnprime <- 0
+    sens.par <- check.sens(sens.p, d)
+    nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX
+    ngrid <- sens.par$ngrid; span <- sens.par$span
+    MainEffectGrid <- as.double(sens.par$MainEffectGrid)
+    if(verb >= 2) 
+      cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
+  }
+  else{ nn.lhs <- 0; ngrid <- 0; MainEffectGrid <- NULL; span <- NULL }
+
+  ## for sens
+  S = R*(BTE[2]-BTE[1])/BTE[3]
+  
   # RNG seed
   state <- sample(seq(0,999), 3)
 
@@ -114,13 +142,18 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            BTE = as.integer(BTE),
            R = as.integer(R),
            linburn = as.integer(linburn),
+           zcov = as.integer(zcov),
+           g = as.integer(g),
            dparams = as.double(dparams),
-           itemps = as.double(c(length(itemps$itemps), as.matrix(itemps))),
+           itemps = as.double(itemps),
            verb = as.integer(verb),
            tree = as.double(NULL),
            hier = as.double(NULL),
            MAP = as.integer(0),
-
+           sens.ngrid = as.integer(ngrid),
+           sens.span = as.double(span),
+           sens.Xgrid = as.double(MainEffectGrid),
+           
            ## begin outputs
            Zp.mean = double(pred.n * n),
            ZZ.mean = double(nnprime),
@@ -128,8 +161,9 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            ZZ.km = double(krige * nnprime),
            Zp.q = double(pred.n * n),
            ZZ.q = double(nnprime),
-           Zp.s2 = double(pred.n * n),
-           ZZ.s2 = double(nnprime),
+           Zp.s2 = double(pred.n * (zcov*n^2 + (!zcov)*n)),
+           ZZ.s2 = double(zcov*nnprime^2 + (!zcov)*nnprime),
+           ZpZZ.s2 = double(pred.n * n * nnprime * zcov),
            Zp.ks2 = double(krige * pred.n * n),
            ZZ.ks2 = double(krige * nnprime),
            Zp.q1 = double(pred.n * n),
@@ -139,14 +173,24 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            ZZ.med = double(nnprime),
            ZZ.q2 = double(nnprime),
            Ds2x = double(Ds2x * nnprime),
-           improv = double(improv * nnprime),
+           improv = double(as.logical(improv) * nnprime),
+           irank = integer(as.logical(improv) * nnprime),
            ess = double(1),
+           sens.ZZ.mean = double(ngrid*d),
+           sens.ZZ.q1 = double(ngrid*d),
+           sens.ZZ.q2 = double(ngrid*d),
+           sens.S = double(d*S*!is.null(sens.p)),
+           sens.T = double(d*S*!is.null(sens.p)),
            
+           ## end outputs
            PACKAGE = "tgp")
 
   ## all post-processing is moved into a new function so it
   ## can be shared by predict.tgp()
-  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, Zm0r1,
+  ## Bobby: should we do the same with pre-prossesing?
+  ## Taddy: possibly.  However, predict.tgp and tgp have the identical postprocessing,
+  ## but the pre-processing is a little different for predict.tgp
+  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, sens.p, Zm0r1,
                         params, rmfiles)
   return(ll)
 }

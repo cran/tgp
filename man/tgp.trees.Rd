@@ -32,7 +32,10 @@ tgp.trees(out, heights = NULL, main = NULL, ...)
 	The only output of this function is beautiful tree diagrams.
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \references{
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}

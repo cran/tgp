@@ -46,9 +46,8 @@
  * T[col][col], Vb[col][col]
  */
 
-double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, cart, itemp)
+double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, itemp)
 unsigned int n,col;
-int cart;
 double **T, **Vb;
 double a0, g0, tau2, lambda, log_detK, itemp;
 {
@@ -58,9 +57,7 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   /* sanity check for temperature */
   assert(itemp >= 0);
   if(itemp == 0) return 0.0;
-  
-  /* adjust for beta[0]=mu prior */
-  if(cart) col = 1;
+  /* itemp = pow(itemp, 1.0/n); */
 
   /* log det Vb */
   log_detVB = log_determinant_dup(Vb, col);
@@ -117,9 +114,8 @@ double a0, g0, tau2, lambda, log_detK, itemp;
  * Vb[col][col]
  */
 
-double post_margin(n, col, lambda, Vb, log_detK, a0, g0, cart, itemp)
+double post_margin(n, col, lambda, Vb, log_detK, a0, g0, itemp)
 unsigned int n, col;
-int cart;
 double **Vb;
 double a0, g0, lambda, log_detK, itemp;
 {
@@ -128,10 +124,8 @@ double a0, g0, lambda, log_detK, itemp;
   /* sanity check for temperature */
   assert(itemp >= 0);
   if(itemp == 0) return 0.0;
+  /* itemp = pow(itemp, 1.0/n); */
  
-  /* adjust for beta[0]=mu prior */
-  if(cart) col = 1;
-
   /* log determinant of Vb */
   log_detVB = log_determinant_dup(Vb, col);
   
@@ -170,42 +164,44 @@ double a0, g0, lambda, log_detK, itemp;
  * the same as in predict_help().  Should consider moving them to
  * a more accessible place so predict_help and gp_lhood can share.
  *
- * nug only used when Ki == NULL
- * uses annealing inv-temperature;
- * returns the log pdf
+ * BOBBY: Now when we have Ki == NULL, the Kdiag vec is used.
+ *        Thus we now allocate KiFbmZ regardless.
+ *
+ * uses annealing inv-temperature; returns the log pdf
  */
 
 double gp_lhood(double *Z, unsigned int n, unsigned int col, double **F, 
 		double *b, double s2, double **Ki, double log_det_K, 
-		double nug, double itemp)
+		double *Kdiag, double itemp)
 {
   double *ZmFb, *KiZmFb;
   double ZmFbKiZmFb, eponent, front, llik;
+  unsigned int i;
 
+  /* sanity check for temperature */
+  assert(itemp >= 0);
   if(itemp == 0.0) return 0.0;
+  /* itemp = pow(itemp, 1.0/n); */
 
   /* ZmFb = Zdat - F * b; first, copy Z (copied code from predict_help()) */
   ZmFb = new_dup_vector(Z, n);
   linalg_dgemv(CblasNoTrans,n,col,-1.0,F,n,b,1,1.0,ZmFb,1);
 
   /* KiZmFb = Ki * (Z - F * b); first, zero-out KiZmFb */
+  KiZmFb = new_zero_vector(n);
   if(Ki) {
-    KiZmFb = new_zero_vector(n);
     linalg_dsymv(n,1.0,Ki,n,ZmFb,1,0.0,KiZmFb,1); 
   } else {
-    /* This assertion will fail eventually, when MrGp calls this function correctly */
-    /* assert(log_det_K == n*log(1.0 + nug)); */
-    KiZmFb = ZmFb;
+    for(i=0; i<n; i++) KiZmFb[i] = ZmFb[i]/Kdiag[i];
   }
 
   /* eponent = -(1/2) * (ZmFb * KiZmFb)/s2 */
   ZmFbKiZmFb = linalg_ddot(n, ZmFb, 1, KiZmFb, 1);
-  if(!Ki) ZmFbKiZmFb /= (1.0+nug);
   eponent = 0.0 - 0.5 * itemp * ZmFbKiZmFb / s2;
 
   /* clean up */
   free(ZmFb);
-  if(Ki) free(KiZmFb);
+  free(KiZmFb);
 
   /* front = - log(sqrt(2*pi*s2)^n * det(K))) */
   front = 0.0 - n*M_LN_SQRT_2PI - 0.5*(log_det_K + n*(log(s2) - log(itemp)));

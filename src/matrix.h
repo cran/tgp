@@ -72,6 +72,10 @@ void wmean_of_rows(double *mean, double **M, unsigned int n1, unsigned int n2,
 		   double *weight);
 void wmean_of_rows_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
 		     double *weight, double(*f)(double));
+void wcov_of_columns(double **cov, double **M, double *mean, unsigned int n1, 
+		     unsigned int n2, double *weight);
+void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, double *mean2, 
+		      unsigned int T,  unsigned int n1, unsigned int n2, double *weight);
 void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile);
 void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, 
 		unsigned int n2);
@@ -118,8 +122,10 @@ void scalev(double *v, unsigned int n, double scale);
 int* new_ivector(unsigned int n);
 int* new_dup_ivector(int *iv, unsigned int n);
 void dupiv(int *iv_new, int *iv, unsigned int n);
+void zeroiv(int*v, unsigned int n);
 void swap_ivector(int **v1, int **v2);
 int *new_ones_ivector(unsigned int n, int scale);
+int *new_zero_ivector(unsigned int n);
 void iones(int *iv, unsigned int n, int scale);
 void printIVector(int *iv, unsigned int n, FILE *outfile);
 void ivector_to_file(char* file_str, int *vector, unsigned int n);
@@ -132,7 +138,9 @@ double sumv(double *v, unsigned int n);
 unsigned int* new_uivector(unsigned int n);
 unsigned int* new_dup_uivector(unsigned int *iv, unsigned int n);
 void dupuiv(unsigned int *iv_new, unsigned int *iv, unsigned int n);
+void zerouiv(unsigned int *v, unsigned int n);
 unsigned int *new_ones_uivector(unsigned int n, unsigned int scale);
+unsigned int *new_zero_uivector(unsigned int n);
 void uiones(unsigned int *iv, unsigned int n, unsigned int scale);
 void printUIVector(unsigned int *iv, unsigned int n, FILE *outfile);
 void uivector_to_file(char *file_str, unsigned int *iv, unsigned int n);
@@ -143,5 +151,9 @@ unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n);
 double max(double *v, unsigned int n, unsigned int *which);
 double min(double *v, unsigned int n, unsigned int *which);
 double sq(double x);
+double myfmax(double a, double b);
+
+double vmult(double *v1, double *v2, int n);
+
 
 #endif

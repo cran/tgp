@@ -1,9 +1,21 @@
-Coming in version 1.3
----------------------
+2.0 (21 Sept 2007) 
+---
 
-multi-resolution and calibration tgp
+consolidated R finctions from individual files into those
+grouped by task
 
-importance tempering
+made gridlen argument a 2-vector so the grid size can be
+specified in both x and y
+
+new economy argument to tree and Base duplicators so that 
+the entire set of covariance matrices is not copied unless
+necessary
+
+Matt Taddy officially joins the list of authors, adding
+multi-resolution tgp and sensitivity analysis
+
+importance tempering, with importance sampling and 
+simulated tempering support
 
 Latin hypercube sampling with respect to a Beta 
 distribution
@@ -13,8 +25,21 @@ constructor and into Tgp::Init so that tgp_cleanup() can
 safely delete the Tgp module even it it wasn't successfully 
 initialized
 
+ordered multiple improv statistics
 
-1.2-6 (07 June 2007)
+predictive covariances now calculated instead of variances
+
+
+1.2-7 (19 Aug 2007)
+-----
+
+tgp.partition 1-d data handling made more robust
+
+removed assertion on w that tends to fail for unknown
+reasons
+
+
+1.2-6 (17 June 2007)
 -----
 
 added number of leaves to traces

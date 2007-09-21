@@ -49,27 +49,28 @@ class Matern : public Corr
  
  public:
 
-  Matern(unsigned int col, Base_Prior *base_prior);
+  Matern(unsigned int dim, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~Matern(void);
   virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
-		   double **bmu, double **Vb, double tau2, double itemp, bool cart, 
-		   void *state);
+		   double **bmu, double **Vb, double tau2, double itemp, void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
   virtual char* State(void);
   virtual double log_Prior(void);
   virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
-  virtual bool DrawNug(unsigned int n, double **X, double **F, double *Z,
+  virtual bool DrawNugs(unsigned int n, double **X, double **F, double *Z,
 		       double *lambda, double **bmu, double **Vb, double tau2, 
-		       double itemp, bool cart, void *state);
+		       double itemp, void *state);
   virtual double* Trace(unsigned int* len);
   virtual char** TraceNames(unsigned int* len);
   virtual void Init(double *dmat);
+  virtual double* Jitter(unsigned int n1, double **X);
+  virtual double* CorrDiag(unsigned int n1, double **X);
 
   void get_delta_d(Matern* c1, Matern* c2, void *state);
   void propose_new_d(Matern* c1, Matern* c2, void *state);
@@ -99,7 +100,7 @@ class Matern_Prior : public Corr_Prior
   
  public:
 
-  Matern_Prior(unsigned int col);
+  Matern_Prior(unsigned int dim);
   Matern_Prior(Corr_Prior *c);
   virtual ~Matern_Prior(void);
   virtual void read_double(double *dprior);

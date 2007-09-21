@@ -32,6 +32,10 @@ friedman.1.data(n = 100)
 }
 
 \references{ 
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{19}(9).
+\url{http://www.jstatsoft.org/v19/i09}
+
 Friedman, J. H. (1991).
 \emph{Multivariate adaptive regression splines.}
 \dQuote{Annals of Statistics}, \bold{19}, No. 1, 1--67.
@@ -47,7 +51,10 @@ Machine Learning, \bold{48}, 303--324.
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \note{An example using this data is contained in the package vignette:
 \code{vignette("tgp")}.}
@@ -55,4 +62,4 @@ Machine Learning, \bold{48}, 303--324.
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, 
 	\code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{bgp}}}
 
-\keyword{ datasets }
+\keyword{ datagen }

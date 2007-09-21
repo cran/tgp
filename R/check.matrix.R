@@ -22,12 +22,18 @@
 #*******************************************************************************
 
 
+## check.matrix:
+##
+## check/enfore that the X matrix has the proper dimensions
+## (and the same number or rows as length(Z)) removing invalid rows
+## (of Z too), i.e., NA, NaN, Inf
+
 "check.matrix" <- 
 function(X, Z=NULL)
 {
   ## format X
   if(is.null(X)) return(NULL)
-  n <- dim(X)[1]
+  n <- nrow(X)
   if(is.null(n)) { n <- length(X); X <- matrix(X, nrow=n) }
   X <- as.matrix(X)
   
@@ -70,3 +76,23 @@ function(X, Z=NULL)
   
   return(list(X=X, Z=Z))
 }
+
+
+## famify.X
+##
+## change an X matrix into a data frame with the names specified
+## used by tgp.postprocess to convert a matrix enforced by check.matrix
+## back into the data frame it started as
+
+"framify.X" <-
+function(X, Xnames, d)
+{
+  X <- data.frame(t(matrix(X, nrow=d)))
+  if(is.null(Xnames)) {
+    nms <- c();
+    for(i in 1:d) { nms <- c(nms, paste("x", i, sep="")) }
+    names(X) <- nms
+  } else { names(X) <- Xnames }
+  return(X)
+}
+

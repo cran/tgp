@@ -22,8 +22,15 @@
 #*******************************************************************************
 
 
+## lhs:
+##
+## generate a Latin Hypercube Sample of size n within the rectangle
+## provided.  The default "prior" for the sample is uniform, but the
+## shape and mode arguments can be used to describe a beta distribution
+## in each dimension.  The actual sample is generated C-side
+
 "lhs" <-
-function(n, rect)
+function(n, rect, shape=NULL, mode=NULL)
 {
   ## sanity checks
   if(length(n) != 1) stop(paste("length(n) should be 1, you have", length(n)))
@@ -34,6 +41,18 @@ function(n, rect)
   if(is.null(dim(rect))) { ncol <- length(rect); d <- 1 }
   else { ncol <- ncol(rect); d <- dim(rect)[1] }
   if(ncol != 2) stop("ncol(rect) must be 2")
+
+  ## check the shape argument should be positive and of length
+  if(!is.null(shape) && length(shape) != d && all(shape > 0))
+    stop(paste("For beta sampling, length(shape) should be ", d,
+               ", you have ", length(shape), ", and all positive",
+               sep=""))
+
+  ## check the mode argument is positive and of length 1
+  if(!is.null(mode) && length(mode) != d && all(mode > 0))
+    stop(paste("To specify sampling modes, length(mode) should be ", d,
+               ", you have ", length(mode), ", and all positive",
+               sep=""))
   
   ## choose a random state for the C code
   state <- sample(seq(0,999), 3)
@@ -44,6 +63,8 @@ function(n, rect)
            n = as.integer(n),
            d = as.integer(d),
            rect = as.double(rect), # no need to transpose
+           shape = as.double(shape),
+           mode = as.double(mode),
            s = double(n*d),
            PACKAGE="tgp"
            )
@@ -51,4 +72,3 @@ function(n, rect)
   ## just return the samples
   return(t(matrix(ll$s, nrow=d)))
 }
-

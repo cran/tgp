@@ -15,7 +15,7 @@
 }
 
 \usage{
-interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
+interp.loess(x, y, z, gridlen = c(40,40), span = 0.1, ...)
 }
 
 \arguments{
@@ -23,8 +23,8 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
   \item{y}{ Vector of \code{Y} spatial input locations }
   \item{z}{ Vector of \code{Z} responses interpreted as
     \code{Z = f(X,Y)}}
-  \item{gridlen}{ Size of the interpolated grid to be produced.
-    The default of \code{gridlen = 40} causes a \code{40 * 40}
+  \item{gridlen}{ Size of the interpolated grid to be produced in x and y.
+    The default of \code{gridlen = c(40,40)} causes a \code{40 * 40}
     grid of \code{X}, \code{Y}, and \code{Z} values to be computed.}
     \item{span}{ Kernel span argument to the \code{\link[stats]{loess}}
       function with default setting \code{span = 0.1} set significantly lower than the
@@ -59,7 +59,10 @@ interp.loess(x, y, z, gridlen = 40, span = 0.1, ...)
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }
 
-\author{ Robert B. Gramacy \email{rbgramacy@ams.ucsc.edu}}
+\author{ 
+\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
+\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+}
 
 \note{ 
   As mentioned above, the default \code{span = 0.1} parameter is 
