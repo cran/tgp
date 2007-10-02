@@ -31,7 +31,7 @@
 
 "default.itemps" <-
 function(m=40, type=c("geometric", "harmonic", "sigmoidal"),
-         k.min=0.01, c0n0=c(100,1000), lambda=c("opt", "naive", "st"))
+         k.min=0.1, c0n0=c(100,1000), lambda=c("opt", "naive", "st"))
 {
   ## check m argument
   if(length(m) != 1 || m <= 0)
@@ -217,5 +217,5 @@ hist2bar <- function(x)
   b <- data.frame(b)
   row.names(b) <- r[1]:r[2]
   
-  return(b)
+  return(t(b))
 }

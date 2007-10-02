@@ -23,7 +23,7 @@
 
 
 "tgp.postprocess" <-
-function(ll, Xnames, response, pred.n, Ds2x, improv, sens.p, Zm0r1, params, rmfiles=TRUE)
+function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params, rmfiles=TRUE)
 {
   ## deal with X, and names of X
   ll$X <- framify.X(ll$X, Xnames, ll$d)

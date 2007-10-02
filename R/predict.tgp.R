@@ -171,7 +171,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            PACKAGE = "tgp")
 
   ## post-process before returning
-  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, sens.p,
+  ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p,
                         Zm0r1, object$params, TRUE)
   return(ll)
 }

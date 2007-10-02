@@ -299,12 +299,16 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     if(T>B && (index % preds->mult == 0)) {
 
       /* keep track of MAP, and calculate importance sampling weight */
-      preds->w[index/preds->mult] = Posterior(true);
-      preds->itemp[index/preds->mult] = its->Itemp();
+      double w = Posterior(true); /* must call Posterior for mapt */
+      if(its->IT_ST_or_IS()) {
+	preds->w[index/preds->mult] = w;
+	preds->itemp[index/preds->mult] = its->Itemp();
+      }
 
       /* For random XX (eg sensitivity analysis), draw the predictive locations */
       if(preds->nm > 0){
-	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, preds->mode, state); 
+	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
+		    preds->mode, state); 
 	dupv(preds->M[index/preds->mult], preds->XX[0], preds->d * preds->nm);
 	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
 	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
@@ -1449,7 +1453,7 @@ void Model::PrintPosteriors(void)
     /* add maptree-relevant headers */
     myprintf(treefile, "rows var n dev yval splits.cutleft splits.cutright ");
 
-  /* the following are for printing a higher precision val, and base model
+    /* the following are for printing a higher precision val, and base model
      parameters for reconstructing trees later */
     myprintf(treefile, "val ");
 
@@ -1648,20 +1652,23 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
     /* produce leaves for parallel prediction */
     if(parallel && PP && PP->Len() > PPMAX) produce();
 
-  /* process full posterior, and calculate linear area */
+    /* process full posterior, and calculate linear area */
     if(r % preds->mult == 0) {
 
       /* For random XX (eg sensitivity analysis), draw the predictive locations */
       if(preds->nm > 0){
-	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, preds->mode, state); 
+	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
+		    preds->mode, state); 
 	dupv(preds->M[r/preds->mult], preds->XX[0], preds->d * preds->nm);
 	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
 	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
       }
 
       /* keep track of MAP, and calculate importance sampling weight */
-      preds->w[r/preds->mult] = 1.0; //Posterior(false);
-      preds->itemp[r/preds->mult] = its->Itemp();
+      if(its->IT_ST_or_IS()) {
+	preds->w[r/preds->mult] = 1.0; //Posterior(false);
+	preds->itemp[r/preds->mult] = its->Itemp();
+      }
 
       /* predict for each leaf */
       /* make sure to do this after calculation of preds->w[r], above */

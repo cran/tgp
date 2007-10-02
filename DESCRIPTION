@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.0
-Date: 2007-09-21
+Version: 2.0-1
+Date: 2007-10-02
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy <taddy@ams.ucsc.edu>
 Depends: R (>= 2.4)
 Suggests: akima, maptree, combinat
@@ -18,4 +18,3 @@ Description: Bayesian nonstationary, semiparametric nonlinear regression
 Maintainer: Robert B. Gramacy  <rbgramacy@ams.ucsc.edu>
 License: LGPL (Lesser GNU Public License) 
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
-Packaged: Fri Sep 21 11:40:29 2007; bobby
