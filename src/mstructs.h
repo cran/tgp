@@ -111,8 +111,8 @@ typedef struct largs
  */
 
 Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, 
-		 double **rect, unsigned int R, bool krige, bool delta_s2, 
-		 bool improv, bool sens, unsigned int every);
+		 double **rect, unsigned int R, bool pred_n, bool krige, bool it,
+		 bool delta_s2, bool improv, bool sens, unsigned int every);
 void delete_preds(Preds* preds);
 void import_preds(Preds* to, unsigned int where, Preds *from);
 Preds *combine_preds(Preds *to, Preds *from);

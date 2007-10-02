@@ -32,6 +32,7 @@ extern "C"
 #include "tgp.h"
 #include "model.h"
 #include "params.h"
+#include "mstructs.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -247,7 +248,8 @@ void Tgp::Init(void)
   }
 
   /* structure for accumulating predictive information */
-  cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), krige, delta_s2, improv, sens, E);
+  cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), pred_n, krige, 
+		       its->IT_ST_or_IS(), delta_s2, improv, sens, E);
   /* make sure the first col still indicates the coarse or fine process */
   if(params->BasePrior()->BaseModel() == GP){
     if( ((Gp_Prior*) params->BasePrior())->CorrPrior()->CorrModel() == MREXPSEP ){ 
@@ -287,7 +289,8 @@ void Tgp::Rounds(void)
     }
 	
     /* do the MCMC rounds B,...,T */
-    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, krige, delta_s2, improv, sens, E);
+    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, pred_n, krige,
+		      its->IT_ST_or_IS(), delta_s2, improv, sens, E);
     model->Sample(preds, T-B, state);
 
     /* print tree statistics */
@@ -364,7 +367,8 @@ void Tgp::Predict(void)
     itime = my_r_process_events(itime);
 
     /* do the MCMC rounds B,...,T */
-    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, krige, delta_s2, improv, sens, E);
+    preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, pred_n, krige, 
+		      its->IT_ST_or_IS(), delta_s2, improv, sens, E);
     model->Predict(preds, T-B, state);
 
     /* accumulate predictive information */
@@ -425,7 +429,7 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
   int ngrid = *ngrid_in;
   double span = *span_in;
   double **ZZsample = new_zero_matrix(cumpreds->R, ngrid*cumpreds->d);
-  int nm = cumpreds->nm;
+  unsigned int nm = cumpreds->nm;
   double *XXdraw = new_vector(nm);
   for(unsigned int i=0; i<cumpreds->R; i++) {
     for(unsigned int j=0; j<cumpreds->d; j++) {

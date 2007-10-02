@@ -44,8 +44,8 @@ extern "C" {
  */
 
 Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d, 
-		 double **rect, unsigned int R, bool krige, bool delta_s2, 
-		 bool improv, bool sens, unsigned int every)
+		 double **rect, unsigned int R, bool pred_n, bool krige, bool it,
+		 bool delta_s2, bool improv, bool sens, unsigned int every)
 {
   /* allocate structure */
   Preds* preds = (Preds*) malloc(sizeof(struct preds));
@@ -55,6 +55,7 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d,
   preds->n = n;
   preds->d = d;
   preds->R = (int) ceil(((double)R)/every);
+  preds->mult = every;
   
   /* allocations needed for sensitivity analysis */
   if(sens){
@@ -96,18 +97,23 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d,
 
   /* continue with allocations and assignment regardless
    * of whether sensitivity analysis is being performed */
-  preds->mult = every;
-  preds->w = ones(preds->R, 1.0);
-  preds->itemp = ones(preds->R, 1.0);
+
+  /* keep track of importance tempering (IT) weights and inv-temps */
+  if(it) {
+    preds->w = ones(preds->R, 1.0);
+    preds->itemp = ones(preds->R, 1.0);
+  } else { preds->w = preds->itemp = NULL; }
+
+  /* samples from the posterior predictive distribution */
   preds->ZZ = new_zero_matrix(preds->R, nn);
-  preds->Zp = new_zero_matrix(preds->R, n);
+  preds->Zp = new_zero_matrix(preds->R, n*pred_n);
   
   /* allocations only necessary when saving kriging data */
   if(krige) { 
     preds->ZZm = new_zero_matrix(preds->R, nn);
     preds->ZZs2 = new_zero_matrix(preds->R, nn);
-    preds->Zpm = new_zero_matrix(preds->R, n);
-    preds->Zps2 = new_zero_matrix(preds->R, n);
+    preds->Zpm = new_zero_matrix(preds->R, n*pred_n);
+    preds->Zps2 = new_zero_matrix(preds->R, n * pred_n);
   } else { preds->ZZm = preds->ZZs2 = preds->Zpm = preds->Zps2 = NULL; }
   
   /* allocations only necessary when calculating ALC and Improv 
@@ -170,9 +176,10 @@ Preds *combine_preds(Preds *to, Preds *from)
   assert(to->nn == from->nn);  
   assert(to->d == from->d); 
   assert(to->mult == from->mult);
-  Preds *preds = new_preds(to->XX, to->nn, to->n, to->d, NULL, (to->R + from->R)*to->mult, 
-			   (bool) ((to->Zps2!=NULL) || (to->ZZs2!=NULL)), (bool) to->Ds2x, 
-			   (bool) to->improv, ((bool) (to->nm>0)), to->mult);
+  Preds *preds = new_preds(to->XX, to->nn, to->n, to->d, NULL, (to->R + from->R)*to->mult,
+			   (bool) ((to->Zp!=NULL)), (bool) ((to->Zps2!=NULL) || (to->ZZs2!=NULL)), 
+			   (bool) (to->w != NULL), (bool) to->Ds2x, (bool) to->improv, 
+			   ((bool) (to->nm>0)), to->mult);
   import_preds(preds, 0, to);
   import_preds(preds, to->R, from);
   delete_preds(to);

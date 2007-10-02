@@ -533,7 +533,7 @@ b2 <- btgp(X=cbind(ind,X), Z=Z, XX=XX, corr="mrexpsep",
            m0r1=TRUE, meanfn="constant")
 
 # Plots focusing on the different resolutions
-plot(b2) # Plot both fine and coarse fits.
+plot(b2, legendloc="topleft") # Plot both fine and coarse fits.
 plot(b2, mrlayout="fine") # Plot fine only.
 plot(b2, mrlayout="coarse") # Plot coarse only.
 }

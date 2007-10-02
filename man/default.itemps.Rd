@@ -15,7 +15,7 @@
 }
 \usage{
 default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
-               k.min = 0.01, c0n0 = c(100, 1000), lambda = c("opt",
+               k.min = 0.1, c0n0 = c(100, 1000), lambda = c("opt",
                "naive", "st"))
 }
 
@@ -130,7 +130,7 @@ par(mfrow=c(2,1))
 matplot(cbind(geo$k, har$k, sig$k), pch=c(21,22,23),
         cex=1.5, main="3 inv-temp ladders", xlab="indx",
         ylab="itemp")
-legend("topright", pch=c(21,22,23), cex=1.5,
+legend("topright", pch=c(21,22,23), 
        c("geometric","harmonic","sigmoidal"), col=c(1,2,3))
 matplot(log(cbind(sig$k, geo$k, har$k)), pch=c(21,22,23),
         cex=1.5, main="3 log(inv-temp) ladders", xlab="indx",
@@ -154,6 +154,9 @@ hw <- suppressWarnings(sample(out.it$trace$post$height, L,
             prob=out.it$trace$post$wlambda, replace=TRUE))
 b <- hist2bar(cbind(out.reg$trace$post$height,
              out.it$trace$post$height, hw))
+par(mfrow=c(1,1))
+barplot(b, beside=TRUE, xlab="tree height", ylab="counts", col=1:3,
+        main="tree heights encountered")
 legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 }
 

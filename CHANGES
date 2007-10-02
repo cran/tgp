@@ -1,3 +1,16 @@
+2.0-1 (1 Oct 2007)
+-----
+
+Memory savings: preds->ZZ and preds->Zp only allocated when 
+pred.n=TRUE, preds->w and preds->itemp only allocated when
+ST or IT or IS
+
+corrected default.itemps() example barplot and changed 
+k.min to 0.1 to afree with IT paper
+
+fixed zcov bug in tgp.postprocess
+
+
 2.0 (21 Sept 2007) 
 ---
 

@@ -190,7 +190,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   ## Bobby: should we do the same with pre-prossesing?
   ## Taddy: possibly.  However, predict.tgp and tgp have the identical postprocessing,
   ## but the pre-processing is a little different for predict.tgp
-  ll <- tgp.postprocess(ll, Xnames, response, pred.n, Ds2x, improv, sens.p, Zm0r1,
+  ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1,
                         params, rmfiles)
   return(ll)
 }

@@ -1,18 +1,18 @@
-blm			Bayesian hierarchical linear model
-btlm			Bayesian treed Linear (CART) model
-bgp			Bayesian Gaussian process model
-bgpllm			Bayesian Gaussian process with jumps to the limiting linear model (LLM)
+blm                     Bayesian hierarchical linear model
+btlm                    Bayesian treed Linear (CART) model
+bgp                     Bayesian Gaussian process model
+bgpllm                  Bayesian Gaussian process with jumps to the limiting linear model (LLM)
 btgp                    Bayesian treed Gaussian process model
-btgpllm			Bayesian treed Gaussian process with jumps to the LLM
+btgpllm                 Bayesian treed Gaussian process with jumps to the LLM
 dopt.gp                 Sequential D-optimal design for a stationary Gaussian process
 exp2d                   2-d exponential Data, for examples
 exp2d.rand              Randomly subsampled 2-d exponential Data, for examples
-exp2d.Z	                Z-values for 2-d exponential Data, for examples
-friedman.1.data		First Friedman dataset, for examples
+exp2d.Z                 Z-values for 2-d exponential Data, for examples
+friedman.1.data         First Friedman dataset, for examples
 interp.loess            Loess based interpolation of spatial data onto a regular grid
-lhs			Latin Hypercube sampling
-mapT			Plot the MAP partition, or add one to an existing plot
-partition      		Partition data according to the MAP tree
+lhs                     Latin Hypercube sampling
+mapT                    Plot the MAP partition, or add one to an existing plot
+partition               Partition data according to the MAP tree
 plot.tgp                Plotting for treed Gaussian process Models
 predict.tgp             Prediction for (MAP estimates of) treed GP Models
 sens                    Bayesian Monte Carlo sensitivity analysis for treed GP Models
