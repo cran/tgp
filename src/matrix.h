@@ -63,7 +63,9 @@ double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2,
 double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2, 
 		double **rect, double normscale);
 void delete_matrix(double** m);
+void delete_imatrix(int** m);
 void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile);
+void printIMatrix(int **matrix, unsigned int n, unsigned int col, FILE *outfile);
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
 		      double *weight);
 void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
@@ -103,6 +105,7 @@ void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n);
 void vector_to_file(char* file_str, double *quantiles, unsigned int n);
 void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n);
 void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
+void intmatrix_to_file(char* file_str, int** matrix, unsigned int n1, unsigned int n2);
 void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
 void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type);
 

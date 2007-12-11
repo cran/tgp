@@ -292,6 +292,19 @@ void delete_matrix(double** m)
   free(m);
 }
 
+/*
+ * delete a matrix allocated as above
+ */
+
+void delete_imatrix(int** m)
+{
+  if(m == NULL) return;
+  assert(*m);
+  free(*m);
+  assert(m);
+  free(m);
+}
+
 
 /*
  * print an n x col matrix allocated as above out an opened outfile.
@@ -311,6 +324,30 @@ void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
 #else
       if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
       else myprintf(outfile, "%g ", M[i][j]);
+#endif
+    }
+  }
+}
+
+
+/*
+ * print an n x col integer matrix allocated as above out an opened outfile.
+ * actually, this routine can print any double** 
+ */
+
+void printIMatrix(int **M, unsigned int n, unsigned int col, FILE *outfile)
+{
+  int i,j;
+  assert(outfile);
+  if(n > 0 && col > 0) assert(M);
+  for(i=0; i<n; i++) {
+    for(j=0; j<col; j++) {
+#ifdef DEBUG
+      if(j==col-1) myprintf(outfile, "%d\n", M[i][j]);
+      else myprintf(outfile, "%d ", M[i][j]);
+#else
+      if(j==col-1) myprintf(outfile, "%d\n", M[i][j]);
+      else myprintf(outfile, "%d ", M[i][j]);
 #endif
     }
   }
@@ -1094,6 +1131,21 @@ void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned i
   MOUT = fopen(file_str, "w");
   assert(MOUT);
   printMatrix(matrix, n1, n2, MOUT); 
+  fclose(MOUT);
+}
+
+/* 
+ * open file with the given name
+ * and print the passed integer matrix to it
+ */
+
+void intmatrix_to_file(char* file_str, int** matrix, unsigned int n1, unsigned int n2)
+{
+  FILE* MOUT;
+  
+  MOUT = fopen(file_str, "w");
+  assert(MOUT);
+  printIMatrix(matrix, n1, n2, MOUT); 
   fclose(MOUT);
 }
 

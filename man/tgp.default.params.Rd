@@ -37,9 +37,6 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
 \value{
    The output is the following list of \code{params}...
 
-   \item{tree}{\code{c(0.5,2,max(c(10,col+1)),1)} indicating the tree prior
-     parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
-     and \emph{splitmin}}
    \item{col}{dimension of regression coefficients \eqn{\mbox{\boldmath
 	 $\beta$}}{beta}: 1 for input \code{meanfn = "constant"}, or
      \code{ncol(X)+1} for \code{meanfn = "linear"}}
@@ -54,12 +51,16 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range \eqn{d}{d},
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}
    \item{beta}{\code{rep(0,col)} starting values for beta linear parameters}
-   \item{tree}{\code{c(0.25,2,min(c(10,col+1)))} tree prior process parameters 
-     \code{c(alpha, beta, nmin)} specifying
+   \item{tree}{\code{c(0.5,2,min(c(10,col+1)),1)} indicating the tree prior 
+     process parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
+     and \emph{splitmin}:
      \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
-	  \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
+       \alpha*(1+\eta)^\beta}{p(split leaf eta) =
+       alpha*(1+depth(eta))^(-beta)}
 	with zero probability given to trees
-	with partitions containing less than \code{nmin} data points}
+	with partitions containing less than \code{nmin} data points;
+        \emph{splitmin} indicates the first column of \code{X} which 
+        where treed partitioning is allowed}
       \item{s2.p}{\code{c(5,10)} \eqn{\sigma^2}{s2} inverse-gamma prior
 	parameters \code{c(a0, g0)} where \code{g0} is scale (1/rate) parameter}
       \item{tau2.p}{\code{c(5,10)} \eqn{\tau^2}{tau2} inverse-gamma
@@ -105,9 +106,10 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
      exponential prior.  Delta scales the variance of the residual "fine" process with respect to
      the variance of the underlying "coarse" process. }
    \item{nugf.p}{\code{c(1,1,1,1)}  Parameters in the mixture of gammas prior
-       on the residual "fine" process nugget parameter for
+       on the residual \dQuote{fine} process nugget parameter for
        \code{corr="mrexpsep"}: \code{c(a1,g1,a2,g2)} where \code{g1} and
-     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior. }
+     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior.
+   }
 }
 
 

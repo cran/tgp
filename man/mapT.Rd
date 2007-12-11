@@ -59,7 +59,7 @@ mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2, ...)
 
 \note{
 For examples, see \code{vignette("tgp")} and the examples provided 
-in the documentation for the \code{\link{tgp.design}} function}
+in the documentation for the \code{\link{tgp.design}} function
 }
 
 \seealso{ \code{\link{plot.tgp}}, \code{\link{tgp.trees}},

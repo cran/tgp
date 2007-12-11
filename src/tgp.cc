@@ -564,6 +564,8 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
   } else *ess = cumpreds->R;
 
   /* allocate pointers for holding q1 median and q3 */
+  /* TADDY's IQR settings 
+     double q[3] = {0.25, 0.5, 0.75};*/
   double q[3] = {0.05, 0.5, 0.95};
   double **Q = (double**) malloc(sizeof(double*) * 3);
 
@@ -646,8 +648,16 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
     /* improv (minima) */
     if(improv) {
       assert(cumpreds->improv);
-      matrix_to_file("improv.txt", cumpreds->improv, cumpreds->R, cumpreds->nn);
+      
       wmean_of_columns(improvec, cumpreds->improv, cumpreds->R, cumpreds->nn, w);
+      /* TADDY's file output for improv trace   
+      matrix_to_file("improv.txt", cumpreds->improv, cumpreds->R, cumpreds->nn);
+      int **IRANK = new int*[2];
+      IRANK[0] = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, 1, w);
+      IRANK[1] = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, 2, w);
+      dupiv(irank, IRANK[0], nn);
+      intmatrix_to_file("irank.txt", IRANK, 2, cumpreds->nn);
+      delete_imatrix(IRANK); */
       int *ir = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, improv, w);
       dupiv(irank, ir, nn);
       free(ir);

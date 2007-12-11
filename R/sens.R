@@ -36,8 +36,16 @@ function(sens.p, d)
 
   ## nn.lhs is 'nm' in the .cc code.
   nn.lhs <- sens.p[1] 
-  nn <-nn.lhs*(d+2)  ## Bobby asks Taddy: why so big?
-
+  nn <-nn.lhs*(d+2)
+  ## Bobby asks Taddy: why so big?
+  ## Taddy replies to Bobby: nn.lhs is the sample size for your Monte-Carlo estimates,
+  ## but you require distinct samples to estimate variance and
+  ## expectation with respect to main effects (and total effects) for
+  ## each input (+ two more for total variation estimates).
+  ## And n(d+2) is considered 'efficient' in the SA literature,
+  ## which is why it pays to have tgp do the prediction rather than
+  ## running your simulator at each location.
+  
   ## The XX matrix is of the correct size for within the .cc code.
   ## This may or may not be necessary.
   ## The first 3 rows contain the LHS parameters to begin with.
@@ -53,9 +61,14 @@ function(sens.p, d)
 
   ## check mode for validity, and copy to XX
   mode <- XX[4,] <- sens.p[(3*d+2):(4*d+1)]
-  if(length(mode) != d || !all(mode > 0)) {
+  if(length(mode) != d) {
     print(mode)
-    stop(paste("mode should be a positive ", d, "-vector", sep=""))
+    stop(paste("mode should be a ", d, "-vector", sep=""))
+  }
+  for(i in 1:d){
+    if(mode[i] < XX[1,i] || mode[i] > XX[2,i]){
+      stop(paste("mode ", i, " should be within bounds [", XX[1,i],", ", XX[2,i],"]", sep=""))
+    }
   }
   
   ## Create the Man Effect Grid
@@ -95,14 +108,14 @@ function(X, Z, nn.lhs, model=btgp, ngrid=100, span=0.3, BTE=c(3000,8000,10),
 
   ## check the shape and mode vectors
   if(is.null(shape)) shape <- rep(1,d)
-  else if(length(shape) != d || !all(shape > 0)) {
+  else if(length(shape) != d || !all(shape > 0)) { 
     print(shape)
     stop(paste("shape should be a positive ", d, "-vector", sep=""))
   }
   if(is.null(mode)) mode <- apply(as.matrix(X),2,mean)
-  else if(length(mode) != d || !all(mode > 0)) {
+  else if(length(mode) != d) {
     print(mode)
-    stop(paste("mode should be a positive ", d, "-vector", sep=""))
+    stop(paste("mode should be a ", d, "-vector", sep=""))
   }
   
   ## build the sens parameter

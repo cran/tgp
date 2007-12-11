@@ -5,7 +5,7 @@
 
 \description{
   Draw a (random) Latin Hypercube (LH) sample of size \code{n} from in
-  the region outlined by the provided rectangle}
+  the region outlined by the provided rectangle
 }
 \usage{
 lhs(n, rect, shape=NULL, mode=NULL)

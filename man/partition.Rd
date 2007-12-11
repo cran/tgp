@@ -23,7 +23,7 @@ partition(X, out)
 \value{
   Output is a list of \code{data.frame}s populated with the inputs
   \code{X} contained in each region of the partition of the MAP tree
-  in the \code{"tgp"}-class object \code{out}}
+  in the \code{"tgp"}-class object \code{out}
 }
 
 \references{
