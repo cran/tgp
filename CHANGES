@@ -1,3 +1,17 @@
+2.0-2 (12 Dec 2007)
+-----
+
+allow mode in the sens function to be be within the 
+bounds of rect -- i.e., stop checking for positive mode
+
+fixed dyslexic error in man page for sens describing
+total effect indices
+
+fixed missing braces in some .Rd files
+
+shortened to LGPL in DESCRIPTION
+
+
 2.0-1 (1 Oct 2007)
 -----
 
@@ -6,7 +20,7 @@ pred.n=TRUE, preds->w and preds->itemp only allocated when
 ST or IT or IS
 
 corrected default.itemps() example barplot and changed 
-k.min to 0.1 to afree with IT paper
+k.min to 0.1 to agree with IT paper
 
 fixed zcov bug in tgp.postprocess
 
@@ -14,7 +28,7 @@ fixed zcov bug in tgp.postprocess
 2.0 (21 Sept 2007) 
 ---
 
-consolidated R finctions from individual files into those
+consolidated R functions from individual files into those
 grouped by task
 
 made gridlen argument a 2-vector so the grid size can be
@@ -33,7 +47,7 @@ simulated tempering support
 Latin hypercube sampling with respect to a Beta 
 distribution
 
-moved most of the reading of paramters out of the Tgp
+moved most of the reading of parameters out of the Tgp
 constructor and into Tgp::Init so that tgp_cleanup() can 
 safely delete the Tgp module even it it wasn't successfully 
 initialized
@@ -134,7 +148,7 @@ CART style mean rather than a LM mean
 
 Now allowing BTE[2]-BTE[1] % BTE[3] != 0
 
-Added predict.tgp and necesary functionality to save 
+Added predict.tgp and necessary functionality to save 
 and load in MAP tgp model for later prediction
 
 Corrected par calculation in tgp.trees for non-default
@@ -149,7 +163,7 @@ them thread-safe, and added improv samples to traces
 Also now renamed ds2x to Ds2x, and made Ds2x (i.e., ALC) 
 calculations thread-safe
 
-Elipses to b* function allow other params arguments to 
+Ellipses to b* function allow other params arguments to 
 be passed to replace defaults in tgp.default.params()
 
 Added traces of hierarchical parameters, and all 
@@ -182,7 +196,7 @@ across platforms (tested on OSX/PB & Linux/Xeons)
 
 Allow X=NULL in dopt.gp()
 
-Removal of constansts LOG_2_PI covered by R internal
+Removal of constants LOG_2_PI covered by R internal
 M_LOG_SQRT_2PI
 
 Added mvnpdf_log_dup and wishpdf_log functions
@@ -288,7 +302,7 @@ matrix initialization -- fixed.
 1.1-2: (04 Mar 2006)
 ------
 
-1. Beta version of Matern correllation function working
+1. Beta version of Matern correlation function working
 (abiet a bit shakily)
 
 2. Tgp class and cleanup function now implemented in 
@@ -307,10 +321,10 @@ Minor edits to documentation.
 
 1. Modularization overhall of C/C++ code for passing 
 to Matt Taddy, who will be responsible for such future
-additions as Matern correllation functions, and multi-
+additions as Matern correlation functions, and multi-
 resolution GP implementations.
 
-2. Plotting inhancements, including 1-d projections
+2. Plotting enhancements, including 1-d projections
 and (now default) loess interpolation for 2-d surfaces
 and projections, plotting of ALC & EGO statistics,
 and ability to control plot layout to show mean surface,

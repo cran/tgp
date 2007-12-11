@@ -45,7 +45,7 @@ tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
 
 \value{
   Output is a list of \code{data.frame}s containing \code{XX} design
-  points for each region of the MAP tree in \code{out}}
+  points for each region of the MAP tree in \code{out}
 }
 
 \references{

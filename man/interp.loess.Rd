@@ -74,7 +74,6 @@ interp.loess(x, y, z, gridlen = c(40,40), span = 0.1, ...)
       For data that is random or sparse, simply choose higher setting,
     e.g., the default \code{\link[stats]{loess}} setting of \code{span =
   0.75}, or a more intermediate setting of \code{span = 0.5} as in the example below}
-}
 
 \seealso{ \code{\link[akima]{interp}}, \code{\link[stats]{loess}},
   \code{\link{persp}}, \code{\link{image}}, \code{\link{contour}}

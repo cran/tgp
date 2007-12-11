@@ -67,7 +67,7 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
   where \eqn{x_i}{x[i]} is the  \eqn{i}{i}-th input.
  
   Total Effect for input \eqn{i}{i},
-  \deqn{T(i) = \mbox{Var}(E[f|x_{-i}])/\mbox{Var}(f),}{T(i) = var(E[f|x[-i]])/var(f),}
+  \deqn{T(i) = E[\mbox{Var}(f|x_{-i})]/\mbox{Var}(f),}{T(i) = E[var(f|x[-i])]/var(f),}
   where \eqn{x_{-i}}{x[-i]} is all inputs except for the \eqn{i}{i}-th.
   
   All moments are with respect to the appropriate marginals of the

@@ -21,31 +21,30 @@
 #
 #*******************************************************************************
 
-
 ## exp2d.Z:
 ##
 ## sample from he 2-d exponential data at locations X with
 ## normal mean-zero random deviates with sd specified
 
 "exp2d.Z" <-
-  function(X, sd=0.001)
+function(X, sd=0.001)
 {
-  if(is.null(X)) return(NULL);
-  if(is.null(ncol(X))) X <- matrix(X, ncol=length(X))
-  
-  ## check the number of columns
-  if(ncol(X) != 2)
-    stop(paste("X should be a matrix (or data frame) with 2 columns, you have",
-               ncol(X)))
-  
-  ## calculate the Z data
-  Ztrue <- X[,1] * exp(- X[,1]^2 - X[,2]^2)
+if(is.null(X)) return(NULL);
+if(is.null(ncol(X))) X <- matrix(X, ncol=length(X))
 
-  ## add randomness for random sample
-  Z <- Ztrue + rnorm(nrow(X),mean=0,sd=sd)
+## check the number of columns
+if(ncol(X) != 2)
+stop(paste("X should be a matrix (or data frame) with 2 columns, you have",
+       ncol(X)))
 
-  ## return a data frame object
-  return(data.frame(Z=Z,Ztrue=Ztrue))
+## calculate the Z data
+Ztrue <- X[,1] * exp(- X[,1]^2 - X[,2]^2)
+
+## add randomness for random sample
+Z <- Ztrue + rnorm(nrow(X),mean=0,sd=sd)
+
+## return a data frame object
+return(data.frame(Z=Z,Ztrue=Ztrue))
 }
 
 
@@ -59,72 +58,72 @@
 "exp2d.rand" <-
 function(n1=50, n2=30, lh=NULL, dopt=1)
 {
-  ## check the sanity of the inputs
-  if(n1 < 0 || n2 < 0) { stop("n1 and n2 must be >= 0") }
+## check the sanity of the inputs
+if(n1 < 0 || n2 < 0) { stop("n1 and n2 must be >= 0") }
 
-  ## use Latin Hybpercube sampling
-  if(!is.null(lh)) {
+## use Latin Hybpercube sampling
+if(!is.null(lh)) {
 
-    ## start with the interesting region
-    Xcand <- lhs(n1*dopt, rbind(c(-2,2), c(-2,2)))
-    if(dopt > 2) { X <- dopt.gp(n1, NULL, Xcand)$XX }
-    else { X <- Xcand }
+## start with the interesting region
+Xcand <- lhs(n1*dopt, rbind(c(-2,2), c(-2,2)))
+if(dopt > 2) { X <- dopt.gp(n1, NULL, Xcand)$XX }
+else { X <- Xcand }
 
-    ## check if n2 is a 1-vector or a 3-vector
-    if(length(n2) == 1) n2 <- rep(ceiling(n2/3), 3)
-    else if(length(n2 != 3))
-      stop(paste("length of n2 should be 1 or 3, you have",
-                 length(n2)))
+## check if n2 is a 1-vector or a 3-vector
+if(length(n2) == 1) n2 <- rep(ceiling(n2/3), 3)
+else if(length(n2 != 3))
+stop(paste("length of n2 should be 1 or 3, you have",
+	 length(n2)))
 
-    ## check validity of dopt
-    if(length(dopt) != 1 || dopt < 1)
-      stop(paste("dopt should be a scalar >= 1, you have", dopt))
+## check validity of dopt
+if(length(dopt) != 1 || dopt < 1)
+stop(paste("dopt should be a scalar >= 1, you have", dopt))
 
-    ## do the remaining three (uninteresting) quadtants
-    Xcand <- lhs(n2[1]*dopt, rbind(c(2,6), c(-2,2)))
-    Xcand <- rbind(Xcand, lhs(n2[2]*dopt, rbind(c(2,6), c(2,6))))
-    Xcand <- rbind(Xcand, lhs(n2[3]*dopt, rbind(c(-2,2), c(2,6))))
+## do the remaining three (uninteresting) quadtants
+Xcand <- lhs(n2[1]*dopt, rbind(c(2,6), c(-2,2)))
+Xcand <- rbind(Xcand, lhs(n2[2]*dopt, rbind(c(2,6), c(2,6))))
+Xcand <- rbind(Xcand, lhs(n2[3]*dopt, rbind(c(-2,2), c(2,6))))
 
-    ## see if we need d-optimal subsample
-    if(dopt > 2) { X <- rbind(X, dopt.gp(sum(n2), NULL, Xcand)$XX) }
-    else { X <- rbind(X, Xcand) }
+## see if we need d-optimal subsample
+if(dopt > 2) { X <- rbind(X, dopt.gp(sum(n2), NULL, Xcand)$XX) }
+else { X <- rbind(X, Xcand) }
 
-    ## calculate the Z data
-    Zdata <- exp2d.Z(X);
-    Ztrue <- Zdata$Ztrue; Z <- Zdata$Z
+## calculate the Z data
+Zdata <- exp2d.Z(X);
+Ztrue <- Zdata$Ztrue; Z <- Zdata$Z
 
-    ## now get the size of the XX vector (for each quadtant)
-    
-    if(length(lh) == 1) lh <- rep(ceiling(lh/4), 4)
-    else if(length(lh) != 4)
-      stop(paste("length of lh should be 0 (for grid), 1 or 4, you have",
-                 length(lh)))
+## now get the size of the XX vector (for each quadtant)
 
-    ## fill the XX vector
-    XX <- lhs(lh[1]*dopt, rbind(c(-2,2), c(-2,2)))
-    XX <- rbind(XX, lhs(lh[2]*dopt, rbind(c(2,6), c(-2,2))))
-    XX <- rbind(XX, lhs(lh[3]*dopt, rbind(c(2,6), c(2,6))))
-    XX <- rbind(XX, lhs(lh[4]*dopt, rbind(c(-2,2), c(2,6))))
+if(length(lh) == 1) lh <- rep(ceiling(lh/4), 4)
+else if(length(lh) != 4)
+stop(paste("length of lh should be 0 (for grid), 1 or 4, you have",
+	 length(lh)))
 
-    ## see if we need d-optimal subsample
-    if(length(X) > 0 && dopt > 2) {
-      XX <- dopt.gp(sum(lh), X, XX)$XX
-    }
-    
-    ## calculate the ZZ data
-    ZZdata <- exp2d.Z(XX);
-    ZZtrue <- ZZdata$Ztrue; ZZ <- Zdata$Z
+## fill the XX vector
+XX <- lhs(lh[1]*dopt, rbind(c(-2,2), c(-2,2)))
+XX <- rbind(XX, lhs(lh[2]*dopt, rbind(c(2,6), c(-2,2))))
+XX <- rbind(XX, lhs(lh[3]*dopt, rbind(c(2,6), c(2,6))))
+XX <- rbind(XX, lhs(lh[4]*dopt, rbind(c(-2,2), c(2,6))))
 
-  } else {
+## see if we need d-optimal subsample
+if(length(X) > 0 && dopt > 2) {
+XX <- dopt.gp(sum(lh), X, XX)$XX
+}
 
-    ## make sure we have enough data to fulfill the request
-    if(n1 + n2 >= 441) { stop("n1 + n2 must be <= 441") }
+## calculate the ZZ data
+ZZdata <- exp2d.Z(XX);
+ZZtrue <- ZZdata$Ztrue; ZZ <- Zdata$Z
 
-    ## dopt = TRUE doesn't make sense here
-    if(dopt != 1) { warning("argument dopt != 1 only makes sens when !is.null(lh)") }
-    
-    ## load the data
-    data(exp2d); n <- dim(exp2d)[1]
+} else {
+
+## make sure we have enough data to fulfill the request
+if(n1 + n2 >= 441) { stop("n1 + n2 must be <= 441") }
+
+## dopt = TRUE doesn't make sense here
+if(dopt != 1) { warning("argument dopt != 1 only makes sens when !is.null(lh)") }
+
+## load the data
+data(exp2d); n <- dim(exp2d)[1]
 
     ## get the X columns
     si <- (1:n)[1==apply(exp2d[,1:2] <= 2, 1, prod)]
