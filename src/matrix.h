@@ -155,6 +155,7 @@ double max(double *v, unsigned int n, unsigned int *which);
 double min(double *v, unsigned int n, unsigned int *which);
 double sq(double x);
 double myfmax(double a, double b);
+double myfmin(double a, double b);
 
 double vmult(double *v1, double *v2, int n);
 

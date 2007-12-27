@@ -1,3 +1,10 @@
+2.0-3 (27 Dec 2007)
+-----
+
+commented the moving average code (for sens) and made
+it more efficient
+
+
 2.0-2 (12 Dec 2007)
 -----
 
