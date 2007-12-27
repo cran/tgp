@@ -23,7 +23,7 @@
 
 
 #include "rhelp.h"
-#include "rand_draws.h"
+/* #include "rand_draws.h" */
 #include "matrix.h"
 #include <assert.h>
 #include <math.h>
@@ -1878,8 +1878,24 @@ double myfmax(double a, double b)
 
 
 /*
- * vmult returns the product of its arguments
+ * myfmin:
  *
+ * seems like some systems are missing the prototype
+ * for the fmin function which should be in math.h --
+ * so I wrote my own
+ */
+
+double myfmin(double a, double b)
+{
+  if(a <= b) return a;
+  else return b;
+}
+
+
+/*
+ * vmult: 
+ *
+ * returns the product of its arguments
  */
 
 double vmult(double *v1, double *v2, int n)

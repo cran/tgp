@@ -123,10 +123,10 @@ void myflush(FILE *outfile)
 
 
 /*
- * my_r_process_Events:
+ * my_r_process_events:
  *
  * at least every 1 second(s) pass control back to
- * Ro so that it can check for interrupts and/or 
+ * R so that it can check for interrupts and/or 
  * process other R-gui events
  */
 

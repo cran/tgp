@@ -32,6 +32,7 @@
 #include "predict.h"
 #include "linalg.h"
 #include "rhelp.h"
+#include "lh.h"
 #include <Rmath.h>
 
 /* #define DEBUG */
@@ -694,67 +695,74 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w)
 /* 
  * move_avg:
  * 
- * simple moving average smoothing.  Uses a squared difference weight function.
+ * simple moving average smoothing.  
+ * Assumes that XX is already in ascending order!
+ * Uses a squared difference weight function.
  */
  
-void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac){
-
-  /* frac is the portion of the data in the moving average window
-     and q is the number of points in this window */
-
+void move_avg(int nn, double* XX, double *YY, int n, double* X, 
+              double *Y, double frac)
+{
+  int q, i, j, l, u, search;
+  double dist, range, sumW;
+  double *Xo, *Yo, *w;
+  int *o;
+	
+  /* frac is the portion of the data in the moving average
+     window and q is the number of points in this window */
   assert( 0.0 < frac && frac < 1.0);
-  int q = (int) floor( frac*((double) n));
+  q = (int) floor( frac*((double) n));
   if(q < 2) q=2;
   if(n < q) q=n;
 
-  double *w = new_vector(n);
-  int i, j, l, u, search;
-  double dist;
-  double range;
-  double sumW;
-  double temp;
-
-  /* assume that XX is already in ascending order... */
-  double *Xordered, *Yordered;
-  Xordered = new_dup_vector(X, n);
-  Yordered = new_dup_vector(Y, n);
-
-  for(i=0; i<n; i++){
-    for(j=i; j<n; j++){ 
-      if(Xordered[i] > Xordered[j]){
-	temp = Xordered[i];
-	Xordered[i] = Xordered[j];
-	Xordered[j] = temp;
-	temp = Yordered[i];
-	Yordered[i] = Yordered[j];
-	Yordered[j] = temp;
-      }
-    }
+  /* assume that XX is already in ascending order. 
+   * put X in ascending order as well (and match Y) */
+  Xo = new_vector(n);
+  Yo = new_vector(n);
+  o = order(X, n);
+  for(i=0; i<n; i++) {
+    Xo[i] = X[o[i]-1];
+    Yo[i] = Y[o[i]-1];
   }
 
-  l = 0;
-  u = q-1;
+  /* window paramters */
+  w = new_vector(n);  /* window weights */
+  l = 0;              /* lower index of window */
+  u = q-1;            /* upper index of the window */
+  
+  /* now slide the window along */
   for(i=0; i<nn; i++){
+
+    /* find the next window */
     search=1;
     while(search){
       if(u==(n-1)) search = 0;
-      else if( myfmax(fabs(XX[i]-Xordered[l+1]), fabs(XX[i]-Xordered[u+1])) > 
-               myfmax(fabs(XX[i]-Xordered[l]), fabs(XX[i]-Xordered[u]))) search = 0;
+      else if( myfmax(fabs(XX[i]-Xo[l+1]), fabs(XX[i]-Xo[u+1])) > 
+               myfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]))) search = 0;
       else{ l++; u++; }
     }
-    /*printf("l=%d, u=%d, Xordered[l]=%g, Xordered[u]=%g, XX[i]=%g \n", l, u, Xordered[l],Xordered[u],XX[i]);*/
-    range = myfmax(fabs(XX[i]-Xordered[l]), fabs(XX[i]-Xordered[u]));
+    /*printf("l=%d, u=%d, Xo[l]=%g, Xo[u]=%g, XX[i]=%g \n", l, u, Xo[l],Xo[u],XX[i]);*/
+
+    /* width of the window in X-space */
+    range = myfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]));
+    
+    /* calculate the weights in the window; 
+     * every weight outside the window will be zero */
     zerov(w,n);
     for(j=l; j<=u; j++){
-      dist = fabs(XX[i]-Xordered[j])/range;
+      dist = fabs(XX[i]-Xo[j])/range;
       w[j] = (1.0-dist)*(1.0-dist);
     }
-    sumW = sumv(w, n);
-    YY[i] = vmult(w, Yordered, n)/sumW;
+
+    /* record the (normalized) weighted average in the window */
+    sumW = sumv(&(w[l]), q);
+    YY[i] = vmult(&(w[l]), &(Yo[l]), q)/sumW;
     /*printf("YY = "); printVector(YY, nn, stdout, HUMAN);*/
   }
   
+  /* clean up */
   free(w);
-  free(Xordered);
-  free(Yordered);
+  free(o);
+  free(Xo);
+  free(Yo);
 }
