@@ -1,3 +1,12 @@
+2.0-4 (23 Jan 2008)
+-----
+
+made a change suggested by Andrea Spano to make the
+partition function more robust when new X values 
+(on a different range from the original data) are 
+provided
+
+
 2.0-3 (27 Dec 2007)
 -----
 
