@@ -1,9 +1,3 @@
-%\VignetteIndexEntry{collaborating with predict.tgp}
-%\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
-%\VignettePackage{tgp}
-
-
 \subsection{Collaboration with {\tt predict.tgp}}
 \label{sec:apred}
 
@@ -62,29 +56,29 @@ That is, {\tt out2} can also be passed to {\tt predict.tgp}.
 
 \begin{figure}[hp]
 \centering
-<<label=kp,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+<<label=pred-kp,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
 plot(out.kp, center="km", as="ks2")
 @ 
 <<echo=false,results=hide>>=
 graphics.off()
 @
 \vspace{-0.1cm}
-\includegraphics[trim=50 30 50 25]{pred-kp}
-<<label=p,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+\includegraphics[trim=50 30 50 25]{tgp-pred-kp}
+<<label=pred-p,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
 plot(out.p)
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
 \vspace{-0.1cm}
-\includegraphics[trim=50 30 50 25]{pred-p}
-<<label=2,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+\includegraphics[trim=50 30 50 25]{tgp-pred-p}
+<<label=pred-2,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
 plot(out2)
 @ 
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=50 30 50 25]{pred-2}
+\includegraphics[trim=50 30 50 25]{tgp-pred-2}
 \caption{Predictive surfaces ({\em left}) and
   error/variance plots ({\em right}) resulting
   from three different uses of the {\tt predict.tgp} function:

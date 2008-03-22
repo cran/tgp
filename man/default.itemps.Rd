@@ -59,7 +59,8 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   ladder
   \deqn{\Delta_k = k_{\mbox{\tiny min}}^{1/(1-m)}-1,}{delta = k.min^(1/(1-m))-1,}
   and for the harmonic
-  \deqn{\Delta_k = \frac{k_{\mbox{\tiny min}}^{-1}-1}{m-1}.}{delta = (k.min^(-1)-1)/(m-1).}
+  \deqn{\Delta_k = \frac{k_{\mbox{\tiny min}}^{-1}-1}{m-1}.}{delta
+    = (k.min^(-1)-1)/(m-1).}
   In a similar spirit, the sigmoidal ladder is specified by first
   situating \eqn{m}{m} indices \eqn{j_i\in \Re}{j[i] in Re} so that
   \eqn{k_1 = k(j_1) = 1}{k[1] = k(j[1]) = 1}
@@ -127,13 +128,13 @@ geo <- default.itemps(type="geometric")
 har <- default.itemps(type="harmonic")
 sig <- default.itemps(type="sigmoidal")
 par(mfrow=c(2,1))
-matplot(cbind(geo$k, har$k, sig$k), pch=c(21,22,23),
-        cex=1.5, main="3 inv-temp ladders", xlab="indx",
+matplot(cbind(geo$k, har$k, sig$k), pch=21:23,
+        main="inv-temp ladders", xlab="indx",
         ylab="itemp")
-legend("topright", pch=c(21,22,23), 
-       c("geometric","harmonic","sigmoidal"), col=c(1,2,3))
-matplot(log(cbind(sig$k, geo$k, har$k)), pch=c(21,22,23),
-        cex=1.5, main="3 log(inv-temp) ladders", xlab="indx",
+legend("topright", pch=21:23, 
+       c("geometric","harmonic","sigmoidal"), col=1:3)
+matplot(log(cbind(sig$k, geo$k, har$k)), pch=21:23,
+        main="log(inv-temp) ladders", xlab="indx",
         ylab="itemp")
 
 ## using Importance Tempering (IT) to improve mixing
@@ -149,11 +150,10 @@ out.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,2),
 
 ## compare the heights explored by the three chains:
 ## REG, combining all temperatures, and IT
-L <- length(out.it$trace$post$height)
-hw <- suppressWarnings(sample(out.it$trace$post$height, L,
-            prob=out.it$trace$post$wlambda, replace=TRUE))
-b <- hist2bar(cbind(out.reg$trace$post$height,
-             out.it$trace$post$height, hw))
+p <- out.it$trace$post
+L <- length(p$height)
+hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
+b <- hist2bar(cbind(out.reg$trace$post$height, p$height, hw))
 par(mfrow=c(1,1))
 barplot(b, beside=TRUE, xlab="tree height", ylab="counts", col=1:3,
         main="tree heights encountered")

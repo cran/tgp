@@ -93,6 +93,7 @@ class Base
   virtual void ForceLinear(void)=0;
   virtual void ForceNonlinear(void)=0;
   virtual bool Linear(void)=0;
+  virtual bool Constant(void)=0;
   virtual void printFullNode(void)=0;
   virtual double Var(void)=0;
   virtual double Posterior(void)=0;

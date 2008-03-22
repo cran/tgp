@@ -1,8 +1,3 @@
-%\VignetteIndexEntry{example on exponential data}
-%\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
-%\VignettePackage{tgp}
-
 \subsection{Synthetic 2-d Exponential Data}
 \label{sec:exp}
 
@@ -46,13 +41,13 @@ exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
 @
 \begin{figure}[ht!]
 \centering
-<<label=bgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+<<label=exp-bgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
 plot(exp.bgp, main='GP,')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{exp-bgp}
+\includegraphics[trim=0 35 0 25]{tgp-exp-bgp}
 %\vspace{-0.5cm}
 \caption{{\em Left:} posterior predictive mean using
   {\tt bgp} on synthetic exponential data; {\em right} image plot of
@@ -78,21 +73,21 @@ exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
 @ 
 \begin{figure}[ht!]
 \centering
-<<label=btgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+<<label=exp-btgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
 plot(exp.btgp, main='treed GP,')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{exp-btgp}
+\includegraphics[trim=0 35 0 25]{tgp-exp-btgp}
 %\vspace{-0.25cm}
-<<label=btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
+<<label=exp-btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
 tgp.trees(exp.btgp)
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=50 65 50 10]{exp-btgptrees}
+\includegraphics[trim=50 65 50 10]{tgp-exp-btgptrees}
 \vspace{-0.5cm}
 \caption{{\em Top-Left:} posterior predictive mean using
   {\tt btgp} on synthetic exponential data; {\em top-right} image plot
@@ -119,13 +114,13 @@ exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2)
 @
 \begin{figure}[ht!]
 \centering
-<<label=btgpllm,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+<<label=exp-btgpllm,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
 plot(exp.btgpllm, main='treed GP LLM,')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{exp-btgpllm}
+\includegraphics[trim=0 35 0 25]{tgp-exp-btgpllm}
 %\vspace{-0.5cm}
 \caption{{\em Left:} posterior predictive mean using
   {\tt btgpllm} on synthetic exponential data; {\em right} image plot
@@ -142,21 +137,21 @@ location--specific linearity in this example.
 
 \begin{figure}[ht!]
 \centering
-<<label=1dbtgpllm1,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+<<label=exp-1dbtgpllm1,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
 plot(exp.btgpllm, main='treed GP LLM,', proj=c(1))
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
 \vspace{-0.65cm}
-<<label=1dbtgpllm2,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+<<label=exp-1dbtgpllm2,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
 plot(exp.btgpllm, main='treed GP LLM,', proj=c(2))
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 10 0 25]{exp-1dbtgpllm1}
-\includegraphics[trim=0 25 0 10]{exp-1dbtgpllm2}
+\includegraphics[trim=0 10 0 25]{tgp-exp-1dbtgpllm1}
+\includegraphics[trim=0 25 0 10]{tgp-exp-1dbtgpllm2}
 %\vspace{-0.5cm}
 \caption{1-d projections of the posterior predictive surface ({\em left})
 and normed predictive intervals ({\em right}) of the 1-d tree GP LLM

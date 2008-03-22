@@ -77,8 +77,7 @@ Base::Base(unsigned int d, Base_Prior *prior, Model *model)
 
 Base::Base(double **X, double *Z, Base *old, bool economy)
 {
-  /* simple non-pointer copies */
-  
+  /* simple non-pointer copies */ 
   d = old->d;
   col = old->col;
   n = old->n;

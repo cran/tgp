@@ -38,7 +38,7 @@ function(X, Z, XX=NULL,
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr, ...)
   params$bprior <- bprior
-  params$tree <- c(tree,params$tree[3:4])
+  params$tree[1:2] <- tree
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu<-nu
   return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov, 
@@ -75,7 +75,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   else { d <- dim(X)[2] }
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr,...)
   params$bprior <- bprior
-  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  params$tree[1:2] <- c(0,0) # no tree
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu <- nu
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,Ds2x,
@@ -100,7 +100,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr, ...)
   params$bprior <- bprior
   params$gamma <- gamma
-  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  params$tree[1:2] <- c(0,0) # no tree
   if(corr == "matern"){ params$nu <- nu; }
   if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,Ds2x,
@@ -123,7 +123,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
   else { d <- dim(X)[2] }
   params <- tgp.default.params(d, meanfn=meanfn, ...)
   params$bprior <- bprior
-  params$tree <- c(0,0,params$tree[3:4])	# no tree
+  params$tree[1:2] <- c(0,0) # no tree
   params$gamma <- c(-1,0.2,0.7)	# force llm
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,
              zcov,krige,Ds2x,improv,sens.p,trace,verb))
@@ -146,7 +146,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr,...)
   params$bprior <- bprior
-  params$tree <- c(tree,params$tree[3:4])
+  params$tree[1:2] <- tree
   params$gamma <- gamma
   if(corr == "matern"){ params$nu <- nu }
   if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
@@ -166,7 +166,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, ...)
   params$bprior <- bprior
-  params$tree <- c(tree,params$tree[3:4])
+  params$tree[1:2] <- tree
   params$gamma <- c(-1,0.2,0.7)	# no llm
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,
              Ds2x,improv,sens.p, trace,verb))

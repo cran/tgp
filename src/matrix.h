@@ -44,6 +44,7 @@ unsigned int matrix_constrained(int *p, double **X, unsigned int n1, unsigned in
 				Rect *rect);
 void print_rect(Rect *r, FILE* outfile);
 double rect_area(Rect* rect);
+double rect_area_maxd(Rect* rect, unsigned int maxd);
 void rect_unnorm(Rect* r, double **rect, double normscale);
 double **get_data_rect(double **X, unsigned int N, unsigned int d);
 
@@ -64,8 +65,8 @@ double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2,
 		double **rect, double normscale);
 void delete_matrix(double** m);
 void delete_imatrix(int** m);
-void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile);
-void printIMatrix(int **matrix, unsigned int n, unsigned int col, FILE *outfile);
+
+void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n);
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
 		      double *weight);
 void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
@@ -78,7 +79,7 @@ void wcov_of_columns(double **cov, double **M, double *mean, unsigned int n1,
 		     unsigned int n2, double *weight);
 void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, double *mean2, 
 		      unsigned int T,  unsigned int n1, unsigned int n2, double *weight);
-void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile);
+
 void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, 
 		unsigned int n2);
 void copy_p_matrix(double **V, int *p1, int *p2, double **v, unsigned int n1, 
@@ -101,13 +102,17 @@ void quantiles_of_columns(double **Q, double *q, unsigned int m, double **M,
 void quantiles(double *qs, double *q, unsigned int m, double *v,
 	       double *w, unsigned int n);
 
-void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n);
-void vector_to_file(char* file_str, double *quantiles, unsigned int n);
-void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n);
-void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
-void intmatrix_to_file(char* file_str, int** matrix, unsigned int n1, unsigned int n2);
-void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2);
+void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile);
+void printIMatrix(int **matrix, unsigned int n, unsigned int col, FILE *outfile);
+void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile);
+void mean_to_file(const char *file_str, double **M, unsigned int T, unsigned int n);
+void vector_to_file(const char* file_str, double *quantiles, unsigned int n);
+void matrix_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2);
+void intmatrix_to_file(const char* file_str, int** matrix, unsigned int n1, unsigned int n2);
+void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2);
 void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type);
+void ivector_to_file(const char* file_str, int *vector, unsigned int n);
+void uivector_to_file(const char *file_str, unsigned int *iv, unsigned int n);
 
 double* new_dup_vector(double* vold, unsigned int n);
 double* new_zero_vector(unsigned int n);
@@ -131,7 +136,6 @@ int *new_ones_ivector(unsigned int n, int scale);
 int *new_zero_ivector(unsigned int n);
 void iones(int *iv, unsigned int n, int scale);
 void printIVector(int *iv, unsigned int n, FILE *outfile);
-void ivector_to_file(char* file_str, int *vector, unsigned int n);
 void copy_p_ivector(int *V, int *p, int *v, unsigned int n);
 void copy_sub_ivector(int *V, int *p, int *v, unsigned int n);
 int* new_sub_ivector(int *p, int *v, unsigned int n);
@@ -146,7 +150,6 @@ unsigned int *new_ones_uivector(unsigned int n, unsigned int scale);
 unsigned int *new_zero_uivector(unsigned int n);
 void uiones(unsigned int *iv, unsigned int n, unsigned int scale);
 void printUIVector(unsigned int *iv, unsigned int n, FILE *outfile);
-void uivector_to_file(char *file_str, unsigned int *iv, unsigned int n);
 void copy_p_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n);
 void copy_sub_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n);
 unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n);

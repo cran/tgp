@@ -18,7 +18,9 @@ tgp.trees(out, heights = NULL, main = NULL, ...)
   	describing trees to plot by their height.  Default (\code{NULL}) is to
   	plot all trees, one for each height encountered when sampling
 	from the Markov chain of the tree posterior.  This is equivalent to
-	\code{which = out$posts$height}}
+	\code{heights = out$posts$height}.  Specifying \code{heights =
+	  "map"} causes (only) the maximum a' posteriori (MAP) height
+	tree to be plotted } 
   \item{main}{ Optional character string to add to the main title of the plot}
   \item{\dots}{ Extra arguments to the \code{\link[maptree]{draw.tree}}
 	function from \pkg{maptree}}

@@ -37,6 +37,9 @@ function(out, heights=NULL, main=NULL, ...)
 
   ## get the full set of heights if none specified, and length
   if(is.null(heights)) heights <- out$posts$height
+  else if(heights == "map") { ## only plot the MAP
+    heights <- out$post$height[which.max(out$posts$lpost)]
+  }
   howmany <- length(heights)
 
   ## calculate how many sub-windows to make with par

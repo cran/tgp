@@ -16,7 +16,7 @@ void error(const char *str, ...);
 #endif
 
 void R_FlushConsole(void); /* R < 2.3 does not have this in R.h (in Rinterface.h) */
-void myprintf(FILE *outfile, char *str, ...);
+void myprintf(FILE *outfile, const char *str, ...);
 void myflush(FILE *outfile);
 time_t my_r_process_events(time_t itime);
 

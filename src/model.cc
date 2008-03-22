@@ -500,16 +500,21 @@ bool Model::change_tree(void *state)
 
 bool Model::prune_tree(void *state)
 {
-  unsigned int len, t_minpart, t_splitmin;
+  /* get the list of possible prunable nodes */
+  unsigned int len;
   Tree** nodes = t->prunableList(&len);
   if(len == 0) return false;
 
+  /* update the forward and backward proposal probabilities */
   double q_fwd = 1.0/len;
   double q_bak = 1.0/(t->numLeaves()-1);
   
+  /* get the prior tree parameters */
+  unsigned int t_minpart, t_splitmin, t_basemax;
   double t_alpha, t_beta;
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin); 
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin, &t_basemax); 
   
+  /* calculate the tree prior */
   unsigned int k = (unsigned int) sample_seq(0,len-1, state);
   unsigned int depth = nodes[k]->getDepth() + 1;
   double pEtaT = t_alpha * pow(1+depth,0.0-(t_beta));
@@ -524,6 +529,7 @@ bool Model::prune_tree(void *state)
   bool success = nodes[k]->prune((q_bak/q_fwd)*pTreeRatio, state);
   free(nodes);
   
+  /* update the prune success rates */
   prune_try++;
   if(success) prune++;
   return success;
@@ -538,12 +544,13 @@ bool Model::prune_tree(void *state)
 
 bool Model::grow_tree(void *state)
 {
-  unsigned int len, t_minpart, t_splitmin;
+  /* get the tree prior params */
+  unsigned int len, t_minpart, t_splitmin, t_basemax;
   double t_alpha, t_beta;
-
-  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin);
+  params->get_T_params(&t_alpha, &t_beta, &t_minpart, &t_splitmin, &t_basemax);
   if(t_alpha == 0 || t_beta == 0) return false;
 	
+  /* get the list of growable nodes */
   Tree** nodes = t->leavesList(&len);
   
   /* forward (grow) probability */
@@ -688,6 +695,21 @@ void Model::PrintTreeStats(FILE* outfile)
   if(change_try > 0) myprintf(outfile, "Change: %.4g%c, ", 100* (double)change/change_try, '%');
   if(swap_try > 0) myprintf(outfile, "Swap: %.4g%c", 100* (double)swap/swap_try, '%');
   if(grow_try > 0) myprintf(outfile, "\n");
+}
+
+
+/*
+ * TreeStats:
+ *
+ * write the tree operation stats to the double arg
+ */
+
+void Model::TreeStats(double *gpcs) 
+{
+  gpcs[0] = (double)grow/grow_try;
+  gpcs[1] = (double)prune/prune_try;
+  gpcs[2] = (double)change/change_try;
+  gpcs[3] = (double)swap/swap_try;
 }
 
 
@@ -1286,7 +1308,7 @@ double Model::Partitions(void)
  * open a the file named prefix_trace_Id+1.out
  */
 
-FILE* Model::OpenFile(char *prefix, char *type)
+FILE* Model::OpenFile(const char *prefix, const char *type)
 {
   char outfile_str[BUFFMAX];
   sprintf(outfile_str, "%s_%s_%d.out", prefix, type, Id+1);
@@ -1807,14 +1829,14 @@ double Model::iTemp(void)
 /* 
  * DupItemps:
  *
- * duplicate the importance annealing temperature
+ * duplicate the importance temperature
  * structure known by the model to one provided
  * in the argument
  */
 
 void Model::DupItemps(Temper *new_its)
 {
-  new_its = its;
+  *new_its = *its;
 }
 
 

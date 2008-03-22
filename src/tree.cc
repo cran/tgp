@@ -850,15 +850,17 @@ bool Tree::rotate(void *state)
 
 double Tree::pT_rotate(Tree* low, Tree* high)
 {
-  unsigned int low_ni, low_nl, high_ni, high_nl, i, t_minpart, splitmin;
+  unsigned int low_ni, low_nl, high_ni, high_nl;
   Tree** low_i = low->internalsList(&low_ni);
   Tree** low_l = low->leavesList(&low_nl);
   Tree** high_i = high->internalsList(&high_ni);
   Tree** high_l = high->leavesList(&high_nl);
  
+  unsigned int t_minpart, splitmin, basemax;
   double t_alpha, t_beta;
-  model->get_params()->get_T_params(&t_alpha, &t_beta, &t_minpart, &splitmin);
+  model->get_params()->get_T_params(&t_alpha, &t_beta, &t_minpart, &splitmin, &basemax);
  
+  unsigned int i;
   double pT_log = 0;
   for(i=0; i<low_ni; i++) pT_log += log(t_alpha)-t_beta*log(1.0+low_i[i]->depth);
   for(i=0; i<low_nl; i++) pT_log += log(1-t_alpha*pow(1.0+low_l[i]->depth,0.0-t_beta));
@@ -962,7 +964,10 @@ bool Tree::change(void *state)
 {
   tree_op = CHANGE;
   assert(!isLeaf());
-  
+
+  /* Bobby: maybe add code here to prevent 0->1 proposals when
+     there the marginal X is only binary */
+
   /* save old tree */
   double old_val = val;
   val = propose_val(state);
@@ -1244,10 +1249,13 @@ bool Tree::grow(double ratio, void *state)
   assert(isLeaf());	
   
   /* propose the next tree, by choosing the split point */
+  /* We only partition on variables > splitmin */
   unsigned int mn = model->get_params()->T_smin();
-  // We only partition on variables > splitmin
   var = sample_seq(mn, d-1, state);
   
+  /* can't grow if this dimension does not have varying x-values */
+  if(rect->boundary[0][var] == rect->boundary[1][var]) return false;
+
   /* propose the split location */
   val = propose_split(&q_fwd, state);
 
@@ -1255,7 +1263,7 @@ bool Tree::grow(double ratio, void *state)
   unsigned int nsplit;
   model->get_Xsplit(&nsplit);
   logp_split =  0.0 - log((double) nsplit);
-  
+
   /* grow the children; stop if partition too small */
   success = grow_children();
   if(!success) return false;
@@ -1268,9 +1276,9 @@ bool Tree::grow(double ratio, void *state)
   pklast = this->Posterior();
   alpha = ratio*exp(pk-pklast+logp_split)/q_fwd;
   
-  /*myprintf(stderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
+  /* myprintf(stderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
 	   var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
-	   myflush(stderr);*/
+	   myflush(stderr); */
  
   /* accept or reject? */
   bool ret_val = true;
@@ -1422,34 +1430,54 @@ void Tree::val_order_probs(double **Xo, double **probs,
 void Tree::val_order_probs(double **Xo, double **probs, unsigned int var, 
 			   double **rX, unsigned int rn)
 {
-  unsigned int i;
+
+  /* calculate the midpoint of rX in dimension var withing this partition */
   double mid = (rect->boundary[1][var] + rect->boundary[0][var]) / 2;
+
+  /* calculate the squared distance of each rX[][var] point from the midpoint */
   double *XmMid = new_vector(rn); 
-  *Xo = new_vector(rn); 
-  for(i=0; i<rn; i++) {
+  for(unsigned int i=0; i<rn; i++) {
     double diff = rX[i][var] - mid;
     XmMid[i] = (diff)*(diff);
   }
+
+  /* put rX in the order of XmMid */
+  *Xo = new_vector(rn); 
   int *o = order(XmMid, rn);
-  for(i=0; i<rn; i++) (*Xo)[i] = rX[o[i]-1][var];
+  for(unsigned int i=0; i<rn; i++) (*Xo)[i] = rX[o[i]-1][var];
+
+  /* calculate triangular probabilities as a decreasing function of
+     the distance to the midpoint */
   *probs = new_vector(rn); 
   int * one2n = iseq(1,rn);
+
+  /* calculate normalising constants for the left and right
+     hand sides of the mid point */
   double sum_left, sum_right;
-  sum_left = sum_right = 0;
-  
-  for(i=0; i<rn; i++) { 
-    (*probs)[i] = 1.0/one2n[i];
+  sum_left = sum_right = 0;  
+  for(unsigned int i=0; i<rn; i++) { 
+
+    /* assign no probability outside the current partition */
+    if((*Xo)[i] < rect->boundary[0][var] || (*Xo)[i] >= rect->boundary[1][var])
+      (*probs)[i] = 0.0;
+    else (*probs)[i] = 1.0/one2n[i];
+
+    /* calculate the cumulative probability to the left and right of midpoint */
     if((*Xo)[i] < mid) sum_left += (*probs)[i]; 
     else sum_right += (*probs)[i];
   }
 
+  /* normalise the probability distribution with sim_left and sum_right */
   double mult;
   if(sum_left > 0 && sum_right > 0) mult = 0.5;
   else mult = 1.0;
-  for(i=0; i<rn; i++) { 
+  for(unsigned int i=0; i<rn; i++) { 
+    if((*probs)[i] == 0) continue;
     if((*Xo)[i] < mid) (*probs)[i] = mult * (*probs)[i]/sum_left; 
     else (*probs)[i] = mult * (*probs)[i]/sum_right;
   }
+
+  /* clean up */
   free(one2n);
   free(o);
   free(XmMid);
@@ -1742,10 +1770,16 @@ unsigned int* Tree::dopt_from_XX(unsigned int N, unsigned int iter, void *state)
 
 bool Tree::wellSized(void) const
 {
-  // return  (n >= *t_minp) && (Area() > 0) && (!Singular());
-  return ((n >= model->get_params()->T_minp()) /* minimum number of points */
-	  && (Area() > 0)                      /* non-zero Area or Volume */
-	  && (!Singular()));                   /* non-singular design matrix */
+  /* partition must have enough data in it */
+  if(n <= model->get_params()->T_minp()) return false;
+
+  /* don't care about the rest of the checks if the base
+     model is constant */
+  if(base->Constant()) return true;
+
+  /* checks to do with well defined linear and GP models */
+  return ((Area() > 0)         /* non-zero Area or Volume */
+	  && (!Singular()));   /* non-singular design matrix */
 }
 
 
@@ -1759,9 +1793,9 @@ bool Tree::wellSized(void) const
 bool Tree::Singular(void) const
 {
   assert(X);
-  unsigned int mn = model->get_params()->T_smin();
-  // We only partition on variables > splitmin
-  for(unsigned int i=mn; i<d; i++) {
+
+  unsigned int bm = model->get_params()->T_bmax();
+  for(unsigned int i=0; i<bm; i++) {
     double f = X[0][i];
     unsigned int j = 0;
     for(j=1; j<n; j++) if(f != X[j][i]) break;
@@ -1779,7 +1813,9 @@ bool Tree::Singular(void) const
 
 double Tree::Area(void) const
 {
-  return rect_area(rect);
+  unsigned int bm = model->get_params()->T_bmax();
+  return rect_area_maxd(rect, bm);
+  /* return rect_area(rect); */
 }
 
 
@@ -1912,8 +1948,8 @@ double Tree::Prior(double itemp)
 
   /* get the tree process prior parameters */
   double alpha, beta;
-  unsigned int minpart, splitmin;
-  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
+  unsigned int minpart, splitmin, basemax;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin, &basemax);
 
   if(isLeaf()) {
 
@@ -1958,8 +1994,8 @@ double Tree::FullPosterior(double itemp, bool tprior)
 
   /* get the tree process prior parameters */
   double alpha, beta;
-  unsigned int minpart, splitmin;
-  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
+  unsigned int minpart, splitmin, basemax;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin, &basemax);
 
   if(isLeaf()) {
 
@@ -2008,8 +2044,8 @@ double Tree::MarginalPosterior(double itemp)
 
   /* get the tree process prior parameters */
   double alpha, beta;
-  unsigned int minpart, splitmin;
-  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin);
+  unsigned int minpart, splitmin, basemax;
+  model->get_params()->get_T_params(&alpha, &beta, &minpart, &splitmin, &basemax);
 
   if(isLeaf()) {
 

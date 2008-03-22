@@ -224,7 +224,7 @@ function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, method="loess", gridlen=c(40,40)
     if(require(akima) == FALSE) {
       warning("library(akima) required for 2-d plotting\ndefaulting to loess interpolation\n");
     } else {
-      return(interp(x,y,z, duplicate="mean",
+      return(interp(x,y,z, duplicate="mean", linear=FALSE, 
                     xo=seq(min(x), max(x), length=gridlen[1]),
                     yo=seq(min(y), max(y), length=gridlen[2]), extrap=TRUE))
     }

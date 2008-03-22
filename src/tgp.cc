@@ -60,7 +60,7 @@ void tgp(int* state_in,
 	 double *ZpZZ_s2_out, double *Zp_ks2_out, double *ZZ_ks2_out, double *Zp_q1_out, 
 	 double *Zp_median_out, double *Zp_q2_out, double *ZZ_q1_out, double *ZZ_median_out, 
 	 double *ZZ_q2_out, double *Ds2x_out, double *improv_out, int *irank_out, 
-	 double *ess_out, 
+	 double *ess_out, double *gpcs_rates_out,
 	 double *sens_ZZ_mean_out, double *sens_ZZ_q1_out,double *sens_ZZ_q2_out, 
 	 double *sens_S_out,  double *sens_T_out)
 {
@@ -69,7 +69,7 @@ void tgp(int* state_in,
   unsigned int lstate = three2lstate(state_in);
   tgp_state = newRNGstate(lstate);
 
-  /* check that improv input agrees with improv output */
+  /* check that the improv input agrees with improv output */
   if(*improv_in) assert(improv_out != NULL);
 
   /* copy the input parameters to the tgp class object where all the MCMC 
@@ -99,6 +99,9 @@ void tgp(int* state_in,
 
   /* get (possibly unchanged) pseudo--prior */
   tgpm->GetPseudoPrior(ditemps_in);
+
+  /* get the (tree) acceptance rates */
+  tgpm->GetTreeStats(gpcs_rates_out);
 
   /* delete the tgp model */
   delete tgpm; tgpm = NULL;
@@ -782,4 +785,17 @@ int Tgp::Verb(void)
 void Tgp::GetPseudoPrior(double *ditemps)
 {
   its->CopyPrior(ditemps);
+}
+
+
+/*
+ * GetTreeStats:
+ *
+ * get the (Tree) acceptance rates for (G)row, (P)rune,
+ * (C)hange and (S)wap tree operations in the model module
+ */
+
+void Tgp::GetTreeStats(double *gpcs) 
+{
+  model->TreeStats(gpcs);
 }

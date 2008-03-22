@@ -58,7 +58,6 @@ class Gp : public Base
   double **Vb;		        /* variance of Gibbs beta step */
   double *bmu;		        /* mean of gibbs beta step */
   double *bmle;		        /* linear coefficients mle w/o Gp */
-   
   
   double lambda;		/* parameter in marginalized beta */
   
@@ -88,6 +87,7 @@ class Gp : public Base
   virtual void ForceLinear(void);
   virtual void ForceNonlinear(void);
   virtual bool Linear(void);
+  virtual bool Constant(void);
   virtual void printFullNode(void);
   virtual double Var(void);
   virtual char* State(void);
