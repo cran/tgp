@@ -1,3 +1,39 @@
+2.1 (22 March 2008)
+---
+
+moved CHANGES to ChangeLog for the new CRAN packages
+page
+
+cleaned up tgp vignette into one .Rnw file including
+several .iRnw files
+
+added linear=FALSE to akima interp commands
+
+stopped printing both separate ess and essN in IT method
+
+added new itemps.barplot function for visualizing the number
+of visits to each inverse temperature in the ST-MCMC chain
+
+now tcounts (observation counts) for IT are accumulated
+across repeats (R>=2) -- not sure if this is a good idea
+
+now recording tree acceptance rates (Grow, Prune Change
+and Swap accepts over total)
+
+propogated splitmin to up to the R interface, and added
+a basemax paramter also specifiable in the R inferface --
+the parameters allow control of which X colums can
+be partitioned upon (by the tree) and which appear in the
+base (GP) model
+
+added heights="map" argument to tgp.trees for plotting only
+the tree corresponding to the maximum a' posteriori tree
+
+wrote two sections in the new vignette (tgp2): one on
+splitmin and basemax (i.e., categorical inputs) and one
+on importance tempering
+
+ 
 2.0-4 (23 Jan 2008)
 -----
 

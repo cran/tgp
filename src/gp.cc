@@ -800,6 +800,7 @@ double Gp::Var(void)
   return s2;
 }
 
+
 /*
  * X_to_F:
  * 
@@ -809,7 +810,6 @@ double Gp::Var(void)
  */
 
 void Gp::X_to_F(unsigned int n, double **X, double **F)
-
 {
   unsigned int i,j;
   switch( ((Gp_Prior*) prior)->MeanFn() ){
@@ -823,9 +823,7 @@ void Gp::X_to_F(unsigned int n, double **X, double **F)
     for(i=0; i<n; i++) F[0][i] = 1;
     break;
   default: error("bad mean function in X to F");
-  }
-
-    
+  } 
 }
 
 
@@ -963,6 +961,20 @@ double Gp::NewInvTemp(double itemp, bool isleaf)
     if(isleaf) Compute();
   }
   return olditemp;
+}
+
+
+/*
+ * Constant:
+ *
+ * return true of the model being fit is actually the
+ * constant model
+ */
+
+bool Gp::Constant(void)
+{
+  if(col == 1 && Linear()) return true;
+  else return false;
 }
 
 
@@ -1176,15 +1188,14 @@ Gp_Prior::~Gp_Prior(void)
 
 
 /* 
- * read_double:
+ * read_double
  * 
  * takes params from a double array,
  * for use with communication with R
  */
 
 void Gp_Prior::read_double(double * dparams)
-{
- 
+{ 
   int bp = (int) dparams[0];
  /* read the beta linear prior model */
   switch (bp) {
@@ -1650,7 +1661,7 @@ void Gp_Prior::ResetLinear(double gam)
 void Gp_Prior::Print(FILE* outfile)
 {
 
-/* beta prior */
+  /* beta prior */
   switch (mean_fn) {
   case LINEAR: myprintf(stdout, "mean function: linear\n"); break;
   case CONSTANT: myprintf(stdout, "mean function: constant\n"); break;

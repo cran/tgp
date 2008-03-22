@@ -38,7 +38,6 @@
 \alias{sens.plot}
 \alias{mr.plot}
 \alias{mr.checkres}
-\alias{hist2bar}
 %% </LIST>
 %% Currently (?) exported as used in the grid.layout.Rd \example ...
 %% <LIST>

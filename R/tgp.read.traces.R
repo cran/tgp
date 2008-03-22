@@ -158,12 +158,12 @@ function(nn, dim, corr, verb=1, rmfiles=TRUE)
   if(! file.exists(file)) return(NULL)
     
   ## calculate and count the names to the traces
-  names <- names(read.table(file, nrows=0, header=TRUE))
-  count <- length(names)
-  names <- names[2:length(names)]
+  nam <- names(read.table(file, nrows=0, header=TRUE))
+  count <- length(nam)
+  nam <- nam[2:length(nam)]
 
   ## read the rest of the trace file
-  t <- t(matrix(scan(file, quiet=TRUE, skip=1), nrow=count))
+  tr <- t(matrix(scan(file, quiet=TRUE, skip=1), nrow=count))
   if(rmfiles) unlink(file)
 
   if(nn > 0) {
@@ -172,25 +172,25 @@ function(nn, dim, corr, verb=1, rmfiles=TRUE)
 
     for(i in 1:nn) {
 
-      ## make t into a matrix if it has only one entry (vector)
-      if(is.null(dim(t))) t <- matrix(t, nrow=1)
+      ## make tr into a matrix if it has only one entry (vector)
+      if(is.null(dim(tr))) tr <- matrix(tr, nrow=1)
       
       ## find those rows which correspond to XX[i,]
-      o <- t[,1] == i
-      ## print(c(sum(o), dim(t)[1]))
+      o <- tr[,1] == i
+      ## print(c(sum(o), nrow(tr)))
       
       ## progress meter, overstimate % done, because things speed up
       if(verb >= 1) {
         if(i==nn) cat("  XX 100% done  \r")
-        else cat(paste("  XX ", round(100*log2(sum(o))/log2(dim(t)[1])),
+        else cat(paste("  XX ", round(100*log2(sum(o))/log2(nrow(tr))),
                        "% done   \r", sep=""))
       }
       
       ## save the ones for X[i,]
-      traces[[i]] <- data.frame(t[o,2:count])
+      traces[[i]] <- data.frame(tr[o,2:count])
       
       ## remove the XX[i,] ones from t
-      if(i!=nn) t <- t[!o,]
+      if(i!=nn) tr <- tr[!o,]
       
       ## reorder the trace file, and get rid of first column
       ## they could be out of order if using pthreads
@@ -199,7 +199,7 @@ function(nn, dim, corr, verb=1, rmfiles=TRUE)
       
       ## assign the names
       if(sum(o) == 1) traces[[i]] <- t(traces[[i]])
-      names(traces[[i]]) <- names       
+      names(traces[[i]]) <- nam       
     }
 
     if(verb >= 1) cat("\n")

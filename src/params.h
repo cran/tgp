@@ -34,13 +34,14 @@
 class Params
 {
  private:
-  unsigned int d;  	/* dimenstion of the data */
-  unsigned int col;	/* dimenstion of the design matrix */
+  unsigned int d;  	        /* dimenstion of the data */
+  unsigned int col;	        /* dimenstion of the design matrix */
   double t_alpha;		/* tree prior parameter alpha */
-  double t_beta;  	/* tree prior parameter beta */
-  unsigned int t_minpart; /* tree prior parameter minpart, smallest partition */
-  unsigned int t_splitmin; /* data column where we start partitioning */
-	
+  double t_beta;                /* tree prior parameter beta */
+  unsigned int t_minpart;       /* tree prior parameter minpart, smallest partition */
+  unsigned int t_splitmin;      /* data col to start partitioning */
+  unsigned int t_basemax;       /* data col to stop using the Base (then only use tree) */
+
   Base_Prior *prior;
 
  public:
@@ -51,15 +52,17 @@ class Params
   ~Params(void);
   void read_ctrlfile(std::ifstream* ctrlfile);
   void read_double(double *dparams);
-  void get_T_params(double *alpha, double *beta, unsigned int* minpart, unsigned int* splitmin);
+  void get_T_params(double *alpha, double *beta, unsigned int* minpart, 
+		    unsigned int* splitmin, unsigned int *basemax);
   bool isTree(void);
   unsigned int T_minp(void);
   unsigned int T_smin(void);
+  unsigned int T_bmax(void);
   Base_Prior* BasePrior(void);
   void Print(FILE *outfile);
 };
 
-void get_mix_prior_params(double *alpha, double *beta, char *line, char* which);
-void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, char* which);
+void get_mix_prior_params(double *alpha, double *beta, char *line, const char* which);
+void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, const char* which);
 
 #endif

@@ -1,8 +1,3 @@
-%\VignetteIndexEntry{example on linear data}
-%\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
-%\VignettePackage{tgp}
-
 <<echo=false,results=hide>>=
 library(tgp)
 ##options(width=65)
@@ -36,14 +31,14 @@ lin.blm <- blm(X=X, XX=XX, Z=Z)
 @ 
 \begin{figure}[ht!]
 \centering
-<<label=blm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
+<<label=linear-blm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
 plot(lin.blm, main='Linear Model,', layout='surf')
 abline(1,2,lty=3,col='blue')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 25 0 25]{linear-blm}
+\includegraphics[trim=0 25 0 25]{tgp-linear-blm}
 %\vspace{-0.5cm}
 \caption{Posterior predictive distribution using {\tt blm} on
   synthetic linear data: mean and 90\% credible interval.  The actual
@@ -79,14 +74,14 @@ lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
 @
 \begin{figure}[ht!]
 \centering
-<<label=gplm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
+<<label=linear-gplm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
 plot(lin.gpllm, main='GP LLM,', layout='surf')
 abline(1,2,lty=4,col='blue')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 25 0 25]{linear-gplm}
+\includegraphics[trim=0 25 0 25]{tgp-linear-gplm}
 %\vspace{-0.5cm}
 \caption{Posterior predictive distribution using {\tt
     bgpllm} on synthetic linear data: mean and 90\% credible interval.

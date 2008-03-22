@@ -916,12 +916,12 @@ applications to the Boston housing data \cite{harrison:78,
 launch vehicle \cite{glm:04,gra:lee:2006b} called the Langely
 glide-back booster (LGBB).
 
-\input{linear}
-\input{sin}
-\input{exp}
-\input{moto}
-\input{fried}
-\input{as}
+\SweaveInput{linear.iRnw}
+\SweaveInput{sin.iRnw}
+\SweaveInput{exp.iRnw}
+\SweaveInput{moto.iRnw}
+\SweaveInput{fried.iRnw}
+\SweaveInput{as.iRnw}
 
 \subsection*{Acknowledgments}
 This work was partially supported by research subaward
@@ -972,7 +972,7 @@ the {\tt tgp} package such as the gathering and summarizing of MCMC
 parameter traces, the progress meter, and an example of how to use the
 {\tt predict.tgp} function in a collaborative setting.
 
-\input{traces}
+\SweaveInput{traces.iRnw}
 
 \subsection{Explaining the progress meter}
 \label{sec:progress}
@@ -1038,7 +1038,7 @@ partition.  These prints will look slightly different if the isotropic
 instead of separable correlation is used, since there are not as many
 range parameters.
 
-\input{pred}
+\SweaveInput{pred.iRnw}
 
 \section{Configuration and performance optimization}
 

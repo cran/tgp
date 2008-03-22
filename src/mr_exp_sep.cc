@@ -217,8 +217,7 @@ double* MrExpSep::CorrDiag(unsigned int n1, double **X)
  */
 
 bool MrExpSep::DrawNugs(unsigned int n, double **X, double **F, double *Z, double *lambda, 
-		       double **bmu, double **Vb, double tau2, double itemp, 
-		       void *state)
+		       double **bmu, double **Vb, double tau2, double itemp, void *state)
 {
   bool success = false;
   Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
@@ -618,6 +617,7 @@ void MrExpSep::propose_new_d(MrExpSep* c1, MrExpSep* c2, void *state)
   }
 }
 
+
 /*
  * d_draw:
  * 
@@ -775,6 +775,7 @@ void MrExpSep::draw_d_from_prior(double *d_new, void *state)
   else ((MrExpSep_Prior*)prior)->DPrior_rand(d_new, state);
 }
 
+
 /*
  * corr_symm:
  * 
@@ -889,8 +890,10 @@ void MrExpSep::corr_unsymm(double **K, unsigned int m,
 }
 
 /*
- * return a string depecting the state
- * of the (parameters of) correlation function
+ * State: 
+ *
+ * return a string depecting the state of the 
+ * (parameters of) correlation function
  */
 
 char* MrExpSep::State(void)
@@ -1020,10 +1023,8 @@ double* MrExpSep::D(void)
 }
 
 
-
 /*
  * Delta:
- *
  *
  * return the fine fidelity discount factor, delta.
  */
@@ -1044,6 +1045,7 @@ double MrExpSep::Nugaux(void)
 {
   return nugaux;
 }
+
 
 /* 
  * TraceNames:
@@ -1141,10 +1143,10 @@ MrExpSep_Prior::MrExpSep_Prior(const unsigned int dim) : Corr_Prior(dim)
      function like the others */
   delta = 1.0;
   nugaux = 0.01;
-  delta_alpha = ones(2,1.0);
-  delta_beta = ones(2,20.0);
-  nugaux_alpha = ones(2,1.0);
-  nugaux_beta = ones(2,1.0);
+  delta_alpha = ones(2, 1.0);
+  delta_beta = ones(2, 20.0);
+  nugaux_alpha = ones(2, 1.0);
+  nugaux_beta = ones(2, 1.0);
 }
 
 
@@ -1307,17 +1309,18 @@ void MrExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
     dupv(d_beta[i], beta, 2);
   }
 
+  /* get the d prior mixture */
   ctrlfile->getline(line, BUFFMAX);
   get_mix_prior_params(alpha, beta, line, "d");
-    dupv(delta_alpha, alpha, 2);
-    dupv(delta_beta, beta, 2);
-  
-  ctrlfile->getline(line, BUFFMAX);
-  get_mix_prior_params(alpha, beta, line, "d");
-    dupv(nugaux_alpha, alpha, 2);
-    dupv(nugaux_beta, beta, 2);
-  
+  dupv(delta_alpha, alpha, 2);
+  dupv(delta_beta, beta, 2);
 
+  /* get the nugget prior mixture */
+  ctrlfile->getline(line, BUFFMAX);
+  get_mix_prior_params(alpha, beta, line, "nug");
+  dupv(nugaux_alpha, alpha, 2);
+  dupv(nugaux_beta, beta, 2);
+  
   /* d hierarchical lambda prior parameters */
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
@@ -1376,9 +1379,9 @@ double* MrExpSep_Prior::D(void)
   return d;
 }
 
+
 /*
  * Delta:
- *
  *
  * return the fine fidelity discount factor, delta.
  */
@@ -1388,9 +1391,9 @@ double MrExpSep_Prior::Delta(void)
   return delta;
 }
 
+
 /*
- * Nugaux
- *
+ * Nugaux:
  *
  * return the fine fidelity observation error.
  */
@@ -1399,6 +1402,7 @@ double MrExpSep_Prior::Nugaux(void)
 {
   return nugaux;
 }
+
 
 /*
  * DAlpha:
@@ -1478,7 +1482,7 @@ double* MrExpSep_Prior::Nugaux_beta(void)
 }
 
 /*
- * DeltaDraw
+ * DeltaDraw:
  *
  * sample a delta value from the prior
  */
@@ -1488,8 +1492,9 @@ double MrExpSep_Prior::DeltaDraw(void *state)
   return gamma_mixture_rand(delta_alpha, delta_beta, state);
 }
 
+
 /*
- * NugauxDraw
+ * NugauxDraw:
  *
  * sample a nugaux value from the prior
  */
@@ -1498,6 +1503,7 @@ double MrExpSep_Prior::NugauxDraw(void *state)
 {
   return nug_prior_rand(nugaux_alpha, nugaux_beta, state);
 }
+
 
 /*
  * Draw:
@@ -1626,6 +1632,7 @@ void MrExpSep_Prior::DPrior_rand(double *d_new, void *state)
     d_new[j] = d_prior_rand(d_alpha[j], d_beta[j], state);
 }
 
+
 /* 
  * BasePrior:
  *
@@ -1648,6 +1655,7 @@ void MrExpSep_Prior::SetBasePrior(Base_Prior *base_prior)
 {
   this->base_prior = base_prior;
 }
+
 
 /*
  * Print:

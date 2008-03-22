@@ -38,7 +38,7 @@
  * othersie fprintf (takes the same arguments as fprintf)
  */
 
-void myprintf(FILE *outfile, char *str, ...)
+void myprintf(FILE *outfile, const char *str, ...)
 {
   va_list argp;
   va_start(argp, str);

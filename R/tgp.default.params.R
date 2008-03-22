@@ -29,27 +29,50 @@
 ## and other augmentations specified in ...
 
 "tgp.default.params" <-
-function(d, meanfn=c("linear", "constant") , corr="expsep", ...)
+function(d, meanfn=c("linear", "constant") ,
+         corr=c("expsep", "exp", "mrexpsep", "matern"), splitmin=1, basemax=d, ...)
 {
+  ## check the d argument, other check in tgp.check.params
+  if(length(d) != 1)
+    stop("d should be an integer scalar >= 1")
+  
+  ## check the splitmin argument, other check in tgp.check.params
+  if(length(splitmin) != 1)
+    stop("splitmin should be an integer scalar >= 1")
+
+  ## check the basemax argument, other check in tgp.check.params
+  if(length(basemax) != 1)
+    stop("basemax should be an integer scalar >= 1")
+
+  ## setting of col, the dim of (1,X) based on the mean function
   meanfn <- match.arg(meanfn)
   if(meanfn == "linear") { col <- d+1 }
-  else if(meanfn == "constant"){ col <- 1}
-
-  if(corr=="mrexpsep"){ 
-	splitmin <- 1 
+  else if(meanfn == "constant"){
+    col <- 1
+    if(basemax != d) {
+      warning("must have basemax = d for linear mean function")
+      basemax <- d
+    }
   }
-  else { splitmin <- 0 }
+
+  ## adjust the starting beta values on basemax
+  beta <- rep(0, min(col, basemax+1))
+
+  ## check the corr argument, and augment splitmin
+  ## if fitting a multi-resolution model
+  corr <- match.arg(corr)
+  ## PERHAPS THIS SHOULD BE DONE IN THE C CODE SO THAT WHEN WE PRINT WITHIN C IT MAKES MORE SENSE
+  if(corr=="mrexpsep")  splitmin <- splitmin + 1
   
   ## parameters shared by all models
   params <-
     list(
-         tree=c(0.5,2,max(c(10,col+1)), # tree prior params <alpha>,<beta>,<minpart> & <splitmin>
-           splitmin),                   # continued: we partition on X columns > splitmin.
-                                        # This will be useful for mrexpsep
+         tree=c(0.5,2,max(c(10,d+2)),   # tree prior params <alpha>,<beta>,<minpart>
+           splitmin, basemax),          # (continued)
          col=col,                       # defined above, based on meanfn
          meanfn=meanfn,                 # one of "linear" or "constant"
          bprior="bflat",		# linear prior (b0, bmle, bflat, b0not or bmzt)
-         beta=rep(0,col), 		# start vals beta (length = col = dim + 1)
+         beta=beta, 		        # start vals beta
          start=c(1,1), 	                # start vals for s2, and tau2
          s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>
          s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
@@ -69,7 +92,7 @@ function(d, meanfn=c("linear", "constant") , corr="expsep", ...)
 
   ## parameters specific to multi-resolution corr model
   if(corr == "mrexpsep"){
-    mrd.p <- c(1,10,1,10)               # add in the gamma-mix params for the discr process (this for 'wigl')
+    mrd.p <- c(1,10,1,10)               # gamma-mix params for the discr process (this for 'wigl')
     params$d.p <- c(params$d.p, mrd.p) 
     params$delta.p <- c(1,1,1,1)
     params$nugf.p <- c(1,1,1,1)
@@ -102,26 +125,32 @@ function(params, d)
   ## check the number of parameters
   if(is.null(params)) return(matrix(-1));
   if(length(params) != 20) {
-    stop(paste("Number of params should be 20 you have", length(params), "\n"));
+    stop(paste("Number of params should be 20, you have", length(params), "\n"));
   }
         
   ## tree prior parameters
-  if(length(params$tree) != 4) {
-    stop(paste("length of params$tree should be 4 you have", length(params$tree), "\n"));
+  if(length(params$tree) != 5) {
+    stop(paste("length of params$tree should be 5, you have", length(params$tree), "\n"));
   }
 
   ## check tree minpart is bigger than input dimension
   if(params$tree[3] < d) {
-    stop(paste("tree minpart", params$tree[3], "should be greater than d", d, "\n"));
+    stop(paste("tree minpart", params$tree[3], "should be > d =", d, "\n"));
   }
 
-  ## check tree splitmin is < than input dimension
-  if(params$tree[4] >= d) {
-    stop(paste("treesplitmin", params$tree[4], "should be less than d", d, "\n"));
+  ## check tree splitmin is <= than input dimension
+  if(params$tree[4] < 1 || params$tree[4] > d) {
+    stop(paste("tree splitmin", params$tree[4], "should be >= 1 and <= d =", d, "\n"));
   }
 
   ## Splitmin = 1 indicated that the first row of the design matrix is not to be split.
-  if(params$corr == "mrexpsep"){ params$tree[4] <- 1 }
+  ## Taddy: this is now handled in tgp.default.params
+  ## if(params$corr == "mrexpsep"){ params$tree[4] <- 1 }
+
+  ## check tree basemax is > splitmin and <= than input dimension
+  if(params$tree[5] < 1 || params$tree[4] > d) {
+    stop(paste("tree basemax", params$tree[5], "should be >= 1 and <= d =", d, "\n"));
+  }
 
   ## tree alpha and beta parameters
   p <- c(as.numeric(params$tree))
@@ -131,17 +160,14 @@ function(params, d)
     meanfn <- 0;
     if(params$col != d+1)
       stop(paste("col=", params$col, " should be d+1=", d+1, "with linear mean function",  sep=""))
-  }
-  else if(params$meanfn == "constant"){
+  } else if(params$meanfn == "constant"){
     meanfn <- 1;
     if(params$col != 1)
       stop(paste("col=", params$col, " should be 1 with constant mean function",  sep=""))
-  }  
-  else { cat(paste("params$meanfn =", params$meanfn, "not valid\n")); meanfn <- 0; }
+  } else { cat(paste("params$meanfn =", params$meanfn, "not valid\n")); meanfn <- 0; }
   p <- c(p, meanfn)
-
+  
   ## beta linear prior model
-
   ## check the type of beta prior, and possibly augment by p0
   if(params$bprior == "b0") { p <- c(p,1);  }
   else if(params$bprior == "bmle") { p <- c(p, 1); }
@@ -151,9 +177,9 @@ function(params, d)
   else { stop(paste("params$bprior =", params$bprior, "not valid\n")); }
   
   ## initial settings of beta linear prior parameters
-  if(length(params$beta) != params$col) {
-    stop(paste("length of params$beta should be", params$col, "you have", 
-              length(params$beta), "\n"));
+  if(length(params$beta) != min(params$col, params$tree[5]+1)) {
+    stop(paste("length of params$beta should be", min(params$col, params$tree[5]+1),
+               "you have", length(params$beta), "\n"));
   }
 
   ## finally, set the params$beta 

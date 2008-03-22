@@ -138,7 +138,7 @@ class Model
   FILE* Outfile(int* verb);
   void Outfile(FILE *file, int verb);
   double Partitions(void);
-  FILE* OpenFile(char *prefix, char *type);
+  FILE* OpenFile(const char *prefix, const char *type);
   void PrintPartitions(void);
   void PrintBestPartitions();
   void PrintTree(FILE* outfile);
@@ -148,6 +148,7 @@ class Model
   Tree* maxPosteriors(void);
   void Print(void);
   void PrintTreeStats(FILE* outfile);
+  void TreeStats(double *gpcs);
   void PrintHiertrace(void);
   void ProcessLinarea(Tree **leaves, unsigned int numLeaves);
   
@@ -161,7 +162,7 @@ class Model
   void TraceNames(FILE * outfile, bool full);
   void PriorTraceNames(FILE * outfile, bool full);
 
-  /* annealed importance sampling */
+  /* tempered importance sampling */
   double iTemp(void);
   void DrawInvTemp(void* state);
   double* update_tprobs(void);

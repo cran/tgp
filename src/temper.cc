@@ -55,7 +55,7 @@ Temper::Temper(double *itemps, double *tprobs, unsigned int numit,
   /* combination method */
   this->it_lambda = it_lambda;
 
-  /* either assign uniform probl if tprobs is NULL */
+  /* either assign uniform probs if tprobs is NULL */
   if(tprobs == NULL) {
     this->tprobs = ones(numit, 1.0/numit);
   } else { /* or copy them and make sure they're positive and normalized */
@@ -112,7 +112,7 @@ Temper::Temper(double *ditemps)
   for(unsigned int i=0; i<numit; i++) assert(tprobs[i] > 0);
   
   /* combination method */
-  int dlambda = (unsigned int) ditemps[3+2*numit];
+  int dlambda = (unsigned int) ditemps[3+3*numit];
   switch((unsigned int) dlambda) {
   case 1: it_lambda = OPT; break;
   case 2: it_lambda = NAIVE; break;
@@ -134,8 +134,10 @@ Temper::Temper(double *ditemps)
   /* set iteration number for stoch_approx to zero */
   cnt = 1;
 
-  /* zero-out a new counter for each temperature */
+  /* initialize the counter for each temperature */
   tcounts = new_ones_uivector(numit, 0);
+  for(unsigned int i=0; i<numit; i++) 
+    tcounts[i] = (unsigned int) ditemps[3+2*numit+i];
 }
 
 
@@ -337,8 +339,9 @@ void Temper::Reject(double itemp_new)
  * UpdatePrior:
  *
  * re-create the prior distribution of the temperature
- * ladder by dividing by the normalization constant -- returns
- * a pointer to the probabilities 
+ * ladder by dividing by the normalization constant, i.e.,
+ * adjust by the "observation counts"  -- returns  a pointer 
+ * to the probabilities 
  */
 
 double* Temper::UpdatePrior(void)
@@ -365,8 +368,8 @@ double* Temper::UpdatePrior(void)
   /* now normalize the probabilities */
   scalev(tprobs, numit, 1.0/sum);
 
-  /* zero_out the tprobs vector */
-  uiones(tcounts, numit, 0);
+  /* zero_out the tcounts (observation counts) vector */
+  /* uiones(tcounts, numit, 0); */
 
   /* return a pointer to the (new) prior probs */
   return tprobs;
@@ -397,7 +400,13 @@ void Temper::UpdatePrior(double *tprobs, unsigned int numit)
 void Temper::CopyPrior(double *dparams)
 {
   assert(this->numit == (unsigned int) dparams[0]);
+
+  /* copy the pseudoprior */
   dupv(&(dparams[3+numit]), tprobs, numit);
+
+  /* copy the integer counts in each temperature */
+  for(unsigned int i=0; i<numit; i++)
+    dparams[3+2*numit+i] = (double) tcounts[i];
 }
 
 
@@ -488,8 +497,8 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
 
     /* print individual ess */
     if(verb >= 1)
-      myprintf(stdout, "%d: itemp=%g, len=%d, ess=%g, essN=%g\n", //, sw=%g\n", 
-	       i, itemps[i], len, ei, ei*len); //, sumv(wi, len));
+      myprintf(stdout, "%d: itemp=%g, len=%d, ess=%g\n", //, sw=%g\n", 
+	       i, itemps[i], len, ei*len); //, sumv(wi, len));
 
     /* clean up */
     free(wi);
@@ -522,7 +531,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
 
   /* print totals */
   if(verb >= 1) {
-    myprintf(stdout, "total: len=%d, ess.sum=%g, essN(w)=%g\n", 
+    myprintf(stdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
 	     tlen, tess, ((double)wlen)*calc_ess(w,wlen));
     double lce = wlen*(wlen-1.0)*gamma_sum/(sq(wlen)-gamma_sum);
     if(isnan(lce)) lce = 1;

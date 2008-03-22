@@ -58,6 +58,7 @@ Params::Params(unsigned int dim)
   t_beta = 2; 		/* beta: tree priors */
   t_minpart = 5; 	/* minpart: tree priors, smallest partition */
   t_splitmin = 0;       /* data column where we start partitioning */
+  t_basemax = dim;      /* last data column before we stop using the base model */
 
   prior = NULL;
 }
@@ -75,13 +76,15 @@ Params::Params(Params *params)
   d = params->d;
   col = params->col;
 
+  /* copy the tree parameters */
   t_alpha = params->t_alpha;
   t_beta = params->t_beta;
   t_minpart = params->t_minpart;
   t_splitmin = params->t_splitmin;
+  t_basemax = params->t_basemax;
   
+  /* copy the Gp prior */
   assert(params->prior);
-  
   prior = new Gp_Prior(params->prior);
   ((Gp_Prior*)prior)->CorrPrior()->SetBasePrior(prior);   
 }
@@ -108,26 +111,30 @@ Params::~Params(void)
 
 void Params::read_double(double *dparams)
 {
-  /* read tree prior values */
-  //printVector(dparams, 6, stdout, HUMAN);
+  /* read tree prior values alpha, beta and minpart */
+  // printVector(dparams, 5, stdout, HUMAN);
   t_alpha = dparams[0];
   t_beta = dparams[1];
   t_minpart = (unsigned int) dparams[2];
-  t_splitmin = (unsigned int) dparams[3];
-  assert(t_splitmin < d);
+
+  /* read tree prior values splitmin and basemax */
+  t_splitmin = ((unsigned int) dparams[3]) - 1;
+  assert(t_splitmin >= 0 && t_splitmin < d);
+  t_basemax = ((unsigned int) dparams[4]);
+  assert(t_basemax > 0 && t_basemax <= d);
 
  /* read the mean function form */
-  int mf = (int) dparams[4];
+  int mf = (int) dparams[5];
   MEAN_FN mean_fn = LINEAR;
   switch (mf) {
   case 0: mean_fn=LINEAR; /* myprintf(stdout, "linear mean\n"); */ break;
   case 1: mean_fn=CONSTANT;/*  myprintf(stdout, "constant mean\n");*/  break;
-  default: error("bad mean function %d", (int)dparams[4]); break;
+  default: error("bad mean function %d", (int)dparams[5]); break;
   }
 
-  prior = new Gp_Prior(d,  mean_fn);
+  prior = new Gp_Prior(/*d*/ t_basemax,  mean_fn);
   /* read the rest of the parameters into the corr prior module */
-  prior->read_double(&(dparams[5]));
+  prior->read_double(&(dparams[6]));
 }
 
 
@@ -141,14 +148,18 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
 {
   char line[BUFFMAX];
 
-  /* read the tree-parameters (alpha, beta) from the control file */
+  /* read the tree-parameters (alpha, beta and minpart) from the control file */
   ctrlfile->getline(line, BUFFMAX);
   t_alpha = atof(strtok(line, " \t\n#"));
   t_beta = atof(strtok(NULL, " \t\n#"));
   t_minpart = atoi(strtok(NULL, " \t\n#"));
   assert(t_minpart > 1);
-  t_splitmin = atoi(strtok(NULL, " \t\n#"));
-  assert(t_splitmin < d);
+
+  /* read in splitmin and basemax */
+  t_splitmin = atoi(strtok(NULL, " \t\n#")) - 1;
+  assert(t_splitmin >= 0 && t_splitmin < d);
+  t_basemax = atoi(strtok(NULL, " \t\n#")) - 1;
+  assert(t_basemax > 0 && t_basemax <= d);
 
   /* read the mean function form */
   /* LINEAR, CONSTANT, or TWOLEVEL */
@@ -165,7 +176,7 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   }
 
   /* This will be needed for MrTgp */
-  prior = new Gp_Prior(d,  mean_fn);
+  prior = new Gp_Prior(/*d*/ t_basemax,  mean_fn);
 
   /* prints the tree prior parameter settings */
   Print(stdout);
@@ -182,12 +193,14 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
  * t_alpha nad t_beta
  */
 
-void Params::get_T_params(double *alpha, double *beta, unsigned int *minpart, unsigned int *splitmin)
+void Params::get_T_params(double *alpha, double *beta, unsigned int *minpart, 
+			  unsigned int *splitmin, unsigned int *basemax)
 {
   *alpha = t_alpha;
   *beta = t_beta;
   *minpart = t_minpart;
   *splitmin = t_splitmin;
+  *basemax  = t_basemax;
 }
 
 
@@ -216,10 +229,11 @@ unsigned int Params::T_minp(void)
   return t_minpart;
 }
 
+
 /*
  * T_smin:
  *
- * return minimim partition data number
+ * return minimim partition column number
  */
 
 unsigned int Params::T_smin(void)
@@ -229,12 +243,24 @@ unsigned int Params::T_smin(void)
 
 
 /*
+ * T_bmax:
+ *
+ * return maximum Base model column number
+ */
+
+unsigned int Params::T_bmax(void)
+{
+  return t_basemax;
+}
+
+
+/*
  * get_mix_prior_params:
  * 
  * reading the mixture hierarchical priors from a string
  */
 
-void get_mix_prior_params(double *alpha, double *beta, char *line, char* which)
+void get_mix_prior_params(double *alpha, double *beta, char *line, const char* which)
 {
   assert((alpha[0] = atof(strtok(line, " \t\n#"))) > 0);
   assert((beta[0] = atof(strtok(NULL, " \t\n#"))) > 0);
@@ -251,7 +277,7 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, char* which)
  * reading the mixture hierarchical priors from a string
  */
 
-void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, char* which)
+void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, const char* which)
 {
   assert((alpha[0] = alpha_beta[0]) > 0);
   assert((beta[0] = alpha_beta[1]) > 0);
@@ -284,6 +310,6 @@ Base_Prior* Params::BasePrior(void)
 
 void Params::Print(FILE *outfile)
 {
-  myprintf(outfile, "T[alpha,beta,nmin,smin]=[%g,%g,%d,%d]\n", 
-	   t_alpha, t_beta, t_minpart, t_splitmin);
+  myprintf(outfile, "T[alpha,beta,nmin,smin,bmax]=[%g,%g,%d,%d,%d]\n", 
+	   t_alpha, t_beta, t_minpart, t_splitmin+1, t_basemax);
 }

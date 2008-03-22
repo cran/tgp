@@ -1086,7 +1086,7 @@ double kth_smallest(double a[], int n, int k)
  * out to a file 
  */
 
-void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n)
+void mean_to_file(const char *file_str, double **M, unsigned int T, unsigned int n)
 {
   double *Mm;
   FILE *MmOUT;
@@ -1107,7 +1107,7 @@ void mean_to_file(char *file_str, double **M, unsigned int T, unsigned int n)
  * of the matrix M out to a file 
  */
 
-void vector_to_file(char* file_str, double* vector, unsigned int n)
+void vector_to_file(const char* file_str, double* vector, unsigned int n)
 {
   FILE* VOUT;
   unsigned int i;
@@ -1124,7 +1124,7 @@ void vector_to_file(char* file_str, double* vector, unsigned int n)
  * and print the passed matrix to it
  */
 
-void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2)
+void matrix_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2)
 {
   FILE* MOUT;
   
@@ -1139,7 +1139,7 @@ void matrix_to_file(char* file_str, double** matrix, unsigned int n1, unsigned i
  * and print the passed integer matrix to it
  */
 
-void intmatrix_to_file(char* file_str, int** matrix, unsigned int n1, unsigned int n2)
+void intmatrix_to_file(const char* file_str, int** matrix, unsigned int n1, unsigned int n2)
 {
   FILE* MOUT;
   
@@ -1155,7 +1155,7 @@ void intmatrix_to_file(char* file_str, int** matrix, unsigned int n1, unsigned i
  * and print transpose of the passed matrix to it
  */
 
-void matrix_t_to_file(char* file_str, double** matrix, unsigned int n1, unsigned int n2)
+void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2)
 {
   FILE* MOUT;
   
@@ -1296,6 +1296,24 @@ double rect_area(Rect* rect)
   
   area = 1.0;
   for(i=0; i<rect->d; i++)
+    area *= rect->boundary[1][i] - rect->boundary[0][i];
+  return area;
+}
+
+
+/*
+ * calculate and return the area depicted by
+ * the rectangle boundaries, using only dimensions 0,...,maxd-1
+ */
+
+double rect_area_maxd(Rect* rect, unsigned int maxd)
+{
+  unsigned int i;
+  double area;
+  
+  assert(maxd <= rect->d);
+  area = 1.0;
+  for(i=0; i<maxd; i++)
     area *= rect->boundary[1][i] - rect->boundary[0][i];
   return area;
 }
@@ -1760,7 +1778,7 @@ void printIVector(int *iv, unsigned int n, FILE *outfile)
  * of the matrix M out to a file 
  */
 
-void ivector_to_file(char* file_str, int* vector, unsigned int n)
+void ivector_to_file(const char* file_str, int* vector, unsigned int n)
 {
   FILE* VOUT;
   unsigned int i;
@@ -1837,7 +1855,7 @@ void zerouiv(unsigned int *iv, unsigned int n)
 void printUIVector(unsigned int *iv, unsigned int n, FILE *outfile)
 { printIVector((int*) iv, n, outfile); }
 
-void uivector_to_file(char *file_str, unsigned int *iv, unsigned int n)
+void uivector_to_file(const char *file_str, unsigned int *iv, unsigned int n)
 { ivector_to_file(file_str, (int*) iv, n); }
 
 void copy_p_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n)

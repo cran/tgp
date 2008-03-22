@@ -37,7 +37,6 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   if(is.null(improv)) { ll$improv <- NULL; }
   
   ## deal with predictive data locations (ZZ)
-
   if(ll$nn == 0 || (ll$BTE[2]-ll$BTE[1])==0 || !is.null(sens.p)) { 
     ll$XX <- ll$ZZ.mean <- ll$ZZ.s2 <-  ll$ZZ.q <- ll$ZZ.km <- ll$ZZ.ks2 <- NULL
     ll$ZZ.q1 <- ll$ZZ.med <- ll$ZZ.q2 <- ll$ZpZZ.s2 <- ll$Ds2x <- ll$improv <- NULL
@@ -98,11 +97,18 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   else if(lambda == 3) lambda <- "st"
   else stop(paste("bad lambda = ", lambda, sep=""))
   ll$itemps <- list(c0n0=as.integer(ll$itemps[2:3]), k=ll$itemps[4:(nt+3)],
-                    pk=ll$itemps[(nt+4):(2*nt+3)], lambda=lambda)
+                    pk=ll$itemps[(nt+4):(2*nt+3)], 
+                    counts=as.integer(ll$itemps[(2*nt+4):(3*nt+3)]),
+                    lambda=lambda)
 
   ## change {0,1} to {TRUE,FALSE}
   if(ll$linburn) ll$linburn <- TRUE
   else ll$linburn <- FALSE
+
+  ## pretty-up the grow, prune, change and swap stats
+  ll$gpcs[is.nan(ll$gpcs)] <- NA
+  ll$gpcs <- data.frame(t(ll$gpcs))
+  names(ll$gpcs) <- c("grow", "prune", "change", "swap")
 
   ## deal with sensitivity analysis outputs
   if(!is.null(sens.p)){

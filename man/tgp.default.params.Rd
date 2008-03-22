@@ -9,7 +9,8 @@
 }
 \usage{
 tgp.default.params(d, meanfn = c("linear", "constant"),
-                   corr = "expsep", ...)
+                   corr = c("expsep", "exp", "mrexpsep", "matern"),
+                   splitmin = 1, basemax = d, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,13 +22,22 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
   where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
   part of the model (if present).  Otherwise, when
   \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
-    Z = beta0 + W(X).}}
+    Z = beta0 + W(X)}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
 	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
 	functionality.  The option \code{"mrexpsep"} uses a
-	multi-resolution GP model.}
+	multi-resolution GP model}
+  \item{splitmin}{ Indicates which column of the inputs \code{X} should
+    be the first to allow splits via treed partitioning.  This is useful
+    for excluding certain input directions from the partitioning
+    mechanism}
+  \item{basemax}{ Indicates which column of the inputs \code{X} should
+    be the last be fit under the base model (e.g., LM or GP).  This is useful
+    for allowing some input directions (e.g., binary indicators) to only
+    influence the tree partitioning mechanism, and not the base model(s)
+    at the leaves of the tree}
   \item{...}{ These ellipses arguments are interpreted as augmentations
     to the prior specification. You may use these to specify
     a custom setting of any of default parameters in the output list 

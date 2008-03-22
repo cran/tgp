@@ -87,23 +87,28 @@ class Tgp
   void Rounds(void);
   void Predict(void);
 
+  /* posterior predictive summary statistics */
   void GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, 
 		double *ZZ_km, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
 		double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
 		int* iorder, double *ess);
+  
+  /* Importance Tempering */
+  void GetPseudoPrior(double *ditemps);
 
   /* Sensitivity Analysis */
-  void Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_mean, double *sens_ZZ_q1,double *sens_ZZ_q2, 
-	 double *sens_S,  double *sens_T);
+  void Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_mean, 
+	    double *sens_ZZ_q1,double *sens_ZZ_q2, double *sens_S,  double *sens_T);
 
   /* printing */
   void Print(FILE *outfile);
   int Verb(void);
 
-  /* importance tempering */
-  void GetPseudoPrior(double *ditemps);
+  /* tree statistics */
+  void GetTreeStats(double *gpcs);
+
 };
 
 

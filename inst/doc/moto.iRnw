@@ -1,8 +1,3 @@
-%\VignetteIndexEntry{example on motorcycle data}
-%\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
-%\VignettePackage{tgp}
-
 \subsection{Motorcycle Accident Data}
 \label{sec:moto}
 
@@ -50,13 +45,13 @@ range of one.  The {\tt m0r1} argument to {\tt b*} functions automates
 this procedure.  Progress indicators are suppressed.
 \begin{figure}[ht!]
 \centering
-<<label=bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+<<label=moto-bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(moto.bgp, main='GP,', layout='surf')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 25 0 25]{moto-bgp}
+\includegraphics[trim=0 25 0 25]{tgp-moto-bgp}
 %\vspace{-0.5cm}
 \caption{Posterior predictive distribution using {\tt
     bgp} on the motorcycle accident data: mean and 90\% credible
@@ -74,13 +69,13 @@ Figure \ref{f:moto:btlm} shows the resulting piecewise linear
 predictive surface and MAP partition ($\hat{\mathcal{T}}$).
 \begin{figure}[ht!]
 \centering
-<<label=btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+<<label=moto-btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
 plot(moto.btlm, main='Bayesian CART,', layout='surf')
 @
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 25 0 25]{moto-btlm}
+\includegraphics[trim=0 25 0 25]{tgp-moto-btlm}
 %\vspace{-0.5cm}
 \caption{Posterior predictive distribution using {\tt
     btlm} on the motorcycle accident data: mean and 90\% credible
@@ -103,7 +98,7 @@ The {\tt predict.tgp} function obtains posterior predictive estimates
 from the MAP parameterization (a.k.a., {\em kriging}).
 \begin{figure}[ht!]
 \centering
-<<label=btgp,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+<<label=moto-btgp,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
 par(mfrow=c(1,2))
 plot(moto.btgpllm, main='treed GP LLM,', layout='surf')
 plot(moto.btgpllm.p, center='km', layout='surf')
@@ -112,9 +107,9 @@ plot(moto.btgpllm.p, center='km', layout='surf')
 graphics.off()
 @
 
-\includegraphics[trim=50 25 50 20]{moto-btgp}
+\includegraphics[trim=50 25 50 20]{tgp-moto-btgp}
 
-<<label=btgpq,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+<<label=moto-btgpq,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
 par(mfrow=c(1,2))
 plot(moto.btgpllm, main='treed GP LLM,', layout='as')
 plot(moto.btgpllm.p, as='ks2', layout='as')
@@ -123,7 +118,7 @@ plot(moto.btgpllm.p, as='ks2', layout='as')
 graphics.off()
 @
 
-\includegraphics[trim=50 25 50 20]{moto-btgpq}
+\includegraphics[trim=50 25 50 20]{tgp-moto-btgpq}
 
 %\vspace{-0.5cm}
 \caption{{\em Top}: Posterior predictive distribution

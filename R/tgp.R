@@ -36,11 +36,14 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   ## (quitely) double-check that tgp is clean before-hand
   tgp.cleanup(message="NOTICE", verb=verb, rmfile=TRUE);
 
-  # what to do if fatally interrupted?
+  ## what to do if fatally interrupted?
   on.exit(tgp.cleanup(verb=verb, rmfiles=rmfiles))
 
-  if(params$corr == "mrexpsep" && linburn){ stop("Sorry, the linear burn-in is not yet available for corr=\"mrexpsep\"")}
-  if(params$corr == "mrexpsep" && !is.null(sens.p)){ stop("Sorry, sensitivity analysis is not yet available for corr=\"mrexpsep\"")}
+  ## check for two unsupported combinations of modeling options
+  if(params$corr == "mrexpsep" && linburn)
+    stop("Sorry, the linear burn-in is not available for corr=\"mrexpsep\"")
+  if(params$corr == "mrexpsep" && !is.null(sens.p))
+    stop("Sorry, sensitivity analysis is not available for corr=\"mrexpsep\"")
 
   ## get names
   Xnames <- names(X)
@@ -81,13 +84,18 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
     stop("zcov should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
-  if(length(improv) != 1 || !(is.logical(improv) || is.numeric(improv)) || (is.numeric(improv) && improv <= 0))
-    stop(paste("improv [", improv, "] should be TRUE, FALSE, or a positive integer (power)", sep=""))
+
+  ##check the form of the improv-power argument
+  if(length(improv) != 1 || !(is.logical(improv) ||
+             is.numeric(improv)) || (is.numeric(improv) && improv <= 0))
+    stop(paste("improv [", improv,
+               "] should be TRUE, FALSE, or a positive integer (power)", sep=""))
   g <- as.numeric(improv) 
   
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
-    warning("need to specify XX locations for Ds2x and improv, and at least empty XX for SENS.")
+    warning(paste("need to specify XX locations for Ds2x and improv,",
+                  "and at least empty XX for SENS."))
 
   ## check the sanity of input arguments
   if(nn > 0 && sum(dim(XX)) > 0 && ncol(XX) != d) stop("XX has bad dimensions")
@@ -176,6 +184,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            improv = double(as.logical(improv) * nnprime),
            irank = integer(as.logical(improv) * nnprime),
            ess = double(1),
+           gpcs = double(4),
            sens.ZZ.mean = double(ngrid*d),
            sens.ZZ.q1 = double(ngrid*d),
            sens.ZZ.q2 = double(ngrid*d),
@@ -190,7 +199,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   ## Bobby: should we do the same with pre-prossesing?
   ## Taddy: possibly.  However, predict.tgp and tgp have the identical postprocessing,
   ## but the pre-processing is a little different for predict.tgp
-  ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1,
-                        params, rmfiles)
+  ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv,
+                        sens.p, Zm0r1, params, rmfiles)
   return(ll)
 }

@@ -87,7 +87,10 @@ function(m=40, type=c("geometric", "harmonic", "sigmoidal"),
     
   }
 
-  return(list(c0n0=c0n0, k=k, pk=rep(1/m, m), lambda=lambda))
+  ## return the generated ladder, as above, with a vector of
+  ## observation counts for tgp to update
+  return(list(c0n0=c0n0, k=k, pk=rep(1/m, m),
+              counts=rep(0,m), lambda=lambda))
 }
 
 
@@ -101,17 +104,18 @@ function(m=40, type=c("geometric", "harmonic", "sigmoidal"),
 function(itemps, params)
 {
   ## if null, then just make one temperature (1.0) with all the prob
-  if(is.null(itemps)) return(c(1,0,0,1,1,1))
+  if(is.null(itemps)) return(c(1,0,0,1,1,0,1))
 
   ## if it is a list or a data frame
   else if(is.list(itemps) || is.data.frame(itemps)) {
-
+    
     ## get the four fields
     c0n0 <- itemps$c0n0
     pk <- itemps$pk
     lambda <- itemps$lambda
     k <- itemps$k
-
+    counts <- itemps$counts
+    
     ## check for non-null k
     m <- length(k)
     if(m == 0) stop("must specify k vector in list")
@@ -120,9 +124,9 @@ function(itemps, params)
     if(is.null(pk)) pk <- rep(1/m, m)
     
     ## check the dims are right
-    if(length(k) != length(pk))
+    if(m != length(pk))
       stop("length(itemps$k) != length(itemps$pk)")
-
+    
     ## put into decreasing order
     o <- order(k, decreasing=TRUE)
     k <- k[o]
@@ -130,9 +134,9 @@ function(itemps, params)
     
     ## checks k
     if(prod(k >= 0)!=1) stop("should have 0 <= itemps$k")
-    if((length(k) > 1 || k != 1) && params$bprior != "b0")
+    if((m > 1 || k != 1) && params$bprior != "b0")
       warning("recommend params$bprior == \"b0\" for itemps$k != 1")
-
+  
     ## checks for pk
     if(prod(pk > 0)!=1) stop("all itemps$pk should be positive")
 
@@ -151,8 +155,14 @@ function(itemps, params)
          lambda <- 3
       } else stop(paste("lambda = ", lambda, "is not valid\n", sep=""))
     } else lambda <- 1 
+
+    ## check the counts vector
+    if(! is.null(counts)) {
+      if(m != length(counts)) stop("length(itemps$k) != length(itemps$counts)")
+    } else counts <- rep(0,m)
     
-    return(c(m, c0n0, k, pk, lambda))
+    ## return a double-version of the ladder
+    return(c(m, c0n0, k, pk, counts, lambda))
   }
 
   ## if it is a matrix
@@ -179,7 +189,8 @@ function(itemps, params)
     ## checks for pk
     if(prod(pk > 0)!=1) stop("all probs in itemps[,2] should be positive")
 
-    return(c(m, 100, 1000, k, pk, 1))
+    ## return a double-version with a counts vector at the end
+    return(c(m, 100, 1000, k, pk, 1, rep(0,m)))
   }
 
   ## if itemps is a vector
@@ -193,7 +204,8 @@ function(itemps, params)
     if((length(itemps) > 1 || itemps != 1) && params$bprior != "b0")
       warning("recommend params$bprior == \"b0\" for itemps != 1")
 
-    return(c(m, 100, 1000, itemps, rep(1/m, m), 1))
+    ## return a double-version with a counts vector at the end
+    return(c(m, 100, 1000, itemps, rep(1/m, m), 1, rep(0,m)))
   }
   else stop("invalid form for itemps")
 }
@@ -206,16 +218,69 @@ function(itemps, params)
 
 hist2bar <- function(x)
 {
+  ## make a matrix
+  if(is.vector(x)) x <- matrix(x, ncol=1)
+  
+  ## calculate the number of, and allocate the space for,
+  ## the bins, b, of the histogram
   r <- range(as.numeric(x))
   b <- matrix(0, ncol=ncol(x), nrow=r[2]-r[1]+1)
-  for(i in r[1]:r[2]) {
-    for(j in 1:ncol(x)) {
-      b[i-r[1]+1,j] <- sum(x[,j] == i)
-    }
-  }
 
+  ## calculate the histogram height of each bin
+  for(i in r[1]:r[2])
+    for(j in 1:ncol(x))
+      b[i-r[1]+1,j] <- sum(x[,j] == i)
+
+  ## make have thr right data.frame format so that
+  ## it will place nice with the barplot function,
+  ## and return
   b <- data.frame(b)
   row.names(b) <- r[1]:r[2]
-  
   return(t(b))
+}
+
+
+## itemps.barplot:
+##
+## make a histogram (via barplot) of the number of times
+## each inverse-temperature was visited in the ST-MCMC
+## chain.  Requires that traces were collected
+
+itemps.barplot <- function(obj, main=NULL, xlab="itemps",
+                           ylab="counts", plot.it=TRUE, ...)
+{
+  ## check to make sure traces were collected
+  if(is.null(obj$trace)) 
+    stop(paste("no traces in tgp-object;", 
+               "re-run the b* function with argument \"trace=TRUE\""))
+
+  ## check to make sure tempering was used
+  if(is.null(obj$itemps)) stop("no itemps in tgp-object")
+
+  ## create a bin for each inverse-temperature
+  bins <- rep(0,length(obj$itemps$k))
+
+  ## count and store the number in the first bin
+  m <- obj$trace$post$itemp == obj$itemps$k[1]
+  bins[1] <- sum(m)
+
+  ## count and store the number in the rest of the bins
+  for(i in 2:length(obj$itemps$k)) {
+    m <- obj$trace$post$itemp == obj$itemps$k[i]
+    if(sum(m) == 0) next;
+    bins[i] <- sum(m)
+  }
+
+  ## make into a data frame for convenient barplotting
+  bins <- data.frame(bins)
+  row.names(bins) <- signif(obj$itemps$k,3)
+  
+  ## make the barplot histogram
+  if(plot.it==TRUE) {
+    smain <- paste(main, "itemp counts")
+    barplot(t(bins), xlab=xlab, ylab=ylab, ...)
+  }
+
+  ## return the barplot structure for plotting later
+  return(invisible(bins))
 }
