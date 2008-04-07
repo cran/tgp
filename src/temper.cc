@@ -51,6 +51,7 @@ Temper::Temper(double *itemps, double *tprobs, unsigned int numit,
   /* stochastic approximation parameters */
   this->c0 = c0;
   this->n0 = n0;
+  this->doSA = false;  /* must turn on in Model:: */
 
   /* combination method */
   this->it_lambda = it_lambda;
@@ -60,8 +61,7 @@ Temper::Temper(double *itemps, double *tprobs, unsigned int numit,
     this->tprobs = ones(numit, 1.0/numit);
   } else { /* or copy them and make sure they're positive and normalized */
     this->tprobs = new_dup_vector(tprobs, numit);
-    scalev(this->tprobs, numit, 1.0/sumv(this->tprobs, numit));
-    for(unsigned int i=0; i<numit; i++) assert(this->tprobs[i] > 0);
+    Normalize();
   }
 
   /* init itemp-location pointer -- find closest to 1.0 */
@@ -80,6 +80,7 @@ Temper::Temper(double *itemps, double *tprobs, unsigned int numit,
 
   /* zero-out a new counter for each temperature */
   this->tcounts = new_ones_uivector(this->numit, 0);
+  this->cum_tcounts = new_ones_uivector(this->numit, 0);
 }
 
 
@@ -102,14 +103,14 @@ Temper::Temper(double *ditemps)
   c0 = ditemps[1];
   n0 = ditemps[2];
   assert(c0 >= 0 && n0 >= 0);
+  doSA = false;  /* must turn on in Model:: */
   
   /* copy the inv-temperature vector and probs */
   itemps = new_dup_vector(&(ditemps[3]), numit);
   tprobs = new_dup_vector(&(ditemps[3+numit]), numit);
   
   /* normalize the probs and then check that they're positive */
-  scalev(tprobs, numit, 1.0/sumv(tprobs, numit));
-  for(unsigned int i=0; i<numit; i++) assert(tprobs[i] > 0);
+  Normalize();
   
   /* combination method */
   int dlambda = (unsigned int) ditemps[3+3*numit];
@@ -134,10 +135,14 @@ Temper::Temper(double *ditemps)
   /* set iteration number for stoch_approx to zero */
   cnt = 1;
 
-  /* initialize the counter for each temperature */
-  tcounts = new_ones_uivector(numit, 0);
+  /* initialize the cumulative counter for each temperature */
+  cum_tcounts = new_ones_uivector(numit, 0);
   for(unsigned int i=0; i<numit; i++) 
-    tcounts[i] = (unsigned int) ditemps[3+2*numit+i];
+    cum_tcounts[i] = (unsigned int) ditemps[3+2*numit+i];
+
+  /* initialize the frequencies in each temperature to a a constant
+     determined by the acerave cum_tcounts */
+  tcounts = new_ones_uivector(numit, meanuiv(cum_tcounts, numit));
 }
 
 
@@ -154,11 +159,13 @@ Temper::Temper(Temper *temp)
   itemps = new_dup_vector(temp->itemps, temp->numit);
   tprobs = new_dup_vector(temp->tprobs, temp->numit);
   tcounts = new_dup_uivector(temp->tcounts, temp->numit);
+  cum_tcounts = new_dup_uivector(temp->cum_tcounts, temp->numit);
   numit = temp->numit;
   k = temp->k;
   knew = temp->knew;
   c0 = temp->c0;
   n0 = temp->n0;
+  doSA = false;
   cnt = temp->cnt;
 }
 
@@ -179,12 +186,14 @@ Temper& Temper::operator=(const Temper &t)
   dupv(itemps, temp->itemps, numit);
   dupv(tprobs, temp->tprobs, numit);
   dupuiv(tcounts, temp->tcounts, numit);
+  dupuiv(cum_tcounts, temp->cum_tcounts, numit);
   numit = temp->numit;
   k = temp->k;
   knew = temp->knew;
   c0 = temp->c0;
   n0 = temp->n0;
   cnt = temp->cnt;
+  doSA = temp->doSA;
   
   return *this;
 }
@@ -202,6 +211,7 @@ Temper::~Temper(void)
   free(itemps);
   free(tprobs);
   free(tcounts);
+  free(cum_tcounts);
 }
 
 
@@ -306,13 +316,19 @@ double Temper::Propose(double *q_fwd, double *q_bak, void *state)
  * argument actually was the last proposed inv-temperature
  */
 
-void Temper::Keep(double itemp_new)
+void Temper::Keep(double itemp_new, bool burnin)
 {
   assert(knew >= 0);
   assert(itemp_new == itemps[knew]);
   k = knew;
   knew = -1;
-  (tcounts[k])++;
+
+  /* update the observation counts only whilest not
+     doing SA and not doing burn in rounds */
+  if(!(doSA || burnin)) {
+    (tcounts[k])++;
+    (cum_tcounts[k])++;
+  }
 }
 
 
@@ -325,13 +341,19 @@ void Temper::Keep(double itemp_new)
  * kept (old) temperature
  */
 
-void Temper::Reject(double itemp_new)
+void Temper::Reject(double itemp_new, bool burnin)
 {
   assert(itemp_new == itemps[knew]);
   /* do not update itemps->k, but do update the counter for 
      the old (kept) temperature */
   knew = -1;
-  (tcounts[k])++;
+
+  /* update the observation counts only whilest not 
+     doing SA and not doing burn in rounds */
+  if(!(doSA || burnin)) {
+    (tcounts[k])++;
+    (cum_tcounts[k])++;
+  }
 }
 
 
@@ -366,10 +388,10 @@ double* Temper::UpdatePrior(void)
   }
 
   /* now normalize the probabilities */
-  scalev(tprobs, numit, 1.0/sum);
+  Normalize();
 
-  /* zero_out the tcounts (observation counts) vector */
-  /* uiones(tcounts, numit, 0); */
+  /* mean-out the tcounts (observation counts) vector */
+  uiones(tcounts, numit, meanuiv(cum_tcounts, numit));
 
   /* return a pointer to the (new) prior probs */
   return tprobs;
@@ -406,7 +428,7 @@ void Temper::CopyPrior(double *dparams)
 
   /* copy the integer counts in each temperature */
   for(unsigned int i=0; i<numit; i++)
-    dparams[3+2*numit+i] = (double) tcounts[i];
+    dparams[3+2*numit+i] = (double) cum_tcounts[i];
 }
 
 
@@ -419,6 +441,10 @@ void Temper::CopyPrior(double *dparams)
 
 void Temper::StochApprox(void)
 {
+  /* check if stochastic approximation is currently turned on */
+  if(doSA == false) return;
+
+  /* adjust each of the probs in the pseudo-prior */
   assert(cnt >= 1);
   for(unsigned int i=0; i<numit; i++) {
     if((int)i == k) {
@@ -427,6 +453,8 @@ void Temper::StochApprox(void)
       tprobs[i] = exp(log(tprobs[i])+ c0 / (((double)numit)*((double)(cnt) + n0)));
     }
   }
+
+  /* update the count of the number of SA rounds */
   cnt++;
 }
 
@@ -439,7 +467,8 @@ void Temper::StochApprox(void)
  * thus producing a lambda--adjusted weight distribution
  */
 
-double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned int verb)
+double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, 
+			 double *essd, unsigned int verb)
 {
   unsigned int len;
   unsigned int tlen = 0;
@@ -463,7 +492,11 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
 
     /* nothing to do if no samples were taken at this tempereature --
        but this is bad! */
-    if(len == 0) continue;
+    double ei = 0;
+    if(len == 0) {
+      essd[i] = essd[numit + i] = 0;
+      continue;
+    }
 
     /* collect the weights at the i-th temperature */
     double *wi = new_sub_vector(p, w, len);
@@ -473,7 +506,6 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
     w2sum[i] = sum_fv(wi, len, sq);
 
     /* calculate the ess of the weights of the i-th temperature */
-    double ei = 0;
     if(W[i] > 0 && w2sum[i] > 0) {
 
       /* compute ess and max weight for this temp */
@@ -494,6 +526,10 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
     /* keep track of sum of lengths and ess so far */
     tlen += len;
     tess += len * ei;
+
+    /* save individual ess to the (double) output essd vector */
+    essd[i] = len;
+    essd[numit + i] = ei*len;
 
     /* print individual ess */
     if(verb >= 1)
@@ -545,6 +581,45 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen, unsigned i
 
   /* return the overall effective sample size */
   return(((double)wlen)*calc_ess(w, wlen));
+}
+
+
+/*
+ * EachESS:
+ *
+ * calculate the effective sample size at each temperature
+ */
+
+void Temper::EachESS(double *w, double *itemp, unsigned int wlen, double *essd)
+{
+  /* for each temperature */
+  for(unsigned int i=0; i<numit; i++) {
+
+    /* get the weights at the i-th temperature */
+    unsigned int len;
+    int *p = find(itemp, wlen, EQ, itemps[i], &len);
+
+    /* nothing to do if no samples were taken at this tempereature --
+       but this is bad! */
+    if(len == 0) {
+      essd[i] = essd[numit + i] = 0;
+      continue;
+    }
+
+    /* collect the weights at the i-th temperature */
+    double *wi = new_sub_vector(p, w, len);
+
+    /* calculate the ith ess */
+    double ei = calc_ess(wi, len);
+
+    /* save individual ess to the (double) output essd vector */
+    essd[i] = len;
+    essd[numit + i] = ei*len;
+
+    /* clean up */
+    free(wi);
+    free(p);
+  }
 }
 
 
@@ -731,12 +806,25 @@ double Temper::N0(void)
  * ResetSA:
  *
  * reset the stochastic approximation by setting
- * the counter to 1
+ * the counter to 1, and turn SA on
  */
 
 void Temper::ResetSA(void)
 {
+  doSA = true;
   cnt = 1;
+}
+
+
+/*
+ * StopSA:
+ *
+ * turn off stochastic approximation 
+ */
+
+void Temper::StopSA(void)
+{
+  doSA = false;
 }
 
 
@@ -748,16 +836,17 @@ void Temper::ResetSA(void)
  * weights w, and returning a calculation of ESSw
  */
 
-double Temper::LambdaIT(double *w, double *itemp, unsigned int R, unsigned int verb)
+double Temper::LambdaIT(double *w, double *itemp, unsigned int R, double *essd,
+			unsigned int verb)
 {
   /* sanity check that it makes sense to adjust weights */
   assert(IT_ST_or_IS());
 
   double ess = 0;
   switch(it_lambda) {
-  case OPT: ess = LambdaOpt(w, itemp, R, verb); break;
-  case NAIVE: ess = LambdaNaive(w, R, verb); break;
-  case ST: ess = LambdaST(w, itemp, R, verb); break;
+  case OPT: ess = LambdaOpt(w, itemp, R, essd, verb); break;
+  case NAIVE: ess = LambdaNaive(w, R, verb); EachESS(w, itemp, R, essd); break;
+  case ST: ess = LambdaST(w, itemp, R, verb); EachESS(w, itemp, R, essd); break;
   default: error("bad it_lambda\n");
   }
 
@@ -786,6 +875,36 @@ void Temper::Print(FILE *outfile)
     if(DoStochApprox()) myprintf(outfile, "    with stoch approx\n");
     else myprintf(outfile, "\n");
   }
+}
+
+
+/* 
+ * AppendLadder:
+ *
+ * append tprobs and tcounts to a file with the name
+ * provided
+ */
+
+void Temper::AppendLadder(const char* file_str)
+{
+  FILE *LOUT = fopen(file_str, "a");
+  printVector(tprobs, numit, LOUT, MACHINE);
+  printUIVector(tcounts, numit, LOUT);
+  fclose(LOUT);
+}
+
+
+/* 
+* Normalize:
+ * 
+ * normalize the pseudo-prior (tprobs) and 
+ * check that all probs are positive
+ */
+
+void Temper::Normalize(void)
+{
+  scalev(tprobs, numit, 1.0/sumv(tprobs, numit));
+  for(unsigned int i=0; i<numit; i++) assert(tprobs[i] > 0);
 }
 
 

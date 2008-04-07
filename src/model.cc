@@ -108,7 +108,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
 
   /* default inv-temperature is 1.0 */
   its = NULL;
-  tprior = true;
+  Tprior = true;
 }
 
 
@@ -244,16 +244,17 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     assert(((int)ceil(((double)(T-B))/preds->R)) == (int)preds->mult);
   }
 
+  /* for the leavesList function in the for loop below */
   unsigned int numLeaves = 1;
   
   /* for helping with periodic interrupts */
   time_t itime = time(NULL);
   
   /* every round, do ... */
-  for(int r=0; r<(int)T; r++) {
+  for(unsigned int r=0; r<T; r++) {
 
     /* draw a new temperature */
-    if((r+1)%4 == 0) DrawInvTemp(state);
+    if((r+1)%4 == 0) DrawInvTemp(state, r < B);
 
     /* propose tree changes */
     bool treemod = false;
@@ -523,7 +524,7 @@ bool Model::prune_tree(void *state)
   double pTreeRatio =  (1-pEtaPT) / ((diff*diff) * pEtaPT);
 
   /* temper the tree probabilities in non-log space ==> uselog=0 */
-  if(tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
+  if(Tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
 
   /* attempt a prune */
   bool success = nodes[k]->prune((q_bak/q_fwd)*pTreeRatio, state);
@@ -582,7 +583,7 @@ bool Model::grow_tree(void *state)
   double pTreeRatio =  pEtaT * (diff*diff) / (1-pEtaT);
 
   /* temper the tree probabilities in non-log space ==> uselog=0 */
-  if(tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
+  if(Tprior) pTreeRatio = temper(pTreeRatio, its->Itemp(), 0);
 
   /* attempt a grow */
   bool success = nodes[k]->grow((q_bak/q_fwd)*pTreeRatio, state);
@@ -650,6 +651,8 @@ void Model::cut_root(void)
 
 double *Model::update_tprobs(void)
 {
+  /* for debugging */
+  // its->AppendLadder("ladder.txt");
   return its->UpdatePrior();
 }
 
@@ -1340,10 +1343,11 @@ void Model::PrintTree(FILE* outfile)
  * DrawInvTemp:
  *
  * propose and accept/reject a new annealed importance sampling
- * inv-temperature 
+ * inv-temperature, the burnin argument indicates if we are doing
+ * burn-in rounds in the Markov chain
  */
 
-void Model::DrawInvTemp(void* state)
+void Model::DrawInvTemp(void* state, bool burnin)
 {
   /* don't do anything if there is only one temperature */
   if(its->Numit() == 1) return;
@@ -1353,15 +1357,15 @@ void Model::DrawInvTemp(void* state)
   double itemp_new = its->Propose(&q_fwd, &q_bak, state);
 
   /* calculate the posterior probability under both temperatures */
-  //double p = t->FullPosterior(itemp, tprior);
-  //double pnew = t->FullPosterior(itemp_new, tprior);
+  //double p = t->FullPosterior(itemp, Tprior);
+  //double pnew = t->FullPosterior(itemp_new, Tprior);
 
   /* calculate the log likelihood under both temperatures */
   double ll = t->Likelihood(its->Itemp());
   double llnew = t->Likelihood(itemp_new);
 
   /* add in a tempered version of the tree prior, or not */
-  if(tprior) {
+  if(Tprior) {
     ll += t->Prior(its->Itemp());
     llnew += t->Prior(itemp_new);
   }
@@ -1381,13 +1385,15 @@ void Model::DrawInvTemp(void* state)
   double alpha = exp(diff_lik + diff_p_itemp)*q_bak/q_fwd;
   double ru = runi(state);
   if(ru < alpha) {
-    its->Keep(itemp_new);
+    its->Keep(itemp_new, burnin);
     t->NewInvTemp(itemp_new);
   } else {
-    its->Reject(itemp_new);
+    its->Reject(itemp_new, burnin);
   }
 
-  /* stochastic approximation update of psuedo-prior */
+  /* stochastic approximation update of psuedo-prior, only
+     actually does something if its->resetSA() has been called first,
+     see the Model::StochApprox() function */
   its->StochApprox();
 }
 
@@ -1406,8 +1412,8 @@ void Model::DrawInvTemp(void* state)
 double Model::Posterior(bool record)
 {
   /* tempered and untemepered posteriors, from tree on down */
-  double full_post_temp = t->FullPosterior(its->Itemp(), tprior);
-  double full_post = t->FullPosterior(1.0, tprior);
+  double full_post_temp = t->FullPosterior(its->Itemp(), Tprior);
+  double full_post = t->FullPosterior(1.0, Tprior);
 
   /* include priors hierarchical (linear) params W, B0, etc. 
      and the hierarchical corr prior priors in the Base module */
@@ -1618,8 +1624,13 @@ void Model::StochApprox(unsigned int B, void *state)
     myprintf(OUTFILE, "\nburn in: [with stoch approx (c0,n0)=(%g,%g)]\n",
 	     its->C0(), its->N0());
 
+  /* do the rounds of stochastic approximation */
   its->ResetSA();
   rounds(NULL, B, B, state);
+
+  /* stop stochastic approximation and normalize the weights */
+  its->StopSA();
+  its->Normalize();
 }
 
 

@@ -126,6 +126,8 @@ void copy_p_vector(double *V, int *p, double *v, unsigned int n);
 void copy_sub_vector(double *V, int *p, double *v, unsigned int n);
 double* new_sub_vector(int *p, double *v, unsigned int n);
 void scalev(double *v, unsigned int n, double scale);
+double sum_fv(double *v, unsigned int n, double(*f)(double));
+double sumv(double *v, unsigned int n);
 
 int* new_ivector(unsigned int n);
 int* new_dup_ivector(int *iv, unsigned int n);
@@ -139,8 +141,8 @@ void printIVector(int *iv, unsigned int n, FILE *outfile);
 void copy_p_ivector(int *V, int *p, int *v, unsigned int n);
 void copy_sub_ivector(int *V, int *p, int *v, unsigned int n);
 int* new_sub_ivector(int *p, int *v, unsigned int n);
-double sum_fv(double *v, unsigned int n, double(*f)(double));
-double sumv(double *v, unsigned int n);
+int sumiv(int *v, unsigned int n);
+int meaniv(int *iv, unsigned int n);
 
 unsigned int* new_uivector(unsigned int n);
 unsigned int* new_dup_uivector(unsigned int *iv, unsigned int n);
@@ -153,6 +155,8 @@ void printUIVector(unsigned int *iv, unsigned int n, FILE *outfile);
 void copy_p_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n);
 void copy_sub_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n);
 unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n);
+unsigned int sumuiv(unsigned int *v, unsigned int n);
+unsigned int meanuiv(unsigned int *iv, unsigned int n);
 
 double max(double *v, unsigned int n, unsigned int *which);
 double min(double *v, unsigned int n, unsigned int *which);

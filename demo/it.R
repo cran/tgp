@@ -52,7 +52,7 @@ Z<-exp2d.data$Z
 ### chunk number 6: 
 ###################################################
 its <- default.itemps(m=10)
-exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its) 
+exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE) 
 
 
 ###################################################
@@ -65,15 +65,15 @@ exp.btlm$ess
 ### chunk number 8: 
 ###################################################
 library(MASS)
-moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-        m0r1=TRUE, bprior="b0", R=10, itemps=geo,
+moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        m0r1=TRUE, bprior="b0", R=3, itemps=geo,
         trace=TRUE, pred.n=FALSE, verb=0)
 
 
 ###################################################
 ### chunk number 9: 
 ###################################################
-moto.it$ess
+moto.it$ess$combined
 
 
 ###################################################
@@ -92,14 +92,14 @@ ESS(p$w)
 ###################################################
 ### chunk number 12: 
 ###################################################
-sum(p$itemp == 1)
+c(sum(p$itemp == 1), moto.it$ess$each[1,2:3])
 
 
 ###################################################
 ### chunk number 13: 
 ###################################################
-moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-        R=10, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
+moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        R=3, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
 
 
 ###################################################
@@ -136,25 +136,24 @@ plot(log(moto.it$trace$post$itemp), type="l", ylab="log(k)", xlab="samples",
 ### chunk number 18: it-moto-khist
 ###################################################
 b <- itemps.barplot(moto.it, plot.it=FALSE)
-ylim <- c(0, 1.1*max(c(b[,1], moto.it$itemps$counts)))
 barplot(t(cbind(moto.it$itemps$counts, b)), col=1:2,
         beside=TRUE, ylab="counts", xlab="itemps", 
-        main="inv-temp observation counts", ylim=ylim)
-legend("topleft", c("observation counts", "posterior samples"), fill=1:2)
+        main="inv-temp observation counts")
+legend("topright", c("observation counts", "posterior samples"), fill=1:2)
 
 
 ###################################################
 ### chunk number 19: 
 ###################################################
-moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-                      R=10, m0r1=TRUE, bprior="b0", krige=FALSE,
+moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+                      R=3, m0r1=TRUE, bprior="b0", krige=FALSE,
 		      itemps=sig, verb=0)
 
 
 ###################################################
 ### chunk number 20: 
 ###################################################
-moto.it.sig$ess
+moto.it.sig$ess$combined
 
 
 ###################################################
@@ -200,7 +199,7 @@ tgp.trees(exp.reg, "map")
 ###################################################
 ### chunk number 27: 
 ###################################################
-its <- default.itemps(k.min=0.01, m=60)
+its <- default.itemps(k.min=0.02)
 exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,22000,10), bprior="b0", 
                trace=TRUE, krige=FALSE, itemps=its, R=10, verb=0)
 
@@ -216,7 +215,7 @@ exp.reg$gpcs
 ### chunk number 29: 
 ###################################################
 p <- exp.it$trace$post
-data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess)
+data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess$combined)
 
 
 ###################################################
@@ -248,7 +247,7 @@ legend("topright", c("tempered", "reg MCMC"), lty=c(1,1), col=1:2)
 ###################################################
 ### chunk number 33: it-expit-pred
 ###################################################
-plot(exp.it, pc="c", layout="surf")
+plot(exp.it)
 
 
 ###################################################

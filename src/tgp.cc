@@ -134,7 +134,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R,
   this->Z = NULL;
   params = NULL;
   model = NULL;
-  cumpreds = preds = NULL;
+  cump = preds = NULL;
 
   /* RNG state */
   this->state = state;
@@ -182,7 +182,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R,
   params = NULL;
   rect = NULL;
   model = NULL;
-  cumpreds = NULL;
+  cump = NULL;
 
   /* former parameters to Init() */
   this->dparams = dparams;
@@ -209,7 +209,7 @@ Tgp::~Tgp(void)
   if(Z) { free(Z); Z = NULL; }
   if(rect) { delete_matrix(rect); rect = NULL; }
   if(X) { delete_matrix(X); X = NULL; }
-  if(cumpreds) { delete_preds(cumpreds); }
+  if(cump) { delete_preds(cump); }
   if(preds) { delete_preds(preds); }
   if(its) { delete its; }
 }
@@ -251,12 +251,12 @@ void Tgp::Init(void)
   }
 
   /* structure for accumulating predictive information */
-  cumpreds = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), pred_n, krige, 
+  cump = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), pred_n, krige, 
 		       its->IT_ST_or_IS(), delta_s2, improv, sens, E);
   /* make sure the first col still indicates the coarse or fine process */
   if(params->BasePrior()->BaseModel() == GP){
     if( ((Gp_Prior*) params->BasePrior())->CorrPrior()->CorrModel() == MREXPSEP ){ 
-      for(unsigned int i=0; i<nn; i++) assert(cumpreds->XX[i][0] == XX[i][0]); 
+      for(unsigned int i=0; i<nn; i++) assert(cump->XX[i][0] == XX[i][0]); 
     }
   }
 
@@ -284,9 +284,9 @@ void Tgp::Rounds(void)
 
     /* Stochastic Approximation burn-in rounds
        to jump-start the psuedo-prior for ST */
-    if(i == 0 && its->DoStochApprox()) 
+    if(i == 0 && its->DoStochApprox()) {
       model->StochApprox(T, state);
-    else {
+    } else {
       /* do model rounds 1 thru B (burn in) */
       model->Burnin(B, state);
     }
@@ -300,19 +300,21 @@ void Tgp::Rounds(void)
     if(verb >= 1) model->PrintTreeStats(stdout);
 
     /* accumulate predictive information */
-    import_preds(cumpreds, preds->R * i, preds);		
+    import_preds(cump, preds->R * i, preds);		
     delete_preds(preds); preds = NULL;
 
-    /* done with this repetition; prune the tree all the way back 
-       and reset the inverse-temperatre probabilities */
+    /* done with this repetition */
+
+    /* prune the tree all the way back unless importance tempering */
     if(R > 1) {
       if(verb >= 1) myprintf(stdout, "finished repetition %d of %d\n", i+1, R);
-
-      /* cut_root unless importance tempering; otherwise update tprobs */
       if(its->Numit() == 1) model->cut_root();
-      else if(its->Numit() > 1) 
-	its->UpdatePrior(model->update_tprobs(), its->Numit());
     }
+
+    /* if importance tempering, then update the pseudo-prior based
+       on the observation counts */
+    if(its->Numit() > 1) 
+      its->UpdatePrior(model->update_tprobs(), its->Numit());
   }
 
   /* cap off the printing */
@@ -330,21 +332,21 @@ void Tgp::Rounds(void)
   /* write the preds out to files */
   if(trace && T-B>0) {
     if(nn > 0) { /* at predictive locations */
-      matrix_to_file("trace_ZZ_1.out", cumpreds->ZZ, cumpreds->R, nn);
-      if(cumpreds->ZZm) matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
-      if(cumpreds->ZZs2) matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
+      matrix_to_file("trace_ZZ_1.out", cump->ZZ, cump->R, nn);
+      if(cump->ZZm) matrix_to_file("trace_ZZkm_1.out", cump->ZZm, cump->R, nn);
+      if(cump->ZZs2) matrix_to_file("trace_ZZks2_1.out", cump->ZZs2, cump->R, nn);
     }
     if(pred_n) { /* at the data locations */
-      matrix_to_file("trace_Zp_1.out", cumpreds->Zp, cumpreds->R, n);
-      if(cumpreds->Zpm) matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
-      if(cumpreds->Zps2) matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
+      matrix_to_file("trace_Zp_1.out", cump->Zp, cump->R, n);
+      if(cump->Zpm) matrix_to_file("trace_Zpkm_1.out", cump->Zpm, cump->R, n);
+      if(cump->Zps2) matrix_to_file("trace_Zpks2_1.out", cump->Zps2, cump->R, n);
     }
 
     /* write improv */
-    if(improv) matrix_to_file("trace_improv_1.out", cumpreds->improv, cumpreds->R, nn);
+    if(improv) matrix_to_file("trace_improv_1.out", cump->improv, cump->R, nn);
 
     /* Ds2x is un-normalized, it needs to be divited by nn everywhere */
-    if(delta_s2) matrix_to_file("trace_Ds2x_1.out", cumpreds->Ds2x, cumpreds->R, nn);
+    if(delta_s2) matrix_to_file("trace_Ds2x_1.out", cump->Ds2x, cump->R, nn);
   }
 
   /* copy back the itemps */
@@ -375,7 +377,7 @@ void Tgp::Predict(void)
     model->Predict(preds, T-B, state);
 
     /* accumulate predictive information */
-    import_preds(cumpreds, preds->R * i, preds);		
+    import_preds(cump, preds->R * i, preds);		
     delete_preds(preds); preds = NULL;
 
     /* done with this repetition; prune the tree all the way back */
@@ -402,16 +404,16 @@ void Tgp::Predict(void)
   /* write the preds out to files */
   if(trace && T-B>0) {
     if(nn > 0) {
-      matrix_to_file("trace_ZZ_1.out", cumpreds->ZZ, cumpreds->R, nn);
-      if(cumpreds->ZZm) matrix_to_file("trace_ZZkm_1.out", cumpreds->ZZm, cumpreds->R, nn);
-      if(cumpreds->ZZs2) matrix_to_file("trace_ZZks2_1.out", cumpreds->ZZs2, cumpreds->R, nn);
+      matrix_to_file("trace_ZZ_1.out", cump->ZZ, cump->R, nn);
+      if(cump->ZZm) matrix_to_file("trace_ZZkm_1.out", cump->ZZm, cump->R, nn);
+      if(cump->ZZs2) matrix_to_file("trace_ZZks2_1.out", cump->ZZs2, cump->R, nn);
     }
     if(pred_n) {
-      matrix_to_file("trace_Zp_1.out", cumpreds->Zp, cumpreds->R, n);
-      if(cumpreds->Zpm) matrix_to_file("trace_Zpkm_1.out", cumpreds->Zpm, cumpreds->R, n);
-      if(cumpreds->Zps2) matrix_to_file("trace_Zpks2_1.out", cumpreds->Zps2, cumpreds->R, n);
+      matrix_to_file("trace_Zp_1.out", cump->Zp, cump->R, n);
+      if(cump->Zpm) matrix_to_file("trace_Zpkm_1.out", cump->Zpm, cump->R, n);
+      if(cump->Zps2) matrix_to_file("trace_Zpks2_1.out", cump->Zps2, cump->R, n);
     }
-    if(improv) matrix_to_file("trace_improv_1.out", cumpreds->improv, cumpreds->R, nn);
+    if(improv) matrix_to_file("trace_improv_1.out", cump->improv, cump->R, nn);
   }
 }
 
@@ -431,25 +433,25 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
   /* Calculate the main effects sample: based on M1 only for now.  */
   int ngrid = *ngrid_in;
   double span = *span_in;
-  double **ZZsample = new_zero_matrix(cumpreds->R, ngrid*cumpreds->d);
-  unsigned int nm = cumpreds->nm;
+  double **ZZsample = new_zero_matrix(cump->R, ngrid*cump->d);
+  unsigned int nm = cump->nm;
   double *XXdraw = new_vector(nm);
-  for(unsigned int i=0; i<cumpreds->R; i++) {
-    for(unsigned int j=0; j<cumpreds->d; j++) {
-      for(unsigned int k=0; k<nm; k++) XXdraw[k] = cumpreds->M[i][k*cumpreds->d + j];
+  for(unsigned int i=0; i<cump->R; i++) {
+    for(unsigned int j=0; j<cump->d; j++) {
+      for(unsigned int k=0; k<nm; k++) XXdraw[k] = cump->M[i][k*cump->d + j];
       move_avg(ngrid, &sens_XX[j*ngrid],  &ZZsample[i][j*ngrid], nm, XXdraw, 
-	       cumpreds->ZZ[i], span);
+	       cump->ZZ[i], span);
     }
   }
 
   /* calculate the average of the columns of ZZsample */
-  wmean_of_columns(sens_ZZ_mean, ZZsample, cumpreds->R, ngrid*cumpreds->d, NULL);
+  wmean_of_columns(sens_ZZ_mean, ZZsample, cump->R, ngrid*cump->d, NULL);
 
   /* allocate pointers for holding q1 and q2 */
   double q[2] = {0.05, 0.95};
   double **Q = (double**) malloc(sizeof(double*) * 2);
   Q[0] = sens_ZZ_q1;  Q[1] = sens_ZZ_q2;
-  quantiles_of_columns(Q, q, 2, ZZsample, cumpreds->R, ngrid*cumpreds->d, NULL);
+  quantiles_of_columns(Q, q, 2, ZZsample, cump->R, ngrid*cump->d, NULL);
   free(XXdraw);
   delete_matrix(ZZsample);
   free(Q);
@@ -457,83 +459,88 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
   /* variability indices S and total variability indices T are calculated here */
 
   double **fM1, **fM2, ***fN;
-  fM1 = new_matrix(cumpreds->R, cumpreds->nm);
-  fM2 = new_matrix(cumpreds->R, cumpreds->nm);
-  fN =  new double**[cumpreds->d];
-  for(unsigned int k=0; k<cumpreds->d; k++){
-    fN[k] = new_matrix(cumpreds->R, cumpreds->nm);
-    for(unsigned int i=0; i<cumpreds->R; i++){
-      dupv(fM1[i], cumpreds->ZZ[i], cumpreds->nm);
-      dupv(fM2[i], &cumpreds->ZZ[i][cumpreds->nm], cumpreds->nm);
-      dupv(fN[k][i], &cumpreds->ZZ[i][(k+2)*cumpreds->nm], cumpreds->nm);
-      }
+  fM1 = new_matrix(cump->R, cump->nm);
+  fM2 = new_matrix(cump->R, cump->nm);
+  fN =  new double**[cump->d];
+  for(unsigned int k=0; k<cump->d; k++){
+    fN[k] = new_matrix(cump->R, cump->nm);
+    for(unsigned int i=0; i<cump->R; i++){
+      dupv(fM1[i], cump->ZZ[i], cump->nm);
+      dupv(fM2[i], &cump->ZZ[i][cump->nm], cump->nm);
+      dupv(fN[k][i], &cump->ZZ[i][(k+2)*cump->nm], cump->nm);
+    }
   }
   
   double **U, **Uminus, *EZ, *E2ZforS, *EZ2, *VZ, *VZalt;
   
-  U = new_matrix(cumpreds->d, cumpreds->R);
-  Uminus = new_matrix(cumpreds->d, cumpreds->R);
-  EZ = new_vector(cumpreds->R);
-  E2ZforS = new_vector(cumpreds->R);
-  EZ2 =  new_vector(cumpreds->R);
-  VZ = new_vector(cumpreds->R);
-  VZalt = new_vector(cumpreds->R);
+  U = new_matrix(cump->d, cump->R);
+  Uminus = new_matrix(cump->d, cump->R);
+  EZ = new_vector(cump->R);
+  E2ZforS = new_vector(cump->R);
+  EZ2 =  new_vector(cump->R);
+  VZ = new_vector(cump->R);
+  VZalt = new_vector(cump->R);
 
-  for(unsigned int i=0; i<cumpreds->R; i++){
+  for(unsigned int i=0; i<cump->R; i++){
 
     EZ[i] =0.0;
     E2ZforS[i] = 0.0;
     EZ2[i] = 0.0;
     VZalt[i] = 0.0;
-    for(unsigned int j=0; j<cumpreds->nm; j++){
+    for(unsigned int j=0; j<cump->nm; j++){
       EZ[i] += fM1[i][j] + fM2[i][j];
       E2ZforS[i] += fM1[i][j]*fM2[i][j];
       EZ2[i] += fM1[i][j]*fM1[i][j] + fM2[i][j]*fM2[i][j];
-      VZalt[i] += (fM1[i][j] - EZ[i])*(fM1[i][j] - EZ[i]) + (fM2[i][j] - EZ[i])*(fM2[i][j] - EZ[i]);
+      VZalt[i] += (fM1[i][j]-EZ[i])*(fM1[i][j]-EZ[i])+(fM2[i][j]-EZ[i])*(fM2[i][j]-EZ[i]);
     }
-    EZ[i] = EZ[i]/(((double) cumpreds->nm)*2.0);
-    E2ZforS[i] = E2ZforS[i]/((double) cumpreds->nm);
-    EZ2[i] = EZ2[i]/(((double) cumpreds->nm)*2.0);
+    EZ[i] = EZ[i]/(((double) cump->nm)*2.0);
+    E2ZforS[i] = E2ZforS[i]/((double) cump->nm);
+    EZ2[i] = EZ2[i]/(((double) cump->nm)*2.0);
     VZ[i] =  EZ2[i] - EZ[i]*EZ[i];
-    VZalt[i] = VZalt[i]/(((double)cumpreds->nm)*2.0 - 1.0); // VZalt is guarenteed to be >0, but is very unstable.
-    //printf("i=%d, VZ=%g, EZ=%g, (EZ)^2=%g, EZ2=%g, E2Z.S=%g, VZalt=%g\n", i, VZ[i], EZ[i], EZ[i]*EZ[i], EZ2[i], E2ZforS[i], VZalt[i]);
-    for(unsigned int k=0; k<cumpreds->d; k++){
+    // VZalt is guarenteed to be >0, but is very unstable.
+    VZalt[i] = VZalt[i]/(((double)cump->nm)*2.0 - 1.0); 
+    //printf("i=%d, VZ=%g, EZ=%g, (EZ)^2=%g, EZ2=%g, E2Z.S=%g, VZalt=%g\n", 
+    //       i, VZ[i], EZ[i], EZ[i]*EZ[i], EZ2[i], E2ZforS[i], VZalt[i]);
+    for(unsigned int k=0; k<cump->d; k++){
       U[k][i] = 0.0;
       Uminus[k][i] = 0.0;
-      for(unsigned int j=0; j<cumpreds->nm; j++){
+      for(unsigned int j=0; j<cump->nm; j++){
 	U[k][i] += fM1[i][j]*fN[k][i][j];
 	Uminus[k][i] += fM2[i][j]*fN[k][i][j];
       }
-      U[k][i] = U[k][i]/(((double)cumpreds->nm)-1.0);
-      Uminus[k][i] = Uminus[k][i]/(((double) cumpreds->nm)-1.0);
+      U[k][i] = U[k][i]/(((double)cump->nm)-1.0);
+      Uminus[k][i] = Uminus[k][i]/(((double) cump->nm)-1.0);
     }
   }
 
   /* fill in the S and T matrices; tally number of time VZalt is used intead of VZ */
   int lessthanzero = 0;
-  for(unsigned int i=0; i<cumpreds->R; i++){
-    for(unsigned int k=0; k<cumpreds->d; k++){
+  for(unsigned int i=0; i<cump->R; i++){
+    for(unsigned int k=0; k<cump->d; k++){
 	if(!(VZ[i] > 0.0)){/* printf("VZ%d = %g\n", i, VZ[i]);*/ 
 	    VZ[i] = VZalt[i]; lessthanzero = 1; }
-	//sens_S[i*cumpreds->d + k] = exp(log(U[k][i] - E2ZforS[i])- log(VZ[i])); //saltelli recommends.
-	sens_S[i*cumpreds->d + k] = exp(log(U[k][i] - EZ[i]*EZ[i])- log(VZ[i])); //unbiased
-	sens_T[i*cumpreds->d + k] = 1- exp(log(Uminus[k][i] - EZ[i]*EZ[i]) - log(VZ[i]));
+	/* saltelli recommends.... */
+	//sens_S[i*cump->d + k] = exp(log(U[k][i] - E2ZforS[i])- log(VZ[i])); 
+	sens_S[i*cump->d + k] = exp(log(U[k][i] - EZ[i]*EZ[i])- log(VZ[i])); //unbiased
+	sens_T[i*cump->d + k] = 1- exp(log(Uminus[k][i] - EZ[i]*EZ[i]) - log(VZ[i]));
 	// numerical corrections for the boundary.  Avoidable by increasing nn.lhs.
-	if((U[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_S[i*cumpreds->d + k] = 0.0;  
-	if((Uminus[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_T[i*cumpreds->d + k] = 1.0;
+	if((U[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_S[i*cump->d + k] = 0.0;  
+	if((Uminus[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_T[i*cump->d + k] = 1.0;
     }
   }
 
   /* clean up */
   delete_matrix(fM1);
   delete_matrix(fM2);
-  for(unsigned int k=0; k<cumpreds->d; k++) delete_matrix(fN[k]);
+  for(unsigned int k=0; k<cump->d; k++) delete_matrix(fN[k]);
   delete [] fN;
   delete_matrix(U);
   delete_matrix(Uminus);
   free(EZ); free(E2ZforS); free(EZ2); free(VZ); free(VZalt);
 
-  if(lessthanzero) warning("negative variance values were replaced by alternative nonzero estimates. \nTry setting m0r1=TRUE or increasing nn.lhs for numerical stability.\n");
+  if(lessthanzero) 
+    warning("negative variance values were replaced by alternative nonzero estimates. \
+\nTry setting m0r1=TRUE or increasing nn.lhs for numerical stability.\n");
 }  
 
 
@@ -561,10 +568,12 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
      and possibly write the trace out to a file*/
   double *w = NULL;
   if(its->IT_ST_or_IS()) {
-    *ess = its->LambdaIT(cumpreds->w, cumpreds->itemp, cumpreds->R, verb);
-    if(trace && report) vector_to_file("trace_wlambda_1.out", cumpreds->w, cumpreds->R);
-    w = cumpreds->w;    
-  } else *ess = cumpreds->R;
+    ess[0] = its->LambdaIT(cump->w, cump->itemp, cump->R, ess+1, verb);
+    if(trace && report) vector_to_file("trace_wlambda_1.out", cump->w, cump->R);
+    w = cump->w;    
+  } else {
+    ess[0] = ess[1] = ess[2] = cump->R;
+  }
 
   /* allocate pointers for holding q1 median and q3 */
   /* TADDY's IQR settings 
@@ -575,31 +584,31 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
   /* calculate means and quantiles */
   if(T-B>0 && pred_n) {
 
-    assert(n == cumpreds->n);
+    assert(n == cump->n);
     /* mean */
-    wmean_of_columns(Zp_mean, cumpreds->Zp, cumpreds->R, n, w);
+    wmean_of_columns(Zp_mean, cump->Zp, cump->R, n, w);
 
     /* kriging mean */
-    if(Zp_km) wmean_of_columns(Zp_km, cumpreds->Zpm, cumpreds->R, n, w);
+    if(Zp_km) wmean_of_columns(Zp_km, cump->Zpm, cump->R, n, w);
 
     /* variance (computed from samples Zp) */
     if(zcov) {
       double **Zp_s2_M = (double**) malloc(sizeof(double*) * n);
       Zp_s2_M[0] = Zp_s2;
       for(unsigned int i=1; i<n; i++) Zp_s2_M[i] = Zp_s2_M[i-1] + n;
-      wcov_of_columns(Zp_s2_M, cumpreds->Zp, Zp_mean, cumpreds->R, n, w);
+      wcov_of_columns(Zp_s2_M, cump->Zp, Zp_mean, cump->R, n, w);
       free(Zp_s2_M);
     } else {
-       wmean_of_columns_f(Zp_s2, cumpreds->Zp, cumpreds->R, n, w, sq);
+       wmean_of_columns_f(Zp_s2, cump->Zp, cump->R, n, w, sq);
        for(unsigned int i=0; i<n; i++) Zp_s2[i] -= sq(Zp_mean[i]);
     }
 
     /* kriging variance */
-    if(Zp_ks2) wmean_of_columns(Zp_ks2, cumpreds->Zps2, cumpreds->R, n, w);
+    if(Zp_ks2) wmean_of_columns(Zp_ks2, cump->Zps2, cump->R, n, w);
 
     /* quantiles and medians */
     Q[0] = Zp_q1; Q[1] = Zp_median; Q[2] = Zp_q2;
-    quantiles_of_columns(Q, q, 3, cumpreds->Zp, cumpreds->R, n, w);
+    quantiles_of_columns(Q, q, 3, cump->Zp, cump->R, n, w);
     for(unsigned int i=0; i<n; i++) Zp_q[i] = Zp_q2[i]-Zp_q1[i];
   }
 
@@ -607,20 +616,20 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
   if(T-B>0 && nn>0 && !sens) {
     
     /* mean */
-    wmean_of_columns(ZZ_mean, cumpreds->ZZ, cumpreds->R, nn, w);
+    wmean_of_columns(ZZ_mean, cump->ZZ, cump->R, nn, w);
     
     /* kriging mean */
-    if(ZZ_km) wmean_of_columns(ZZ_km, cumpreds->ZZm, cumpreds->R, nn, w);
+    if(ZZ_km) wmean_of_columns(ZZ_km, cump->ZZm, cump->R, nn, w);
 
     /* variance (computed from samples ZZ) */
     if(zcov) { /* calculate the covarince between all predictive locations */
       double **ZZ_s2_M = (double **) malloc(sizeof(double*) * nn);
       ZZ_s2_M[0] = ZZ_s2;
       for(unsigned int i=1; i<nn; i++) ZZ_s2_M[i] = ZZ_s2_M[i-1] + nn;
-      wcov_of_columns(ZZ_s2_M, cumpreds->ZZ, ZZ_mean, cumpreds->R, nn, w);
+      wcov_of_columns(ZZ_s2_M, cump->ZZ, ZZ_mean, cump->R, nn, w);
       free(ZZ_s2_M);
     } else { /* just the variance */
-      wmean_of_columns_f(ZZ_s2, cumpreds->ZZ, cumpreds->R, nn, w, sq);
+      wmean_of_columns_f(ZZ_s2, cump->ZZ, cump->R, nn, w, sq);
       for(unsigned int i=0; i<nn; i++) ZZ_s2[i] -= sq(ZZ_mean[i]);
     }
 
@@ -629,39 +638,39 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
       double **ZpZZ_s2_M = (double**) malloc(sizeof(double*) * n);
       ZpZZ_s2_M[0] = ZpZZ_s2;
       for(unsigned int i=1; i<n; i++) ZpZZ_s2_M[i] = ZpZZ_s2_M[i-1] + nn;
-      wcovx_of_columns(ZpZZ_s2_M, cumpreds->Zp, cumpreds->ZZ, Zp_mean, 
-		       ZZ_mean, cumpreds->R, n, nn, w);
+      wcovx_of_columns(ZpZZ_s2_M, cump->Zp, cump->ZZ, Zp_mean, 
+		       ZZ_mean, cump->R, n, nn, w);
       free(ZpZZ_s2_M);
     }
 
     /* kriging variance */
-    if(ZZ_ks2) wmean_of_columns(ZZ_ks2, cumpreds->ZZs2, cumpreds->R, nn, w);
+    if(ZZ_ks2) wmean_of_columns(ZZ_ks2, cump->ZZs2, cump->R, nn, w);
 
     /* quantiles and medians */
     Q[0] = ZZ_q1; Q[1] = ZZ_median; Q[2] = ZZ_q2;
-    quantiles_of_columns(Q, q, 3, cumpreds->ZZ, cumpreds->R, cumpreds->nn, w);
+    quantiles_of_columns(Q, q, 3, cump->ZZ, cump->R, cump->nn, w);
     for(unsigned int i=0; i<nn; i++) ZZ_q[i] = ZZ_q2[i]-ZZ_q1[i];
     
     /* ALC: expected reduction in predictive variance */
-    if(cumpreds->Ds2x) {
+    if(cump->Ds2x) {
       assert(delta_s2);
-      wmean_of_columns(Ds2x, cumpreds->Ds2x, cumpreds->R, cumpreds->nn, w);
+      wmean_of_columns(Ds2x, cump->Ds2x, cump->R, cump->nn, w);
     }
 
     /* improv (minima) */
     if(improv) {
-      assert(cumpreds->improv);
+      assert(cump->improv);
       
-      wmean_of_columns(improvec, cumpreds->improv, cumpreds->R, cumpreds->nn, w);
+      wmean_of_columns(improvec, cump->improv, cump->R, cump->nn, w);
       /* TADDY's file output for improv trace   
-      matrix_to_file("improv.txt", cumpreds->improv, cumpreds->R, cumpreds->nn);
+      matrix_to_file("improv.txt", cump->improv, cump->R, cump->nn);
       int **IRANK = new int*[2];
-      IRANK[0] = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, 1, w);
-      IRANK[1] = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, 2, w);
+      IRANK[0] = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, 1, w);
+      IRANK[1] = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, 2, w);
       dupiv(irank, IRANK[0], nn);
-      intmatrix_to_file("irank.txt", IRANK, 2, cumpreds->nn);
+      intmatrix_to_file("irank.txt", IRANK, 2, cump->nn);
       delete_imatrix(IRANK); */
-      int *ir = (int*) GetImprovRank(cumpreds->R, cumpreds->nn, cumpreds->improv, improv, w);
+      int *ir = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, improv, w);
       dupiv(irank, ir, nn);
       free(ir);
     }

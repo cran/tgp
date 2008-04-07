@@ -1,3 +1,17 @@
+2.1-1 (7 April 2008)
+-----
+
+separaing tcounts and cum_tcounts and resetting tcounts to
+the average of cum_tcounts at beginning of each round
+
+fixed bug in returning of tcounts back to R by encuring that
+its->UpdateProbs() is always called after the last of R 
+rounds whenever its->Numit() > 1
+
+return ess information at each inverse temperature back to
+R for storage in the tgp-class object
+
+
 2.1 (22 March 2008)
 ---
 
