@@ -1470,6 +1470,36 @@ double sumv(double *v, unsigned int n)
 
 
 /* 
+ * sumiv:
+ *
+ * return the sum of the contents of the integer vector
+ */
+
+int sumiv(int *iv, unsigned int n)
+{
+  unsigned int i;
+  int s;
+  if(n==0) return 0;
+  assert(iv);
+  s = 0;
+  for(i=0; i<n; i++) s += iv[i];
+  return(s);
+}
+
+
+/* 
+ * meaniv:
+ *
+ * return the mean of the contents of the intever vector
+ */
+
+int meaniv(int *iv, unsigned int n)
+{
+  return((int) (sumiv(iv, n)/n));
+}
+
+
+/* 
  * sum_fv:
  *
  * return the sum of the contents of the vector
@@ -1758,7 +1788,7 @@ void iones(int *iv, unsigned int n, int scale)
   unsigned int i;
   if(n > 0) assert(iv);
   for(i=0; i<n; i++) iv[i] = scale;
-}	
+}
 
 
 /*
@@ -1866,6 +1896,12 @@ void copy_sub_uivector(unsigned int *V, int *p, unsigned int *v, unsigned int n)
 
 unsigned int* new_sub_uivector(int *p, unsigned int *v, unsigned int n)
 { return (unsigned int*) new_sub_ivector(p, (int*)v, n); }
+
+unsigned int sumuiv(unsigned int *v, unsigned int n)
+{ return (unsigned int) sumiv((int*)v, n); }
+
+unsigned int meanuiv(unsigned int *v, unsigned int n)
+{ return (unsigned int) meaniv((int*)v, n); }
 
 
 /*

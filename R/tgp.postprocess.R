@@ -59,6 +59,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   if(!is.null(improv)){
     ll$improv <- data.frame(improv=ll$improv, rank=ll$irank)
   }
+  ll$irank <- NULL
 
   ## NULL-out data-predictive output if unused
   if(pred.n == FALSE || ll$BTE[2]-ll$BTE[1] == 0) {
@@ -100,6 +101,14 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
                     pk=ll$itemps[(nt+4):(2*nt+3)], 
                     counts=as.integer(ll$itemps[(2*nt+4):(3*nt+3)]),
                     lambda=lambda)
+
+  ## consolidate ess
+  if(nt == 1) ll$ess <- ll$ess[1]
+  else {
+    ll$ess=list(combined=ll$ess[1],
+      each=data.frame(k=ll$itemps$k, count=ll$ess[2:(nt+1)], ess=ll$ess[(nt+2):(2*nt+1)]))
+  }
+  
 
   ## change {0,1} to {TRUE,FALSE}
   if(ll$linburn) ll$linburn <- TRUE

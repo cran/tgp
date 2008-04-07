@@ -68,7 +68,7 @@ class Tgp
 
   double **rect;         /* bounding rectangle of the (design matrix) data X */
   Model *model;          /* pointer to the (treed GP) model */
-  Preds *cumpreds;       /* data structure for gathering posterior pred samples */
+  Preds *cump;           /* data structure for gathering posterior pred samples */
   Preds *preds;          /* inv-temporary for posteior pred samples */
 
  public:

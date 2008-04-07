@@ -299,8 +299,24 @@ ones, so long as the desired improvements in mixing are achieved.  In
 the examples to follow, we shall see that the sigmoidal ladder does
 indeed leader to higher $\mathrm{ESS}(\mathbf{w}^{\lambda^*})$.
 
+
 \subsection{Examples}
 \label{sec:examples}
+
+Here the IT method shown in action for {\tt tgp} models.  IT is
+controlled in {\tt b*} function via the {\tt itemps} argument: a {\tt
+  data.frame} coinciding with the output of the {\tt default.itemps}
+function.  The {\tt lambda} argument to {\tt default.itemps} can be
+used to base posterior predictive inference the other IT heuristics:
+ST and the na\"ive approach (\ref{Eq:hath}).  Whenever the argument
+{\tt m = 1} is used with $k.min != 1$ the resulting estimator is
+constructed via tempered importance sampling at inverse temperature
+{\tt k.min}.  The parameters $c_0$ and $n_0$ for stochastic
+approximation of the pseudo--prior can be specified as a 2--vector {\tt
+  c0n0} argument to {\tt default.itemps}.  In the examples which
+follow we simply use the default configuration of the IT method,
+adjusting only the minimum inverse temperature via the {\tt k.min}
+argument.
 
 Before delving into more involved examples, we illustrate the stages
 involved in a small run of importance tempering (IT) on the
@@ -317,7 +333,7 @@ geometric ladder.  A warning will be given if the default setting of
 can lead to improper posterior inference at high temperatures.
 <<>>=
 its <- default.itemps(m=10)
-exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its) 
+exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE) 
 @ 
 Notice how the MCMC inference procedure starts with
 $B+T=\Sexpr{exp.btlm$BTE[1] + exp.btlm$BTE[2]}$ rounds of stochastic
@@ -336,12 +352,15 @@ Any subsequent repeats begin after a similar (re-)adjustment.
 Before finishing, the routine summarizes the sample size and effective
 sample sizes in each rung of the temperature ladder.  The number of
 samples is given by {\tt len}, the ESS by {\tt ess}.  These quantities
-can be recovered via {\tt traces}, as shown in the examples to
+can also be recovered via {\tt traces}, as shown in the examples to
 follow. The ESS of the optimal combined IT sample is the last quantity
-printed.  This can also be obtained via the {\tt tgp}-class output object.
+printed.  This, along with the ESS and total numbers of samples in
+each temperature, can also be obtained via the {\tt tgp}-class output
+object.
 <<>>=
 exp.btlm$ess
 @ 
+
 
 \subsubsection{Motorcycle accident data}
 \label{sec:moto}
@@ -352,14 +371,14 @@ the posterior distribution of the treed GP LLM model using the
 geometric temperature ladder.
 <<>>=
 library(MASS)
-moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-        m0r1=TRUE, bprior="b0", R=10, itemps=geo,
+moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        m0r1=TRUE, bprior="b0", R=3, itemps=geo,
         trace=TRUE, pred.n=FALSE, verb=0)
 @ 
 Out of a total of $\Sexpr{moto.it$R*moto.it$BTE[2]/moto.it$BTE[3]}$
 from the joint chain, the resulting (optimally combined) ESS was:
 <<>>=
-moto.it$ess
+moto.it$ess$combined
 @ 
 Alternatively, $\mb{w}^{\lambda^*}$ can be extracted from the
 traces, and used to make the ESS calculation directly.
@@ -375,22 +394,23 @@ effective sample size.
 ESS(p$w)
 @ 
 To see the benefit of IT over ST we can simply count the number of
-samples obtained when $k^{(t)} = 1$.
+samples obtained when $k^{(t)} = 1$.  This can be accomplished in
+several ways: either via the traces or through the output object.
 <<>>=
-sum(p$itemp == 1)
+as.vector(c(sum(p$itemp == 2), moto.it$ess$each[1,2:3]))
 @ 
 That is, (optimal) IT gives effectively
-$\Sexpr{signif(moto.it$ess/sum(p$itemp==1), 3)}$ times more samples.
+$\Sexpr{signif(moto.it$ess$combined/sum(p$itemp==1), 3)}$ times more samples.
 The na\"{i}ve combination, leading to the estimator in (\ref{Eq:hath}),
-yields an estimator with effective sample size
+yields an estimator with effective sample size that is
 $\Sexpr{round(100*ESS(p$w)/sum(p$itemp==1))}$\% of the number of
 samples obtained under ST.
 
 Now, we should like to compare to the MCMC samples obtained
 under the same model, without IT.
 <<>>=
-moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-        R=10, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
+moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        R=3, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
 @ 
 The easiest comparison to make is to look at the heights explored
 under the three chains: the regular one, the chain of heights visited
@@ -468,14 +488,15 @@ re-weighting samples obtained when $k < 1$ it is only important that
 the chain frequently visit low temperatures to obtain good sampling,
 and high temperatures to obtain good mixing.  The actual time spent in
 specific temperatures, i.e., $k=1$ is less important.
+%%ylim <- c(0, 1.25*max(c(b[,1], moto.it$itemps$counts)))
+%, ylim=ylim)
 \begin{figure}[ht!]
 <<label=it-moto-khist,fig=TRUE,echo=TRUE,width=10,height=6,include=FALSE>>=
 b <- itemps.barplot(moto.it, plot.it=FALSE)
-ylim <- c(0, 1.25*max(c(b[,1], moto.it$itemps$counts)))
 barplot(t(cbind(moto.it$itemps$counts, b)), col=1:2,
         beside=TRUE, ylab="counts", xlab="itemps", 
-        main="inv-temp observation counts", ylim=ylim)
-legend("topleft", c("observation counts", "posterior samples"), fill=1:2)
+        main="inv-temp observation counts")
+legend("topright", c("observation counts", "posterior samples"), fill=1:2)
 @
 \centering
 \includegraphics[trim=0 35 0 25]{tgp2-it-moto-khist}
@@ -489,25 +510,24 @@ Figure \ref{f:khist} shows the histogram of the inverse temperatures
 visited in the Markov chain for the motorcycle experiment.  Also
 plotted is a histogram of the {\em observation counts} in each
 temperature.  The two histograms should similar shape but different
-totals.  Observation counts are tallied during burn--in and for every
-MCMC sample thereafter, whereas the posterior samples of $k$ are
-thinned (at a rate specified in {\tt BTE[3]}) and are not collected
-during burn--in.  When the default {\tt trace = FALSE} argument is
-used only the observation counts will be available in the {\tt
+totals.  Observation counts are tallied during every MCMC sample after
+burn--in, whereas the posterior samples of $k$ are thinned (at a rate 
+specified in {\tt BTE[3]}).  When the default {\tt trace = FALSE} argument 
+is used only the observation counts will be available in the {\tt
   tgp}--class object, and these can be used as a surrogate for a trace
 of $k$.
 
 The compromise IT approach obtained using the sigmoidal ladder can
 yield an increase in ESS.
 <<>>=
-moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,10),
-                      R=10, m0r1=TRUE, bprior="b0", krige=FALSE,
+moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+                      R=3, m0r1=TRUE, bprior="b0", krige=FALSE,
 		      itemps=sig, verb=0)
 @ 
 Compare the resulting ESS to the one given for the geometric
 ladder above.
 <<>>=
-moto.it.sig$ess
+moto.it.sig$ess$combined
 @ 
 \begin{figure}[ht!]
 <<label=it-moto-pred,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>=
@@ -526,8 +546,8 @@ first {\tt tgp} vignette \cite{gramacy:2007}.
 \subsubsection{Synthetic 2--d Exponential Data}
 \label{sec:exp}
 
-Recall the synthetic 2--d exponential data of Section 3.4 of Gramacy
-(2007) \nocite{gramacy:2007}, where the true response is given by
+Recall the synthetic 2--d exponential data of Section 3.4 of the tgp
+vignette \cite{gramacy:2007}, where the true response is given by
 \[
 z(\mb{x}) = x_1 \exp (x_1^2 - x_2^2).
 \]
@@ -542,7 +562,7 @@ Z <- exp2d.Z(X)$Z
 Consider a treed GP LLM model fit to this data using the standard
 RJ--MCMC.
 <<>>=
-exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,22000,10), bprior="b0", 
+exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                    trace=TRUE, krige=FALSE, R=10, verb=0)
 @ 
 \begin{figure}[ht!]
@@ -586,12 +606,15 @@ figures possibly became stuck in a local mode of tree space while on
 an excursion into deeper trees.
 
 Now consider using IT.  It will be important in this case to have a
-$k_{\mbox{\tiny m}}$ small enough to ensure that the tree
-occasionally prunes back to the root.  We shall therefore use a
-smaller $k_{\mbox{\tiny m}}$ with an extra 10 rungs.
+$k_{\mbox{\tiny m}}$ small enough to ensure that the tree occasionally
+prunes back to the root.  We shall therefore use a smaller
+$k_{\mbox{\tiny m}}$.% with an extra 10 rungs.
+Generally speaking, some pilot tuning may be necessary to choose an
+appropriate $k_{\mbox{\tiny m}}$ and number of rungs $m$, though the
+defaults should give adequate performance in most cases.
 <<>>=
-its <- default.itemps(k.min=0.02, m=60)
-exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,22000,10), bprior="b0", 
+its <- default.itemps(k.min=0.02)
+exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                trace=TRUE, krige=FALSE, itemps=its, R=10, verb=0)
 @
 As expected, the tempered chain moves more rapidly throughout tree space
@@ -604,15 +627,15 @@ We can quickly compare the effective sample sizes of the three possible
 estimators: ST, na\"{i}ve IT, and optimal IT.
 <<>>=
 p <- exp.it$trace$post
-data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess)
+data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess$combined)
 @ 
 Due to the thinning in the Markov chain ({\tt BTE[3] = 10}) and the
 traversal between $m=10$ temperatures in the ladder, we can be
-reasonably certain that the \Sexpr{round(exp.it$ess)} samples obtained
+reasonably certain that the \Sexpr{round(exp.it$ess$combined)} samples obtained
 via IT from the total of
-\Sexpr{round((exp.it$BTE[2]-exp.it$BTE[1])*exp.it$R)} samples obtained
-from the posterior are far less correlated than the ones obtained via
-standard RJ--MCMC.
+\Sexpr{round(exp.it$R*(exp.it$BTE[2]-exp.it$BTE[1])/exp.it$BTE[3])} 
+samples obtained from the posterior are far less correlated than the 
+ones obtained via standard RJ--MCMC.
 
 As with the motorcycle data, we can compare the tree heights visited
 by the two chains.
@@ -660,7 +683,7 @@ To more directly compare the mixing in tree space between the ST and
 tempered chains, consider the trace plots of the heights of the trees
 explored by the chains shown in Figure \ref{f:exp:trace:height}.
 Despite being restarted \Sexpr{exp.reg$R} times, the regular RJ--MCMC
-chain never visits trees of height less than five after burn--in and
+chain (almost) never visits trees of height less than five after burn--in and
 instead makes rather lengthy excursions into deeper trees, exploring
 a local mode in the posterior.  In contrast, the tempered chain
 frequently prunes back to the tree root, and consequently discovers

@@ -41,7 +41,8 @@ class Temper
   /* for stochastic approximation -- should prolly be ints */
   double c0;
   double n0;
-  int cnt;  /* iteration number */
+  int cnt;     /* iteration number */
+  bool doSA;   /* for turning SA on and off */
 
   /* temperature ladder and pseudo-prior */
   unsigned int numit;
@@ -52,6 +53,7 @@ class Temper
 
   /* occupation counts -- # of times each itemp is visited */
   unsigned int *tcounts;
+  unsigned int *cum_tcounts;
 
   /* keeping track of the current temperature and
      a proposed temperature */
@@ -85,8 +87,8 @@ class Temper
 
   /* random-walk proposition */
   double Propose(double *q_fwd, double *q_bak, void* state);
-  void Keep(double itemp_new);
-  void Reject(double itemp_new);
+  void Keep(double itemp_new, bool burnin);
+  void Reject(double itemp_new, bool burnin);
 
   /* setting the pseudo-prior */
   double* UpdatePrior(void);
@@ -94,15 +96,19 @@ class Temper
   void CopyPrior(double *dparams);
   void StochApprox(void);
   void ResetSA(void);
+  void StopSA(void);
+  void Normalize(void);
   
   /* combination heuristics */
-  double LambdaIT(double *w, double *itemp, unsigned int R, unsigned int verb);
-  double LambdaOpt(double *w, double *itemp, unsigned int n, unsigned int verb);
+  double LambdaIT(double *w, double *itemp, unsigned int R, double *essd, unsigned int verb);
+  double LambdaOpt(double *w, double *itemp, unsigned int n, double *essd, unsigned int verb);
   double LambdaST(double *w, double *itemp, unsigned int n, unsigned int verb);
   double LambdaNaive(double *w, unsigned int n, unsigned int verb);
+  void EachESS(double *w, double *itemp, unsigned int n, double *essd);
   
   /* printing */
   void Print(FILE *outfile);
+  void AppendLadder(const char* file_str);
 };  
 
 

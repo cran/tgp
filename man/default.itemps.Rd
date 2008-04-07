@@ -86,6 +86,7 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \item{pk }{ A vector with \code{length(pk) = m} containing  an
     initial pseudo-prior for the temperature ladder of \code{1/m} for
     each inverse temperature}
+  \item{lambda}{ IT method, as specified by the input argument}
 }
 \references{
   Gramacy, R.B., Samworth, R.J., and King, R. (2007)

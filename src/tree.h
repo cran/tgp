@@ -50,7 +50,7 @@ class Tree
    
   unsigned int n;		/* number of input data locations */
   unsigned int nn;	        /* number of predictive input data locations */
-  unsigned int d;			 /* dimension of the input data */ 
+  unsigned int d;		/* dimension of the input data */ 
   double **X;		        /* n x (col-1), data: spatial locations */
   int *p;			/* n, indices into original data */
   double *Z;		        /* n, f(X) */
@@ -70,7 +70,7 @@ class Tree
   unsigned int depth;	        /* depth of partition in tree */
    
   FILE* OUTFILE;		/* where to print tree-specific info */
-  int verb;                /* printing level (0=none, ... , 3+=verbose); */
+  int verb;                     /* printing level (0=none, ... , 3+=verbose); */
 
  private: /* functions */
    

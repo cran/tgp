@@ -89,8 +89,7 @@ function(m=40, type=c("geometric", "harmonic", "sigmoidal"),
 
   ## return the generated ladder, as above, with a vector of
   ## observation counts for tgp to update
-  return(list(c0n0=c0n0, k=k, pk=rep(1/m, m),
-              counts=rep(0,m), lambda=lambda))
+  return(list(c0n0=c0n0, k=k, pk=rep(1/m, m), lambda=lambda))
 }
 
 

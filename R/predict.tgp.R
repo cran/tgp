@@ -91,9 +91,9 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
   # RNG seed
   state <- sample(seq(0,999), 3)
 
-  ## get itemps from object
-  ## Bobby: consider setting c0n0 <- c(0,0) for prediction
+  ## get itemps from object, but set c0n0 <- c(0,0) 
   ## so no stochastic approx happens
+  object$itemps$c0n0 <- c(0,0)
   itemps <- check.itemps(object$itemps, object$params)
 
   ## If SENS, set up XX ##
@@ -160,7 +160,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            Ds2x = double(Ds2x * nnprime),
            improv = double(as.logical(improv) * nnprime),
            irank = integer(as.logical(improv) * nnprime),
-           ess = double(1),
+           ess = double(1 + itemps[1]*2),
            gpcs = double(4),
            sens.ZZ.mean = double(ngrid*object$d),
            sens.ZZ.q1 = double(ngrid*object$d),

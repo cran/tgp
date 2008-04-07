@@ -85,8 +85,8 @@ class Model
   Posteriors *posteriors;		/* for keeping track of the best tree posteriors */
   Linarea *lin_area;			/* if so, we need a pointer to the area structure */
 
-  Temper *its;                           /* inv-temperature for importance-tempering */
-  bool tprior;                          /* whether to temper the (tree) prior or not */
+  Temper *its;                          /* inv-temperature for importance-tempering */
+  bool Tprior;                          /* whether to temper the (tree) prior or not */
   
  public:
   
@@ -164,7 +164,7 @@ class Model
 
   /* tempered importance sampling */
   double iTemp(void);
-  void DrawInvTemp(void* state);
+  void DrawInvTemp(void* state, bool burnin);
   double* update_tprobs(void);
   void DupItemps(Temper *its);
 };
