@@ -1,4 +1,15 @@
-2.1-1 (7 April 2008)
+2.1-2 (17 April 2008)
+-----
+
+introduced params$Wi and made it so that params${b,Wi} set
+both the starting an prior values for the corresponding
+parameters.
+
+added bprior="bmznot" so that tau2 can be fixed at its
+starting value
+
+
+2.1-1 (4 April 2008)
 -----
 
 separaing tcounts and cum_tcounts and resetting tcounts to

@@ -55,8 +55,8 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
    \item{bprior}{Linear (beta) prior, default is \code{"bflat"}
      which gives an \dQuote{improper} prior which can perform badly 
      when the signal-to-noise ratio is low.  In these cases the 
-     \dQuote{proper} hierarchical specification \code{"b0"} or
-     \code{"bmzt"} prior may perform better
+     \dQuote{proper} hierarchical specification \code{"b0"},
+     \code{"bmzt"}, or \code{"bmznot"} prior may perform better
      }
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range \eqn{d}{d},
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}
@@ -126,11 +126,13 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
 \references{
 Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-
 \url{http://www.jstatsoft.org/v19/i09}
-Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Bayesian treed Gaussian process models.}
-Available as UCSC Technical Report ams2006-01. 
+
+Gramacy, R. B., Lee, H. K. H. (2007).
+\emph{Bayesian treed Gaussian process models with an application to computer modeling}
+Journal of the American Statistical Association, \bold{to appear}.
+Also available as as ArXiv article 0710.4536
+\url{http://arxiv.org/abs/0710.4536}
 
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }

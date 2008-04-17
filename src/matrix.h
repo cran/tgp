@@ -67,6 +67,11 @@ void delete_matrix(double** m);
 void delete_imatrix(int** m);
 
 void check_means(double *mean, double *q1, double *median, double *q2, unsigned int n);
+void center_columns(double **M, double *center, unsigned int n1, unsigned int n2);
+void center_rows(double **M, double *center, unsigned int n1, unsigned int n2);
+void norm_columns(double **M, double *norm, unsigned int n1, unsigned int n2);
+void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
+		      double(*f)(double));
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
 		      double *weight);
 void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
@@ -126,8 +131,10 @@ void copy_p_vector(double *V, int *p, double *v, unsigned int n);
 void copy_sub_vector(double *V, int *p, double *v, unsigned int n);
 double* new_sub_vector(int *p, double *v, unsigned int n);
 void scalev(double *v, unsigned int n, double scale);
+void centerv(double *v, unsigned int n, double scale);
 double sum_fv(double *v, unsigned int n, double(*f)(double));
 double sumv(double *v, unsigned int n);
+double meanv(double *v, unsigned int n);
 
 int* new_ivector(unsigned int n);
 int* new_dup_ivector(int *iv, unsigned int n);
