@@ -389,6 +389,7 @@ void add_matrix(double a, double **M1, double b, double **M2,
       M1[i][j] = a*M1[i][j] + b*M2[i][j];
 }
 
+
 /*
  * add_p_matrix:
  *
@@ -403,6 +404,61 @@ void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v,
   assert(V); assert(p1); assert(p2); assert(n1 > 0 && n2 > 0);
   for(i=0; i<n1; i++) for(j=0; j<n2; j++) 
     V[p1[i]][p2[j]] = a*V[p1[i]][p2[j]] + b*v[i][j];
+}
+
+
+/*
+ * subtract off (element-wise) the center[n2] vector from each
+ * column of the M[n1][n2] matrix
+ */
+
+void center_columns(double **M, double *center, unsigned int n1, unsigned int n2)
+{
+  unsigned int i,j;
+
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(center && M);
+
+  for(i=0; i<n2; i++)
+     for(j=0; j<n1; j++) 
+       M[j][i] -= center[i];
+}
+
+
+/*
+ * subtract off (element-wise) the center[n1] vector from each
+ * row of the M[n1][n2] matrix
+ */
+
+void center_rows(double **M, double *center, unsigned int n1, unsigned int n2)
+{
+  unsigned int i;
+
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(center && M);
+
+  for(i=0; i<n1; i++) centerv(M[i], n2, center[i]); 
+}
+
+
+/*
+ * subtract off (element-wise) the center[n2] vector from each
+ * column of the M[n1][n2] matrix
+ */
+
+void norm_columns(double **M, double *norm, unsigned int n1, unsigned int n2)
+{
+  unsigned int i,j;
+
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(norm && M);
+
+  for(i=0; i<n2; i++)
+     for(j=0; j<n1; j++) 
+       M[j][i] /= norm[i];
 }
 
 
@@ -433,6 +489,30 @@ void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2
     if(weight) for(j=0; j<n1; j++) mean[i] += weight[j] * M[j][i];	
     else for(j=0; j<n1; j++) mean[i] += M[j][i];	
     mean[i] = mean[i] / sw;
+  }
+}
+
+
+/*
+ * sum_of_columns_f:
+ *
+ * fill sum[n1] with the sum of the columns of M (n1 x n2);
+ * each element of which is sent through function f() first;
+ */
+
+void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
+		      double(*f)(double))
+{
+  unsigned int i,j;
+
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(s && M);
+  
+  /* calculate mean of columns */
+  for(i=0; i<n2; i++) {
+    s[i] = 0;
+    for(j=0; j<n1; j++) s[i] += f(M[j][i]);
   }
 }
 
@@ -559,12 +639,14 @@ void wcov_of_columns(double **cov, double **M, double *mean, unsigned int n1,
     if(weight) {
       for(t=0; t<n1; t++) {
 	for(j=i; j<n2; j++) /* using weights */
-	  cov[i][j] += weight[t] * (M[t][i]*M[t][j] - M[t][i]*mean[j] - M[t][j]*mean[i]) + mean[i]*mean[j];
+	  cov[i][j] += weight[t]*(M[t][i]*M[t][j] - M[t][i]*mean[j] - 
+				  M[t][j]*mean[i]) + mean[i]*mean[j];
       }
     } else {
       for(t=0; t<n1; t++) {
 	for(j=i; j<n2; j++) /*  not using weights */
-	  cov[i][j] += M[t][i]*M[t][j] - M[t][i]*mean[j] - M[t][j]*mean[i] + mean[i]*mean[j];
+	  cov[i][j] += (M[t][i]*M[t][j] - M[t][i]*mean[j] - 
+			M[t][j]*mean[i] + mean[i]*mean[j]);
       }
     }
     scalev(cov[i], n2, 1.0/sw);
@@ -583,8 +665,9 @@ void wcov_of_columns(double **cov, double **M, double *mean, unsigned int n1,
  * to those of M2 (T x n2); weight vector should have length T;
  */
 
-void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, double *mean2, 
-		      unsigned int T,  unsigned int n1, unsigned int n2, double *weight)
+void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, 
+		      double *mean2, unsigned int T,  unsigned int n1, 
+		      unsigned int n2, double *weight)
 {
   unsigned int i,j,t;
   double sw;
@@ -603,12 +686,14 @@ void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, dou
     if(weight) {
       for(t=0; t<T; t++) {
 	for(j=0; j<n2; j++) /* using weights */
-	  cov[i][j] += weight[t] * (M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - M2[t][j]*mean1[i]) + mean1[i]*mean2[j];
+	  cov[i][j] += weight[t] * (M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - 
+				    M2[t][j]*mean1[i]) + mean1[i]*mean2[j];
       }
     } else {
       for(t=0; t<T; t++) {
 	for(j=0; j<n2; j++) /*  not using weights */
-	  cov[i][j] += M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - M2[t][j]*mean1[i] + mean1[i]*mean2[j];
+	  cov[i][j] += (M1[t][i]*M2[t][j] - M1[t][i]*mean2[j] - 
+			M2[t][j]*mean1[i] + mean1[i]*mean2[j]);
       }
     }
     scalev(cov[i], n2, 1.0/sw);
@@ -664,6 +749,11 @@ void quantiles_of_columns(double **Q, double *q, unsigned int m,
   free(qs);
 }
 
+
+/* 
+ * data structure for sorting weighted samples
+ * to estimate quantiles 
+ */
 
 typedef struct wsamp
 {
@@ -1056,6 +1146,11 @@ double quick_select(double arr[], int n, int k)
 }
 
 
+/*
+ * same as the quick_select algorithm above, but less
+ * efficient.  Not currently used in tgp
+ */
+
 double kth_smallest(double a[], int n, int k)
 {
   int i,j,l,m ;
@@ -1080,6 +1175,7 @@ double kth_smallest(double a[], int n, int k)
   return a[k] ;
 }
 #undef ELEM_SWAP
+
 
 /* 
  * send mean of the columns of the matrix M
@@ -1134,6 +1230,7 @@ void matrix_to_file(const char* file_str, double** matrix, unsigned int n1, unsi
   fclose(MOUT);
 }
 
+
 /* 
  * open file with the given name
  * and print the passed integer matrix to it
@@ -1155,7 +1252,8 @@ void intmatrix_to_file(const char* file_str, int** matrix, unsigned int n1, unsi
  * and print transpose of the passed matrix to it
  */
 
-void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2)
+void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1, 
+		      unsigned int n2)
 {
   FILE* MOUT;
   
@@ -1470,6 +1568,18 @@ double sumv(double *v, unsigned int n)
 
 
 /* 
+ * meanv:
+ *
+ * return the mean of the contents of the vector
+ */
+
+double meanv(double *v, unsigned int n)
+{
+  return(sumv(v, n)/n);
+}
+
+
+/* 
  * sumiv:
  *
  * return the sum of the contents of the integer vector
@@ -1490,7 +1600,7 @@ int sumiv(int *iv, unsigned int n)
 /* 
  * meaniv:
  *
- * return the mean of the contents of the intever vector
+ * return the mean of the contents of the integer vector
  */
 
 int meaniv(int *iv, unsigned int n)
@@ -1555,6 +1665,20 @@ void scalev(double *v, unsigned int n, double scale)
   assert(v);
   for(i=0; i<n; i++) v[i] = v[i]*scale;
 }
+
+
+/*
+ * subtract the center value from each component
+ * of v[n]
+ */
+
+void centerv(double *v, unsigned int n, double center)
+{
+  int i;
+  assert(v);
+  for(i=0; i<n; i++) v[i] = v[i] - center;
+}
+    
 
 
 /*

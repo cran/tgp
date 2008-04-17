@@ -251,10 +251,10 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   time_t itime = time(NULL);
   
   /* every round, do ... */
-  for(unsigned int r=0; r<T; r++) {
+  for(int r=0; r<(int)T; r++) {
 
     /* draw a new temperature */
-    if((r+1)%4 == 0) DrawInvTemp(state, r < B);
+    if((r+1)%4 == 0) DrawInvTemp(state, r < (int)B);
 
     /* propose tree changes */
     bool treemod = false;

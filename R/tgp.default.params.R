@@ -27,6 +27,10 @@
 ## create a default parameter vector for tgp-class models with
 ## the specified dimension, mean function, correllation model
 ## and other augmentations specified in ...
+##
+## Note that the choice of bprior can negate the usefulness of
+## (or override) some of the parameters, particularly the hierarchical
+## parameters tau2.p and tau2.lam
 
 "tgp.default.params" <-
 function(d, meanfn=c("linear", "constant") ,
@@ -55,8 +59,9 @@ function(d, meanfn=c("linear", "constant") ,
     }
   }
 
-  ## adjust the starting beta values on basemax
+  ## adjust the starting beta and Wi values on basemax
   beta <- rep(0, min(col, basemax+1))
+  Wi <- diag(1, length(beta))
 
   ## check the corr argument, and augment splitmin
   ## if fitting a multi-resolution model
@@ -71,15 +76,16 @@ function(d, meanfn=c("linear", "constant") ,
            splitmin, basemax),          # (continued)
          col=col,                       # defined above, based on meanfn
          meanfn=meanfn,                 # one of "linear" or "constant"
-         bprior="bflat",		# linear prior (b0, bmle, bflat, b0not or bmzt)
-         beta=beta, 		        # start vals beta
-         start=c(1,1), 	                # start vals for s2, and tau2
+         bprior="bflat",		# linear prior (b0, bmle, bflat, b0not, or bmzt)
+         beta=beta, 		        # start/prior vals for beta
+         Wi=Wi,                         # start/prior vals for Wi
+         s2tau2=c(1,1),                 # start vals for s2, and tau2
          s2.p=c(5,10),			# s2 prior params (initial values) <a0> and <g0>
          s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
          tau2.p=c(5,10),	       	# tau2 prior params (initial values) <a0> and <g0>
          tau2.lam=c(0.2,0.1),		# tau2 hierarch inv-gamma prior params (or "fixed")
          corr=corr,			# correllation model (exp, or expsep)
-         cstart=c(0.1, 0.5),            # start vals for nug and d
+         gd=c(0.1, 0.5),                # start vals for nug and d
          nug.p=c(1,1,1,1),		# nug gamma-mix prior params (initial values)
          nug.lam="fixed",		# nug hierarch gamma-mix prior params (or "fixed")
          gamma=c(10,0.2,0.7),		# gamma linear pdf parameter
@@ -124,8 +130,8 @@ function(params, d)
 {
   ## check the number of parameters
   if(is.null(params)) return(matrix(-1));
-  if(length(params) != 20) {
-    stop(paste("Number of params should be 20, you have", length(params), "\n"));
+  if(length(params) != 21) {
+    stop(paste("Number of params should be 21, you have", length(params), "\n"));
   }
         
   ## tree prior parameters
@@ -174,9 +180,10 @@ function(params, d)
   else if(params$bprior == "bflat") { p <- c(p, 2); }
   else if(params$bprior == "b0not") { p <- c(p, 3); }
   else if(params$bprior == "bmzt") { p <- c(p, 4); }
+  else if(params$bprior == "bmznot") { p <- c(p, 5); }
   else { stop(paste("params$bprior =", params$bprior, "not valid\n")); }
   
-  ## initial settings of beta linear prior parameters
+  ## initial settings of beta linear prior mean parameters
   if(length(params$beta) != min(params$col, params$tree[5]+1)) {
     stop(paste("length of params$beta should be", min(params$col, params$tree[5]+1),
                "you have", length(params$beta), "\n"));
@@ -184,13 +191,22 @@ function(params, d)
 
   ## finally, set the params$beta 
   p <- c(p, as.numeric(params$beta))
-
-  ## initial settings of variance parameters
-  if(length(params$start) != 2) {
-    stop(paste("length of params$start should be 2 you have", 
-              length(params$start), "\n"));
+  
+  ## initial settings of the beta linear prior correlation parameters
+  if(nrow(params$Wi) != length(params$beta) && ncol(params$Wi) != nrow(params$Wi)) {
+    stop(paste("params$Wi should be", length(params$beta), "x", length(params$beta),
+               "you have", nrow(params$Wi), "x", ncol(params$Wi), "\n"));
   }
-  p <- c(p, as.numeric(params$start))
+
+  ## finally, set the params$Wi 
+  p <- c(p, as.numeric(params$Wi))
+  
+  ## initial settings of variance parameters
+  if(length(params$s2tau2) != 2) {
+    stop(paste("length of params$s2tau2 should be 2 you have", 
+              length(params$s2tau2), "\n"));
+  }
+  p <- c(p, as.numeric(params$s2tau2))
 
   ## sigma^2 prior parameters
   if(length(params$s2.p) != 2) {
@@ -230,11 +246,11 @@ function(params, d)
   else { stop(paste("params$corr =", params$corr, "not valid\n")); }
  
   ## initial settings of variance parameters
-  if(length(params$cstart) != 2) {
-    stop(paste("length of params$cstart should be 2 you have", 
-              length(params$cstart), "\n"));
+  if(length(params$gd) != 2) {
+    stop(paste("length of params$gd should be 2 you have", 
+              length(params$gd), "\n"));
   }
-  p <- c(p, as.numeric(params$cstart))
+  p <- c(p, as.numeric(params$gd))
 
   ## mixture of gamma (initial) prior parameters for nug
   if(length(params$nug.p) != 4) {

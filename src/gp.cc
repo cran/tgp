@@ -378,7 +378,7 @@ bool Gp::Draw(void *state)
   if(info != 0) b[0] = mean; 
   
   /* tau2: last becuase of Vb and lambda */
-  if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT)
+  if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT && p->BetaPrior() != BMZNOT)
     tau2 = tau2_draw(col, p->get_Ti(), s2, b, p->get_b0(), 
 		     p->tau2Alpha(), p->tau2Beta(), state);
   
@@ -707,7 +707,8 @@ void Gp::Compute(void)
   case BMLE: dupv(b0, bmle, col); break;
   case BFLAT: assert(b0[0] == 0.0 && Ti[0][0] == 0.0 && tau2 == 1.0); break;
   case B0NOT: assert(b0[0] == 0.0 && Ti[0][0] == 1.0 && tau2 == p->Tau2()); break;
-  case BMZT: assert(b0[0] == 0.0 && Ti[0][0] == 1.0); break;
+  case BMZNOT:
+  case BMZT: /*assert(b0[0] == 0.0 && Ti[0][0] == 1.0);*/ break;
   case B0: break;
   }
   
@@ -996,7 +997,7 @@ Gp_Prior::Gp_Prior(unsigned int d,  MEAN_FN mean_fn) : Base_Prior(d)
    */
   
   corr_prior = NULL;
-  beta_prior = BFLAT; 	/* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
+  beta_prior = BFLAT; 	/* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT, BMZNOT */
 
   /* LINEAR, CONSTANT, or 2LEVEL, which determines col */
   this->mean_fn = mean_fn; 
@@ -1203,7 +1204,8 @@ void Gp_Prior::read_double(double * dparams)
   case 1: beta_prior=BMLE; /* myprintf(stdout, "linear prior: emperical bayes\n"); */ break;
   case 2: beta_prior=BFLAT; /* myprintf(stdout, "linear prior: flat\n"); */ break;
   case 3: beta_prior=B0NOT; /* myprintf(stdout, "linear prior: cart\n"); */ break;
-  case 4: beta_prior=BMZT; /* myprintf(stdout, "linear prior: b0 flat with tau2\n"); */ break;
+  case 4: beta_prior=BMZT; /* myprintf(stdout, "linear prior: b0 fixed with free tau2\n"); */ break;
+  case 5: beta_prior=BMZNOT; /* myprintf(stdout, "linear prior: b0 fixed with fixed tau2\n"); */ break;
   default: error("bad linear prior model %d", (int)dparams[0]); break;
   }
   
@@ -1213,11 +1215,19 @@ void Gp_Prior::read_double(double * dparams)
   /* reset dparams to after the above parameters */
   dparams += 1;
   
-  /* read starting beta linear regression parameter vector */
+  /* read starting/prior beta linear regression parameter (mean) vector */
   dupv(b, dparams, col);
+  if(beta_prior != BFLAT) dupv(b0, dparams, col);
   /* myprintf(stdout, "starting beta=");
      printVector(b, col, stdout, HUMAN); */
   dparams += col; /* reset */
+
+  /* reading the starting/prior beta linear regression parameter (inv-cov) matrix */
+  if(beta_prior != BFLAT) {
+    dupv(Ti[0], dparams, col*col);
+    inverse_chol(Ti, T, Tchol, col);
+  } 
+  dparams += col*col;
 
   /* read starting (initial values) parameter */
   s2 = dparams[0];
@@ -1304,11 +1314,14 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
     error("col should be 1 for constant mean function");
 
   /* read the beta prior model */
-  /* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT */
+  /* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT, BMZNOT */
   ctrlfile->getline(line, BUFFMAX);
-  if(!strncmp(line, "bmzt", 5)) {
+  if(!strncmp(line, "bmznot", 7)) {
+    beta_prior = BMZNOT;
+    myprintf(stdout, "beta prior: b0 fixed with fixed tau2 \n");
+  } else if(!strncmp(line, "bmzt", 5)) {
     beta_prior = BMZT;
-    myprintf(stdout, "beta prior: b0 fixed with tau2 \n");
+    myprintf(stdout, "beta prior: b0 fixed with free tau2 \n");
   } else if(!strncmp(line, "bmle", 4)) {
     beta_prior = BMLE;
     myprintf(stdout, "beta prior: emperical bayes\n");
@@ -1674,7 +1687,8 @@ void Gp_Prior::Print(FILE* outfile)
   case BMLE: myprintf(stdout, "beta prior: emperical bayes\n"); break;
   case BFLAT: myprintf(stdout, "beta prior: flat\n"); break;
   case B0NOT: myprintf(stdout, "beta prior: cart\n"); break;
-  case BMZT: myprintf(stdout, "beta prior: b0 flat with tau2\n"); break;
+  case BMZT: myprintf(stdout, "beta prior: b0 fixed with free tau2\n"); break;
+  case BMZNOT: myprintf(stdout, "beta prior: b0 fixed with fixed tau2\n"); break;
   default: error("beta prior not supported");  break;
   }
 
@@ -1742,7 +1756,7 @@ void Gp_Prior::Draw(Tree** leaves, unsigned int numLeaves, void *state)
   /* update the corr and sigma^2 prior params */
 
   /* tau2 prior first */
-  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != B0NOT) {
+  if(!fix_tau2 && beta_prior != BFLAT && beta_prior != B0NOT && beta_prior != BMZNOT) {
     unsigned int *colv = new_ones_uivector(numLeaves, col);
     sigma2_prior_draw(&tau2_a0,&tau2_g0,tau2,numLeaves,tau2_a0_lambda,
 		      tau2_g0_lambda,colv,state);

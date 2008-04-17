@@ -74,11 +74,13 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   \code{"bmle"} empirical Bayes Normal prior, \code{"b0not"} Bayesian
   treed LM-style prior from Chipman et al. (same as \code{"b0"} but
   without \code{tau2}), \code{"bmzt"} a independent Normal
-  prior (mean zero) with inverse-gamma variance (\code{tau2}).
+  prior (mean zero) with inverse-gamma variance (\code{tau2}),
+  and \code{"bmznot"} is the same as \code{"bmznot"} without \code{tau2}.
   The default \code{"bflat"} gives
   an \dQuote{improper} prior which can perform badly when the
   signal-to-noise ratio is low.  In these cases the \dQuote{proper} hierarchical
-  specification \code{"b0"} or independent \code{"b0"} priors may perform better}
+  specification \code{"b0"} or independent \code{"bmzt"} or \code{"bmznot"}
+  priors may perform better}
   \item{tree}{ 2-vector of tree process prior parameterization
     \code{c(alpha, beta)} specifying
     \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
@@ -333,9 +335,11 @@ Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary
 Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
-Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Bayesian treed Gaussian process models.}
-Available as UCSC Technical Report ams2006-01.
+Gramacy, R. B., Lee, H. K. H. (2007).
+\emph{Bayesian treed Gaussian process models with an application to computer modeling}
+Journal of the American Statistical Association, \bold{to appear}.
+Also available as as ArXiv article 0710.4536 
+\url{http://arxiv.org/abs/0710.4536}
 
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design of supercomputer experiments.}
@@ -349,6 +353,10 @@ Journal of the American Statistical Association, \bold{93},
 Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
+
+Gramacy, R.B., Samworth, R.J., and King, R. (2007)
+\emph{Importance Tempering.} ArXiv article 0707.4242
+\url{http://arxiv.org/abs/0707.4242}
 
 Kennedy, M.C. and O'Hagan, A. (2000).
 \emph{Predicting the output from a complex computer code when fast approximations are available.}
