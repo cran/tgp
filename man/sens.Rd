@@ -115,13 +115,11 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
 }
 
 \references{ 
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
-Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
-
-Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Bayesian treed Gaussian process models.}
-Available as UCSC Technical Report ams2006-01.
+Gramacy, R. B., Lee, H. K. H. (2007).
+\emph{Bayesian treed Gaussian process models with an application to computer modeling}
+Journal of the American Statistical Association, \bold{to appear}.
+Also available as as ArXiv article 0710.4536
+\url{http://arxiv.org/abs/0710.4536}
 
 Saltelli, A. (2002) 
 \emph{Making best use of model evaluations to compute sensitivity indices.}
@@ -156,7 +154,7 @@ Z <- airquality$Ozone
 # There is missing data, which is removed automatically by tgp
 # range(X).
 s <- suppressWarnings(sens(X=X, Z=Z, nn.lhs=300, model=btgp,
-          ngrid=100, span=0.3, BTE=c(5000,10000,10), m0r1=TRUE))
+          ngrid=100, span=0.3, BTE=c(5000,10000,10)))
 
 # plot the results
 plot(s, layout="sens", ylab="Ozone", main="main effects") 

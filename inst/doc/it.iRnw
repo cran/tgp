@@ -372,8 +372,7 @@ geometric temperature ladder.
 <<>>=
 library(MASS)
 moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-        m0r1=TRUE, bprior="b0", R=3, itemps=geo,
-        trace=TRUE, pred.n=FALSE, verb=0)
+        bprior="b0", R=3, itemps=geo, trace=TRUE, pred.n=FALSE, verb=0)
 @ 
 Out of a total of $\Sexpr{moto.it$R*moto.it$BTE[2]/moto.it$BTE[3]}$
 from the joint chain, the resulting (optimally combined) ESS was:
@@ -410,7 +409,7 @@ Now, we should like to compare to the MCMC samples obtained
 under the same model, without IT.
 <<>>=
 moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-        R=3, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
+        R=3, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
 @ 
 The easiest comparison to make is to look at the heights explored
 under the three chains: the regular one, the chain of heights visited
@@ -521,8 +520,7 @@ The compromise IT approach obtained using the sigmoidal ladder can
 yield an increase in ESS.
 <<>>=
 moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-                      R=3, m0r1=TRUE, bprior="b0", krige=FALSE,
-		      itemps=sig, verb=0)
+                      R=3, bprior="b0", krige=FALSE, itemps=sig, verb=0)
 @ 
 Compare the resulting ESS to the one given for the geometric
 ladder above.

@@ -761,7 +761,7 @@ void Tgp::Print(FILE *outfile)
   if(pred_n) myprintf(stdout, " data");
   if(krige && (pred_n || nn)) myprintf(stdout, " krige");
   if(delta_s2) myprintf(stdout, " ALC");
-  if(improv) myprintf(stdout, " IMPROV");
+  if(improv) myprintf(stdout, " improv");
   if(pred_n || krige && (pred_n || nn) || delta_s2 || improv) 
     myprintf(stdout, "\n");
   myflush(stdout);

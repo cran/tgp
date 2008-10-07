@@ -136,7 +136,7 @@ require(MASS)
 
 ## fit a btgpllm without predictive sampling (for speed)
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-	       m0r1=TRUE, pred.n=FALSE)
+	       pred.n=FALSE)
 ## nothing to plot here because there is no predictive data
 
 ## save the "tgp" class output object for use later and

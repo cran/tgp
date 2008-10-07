@@ -36,9 +36,11 @@ Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary
 Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
-Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Bayesian treed Gaussian process models.}
-Available as UCSC Technical Report ams2006-01. 
+Gramacy, R. B., Lee, H. K. H. (2007).
+\emph{Bayesian treed Gaussian process models with an application to computer modeling}
+Journal of the American Statistical Association, \bold{to appear}.
+Also available as as ArXiv article 0710.4536
+\url{http://arxiv.org/abs/0710.4536}
 
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design of supercomputer experiments.}

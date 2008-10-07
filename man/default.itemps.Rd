@@ -142,12 +142,12 @@ matplot(log(cbind(sig$k, geo$k, har$k)), pch=21:23,
 ## on the motorcycle accident dataset
 library(MASS)
 out.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,2),
-        R=3, itemps=default.itemps(), m0r1=TRUE, bprior="b0",
-        trace=TRUE, pred.n=FALSE)
+        R=3, itemps=default.itemps(), bprior="b0", trace=TRUE, 
+        pred.n=FALSE)
 
 ## compare to regular tgp w/o IT
 out.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,22000,2),
-        R=3, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE)
+        R=3, bprior="b0", trace=TRUE, pred.n=FALSE)
 
 ## compare the heights explored by the three chains:
 ## REG, combining all temperatures, and IT
