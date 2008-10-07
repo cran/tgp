@@ -104,14 +104,16 @@ function(d, meanfn=c("linear", "constant") ,
     params$nugf.p <- c(1,1,1,1)
   }
 
-  ## Replace the parameters with ellipsis arguments
+  ## Replace the parameters with ellipsis arguments,
+  ## these should match the entries of parames, or be "minpart"
   plist <- list( ... )
+  args <- names(plist)
   if(length(plist)>0) {
-    pmatch <- match(names(plist), names(params))
-    for(i in 1:length(plist)){      if( is.na(pmatch[[ i ]]) ){
-        stop(paste("your argument \"", names(plist)[i], "\" is not recognized", sep=""))
-      }
-      else params[[ pmatch[i] ]]<- plist[[ i ]]
+    pmatch <- match(args, c(names(params), "minpart"))
+    for(i in 1:length(plist)){
+      if(args[i] == "minpart") params$tree[3] <- plist[[i]]
+      else if(!is.na(pmatch[[i]])) params[[pmatch[i]]]<- plist[[i]]
+      else stop(paste("your argument \"", args[i], "\" is not recognized", sep=""))
     }
   }
 

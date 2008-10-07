@@ -29,7 +29,7 @@
 "btgp" <-
 function(X, Z, XX=NULL,
         meanfn="linear", bprior="bflat", corr="expsep", tree=c(0.5,2), 
-	BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE, itemps=NULL,
+	BTE=c(2000,7000,2), R=1, m0r1=TRUE, linburn=FALSE, itemps=NULL,
 	pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, 
         sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
 {
@@ -52,7 +52,7 @@ function(X, Z, XX=NULL,
 
 "bcart" <-
 function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2), 
-	R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE, 
+	R=1, m0r1=TRUE, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE, 
 	Ds2x=FALSE, improv=FALSE, sens.p=NULL, trace=FALSE, verb=1, ...)
 {
   return(btlm(X,Z,XX,meanfn="constant", bprior,tree,BTE,R,m0r1,itemps,pred.n,krige,
@@ -66,7 +66,7 @@ function(X, Z, XX=NULL, bprior="bflat", tree=c(0.5,2), BTE=c(2000,7000,2),
 
 "bgp" <-
 function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
-         BTE=c(1000,4000,2), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, 
+         BTE=c(1000,4000,2), R=1, m0r1=TRUE, itemps=NULL, pred.n=TRUE, 
          krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, sens.p=NULL, nu=1.5,
          trace=FALSE, verb=1,  ... )
 {
@@ -90,7 +90,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
 
 "bgpllm" <-
 function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
-         gamma=c(10,0.2,0.7), BTE=c(1000,4000,2), R=1, m0r1=FALSE,
+         gamma=c(10,0.2,0.7), BTE=c(1000,4000,2), R=1, m0r1=TRUE,
          itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE,
 	 Ds2x=FALSE, improv=FALSE, sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
 {
@@ -114,7 +114,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
 
 "blm" <-
 function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
-         BTE=c(1000,4000,3), R=1, m0r1=FALSE, itemps=NULL, pred.n=TRUE, 
+         BTE=c(1000,4000,3), R=1, m0r1=TRUE, itemps=NULL, pred.n=TRUE, 
          krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, sens.p=NULL, trace=FALSE, 
 	 verb=1, ...)
 {
@@ -137,7 +137,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
 
 "btgpllm" <-
 function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
-         tree=c(0.5,2), gamma=c(10,0.2,0.7), BTE=c(2000,7000,2), R=1, m0r1=FALSE,
+         tree=c(0.5,2), gamma=c(10,0.2,0.7), BTE=c(2000,7000,2), R=1, m0r1=TRUE,
          linburn=FALSE, itemps=NULL, pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, 
 	 improv=FALSE, sens.p=NULL, nu=1.5, trace=FALSE, verb=1, ...)
 {
@@ -157,7 +157,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
 
 "btlm" <-
 function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
-         tree=c(0.5,2), BTE=c(2000,7000,2), R=1, m0r1=FALSE, itemps=NULL, 
+         tree=c(0.5,2), BTE=c(2000,7000,2), R=1, m0r1=TRUE, itemps=NULL, 
          pred.n=TRUE, krige=TRUE, zcov=FALSE, Ds2x=FALSE, improv=FALSE, 
          sens.p=NULL, trace=FALSE, verb=1, ...)
 {

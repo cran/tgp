@@ -1786,14 +1786,15 @@ bool Tree::wellSized(void) const
 /*
  * Singular:
  * 
- * return true return true iff X has a column
- * with all the same value.
+ * return true return true iff X has a column with all 
+ * the same value or if Z has all of the same value
  */
 
 bool Tree::Singular(void) const
 {
-  assert(X);
 
+  /* first check each column of X */
+  assert(X);
   unsigned int bm = model->get_params()->T_bmax();
   for(unsigned int i=0; i<bm; i++) {
     double f = X[0][i];
@@ -1801,6 +1802,15 @@ bool Tree::Singular(void) const
     for(j=1; j<n; j++) if(f != X[j][i]) break;
     if(j == n) return true;
   }
+
+  /* then check Z */
+  assert(Z);
+  double f = Z[0];
+  unsigned int j = 0;
+  for(j=1; j<n; j++) if(f != Z[j]) break;
+  if(j == n) return true;
+
+  /* otherwise not Singular */ 
   return false;
 }
 

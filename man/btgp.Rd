@@ -15,37 +15,37 @@
 
 \usage{
 blm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
-        BTE = c(1000, 4000, 3), R = 1, m0r1 = FALSE, itemps = NULL,
+        BTE = c(1000, 4000, 3), R = 1, m0r1 = TRUE, itemps = NULL,
         pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
         improv = FALSE, sens.p = NULL, trace = FALSE, verb = 1, ...)
 btlm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
-        tree = c(0.5, 2), BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, 
+        tree = c(0.5, 2), BTE = c(2000, 7000, 2), R = 1, m0r1 = TRUE, 
 	itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
         Ds2x = FALSE, improv = FALSE, sens.p = NULL, trace = FALSE,
         verb = 1, ...)
 bcart(X, Z, XX = NULL, bprior = "bflat", tree = c(0.5, 2),
-        BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, itemps = NULL,
+        BTE = c(2000, 7000, 2), R = 1, m0r1 = TRUE, itemps = NULL,
         pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
         improv=FALSE, sens.p = NULL, trace = FALSE, verb = 1, ...)
 bgp(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
-        corr = "expsep", BTE = c(1000, 4000, 2), R = 1, m0r1 = FALSE, 
+        corr = "expsep", BTE = c(1000, 4000, 2), R = 1, m0r1 = TRUE, 
 	itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
         Ds2x = FALSE, improv = FALSE, sens.p = NULL, nu = 1.5,
         trace = FALSE, verb = 1, ...)
 bgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
         corr = "expsep", gamma=c(10,0.2,0.7), BTE = c(1000, 4000, 2),
-        R = 1, m0r1 = FALSE, itemps = NULL, pred.n = TRUE,
+        R = 1, m0r1 = TRUE, itemps = NULL, pred.n = TRUE,
         krige = TRUE, zcov = FALSE, Ds2x = FALSE, improv = FALSE,
         sens.p = NULL, nu = 1.5, trace = FALSE, verb = 1, ...)
 btgp(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
         corr = "expsep", tree = c(0.5, 2), BTE = c(2000, 7000, 2),
-        R = 1, m0r1 = FALSE, linburn = FALSE, itemps = NULL, 
+        R = 1, m0r1 = TRUE, linburn = FALSE, itemps = NULL, 
 	pred.n = TRUE, krige = TRUE, zcov = FALSE, Ds2x = FALSE,
         improv = FALSE, sens.p = NULL, nu = 1.5, trace = FALSE,
         verb = 1, ...)
 btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
         corr = "expsep", tree = c(0.5, 2), gamma=c(10,0.2,0.7), 
-	BTE = c(2000, 7000, 2), R = 1, m0r1 = FALSE, linburn = FALSE,
+	BTE = c(2000, 7000, 2), R = 1, m0r1 = TRUE, linburn = FALSE,
         itemps = NULL, pred.n = TRUE, krige = TRUE, zcov = FALSE,
         Ds2x = FALSE, improv = FALSE, sens.p = NULL, nu = 1.5,
         trace = FALSE, verb = 1, ...)
@@ -98,11 +98,12 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
 	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
-	functionality.  The option \code{"mrexpsep"} uses a version of
-	the multi-resolution GP model described in Kennedy and O'Hagan
+	functionality.  The option \code{"mrexpsep"} assumes 
+	within each partition a version of
+	the multi-resolution stationary GP model described in Kennedy and O'Hagan
 	(2000).  To use this option, the first column of the design
 	matrices \code{X} and \code{XX} must contain an indicator for
-	'fine' (1) or 'coarse' (0) fidelity.  At this time, \code{"mrexpsep"} is only
+	'fine' (1) or 'coarse' (0) fidelity.  \code{"mrexpsep"} is only
 	available with the \code{btgp} and \code{bgp} models, and
 	\code{linburn=TRUE} is not allowed.  See details below. }
   \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and
@@ -110,8 +111,8 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     at round B, stopping at T. }
   \item{R}{ Number of repeats or restarts of \code{BTE} MCMC rounds,
     default \code{R=1} is no restarts}
-  \item{m0r1}{If \code{TRUE} the responses \code{Z} will be scaled to have a mean of
-  	zero and a range of 1; default is \code{FALSE}}
+  \item{m0r1}{If \code{TRUE} (default) the responses \code{Z} will be
+    scaled to have a mean of zero and a range of 1}
   \item{linburn}{If \code{TRUE} initializes MCMC with \code{B} (additional) 
   	rounds of Bayesian Linear CART (\code{btlm}); default is \code{FALSE} }
   \item{itemps}{ Importance tempering (IT) inverse temperature ladder, 
@@ -482,19 +483,17 @@ tgp.trees(out) 		 	# plot the MAP trees
 #
 
 # get the data
-# and scale the response to zero mean and a rage of 1 (m0r1)
 require(MASS)
 
 # try a GP 
-out <- bgp(X=mcycle[,1], Z=mcycle[,2], m0r1=TRUE)
+out <- bgp(X=mcycle[,1], Z=mcycle[,2])
 plot(out)			# plot the surface
 
 # try a treed GP LLM
 # best to use the "b0" beta linear prior to capture common
 # common linear process throughout all regions (using the
 # ellipses "...") 
-out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-	       m0r1=TRUE)
+out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0")
 plot(out)			# plot the surface
 tgp.trees(out)		 	# plot the MAP trees
 
@@ -512,7 +511,7 @@ Y <- 2*X
 ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
 Z <- Y + ind*sin(12*X)*.75 + rnorm(N,0,.1)
 b <- btgp(X=cbind(ind,X), Z=Z, XX=cbind(rep(1,40),
-          seq(0,1,length=40)), corr="mrexpsep", m0r1=TRUE,
+          seq(0,1,length=40)), corr="mrexpsep",
           BTE=c(5000,10000,10))
 plot(b)
 
@@ -520,8 +519,7 @@ plot(b)
 # the fit for comparison.
 Xf <- X[ind==1]
 Zf <- Z[ind==1]
-bf <- btgp(Xf, Zf, XX=seq(0,1,length=40), corr="expsep",
-           m0r1=TRUE)
+bf <- btgp(Xf, Zf, XX=seq(0,1,length=40), corr="expsep")
 points(Xf, Zf)
 lines(bf$XX[,1], bf$ZZ.mean, lty=1, col=3)
 lines(bf$XX[,1], bf$ZZ.q1, lty=3, col=3)
@@ -538,7 +536,7 @@ XX <- rbind(XX, cbind(ind=rep(0,200), exp2d.data$XX))
 ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
 Z <- Z + (ind/10)*sin(X[,1]*X[,2])
 b2 <- btgp(X=cbind(ind,X), Z=Z, XX=XX, corr="mrexpsep",
-           m0r1=TRUE, meanfn="constant")
+           meanfn="constant")
 
 # Plots focusing on the different resolutions
 plot(b2, legendloc="topleft") # Plot both fine and coarse fits.

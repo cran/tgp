@@ -12,7 +12,7 @@ seed <- 0; set.seed(seed)
 ###################################################
 library(MASS)
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-	       m0r1=TRUE, pred.n=FALSE, verb=0) 
+	       pred.n=FALSE, verb=0) 
 save(out, file="out.Rsave")
 out <- NULL
 

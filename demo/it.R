@@ -66,8 +66,7 @@ exp.btlm$ess
 ###################################################
 library(MASS)
 moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-        m0r1=TRUE, bprior="b0", R=3, itemps=geo,
-        trace=TRUE, pred.n=FALSE, verb=0)
+        bprior="b0", R=3, itemps=geo, trace=TRUE, pred.n=FALSE, verb=0)
 
 
 ###################################################
@@ -99,7 +98,7 @@ c(sum(p$itemp == 1), moto.it$ess$each[1,2:3])
 ### chunk number 13: 
 ###################################################
 moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-        R=3, m0r1=TRUE, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
+        R=3, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
 
 
 ###################################################
@@ -146,8 +145,7 @@ legend("topright", c("observation counts", "posterior samples"), fill=1:2)
 ### chunk number 19: 
 ###################################################
 moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
-                      R=3, m0r1=TRUE, bprior="b0", krige=FALSE,
-		      itemps=sig, verb=0)
+                      R=3, bprior="b0", krige=FALSE, itemps=sig, verb=0)
 
 
 ###################################################

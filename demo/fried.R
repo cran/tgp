@@ -18,7 +18,7 @@ XX <- ff[,1:10]
 ###################################################
 ### chunk number 3: 
 ###################################################
-fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, m0r1=TRUE, verb=0)
+fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, verb=0)
 fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
 fr.btlm.mse
 
@@ -26,7 +26,7 @@ fr.btlm.mse
 ###################################################
 ### chunk number 4: 
 ###################################################
-fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, m0r1=TRUE, verb=0)
+fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, verb=0)
 fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
 fr.bgpllm.mse
 
@@ -35,7 +35,7 @@ fr.bgpllm.mse
 ### chunk number 5: 
 ###################################################
 XX1 <- matrix(rep(0,10), nrow=1)
-fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, verb=0)
+fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, m0r1=FALSE, verb=0)
 
 
 ###################################################

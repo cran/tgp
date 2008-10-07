@@ -25,7 +25,7 @@ names(X)
 ###################################################
 ### chunk number 4: 
 ###################################################
-fit1 <- bcart(X=X, Z=Z, XX=XX, m0r1=TRUE, verb=0)
+fit1 <- bcart(X=X, Z=Z, XX=XX, verb=0)
 rmse1 <- sqrt(mean((fit1$ZZ.mean - ZZ)^2))
 rmse1
 
@@ -39,7 +39,7 @@ tgp.trees(fit1, "map")
 ###################################################
 ### chunk number 6: 
 ###################################################
-fit2 <- btlm(X=X, Z=Z, XX=XX, m0r1=TRUE, verb=0)
+fit2 <- btlm(X=X, Z=Z, XX=XX, verb=0)
 rmse2 <- sqrt(mean((fit2$ZZ.mean - ZZ)^2))
 rmse2
 
@@ -53,7 +53,7 @@ tgp.trees(fit2, "map")
 ###################################################
 ### chunk number 8: 
 ###################################################
-fit3 <- btlm(X=X, Z=Z, XX=XX, basemax=10, m0r1=TRUE, verb=0)
+fit3 <- btlm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
 rmse3 <- sqrt(mean((fit3$ZZ.mean - ZZ)^2))
 rmse3
 
@@ -67,7 +67,7 @@ tgp.trees(fit3, "map")
 ###################################################
 ### chunk number 10: 
 ###################################################
-fit4 <- btgpllm(X=X, Z=Z, XX=XX, m0r1=TRUE, verb=0)
+fit4 <- btgpllm(X=X, Z=Z, XX=XX, verb=0)
 rmse4 <- sqrt(mean((fit4$ZZ.mean - ZZ)^2))
 rmse4
 
@@ -81,7 +81,7 @@ fit4$gpcs
 ###################################################
 ### chunk number 12: 
 ###################################################
-fit5 <-  btgpllm(X=X, Z=Z, XX=XX, m0r1=TRUE, basemax=10, verb=0)
+fit5 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
 rmse5 <- sqrt(mean((fit5$ZZ.mean - ZZ)^2))
 rmse5 
 
@@ -96,7 +96,7 @@ tgp.trees(fit5, "map")
 ###################################################
 ### chunk number 14: 
 ###################################################
-fit6 <-  btgpllm(X=X, Z=Z, XX=XX, m0r1=TRUE, basemax=10, 
+fit6 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, 
                  splitmin=11, verb=0)
 rmse6 <- sqrt(mean((fit6$ZZ.mean - ZZ)^2))
 rmse6

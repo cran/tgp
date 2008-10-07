@@ -47,13 +47,13 @@ helps to scale the responses so that they have a mean of zero and a
 range of one.  First, fit the Bayesian treed LM, and obtain
 the RMSE.
 <<>>=
-fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, m0r1=TRUE, verb=0)
+fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, verb=0)
 fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
 fr.btlm.mse
 @ 
 Next, fit the GP LLM, and obtain its RMSE.
 <<>>=
-fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, m0r1=TRUE, verb=0)
+fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, verb=0)
 fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
 fr.bgpllm.mse
 @ 
@@ -66,10 +66,15 @@ Parameter traces need to be gathered in order to judge the ability
 of the GP LLM model to identify linear and irrelevant effects.
 <<>>=
 XX1 <- matrix(rep(0,10), nrow=1)
-fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, verb=0)
+fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, 
+                       m0r1=FALSE, verb=0)
 @ 
-Notice that the \verb!m0r1=TRUE! has been omitted so that the
-$\bm{\beta}$ estimates provided below will be on the original scale.
+Here, \verb!m0r1 = FALSE! has been specified instead so that the
+$\bm{\beta}$ estimates provided below will be on the original 
+scale.\footnote{The default setting of {\tt m0r1 = TRUE} causes the 
+{\tt Z}--values to undergo pre-processing so that they have a mean of 
+zero and a range of one.  The default prior specification has been
+tuned so as to work well this range.} 
 A summary of the parameter traces show that the
 Markov chain had the following (average) configuration for the booleans.
 <<>>=

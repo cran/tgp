@@ -17,7 +17,7 @@ Z <- data.frame(accel=mcycle[,2])
 ###################################################
 ### chunk number 3: 
 ###################################################
-moto.bgp <- bgp(X=X, Z=Z, m0r1=TRUE, verb=0)
+moto.bgp <- bgp(X=X, Z=Z, verb=0)
 
 
 ###################################################
@@ -36,7 +36,7 @@ graphics.off()
 ###################################################
 ### chunk number 6: 
 ###################################################
-moto.btlm <- btlm(X=X, Z=Z, m0r1=TRUE, verb=0)
+moto.btlm <- btlm(X=X, Z=Z, verb=0)
 
 
 ###################################################
@@ -55,7 +55,7 @@ graphics.off()
 ###################################################
 ### chunk number 9: 
 ###################################################
-moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", m0r1=TRUE, verb=0)
+moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 
 

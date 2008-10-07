@@ -37,12 +37,9 @@ the nonlinearity in the response but fails to capture the input
 dependent noise and increased smoothness (perhaps linearity) in
 parts of the input space.
 <<echo=TRUE,results=HIDE>>=
-moto.bgp <- bgp(X=X, Z=Z, m0r1=TRUE, verb=0)
+moto.bgp <- bgp(X=X, Z=Z, verb=0)
 @ 
-Since the responses in this data have a wide range, it helps to
-translate and rescale them so that they have a mean of zero and a
-range of one.  The {\tt m0r1} argument to {\tt b*} functions automates
-this procedure.  Progress indicators are suppressed.
+Progress indicators are suppressed.
 \begin{figure}[ht!]
 \centering
 <<label=moto-bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
@@ -63,7 +60,7 @@ A Bayesian Linear CART model is able to capture the input dependent
 noise but fails to capture the waviness of the
 ``whiplash''---center--- segment of the response.
 <<echo=TRUE,results=HIDE>>=
-moto.btlm <- btlm(X=X, Z=Z, m0r1=TRUE, verb=0)
+moto.btlm <- btlm(X=X, Z=Z, verb=0)
 @ 
 Figure \ref{f:moto:btlm} shows the resulting piecewise linear
 predictive surface and MAP partition ($\hat{\mathcal{T}}$).
@@ -91,7 +88,7 @@ also linear, perhaps with the same mean as the left--hand region, only
 with higher noise.  The {\tt b*} functions can force
 an i.i.d.~hierarchical linear model by setting \verb!bprior="b0"!.
 <<echo=TRUE,results=HIDE>>=
-moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", m0r1=TRUE, verb=0)
+moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 @ 
 The {\tt predict.tgp} function obtains posterior predictive estimates
