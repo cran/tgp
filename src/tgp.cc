@@ -77,7 +77,7 @@ void tgp(int* state_in,
   tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE_in[0], BTE_in[1], BTE_in[2], *R_in, 
 		 *linburn_in, (bool) (Zp_mean_out!=NULL), 
 		 (bool) ((Zp_ks2_out!=NULL) || (ZZ_ks2_out!=NULL)), (bool) (Ds2x_out!=NULL), 
-		 *improv_in, (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, 
+		 improv_in[0], (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, 
 		 params_in, ditemps_in, (bool) *trace_in, *verb_in, dtree_in, hier_in);
   
   tgpm->Init();
@@ -90,14 +90,15 @@ void tgp(int* state_in,
   tgpm->GetStats(!((bool)*MAP_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, 
 		 Zp_q_out, ZZ_q_out, (bool) (*zcov_in), Zp_s2_out, ZZ_s2_out, ZpZZ_s2_out, 
 		 Zp_ks2_out, ZZ_ks2_out, Zp_q1_out, Zp_median_out, Zp_q2_out, ZZ_q1_out, 
-		 ZZ_median_out, ZZ_q2_out, Ds2x_out, improv_out, irank_out, ess_out);
+		 ZZ_median_out, ZZ_q2_out, Ds2x_out, improv_out, improv_in[1], irank_out, 
+		 ess_out);
 
   /* sensitivity analysis? */
   if((bool) (*sens_ngrid > 0)) 
     tgpm->Sens(sens_ngrid, sens_span, sens_Xgrid_in, sens_ZZ_mean_out, sens_ZZ_q1_out, 
 	       sens_ZZ_q2_out,  sens_S_out, sens_T_out);
 
-  /* get (possibly unchanged) pseudo--prior */
+  /* get (possibly unchanged) pseudo--prior used by Importance Tempering (only) */
   tgpm->GetPseudoPrior(ditemps_in);
 
   /* get the (tree) acceptance rates */
@@ -560,7 +561,7 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
 		   double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		   double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		   double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
-		   int* irank, double *ess)
+		   int numirank, int* irank, double *ess)
 {
   itime = my_r_process_events(itime);
 
@@ -670,7 +671,7 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
       dupiv(irank, IRANK[0], nn);
       intmatrix_to_file("irank.txt", IRANK, 2, cump->nn);
       delete_imatrix(IRANK); */
-      int *ir = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, improv, w);
+      int *ir = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, improv, numirank, w);
       dupiv(irank, ir, nn);
       free(ir);
     }

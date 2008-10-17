@@ -55,7 +55,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
     if(ncol(XX) != object$d) stop("mismatched column dimension of object$X and XX");
   }
 
-  ## check that pred.n, krige, MAP, improv and Ds2x is true or false
+  ## check that pred.n, krige, MAP, and Ds2x is true or false
   if(length(pred.n) != 1 || !is.logical(pred.n))
     stop("pred.n should be TRUE or FALSE")
   if(length(krige) != 1 || !is.logical(krige))
@@ -66,11 +66,21 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
     stop("MAP should be TRUE or FALSE")
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
-  if(length(improv) != 1 || !(is.logical(improv) || is.numeric(improv)) ||
-     (is.numeric(improv) && improv <= 0))
-    stop("improv should be TRUE, FALSE, or a positive integer (power)")
+
+  ## check the form of the improv-power argument
+  if(length(improv) == 2) { numirank <- improv[2]; improv <- improv[1] }
+  else { numirank <- NULL }
+  if(length(improv) != 1 || !(is.logical(improv) ||
+             is.numeric(improv)) || (is.numeric(improv) && improv <= 0))
+    stop(paste("improv [", improv,
+               "] should be TRUE, FALSE, or a positive integer (power)", sep=""))
   g <- as.numeric(improv)
 
+  ## check numirank, which is improv[2] in input
+  if(is.null(numirank) && improv) numirank <- max(min(10, nn), 0.1*nn)
+  else if(!is.null(numirank) && numirank > nn) stop("improv[2] must be <= nrow(XX)")
+  else if(is.null(numirank)) numirank <- 0
+  
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
     warning("need to specify XX locations for Ds2x and improv")
@@ -128,7 +138,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            R = as.integer(R),
            linburn = as.integer(FALSE),
            zcov = as.integer(zcov),
-           g = as.integer(g),
+           g = as.integer(c(g, numirank)),
            dparams = as.double(object$dparams),
            itemps = as.double(itemps),
            verb = as.integer(verb),

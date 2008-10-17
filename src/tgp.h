@@ -93,7 +93,7 @@ class Tgp
 		double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
-		int* iorder, double *ess);
+		int numirank, int* irank, double *ess);
   
   /* Importance Tempering */
   void GetPseudoPrior(double *ditemps);

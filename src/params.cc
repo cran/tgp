@@ -158,7 +158,7 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   /* read in splitmin and basemax */
   t_splitmin = atoi(strtok(NULL, " \t\n#")) - 1;
   assert(t_splitmin >= 0 && t_splitmin < d);
-  t_basemax = atoi(strtok(NULL, " \t\n#")) - 1;
+  t_basemax = atoi(strtok(NULL, " \t\n#"));
   assert(t_basemax > 0 && t_basemax <= d);
 
   /* read the mean function form */

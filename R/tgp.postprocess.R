@@ -34,7 +34,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
 
   ## remove from the list if not requested
   if(Ds2x == FALSE) { ll$Ds2x <- NULL; }
-  if(is.null(improv)) { ll$improv <- NULL; }
+  if(improv == FALSE || is.null(improv)) { ll$improv <- NULL; }
   
   ## deal with predictive data locations (ZZ)
   if(ll$nn == 0 || (ll$BTE[2]-ll$BTE[1])==0 || !is.null(sens.p)) { 
@@ -45,7 +45,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
     
     ## replace NaN's in improv with zeros
     ## shouldn't happen because check have been moved to C code
-    if((!is.null(improv)) && sum(is.nan(ll$improv) > 0)) {
+    if((!is.null(ll$improv)) && sum(is.nan(ll$improv) > 0)) {
       warning(paste("encountered", sum(is.nan(ll$improv)),
                     "NaN in Improv, replaced with zeros"), call.=FALSE)
       ll$improv[is.nan(ll$improv)] <- 0
@@ -57,6 +57,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
 
   ## turn improv into a data.frame where the second column is the rankings
   if(!is.null(improv)){
+    ll$irank[ll$irank == 0] <- NA
     ll$improv <- data.frame(improv=ll$improv, rank=ll$irank)
   }
   ll$irank <- NULL

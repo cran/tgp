@@ -54,6 +54,7 @@ void id(double **M, unsigned int n);
 double ** new_id_matrix(unsigned int n);
 double ** new_zero_matrix(unsigned int n1, unsigned int n2);
 double ** new_matrix(unsigned int m, unsigned int n);
+double ** new_matrix_bones(double *v, unsigned int n1, unsigned int n2);
 double ** new_t_matrix(double** M, unsigned int n1_old, unsigned int n2_old);
 double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2);
 double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2);
@@ -72,6 +73,8 @@ void center_rows(double **M, double *center, unsigned int n1, unsigned int n2);
 void norm_columns(double **M, double *norm, unsigned int n1, unsigned int n2);
 void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
 		      double(*f)(double));
+void sum_of_each_column_f(double *s, double **M, unsigned int *n1, 
+			  unsigned int n2, double(*f)(double));
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
 		      double *weight);
 void wmean_of_columns_f(double *mean, double **M, unsigned int n1, unsigned int n2, 
@@ -87,6 +90,9 @@ void wcovx_of_columns(double **cov, double **M1, double **M2, double *mean1, dou
 
 void add_matrix(double a, double **M1, double b, double **M2, unsigned int n1, 
 		unsigned int n2);
+double **new_p_submatrix(int *p, double **v, unsigned int nrows, unsigned int ncols);
+void sub_p_matrix(double **V, int *p, double **v, 
+		  unsigned int nrows, unsigned int lenp);
 void copy_p_matrix(double **V, int *p1, int *p2, double **v, unsigned int n1, 
 		   unsigned int n2);
 void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v, 
@@ -116,6 +122,8 @@ void matrix_to_file(const char* file_str, double** matrix, unsigned int n1, unsi
 void intmatrix_to_file(const char* file_str, int** matrix, unsigned int n1, unsigned int n2);
 void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1, unsigned int n2);
 void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type);
+void printSymmMatrixVector(double **m, unsigned int n, FILE *outfile, 
+			   PRINT_PREC type);
 void ivector_to_file(const char* file_str, int *vector, unsigned int n);
 void uivector_to_file(const char *file_str, unsigned int *iv, unsigned int n);
 
@@ -123,6 +131,7 @@ double* new_dup_vector(double* vold, unsigned int n);
 double* new_zero_vector(unsigned int n);
 double* new_vector(unsigned int n);
 void dupv(double *v, double* vold, unsigned int n);
+void dup_col(double **M, unsigned int col, double *v, unsigned int n);
 void swap_vector(double **v1, double **v2);
 void zerov(double*v, unsigned int n);
 void add_vector(double a, double *v1, double b, double *v2, unsigned int n);
@@ -131,7 +140,9 @@ void copy_p_vector(double *V, int *p, double *v, unsigned int n);
 void copy_sub_vector(double *V, int *p, double *v, unsigned int n);
 double* new_sub_vector(int *p, double *v, unsigned int n);
 void scalev(double *v, unsigned int n, double scale);
+void scalev2(double *v, unsigned int n, double *scale);
 void centerv(double *v, unsigned int n, double scale);
+void normv(double *v, unsigned int n, double* norm);
 double sum_fv(double *v, unsigned int n, double(*f)(double));
 double sumv(double *v, unsigned int n);
 double meanv(double *v, unsigned int n);

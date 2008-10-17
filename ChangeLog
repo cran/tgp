@@ -1,3 +1,13 @@
+2.1-4 (17 Oct 2008)
+-----
+
+made it possible to cap the number of input locations which
+are ranked by the expected improvement statistic by 
+allowing the improv argument to b* functions to take a
+2-vector input.  Also no longer ranks points with an 
+improvement statistic of zero
+
+
 2.1-3 (7 Oct 2008)
 -----
 

@@ -82,6 +82,7 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
 
      ## create axis lables -- augment proj argument by one column
      proj <- proj+1
+     
      if(is.null(xlab)){xlab <- names(x$X)[proj[1]]}
      if(is.null(ylab)){ylab <- names(x$X)[proj[2]]}
 
@@ -102,13 +103,16 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
      dX <- nrow(X)
 
      ## plot the coarse predictive (mean or median) surface
-     smain <- paste(main, x$response, "fine", center$name)
+     smain <- paste(main, x$response, "coarse", center$name)
      slice.image(Xc[,1], Xc[,2], p=pc, z=Zc, xlab=xlab, ylab=ylab,
                  main=smain, method=method, gridlen=gridlen,span=span,
                  xlim=range(X[,proj[1]]), ylim=range(X[,proj[2]]), ...)
      ## add inputs and predictive locations
      points(x$X[x$X[,1]==0,proj], pch=20, ...)
      points(x$XX[x$XX[,1]==0,proj], pch=21, ...)
+     
+     # plot parts
+     if(pparts & !is.null(x$parts)) { tgp.plot.parts.2d(x$parts, dx=proj)}
 
      ## plot the fine predictive (mean or median) surface
      smain <- paste(main, x$response, "fine", center$name)
@@ -118,6 +122,9 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
      ## add inputs and predictive locations
      points(x$X[x$X[,1]==1,proj], pch=20, ...)
      points(x$XX[x$XX[,1]==1,proj],pch=21, ...)
+     
+     # plot parts
+     if(pparts & !is.null(x$parts)) { tgp.plot.parts.2d(x$parts, dx=proj)}
    }
 }
 
@@ -166,6 +173,8 @@ function(b, res)
   b$ZZ.q2<- b$ZZ.q2[rpred]
   b$ZZ.med <- b$ZZ.med[rpred]
   b$improv <- b$improv[rpred,]
+
+  b$parts <- b$parts[,-1]
   
   return(b)
 }

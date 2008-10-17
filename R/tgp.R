@@ -34,7 +34,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
          Ds2x=FALSE, improv=TRUE, sens.p=NULL, trace=FALSE, verb=1, rmfiles=TRUE)
 {
   ## (quitely) double-check that tgp is clean before-hand
-  tgp.cleanup(message="NOTICE", verb=verb, rmfile=TRUE);
+  tgp.cleanup(message="NOTICE", verb=verb, rmfiles=TRUE);
 
   ## what to do if fatally interrupted?
   on.exit(tgp.cleanup(verb=verb, rmfiles=rmfiles))
@@ -75,7 +75,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
                     "\t Try reducing nrow(XX)", sep=""), immediate.=TRUE)
   }
 
-  ## check that pred.n, krige, improv and Ds2x is true or false
+  ## check that pred.n, krige, and Ds2x is true or false
   if(length(pred.n) != 1 || !is.logical(pred.n))
     stop("pred.n should be TRUE or FALSE")
   if(length(krige) != 1 || !is.logical(krige))
@@ -85,12 +85,19 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   if(length(Ds2x) != 1 || !is.logical(Ds2x))
     stop("Ds2x should be TRUE or FALSE")
 
-  ##check the form of the improv-power argument
+  ## check the form of the improv-power argument
+  if(length(improv) == 2) { numirank <- improv[2]; improv <- improv[1] }
+  else { numirank <- NULL }
   if(length(improv) != 1 || !(is.logical(improv) ||
              is.numeric(improv)) || (is.numeric(improv) && improv <= 0))
     stop(paste("improv [", improv,
                "] should be TRUE, FALSE, or a positive integer (power)", sep=""))
-  g <- as.numeric(improv) 
+  g <- as.numeric(improv)
+
+  ## check numirank, which is improv[2] in input
+  if(is.null(numirank) && improv) numirank <- max(min(10, nn), 0.1*nn)
+  else if(!is.null(numirank) && numirank > nn) stop("improv[2] must be <= nrow(XX)")
+  else if(is.null(numirank)) numirank <- 0
   
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
@@ -117,7 +124,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   if(m0r1) { Zm0r1 <- mean0.range1(Z); Z <- Zm0r1$X }
   else Zm0r1 <- NULL
 
-  ## If SENS, set up XX ##
+  ## if performining a sensitivity analysis, set up XX ##
   if(!is.null(sens.p)){
     nnprime <- 0
     sens.par <- check.sens(sens.p, d)
@@ -151,7 +158,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            R = as.integer(R),
            linburn = as.integer(linburn),
            zcov = as.integer(zcov),
-           g = as.integer(g),
+           g = as.integer(c(g, numirank)),
            dparams = as.double(dparams),
            itemps = as.double(itemps),
            verb = as.integer(verb),
@@ -196,9 +203,6 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
 
   ## all post-processing is moved into a new function so it
   ## can be shared by predict.tgp()
-  ## Bobby: should we do the same with pre-prossesing?
-  ## Taddy: possibly.  However, predict.tgp and tgp have the identical postprocessing,
-  ## but the pre-processing is a little different for predict.tgp
   ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv,
                         sens.p, Zm0r1, params, rmfiles)
   return(ll)

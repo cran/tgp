@@ -185,7 +185,7 @@ rmse4
 Since the design matrices would become rank--deficient if the boolean
 indicators are partitioned upon, there was no partitioning in this
 example.  Since there are large covariance matrices to invert, the
-MCMC inference is very slow.
+MCMC inference is {\em very} slow.
 <<>>=
 fit4$gpcs
 @ 

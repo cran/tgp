@@ -73,7 +73,7 @@ double **F;
   delete_matrix(aux1);
   
   /* by = Z*F */
-  linalg_dgemv(CblasTrans, n,col,1.0,F,n,Z,1,0.0,by,1);
+  linalg_dgemv(CblasTrans,n,col,1.0,F,n,Z,1,0.0,by,1);
   
   /* mle = by*Vb */
   linalg_dsymv(col,1.0,Vb,col,by,1,0.0,mle,1);
@@ -397,7 +397,7 @@ void *state;
 
 
 /*
- * sigma2_draw2_no_b_margin:
+ * sigma2_draw_no_b_margin:
  * 
  * draw sigma^2 without dependence on beta
  */

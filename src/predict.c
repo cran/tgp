@@ -621,15 +621,22 @@ void predicted_improv(n, nn, improv, Zmin, zp, zz)
  * w are R importance tempering (IT) weights
  */
 
-unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w)
+unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, 
+			    int numirank, double *w)
 {
   /* duplicate Imat, since it will be modified by this method */
-  unsigned int j, i, k, m, maxj;
+  unsigned int j, i, k, /* m,*/ maxj;
   double *colmean, *maxcol;
   double maxmean;
-  double **Imat = new_dup_matrix(Imat_in, R, nn); 
+
+  /* allocate the ranking vector */
   unsigned int* pntind = new_zero_uivector(nn);
-  
+  assert(numirank >= 0 && numirank <= nn); 
+  if(numirank == 0) return pntind;
+
+  /* duplicate the Improv matrix so we can modify it */
+  double **Imat = new_dup_matrix(Imat_in, R, nn); 
+
   /* first, raise improv to the appropriate power */
   for (j=0; j<nn; j++){
     for (i=0; i<R; i++){
@@ -654,10 +661,11 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w)
   for (i=0; i<R; i++) maxcol[i] = Imat[i][maxj];
 
   /* a counter for placing zero-imrov indices */
-  m=0;
+  /* m=0; */  /* See comment from Bobby below */
   
   /* Now loop and find appropriate index vector pntind */
-  for (k=1; k<nn; k++) {
+  // for (k=1; k<nn; k++) {
+  for (k=1; k<numirank; k++) {
 
     /* adjust Imat to account for the first k-1 locations
        chosen to reduce improv */
@@ -673,8 +681,10 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w)
 
     /* the maxj-th column is ranked k+1st */
     /* make sure that pntind[maxj] is not already filled */
-    if(pntind[maxj] != 0) {
-      for(; m<nn; m++) if(pntind[m] == 0) { maxj = m; break; }
+    if(pntind[maxj] != 0) { 
+      break; /* Bobby: I put in this break and commented out next line 
+		in order to save on computation time */
+      /* for(; m<nn; m++) if(pntind[m] == 0) { maxj = m; break; } */
     }
     pntind[maxj] = k+1;
     

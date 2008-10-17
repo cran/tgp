@@ -134,7 +134,8 @@ function(itemps, params)
     ## checks k
     if(prod(k >= 0)!=1) stop("should have 0 <= itemps$k")
     if((m > 1 || k != 1) && params$bprior != "b0")
-      warning("recommend params$bprior == \"b0\" for itemps$k != 1")
+      warning("recommend params$bprior == \"b0\" for itemps$k != 1",
+               immediate.=TRUE)
   
     ## checks for pk
     if(prod(pk > 0)!=1) stop("all itemps$pk should be positive")
@@ -183,7 +184,8 @@ function(itemps, params)
     ## checks k
     if(prod(k >= 0)!=1) stop("should have 0 <= itemps[,1]")
     if((m > 1 || k != 1) && params$bprior != "b0")
-      warning("recommend params$bprior == \"b0\" for itemps[,1] != 1")
+      warning("recommend params$bprior == \"b0\" for itemps[,1] != 1",
+              immediate.=TRUE)
 
     ## checks for pk
     if(prod(pk > 0)!=1) stop("all probs in itemps[,2] should be positive")
@@ -201,7 +203,8 @@ function(itemps, params)
     ## checks for itemps
     if(prod(itemps >= 0)!=1) stop("should have 0 <= itemps ")
     if((length(itemps) > 1 || itemps != 1) && params$bprior != "b0")
-      warning("recommend params$bprior == \"b0\" for itemps != 1")
+      warning("recommend params$bprior == \"b0\" for itemps != 1",
+               immediate.=TRUE)
 
     ## return a double-version with a counts vector at the end
     return(c(m, 100, 1000, itemps, rep(1/m, m), 1, rep(0,m)))
