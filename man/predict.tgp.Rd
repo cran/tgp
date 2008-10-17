@@ -60,20 +60,26 @@
         \code{X} locations, which can be used for adaptive sampling;
         \code{FALSE} (default) skips this computation, resulting in
 	a faster implementation}
-  \item{improv}{ \code{TRUE} results in samples from the
-	improvement at locations \code{XX} with respect to the observed
-	data minimum. These samples are used to calculate the expected
-	improvement over \code{XX}, as well as to rank all of the points in
-	\code{XX} in the order that they should be sampled to minimize the
-	expected multivariate improvement.
-	Alternatively, \code{improv} can be set to any positive integer 'g',
-	in which case the ranking is performed with respect to the expectation
-	for improvement raised to the power 'g'. Increasing 'g' leads to
-	rankings that are more oriented towards a global optimization.  The option \code{FALSE}
-	(default) skips these computations, resulting in a faster implementation.}
+  \item{improv}{\code{TRUE} results in samples from the
+    improvement at locations \code{XX} with respect to the observed
+    data minimum. These samples are used to calculate the expected
+    improvement over \code{XX}, as well as to rank all of the points in
+    \code{XX} in the order that they should be sampled to minimize the
+    expected multivariate improvement (refer to Schonlau et al, 1998).
+    Alternatively, \code{improv} can be set to any positive integer 'g',
+    in which case the ranking is performed with respect to the expectation
+    for improvement raised to the power 'g'. Increasing 'g' leads to
+    rankings that are more oriented towards a global optimization.
+    The option \code{FALSE} (default) skips these computations,
+    resulting in a faster implementation.  Optionally, a two-vector
+    can be supplied where \code{improv[2]} is interpreted as the 
+    (maximum) number of points to rank by improvement.  
+    See the note in \code{\link{btgp}} documentation.
+    If not specified, then the larger of 10\% of \code{nn = nrow(XX)} 
+    and \code{min(10, nn)} is taken by default }
   \item{sens.p}{ Either \code{NULL} or a vector of parameters for sensitivity analysis,
   	       built by the function \code{sens}.  Refer there
-	       for details.}
+	       for details}
   \item{trace}{ \code{TRUE} results in a saving of samples from the
         posterior distribution for most of the parameters in the model.  The
         default is \code{FALSE} for speed/storage reasons. See note below }

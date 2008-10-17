@@ -64,7 +64,7 @@ void predict_help(unsigned int n1, unsigned int col, double *b, double **F, doub
 		  double **W, double tau2, double **K, double **Ki, double **FW, 
 		  double **KpFWFi, double *KiZmFb);
 int predict_draw(unsigned int n, double *z, double *mean, double *s, int err, void *state);
-unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, double *w);
+unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, int numirank, double *w);
 void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac);
 
 #endif

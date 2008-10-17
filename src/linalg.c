@@ -171,7 +171,7 @@ double **A, **B, **C;
 /*
  * linalg_dsymv:
  *
- * analog of dsymv in cblas nad blas
+ * analog of dsymv in cblas and blas
  * assumed column major representation
  */
 

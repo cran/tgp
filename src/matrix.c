@@ -130,6 +130,23 @@ double ** new_matrix(unsigned int n1, unsigned int n2)
 
 
 /*
+ * create a double ** Matrix from a double * vector
+ * should be freed with the free command, rather than
+ * delete_matrix
+ */
+
+double ** new_matrix_bones(double *v, unsigned int n1, unsigned int n2)
+{
+  double **M;
+  int i;
+  M = (double **)  malloc(sizeof(double*) * n1);
+  M[0] = v;
+  for(i=1; i<n1; i++) M[i] = M[i-1] + n2;
+  return(M);
+}
+
+
+/*
  * create a new n1 x n2 matrix which is allocated like
  * and n1*n2 array, and copy the of n1 x n2 M into it.
  */
@@ -139,7 +156,7 @@ double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
   double **m;
 
   if(n1 <= 0 || n2 <= 0) {
-    assert(M == NULL);
+    /* assert(M == NULL); */
     return NULL;
   }
  
@@ -189,7 +206,7 @@ void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2)
 
 void swap_matrix(double **M1, double **M2, unsigned int n1, unsigned int n2)
 {
-  unsigned int  i;
+  unsigned int i;
   double *temp;
   temp = M1[0];
   M1[0] = M2[0];
@@ -513,6 +530,31 @@ void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
   for(i=0; i<n2; i++) {
     s[i] = 0;
     for(j=0; j<n1; j++) s[i] += f(M[j][i]);
+  }
+}
+
+
+/*
+ * sum_of_each_column_f:
+ *
+ * fill sum[n1] with the sum of the columns of M (n1[i] x n2);
+ * each element of which is sent through function f() first;
+ * n1 must have n2 entries
+ */
+
+void sum_of_each_column_f(double *s, double **M, unsigned int *n1, 
+			  unsigned int n2, double(*f)(double))
+{
+  unsigned int i,j;
+
+  /* sanity checks */
+  if(n2 <= 0) {return;}
+  assert(s && M);
+  
+  /* calculate mean of columns */
+  for(i=0; i<n2; i++) {
+    s[i] = 0;
+    for(j=0; j<n1[i]; j++) s[i] += f(M[j][i]);
   }
 }
 
@@ -858,8 +900,9 @@ double* ones(unsigned int n, double scale)
 {
   double *o;
   unsigned int i;
-  o = (double*) malloc(sizeof(double) * n);
-  assert(o);
+  /* o = (double*) malloc(sizeof(double) * n); */
+  o = new_vector(n);
+  /* assert(o); */
   for(i=0; i<n; i++) o[i] = scale;
   return o;
 }
@@ -1102,6 +1145,7 @@ double quick_select(double arr[], int n, int k)
   int middle, ll, hh;
   
   low = 0 ; high = n-1 ; 
+  assert(k >= low && k <= high);
   for (;;) {
     if (high <= low) /* One element only */
       return arr[k] ;
@@ -1261,6 +1305,44 @@ void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1,
   assert(MOUT);
   printMatrixT(matrix, n1, n2, MOUT); 
   fclose(MOUT);
+}
+
+
+/*
+ * sub_pcols_matrix:
+ *
+ * copy the cols v[1:n1][p[n2]] to V.  
+ * must have nrow(v) == nrow(V) and ncol(V) >= lenp
+ * and ncol(v) >= max(p)
+ */
+
+void sub_p_matrix(double **V, int *p, double **v, 
+		unsigned int nrows, unsigned int lenp)
+{
+  int i,j;
+  assert(V); assert(p); assert(v); assert(nrows > 0 && lenp > 0);
+  for(i=0; i<nrows; i++) for(j=0; j<lenp; j++) 
+    V[i][j] = v[i][p[j]];
+}
+
+
+/*
+ * new_p_matrix::
+ *
+ * create a new matrix from the columns of v, specified
+ * by p.  Must have have nrow(v) == nrow(V) and ncol(V) >= ncols
+ * and ncol(v) >= max(p)
+ */
+
+double **new_p_submatrix(int *p, double **v, unsigned int nrows, 
+			 unsigned int ncols)
+{
+  double **V;
+  if(nrows == 0 || ncols == 0) return NULL;
+  assert(p); assert(v);
+  V = new_matrix(nrows, ncols);
+  sub_p_matrix(V, p, v, nrows, ncols);
+  return(V);
 }
 
 
@@ -1549,6 +1631,18 @@ void dupv(double *v, double* vold, unsigned int n)
 }
 
 
+/*
+ * copies v into the col-th column of M
+ * (assumes M and v are properly allocated already)
+ */
+
+void dup_col(double **M, unsigned int col, double *v, unsigned int n)
+{
+  unsigned int i;
+  for(i=0; i<n; i++) M[i][col] = v[i];
+}
+
+
 /* 
  * sumv:
  *
@@ -1668,6 +1762,20 @@ void scalev(double *v, unsigned int n, double scale)
 
 
 /*
+ * multiple the contents of vector v[n]
+ * by the scale[n] parameter
+ */
+
+void scalev2(double *v, unsigned int n, double *scale)
+{
+  int i;
+  assert(v);
+  assert(scale);
+  for(i=0; i<n; i++) v[i] = v[i]*scale[i];
+}
+
+
+/*
  * subtract the center value from each component
  * of v[n]
  */
@@ -1678,7 +1786,20 @@ void centerv(double *v, unsigned int n, double center)
   assert(v);
   for(i=0; i<n; i++) v[i] = v[i] - center;
 }
-    
+
+ 
+/*
+ * divide off the norm[n] value from each component
+ * of v[n]
+ */
+
+void normv(double *v, unsigned int n, double* norm)
+{
+  int i;
+  assert(v);
+  assert(norm);
+  for(i=0; i<n; i++) v[i] /= norm[i];
+}
 
 
 /*
@@ -1720,7 +1841,7 @@ double* new_sub_vector(int *p, double *v, unsigned int n)
 
 /*
  * add two vectors of the same size 
- * M1 = M1 + M2
+ * v1 = a*v1 + b*v2
  */
 
 void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
@@ -1756,6 +1877,27 @@ void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type)
   unsigned int i;
   if(type==HUMAN) for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
   else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%.20f ", v[i]);
+  else error("bad PRINT_PREC type");
+  myprintf(outfile, "\n");
+}
+
+
+/*
+ * printing a symmetric matrix in vector format out to outfile
+ */
+
+void printSymmMatrixVector(double **m, unsigned int n, FILE *outfile, 
+			   PRINT_PREC type)
+{
+  unsigned int i,j;
+  if(type==HUMAN)
+    for(i=0; i<n; i++) 
+      for(j=i; j<n; j++) 
+	myprintf(outfile, "%g ", m[i][j]);
+  else if(type==MACHINE) 
+    for(i=0; i<n; i++) 
+      for(j=i; j<n; j++) 
+	myprintf(outfile, "%.20f ", m[i][j]);
   else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }

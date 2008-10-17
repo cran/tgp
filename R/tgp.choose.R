@@ -71,7 +71,7 @@ function(out, as)
       if(is.null(out$improv)) cat("NOTICE: out$improv is NULL, using ALM\n")
       else {
         criteria <- out$improv[,1];
-        name <- paste("Improv stats (g=", out$g, ")", sep="")
+        name <- paste("Improv stats (g=", out$g[1], ")", sep="")
       }
     } else if(as != "alm")
       warning(paste("as criteria \"", as, "\" not recognized; defaulting to \"alm\"",

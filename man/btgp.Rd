@@ -147,10 +147,14 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     for improvement raised to the power 'g'. Increasing 'g' leads to
     rankings that are more oriented towards a global optimization.
     The option \code{FALSE} (default) skips these computations,
-    resulting in a faster implementation.}
+    resulting in a faster implementation.  Optionally, a two-vector
+    can be supplied where \code{improv[2]} is interpreted as the 
+    (maximum) number of points to rank by improvement.  See the note below.
+    If not specified, then the larger of 10\% of \code{nn = nrow(XX)} 
+    and \code{min(10, nn)} is taken by default }
   \item{sens.p}{ Either \code{NULL} or a vector of parameters for
     sensitivity analysis, built by the function \code{\link{sens}}.
-    Refer there for details.}
+    Refer there for details}
   \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for
     the Matern correlation function; nu+0.5 times differentiable
     predictive surfaces result}
@@ -173,7 +177,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     the type of \code{b*} function being called (e.g.,
     \code{params$tree} or \code{params$gamma}); these redundant or
     possibly conflicting specifications will be ignored.  Refer to
-    \code{tgp.default.params} for details on the prior specification. }
+    \code{tgp.default.params} for details on the prior specification}
 }
 
 \details{
@@ -240,7 +244,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   rounds in order to settle-in after using the observation counts.  See
   \code{\link{default.itemps}} for more details and an example
   
-  Please see \code{vignette("tgp")} for detailed illustration.
+  Please see \code{vignette("tgp")} for detailed illustration
 }
 
 \value{
@@ -328,16 +332,19 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
 
     Otherwise the ESS will be lower due to a non-zero coefficient of
     variation of the calculated importance tempering weights}
-  \item{sens}{ See \code{\link{sens}} documentation for more details. }
+  \item{sens}{ See \code{\link{sens}} documentation for more details}
 }
 
 \references{
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+    Bayesian Nonstationary, Semiparametric Nonlinear Regression
+    and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
 Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
+\emph{Bayesian treed Gaussian process models with an application
+  to computer modeling}
 Journal of the American Statistical Association, \bold{to appear}.
 Also available as as ArXiv article 0710.4536 
 \url{http://arxiv.org/abs/0710.4536}
@@ -360,11 +367,13 @@ Gramacy, R.B., Samworth, R.J., and King, R. (2007)
 \url{http://arxiv.org/abs/0707.4242}
 
 Kennedy, M.C. and O'Hagan, A. (2000).
-\emph{Predicting the output from a complex computer code when fast approximations are available.}
+\emph{Predicting the output from a complex computer code when fast
+  approximations are available.}
 Biometrika, \bold{87}, 1--13.
 
 M. Schonlau and Jones, D.R. and Welch, W.J. (1998).
-\emph{Global versus local search in constrained optimization of computer models.}
+\emph{Global versus local search in constrained optimization of
+  computer models.}
 In "New Developments and applications in experimental design", 
 IMS Lecture Notes - Monograph Series 34.  11--25.
 
@@ -412,7 +421,7 @@ the tree partitions, areas under the LLM, log posterior (as a function
 of tree height), and samples from the posterior predictive
 distributions. Note that since some traces are stored in
 files, multiple \code{tgp}/\R sessions in the same working
-directory can clobber the trace files of other sessions.
+directory can clobber the trace files of other sessions
 }
 
 \seealso{  \code{\link{plot.tgp}},  \code{\link{tgp.trees}},
