@@ -93,7 +93,7 @@ class Corr
   virtual void Update(unsigned int n1, double **K, double **X)=0;
   virtual void Combine(Corr *c1, Corr *c2, void *state)=0;
   virtual void Split(Corr *c1, Corr *c2, void *state)=0;
-  virtual char* State(void)=0;
+  virtual char* State(unsigned int which)=0;
   virtual double log_Prior(void)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void ToggleLinear(void)=0;

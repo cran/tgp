@@ -1898,10 +1898,10 @@ double* Gp::Bmle(void)
  * in particular, for printing in the main meta model
  */
 
-char* Gp::State(void)
+char* Gp::State(unsigned int which)
 {
   assert(corr);
-  return(corr->State());
+  return(corr->State(which));
 }
 
 

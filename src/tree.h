@@ -161,7 +161,7 @@ class Tree
   /* access function: info about nodes */
   bool isLeaf(void) const;
   bool isRoot(void) const;
-  char* State(void);
+  char* State(unsigned int which);
   bool Draw(void* state);
   void Clear(void);
  

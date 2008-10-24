@@ -101,7 +101,7 @@ class Base
   virtual double FullPosterior(double itemp)=0;
   virtual double MarginalPosterior(double itemp)=0;
   virtual double Likelihood(double itemp)=0;
-  virtual char* State(void)=0;
+  virtual char* State(unsigned int which)=0;
   virtual unsigned int sum_b(void)=0;
   virtual void Init(double *dbase)=0;
   virtual void X_to_F(unsigned int n, double **X, double **F)=0;  

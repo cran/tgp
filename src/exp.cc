@@ -400,19 +400,20 @@ void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
  * of the (parameters of) correlation function
  */
 
-char* Exp::State(void)
+char* Exp::State(unsigned int which)
 {
   char buffer[BUFFMAX];
 #ifdef PRINTNUG
-  string s = "(";
+  string s = "(d=";
 #else
   string s = "";
+  if(which == 0) s.append("d=");
 #endif
   if(linear) sprintf(buffer, "0(%g)", d);
   else sprintf(buffer, "%g", d);
   s.append(buffer);
 #ifdef PRINTNUG
-  sprintf(buffer, ",%g)", nug);
+  sprintf(buffer, ", g=%g)", nug);
   s.append(buffer);
 #endif
   

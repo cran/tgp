@@ -1277,8 +1277,8 @@ bool Tree::grow(double ratio, void *state)
   alpha = ratio*exp(pk-pklast+logp_split)/q_fwd;
   
   /* myprintf(stderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
-	   var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
-	   myflush(stderr); */
+     var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
+     myflush(stderr); */
  
   /* accept or reject? */
   bool ret_val = true;
@@ -1793,7 +1793,7 @@ bool Tree::wellSized(void) const
 bool Tree::Singular(void) const
 {
 
-  /* first check each column of X */
+  /* first check each column of X for >=1 unique value */
   assert(X);
   unsigned int bm = model->get_params()->T_bmax();
   for(unsigned int i=0; i<bm; i++) {
@@ -1803,7 +1803,37 @@ bool Tree::Singular(void) const
     if(j == n) return true;
   }
 
-  /* then check Z */
+  /* then check the rows of X for >= d+1 unique vectors */
+  unsigned int UN = d+2;
+  double **U = new_matrix(UN, bm);
+  dupv(U[0], X[0], bm);
+  unsigned int un = 1;
+
+  /* for each row */
+  for(unsigned int i=1; i<n; i++) {
+
+    /* compare row X[i,] to U[1:un,] */
+    unsigned int j;
+    for(j=0; j<un; j++) 
+      if(equalv(X[i], U[j], bm)) break;
+
+    /* check if we've found a unique X */
+    if(j == un) { /* yes */
+      if(un >= UN) {
+	if(2*UN > n) UN = n; else UN = 2*UN;
+	U = new_bigger_matrix(U, un, bm, UN, bm);
+      }
+      dupv(U[un], X[i], bm);
+      un++;
+    }
+
+    /* have we found enough unique X's */
+    if(un >= d+1) break;
+  }
+  delete_matrix(U);
+  if(un <= d) return true;
+
+  /* then check Z for >=1 unique value */
   assert(Z);
   double f = Z[0];
   unsigned int j = 0;
@@ -2143,10 +2173,10 @@ void Tree::Compute(void)
  * at this node in the tree
  */
 
-char* Tree::State(void)
+char* Tree::State(unsigned int which)
 {
   assert(base);
-  return base->State();
+  return base->State(which);
 }
 
 

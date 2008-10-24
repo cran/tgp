@@ -23,6 +23,7 @@
 
 
 #include <stdlib.h>
+#include <assert.h>
 #include "linalg.h"
 #include "matrix.h"
 #include "rhelp.h"
@@ -30,6 +31,7 @@
 #ifdef FORTPACK
 char uplo = 'U';
 #endif
+/* #define DEBUG */
 
 /*
  * linalg_dtrsv:
@@ -213,7 +215,7 @@ double **Mutil, **Mi;
 
 	#ifdef DEBUG
 	if(info != 0) {
-		matrix_to_file("M.dump", M, n, n);
+		matrix_to_file("M.dump", Mutil, n, n);
 		error("offending matrix dumped into matrix.dump");
 	}
 	#endif

@@ -559,3 +559,4 @@ plot(b2, mrlayout="coarse") # Plot coarse only.
 \keyword{ regression }
 \keyword{ spatial }
 \keyword{ tree }
+\keyword{ optimize }

@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define DEBUG
 #define GA 1.0 /* 5.0 */
 #define PWR 2.0
 #define LINEAR(gamma, min, max, d) min + max / (1.0 + exp(0.0-gamma*(d-0.5)));
@@ -131,11 +130,8 @@ double tau2, itemp;
 
   /* Vb = inv(F'*F + Ti/tau2); is inv(aux1) */
   id(Vb, col);
-  if(col==1) {
-    Vb[0][0] = 1.0/Vbi[0][0];
-  } else {
-    info = linalg_dgesv(col, Vbi, Vb);
-  }
+  if(col==1) Vb[0][0] = 1.0/Vbi[0][0];
+  else info = linalg_dgesv(col, Vbi, Vb);
   delete_matrix(Vbi);
   
   /* by = Z*F/(1+g) + b0'*Ti/tau2; 

@@ -436,11 +436,11 @@ void Matern::propose_new_d(Matern* c1, Matern* c2, void *state)
  * of the (parameters of) correlation function
  */
 
-char* Matern::State(void)
+char* Matern::State(unsigned int which)
 {
   char buffer[BUFFMAX];
 #ifdef PRINTNUG
-  string s = "(";
+  string s = "(d=";
 #else
   string s = "";
 #endif
@@ -448,7 +448,7 @@ char* Matern::State(void)
   else sprintf(buffer, "%g", d);
   s.append(buffer);
 #ifdef PRINTNUG
-  sprintf(buffer, ",%g)", nug);
+  sprintf(buffer, ", g=%g)", nug);
   s.append(buffer);
 #endif
   

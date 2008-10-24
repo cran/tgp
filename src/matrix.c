@@ -1673,6 +1673,19 @@ double meanv(double *v, unsigned int n)
 }
 
 
+/*
+ * equalv:
+ *
+ * returns 1 if the vectors are equal, 0 otherwise
+ */
+
+int equalv(double *v1, double *v2, int n)
+{
+  for(unsigned int i=0; i<n; i++) if(v1[i] != v2[i]) return(0);
+  return(1);
+}
+
+
 /* 
  * sumiv:
  *

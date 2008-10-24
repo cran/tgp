@@ -635,16 +635,20 @@ void ExpSep::draw_d_from_prior(double *d_new, void *state)
  * of the (parameters of) correlation function
  */
 
-char* ExpSep::State(void)
+char* ExpSep::State(unsigned int which)
 {
   char buffer[BUFFMAX];
 
   /* slightly different format if the nugget is going
      to get printed also */
 #ifdef PRINTNUG
-  string s = "([";
+  string s = "(d";
+  sprintf(buffer, "%d=[", which);
+  s.append(buffer);
 #else
-  string s = "[";
+  string s = "";
+  if(which == 0) s.append("d=[");
+  else s.append("[");
 #endif
 
   /* if linear, then just put a zero and be done;
@@ -668,7 +672,7 @@ char* ExpSep::State(void)
 
 #ifdef PRINTNUG
   /* print the nugget */
-  sprintf(buffer, ", %g)", nug);
+  sprintf(buffer, ", g=%g)", nug);
   s.append(buffer);
 #endif
   
