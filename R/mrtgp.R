@@ -34,6 +34,9 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
   ## 1-d plot of 1-d data described by two columns (resolutions)
   if( x$d==2 ){
 
+    ## create plot window
+    par(mfrow=c(1,1))
+
     ## construct axis x&y labels
     if(is.null(xlab)){xlab <- names(x$X)[2]}
     if(is.null(ylab)){ylab <- x$response}

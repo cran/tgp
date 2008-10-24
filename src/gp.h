@@ -90,7 +90,7 @@ class Gp : public Base
   virtual bool Constant(void);
   virtual void printFullNode(void);
   virtual double Var(void);
-  virtual char* State(void);
+  virtual char* State(unsigned int which);
   virtual unsigned int sum_b(void);
   virtual void Init(double *dgp);
   virtual void X_to_F(unsigned int n, double **X, double **F);

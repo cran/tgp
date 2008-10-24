@@ -99,3 +99,4 @@ points(dgp$XX)
 }
 \keyword{ design }
 \keyword{ spatial }
+\keyword{ optimize }

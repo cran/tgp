@@ -125,5 +125,6 @@ dout <- btgpllm(X=X, Z=Z, XX=XX, corr="exp")
 plot(dout)
 }
 \keyword{ design }
+\keyword{ optimize }
 \keyword{ spatial }
 \keyword{ tree }

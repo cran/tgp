@@ -896,21 +896,15 @@ void MrExpSep::corr_unsymm(double **K, unsigned int m,
  * (parameters of) correlation function
  */
 
-char* MrExpSep::State(void)
+char* MrExpSep::State(unsigned int which)
 {
   char buffer[BUFFMAX];
 
-  /* slightly different format if the nugget is going
-     to get printed also */
-// #ifdef PRINTNUG
+  /* initialize the state string */
   string s = "(d=[";
-// #else
-//  string s = "[";
-// #endif
 
   /* if linear, then just put a zero and be done;
-     otherwise, print the col d-values */ 
- 
+     otherwise, print the col d-values */  
   if(linear) sprintf(buffer, "0]");
   else {
     for(unsigned int i=0; i<(2*dim-1); i++) {
@@ -928,14 +922,12 @@ char* MrExpSep::State(void)
   }
   s.append(buffer);
 
-  /* print the nugget */
-  sprintf(buffer, "\n\t g=[%g", nug);
+  /* print the nugget coarse and fine */
+  sprintf(buffer, " g=[%g", nug);
   s.append(buffer);
-//#ifdef PRINTNUG
-  /* print the fine nugget */
   sprintf(buffer, " %g]", nugaux);
   s.append(buffer);
-//#endif
+  
   /* print the delta parameter */
   sprintf(buffer, ", delta=%g)", delta);
   s.append(buffer); 

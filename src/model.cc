@@ -804,21 +804,21 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   /* print round information */
 #ifdef PARALLEL
   if(num_produced - num_consumed > 0)
-    myprintf(OUTFILE, "(r,l)=(%d,%d)", r, num_produced - num_consumed);
+    myprintf(OUTFILE, "(r,l)=(%d,%d) ", r, num_produced - num_consumed);
   else myprintf(OUTFILE, "r=%d", r);
 #else
-  myprintf(OUTFILE, "r=%d", r);
+  myprintf(OUTFILE, "r=%d ", r);
 #endif
   
   /* this is here so that the progress meter in SampleMap doesn't need to print
      the same tree information each time */
   if(numLeaves > 0) {
 
-    myprintf(OUTFILE, " d=");
+    // myprintf(OUTFILE, " d=");
 
     /* print the (correllation) state (d-values and maybe nugget values) */
     for(unsigned int i=0; i<numLeaves; i++) {
-      char *state = leaves[i]->State();
+      char *state = leaves[i]->State(i);
       myprintf(OUTFILE, "%s", state);
       if(i != numLeaves-1) myprintf(OUTFILE, " ");
       free(state);

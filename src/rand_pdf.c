@@ -343,6 +343,7 @@ double **M;
   if(info != 0) {
 #ifdef DEBUG
     warning("bad chol decomp in log_determinant");
+    /* assert(0); */
 #endif
     return -1e300*1e300;
   }  

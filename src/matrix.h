@@ -146,6 +146,7 @@ void normv(double *v, unsigned int n, double* norm);
 double sum_fv(double *v, unsigned int n, double(*f)(double));
 double sumv(double *v, unsigned int n);
 double meanv(double *v, unsigned int n);
+int equalv(double *v1, double *v2, int n);
 
 int* new_ivector(unsigned int n);
 int* new_dup_ivector(int *iv, unsigned int n);

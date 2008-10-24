@@ -64,7 +64,7 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   
   /* determine if design matrix is collinear */
   if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-    /*warning("degenerate design matrix"); */
+    /* warning("degenerate design matrix in post_margin_rj"); */
     /* assert(0); */
     return 0.0-1e300*1e300;
   }
@@ -131,7 +131,7 @@ double a0, g0, lambda, log_detK, itemp;
   
   /* determine if design matrix is collinear */
   if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
-    /* warning("degenerate design matrix"); */
+    /* warning("degenerate design matrix in post_margin"); */
     return 0.0-1e300*1e300;
   }
 

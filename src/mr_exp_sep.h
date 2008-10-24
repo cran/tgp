@@ -59,7 +59,7 @@ class MrExpSep : public Corr
 		   void *state);
   virtual void Combine(Corr *c1, Corr *c2, void *state);
   virtual void Split(Corr *c1, Corr *c2, void *state);
-  virtual char* State(void);
+  virtual char* State(unsigned int which);
    virtual unsigned int sum_b(void);
   virtual void ToggleLinear(void);
   virtual bool DrawNugs(unsigned int n, double **X, double **F, double *Z,

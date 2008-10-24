@@ -134,7 +134,7 @@
 }
 
 \value{
-	The only output of this function is beautiful plots.
+	The only output of this function is beautiful plots
 }
 
 \author{ 
