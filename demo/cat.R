@@ -39,19 +39,33 @@ tgp.trees(fit1, "map")
 ###################################################
 ### chunk number 6: 
 ###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
+
+
+###################################################
+### chunk number 7: 
+###################################################
 fit2 <- btlm(X=X, Z=Z, XX=XX, verb=0)
 rmse2 <- sqrt(mean((fit2$ZZ.mean - ZZ)^2))
 rmse2
 
 
 ###################################################
-### chunk number 7: cat-fbtlm-trees
+### chunk number 8: cat-fbtlm-trees
 ###################################################
 tgp.trees(fit2, "map")
 
 
 ###################################################
-### chunk number 8: 
+### chunk number 9: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
+
+
+###################################################
+### chunk number 10: 
 ###################################################
 fit3 <- btlm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
 rmse3 <- sqrt(mean((fit3$ZZ.mean - ZZ)^2))
@@ -59,13 +73,20 @@ rmse3
 
 
 ###################################################
-### chunk number 9: cat-fbtlm-mapt
+### chunk number 11: cat-fbtlm-mapt
 ###################################################
 tgp.trees(fit3, "map")
 
 
 ###################################################
-### chunk number 10: 
+### chunk number 12: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
+
+
+###################################################
+### chunk number 13: 
 ###################################################
 fit4 <- btgpllm(X=X, Z=Z, XX=XX, verb=0)
 rmse4 <- sqrt(mean((fit4$ZZ.mean - ZZ)^2))
@@ -73,13 +94,13 @@ rmse4
 
 
 ###################################################
-### chunk number 11: 
+### chunk number 14: 
 ###################################################
 fit4$gpcs
 
 
 ###################################################
-### chunk number 12: 
+### chunk number 15: 
 ###################################################
 fit5 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
 rmse5 <- sqrt(mean((fit5$ZZ.mean - ZZ)^2))
@@ -87,14 +108,21 @@ rmse5
 
 
 ###################################################
-### chunk number 13: cat-fb-mapt
+### chunk number 16: cat-fb-mapt
 ###################################################
 h <- fit1$post$height[which.max(fit1$posts$lpost)]
 tgp.trees(fit5, "map")
 
 
 ###################################################
-### chunk number 14: 
+### chunk number 17: 
+###################################################
+rl <- readline("press RETURN to continue: ")
+graphics.off()
+
+
+###################################################
+### chunk number 18: 
 ###################################################
 fit6 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, 
                  splitmin=11, verb=0)

@@ -563,6 +563,9 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
   
     /* copy the mofified weights into the big weight vector */
     copy_p_vector(w, p, wi, len);
+
+    /* clean up */
+    free(p); free(wi);
   }
 
   /* print totals */

@@ -177,7 +177,7 @@ function(params, d)
   
   ## beta linear prior model
   ## check the type of beta prior, and possibly augment by p0
-  if(params$bprior == "b0") { p <- c(p,1);  }
+  if(params$bprior == "b0") { p <- c(p,0);  }
   else if(params$bprior == "bmle") { p <- c(p, 1); }
   else if(params$bprior == "bflat") { p <- c(p, 2); }
   else if(params$bprior == "b0not") { p <- c(p, 3); }
