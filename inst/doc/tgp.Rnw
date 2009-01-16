@@ -26,7 +26,7 @@ library(tgp)
 options(width=65)
 @ 
 
-\title{{\tt tgp} v1.2:\\ an {\tt R} package for Bayesian
+\title{{\tt tgp}: an {\sf R} package for Bayesian
   nonstationary,\\ semiparametric nonlinear regression and design
   by treed Gaussian process models}
 \author{Robert B. Gramacy\\
@@ -36,7 +36,7 @@ options(width=65)
 \maketitle
 
 \begin{abstract}
-  The {\tt tgp} package for {\tt R} \cite{cran:R} is a tool for fully
+  The {\tt tgp} package for {\sf R} \cite{cran:R} is a tool for fully
   Bayesian nonstationary, semiparametric nonlinear regression and
   design by treed Gaussian processes with jumps to the limiting linear
   model.  Special cases also implemented include Bayesian linear
@@ -64,7 +64,7 @@ This means that the code quoted throughout is certified by {\tt
 
 Note that this tutorial was not meant to serve as an instruction
 manual.  For more detailed documentation of the functions contained in
-the package, see the package help-manuals. At an {\tt R} prompt, type
+the package, see the package help-manuals. At an {\sf R} prompt, type
 {\tt help(package=tgp)}. PDF documentation is also available on the
 world-wide-web.
 \begin{center}
@@ -114,7 +114,7 @@ the table they are ordered by some notion of ``flexibility''.  These
 \begin{table}
 \centering
 \begin{tabular}{l|l|l}
-  {\tt R} function & Ingredients & Description \\
+  {\sf R} function & Ingredients & Description \\
   \hline
   blm & LM & Linear Model \\
   btlm & T, LM & Treed Linear Model \\
@@ -134,7 +134,7 @@ The {\tt b*} functions are intended as the main interface, so little
 further attention to the {\tt tgp} master function will be included
 here.  The easiest way to see how the master {\tt tgp} function
 implements one of the {\tt b*} methods is to simply type the name of
-the function of interest into {\tt R}.  For example, to see the
+the function of interest into {\sf R}.  For example, to see the
 implementation of {\tt bgp}, type:
 <<results=hide>>=
 bgp
@@ -195,10 +195,10 @@ A few notes on 2-d plotting of {\tt tgp}-class objects:
   dimension larger than two.  The example provided in Section
   \ref{sec:fried} uses 10-d data, however no plotting is required.
   {\tt tgp} methods have been used on data with input dimension as
-  large as 15 \cite{gra:lee:2006}, and were used in a sequential
+  large as 15 \cite{gra:lee:2008}, and were used in a sequential
   design and detailed analysis of some proprietary 3-d input and 6-d
   output data sampled using a NASA supercomputer
-  \cite{gra:lee:2006b}.
+  \cite{gra:lee:2009}.
 
 \item The {\tt plot.tgp} function has many more options than are
   illustrated in [Section \ref{sec:examples} of] this document.
@@ -342,9 +342,9 @@ a.k.a.~GP LLM), treed partitioning for nonstationary models, and
 sequential design of experiments (a.k.a.~{\em adaptive sampling})
 concepts for these models are all briefly discussed.  Appropriate
 references are provided for the details, including the original paper
-on Bayesian treed Gaussian process models \cite{gra:lee:2006}, and an
+on Bayesian treed Gaussian process models \cite{gra:lee:2008}, and an
 application paper on adaptively designing supercomputer experiments
-\cite{gra:lee:2006b}.
+\cite{gra:lee:2009}.
 
 As a first pass on this document, it might make sense to skip this
 section and go straight on to the examples in Section
@@ -389,7 +389,7 @@ functionality.
 All parameters in (\ref{eq:model}) can be sampled using Gibbs steps,
 except for the covariance structure and nugget parameters, and their
 hyperparameters, which can be sampled via Metropolis-Hastings
-\cite{gra:lee:2006}.
+\cite{gra:lee:2008}.
 
 
 \subsubsection{The nugget} 
@@ -526,7 +526,7 @@ data (averaged over a reference set $\tilde{\mb{Y}}$):
     \mb{q}_N^\top(\tilde{\mb{x}})\mb{C}_N^{-1}\mb{q}_N(\tilde{\mb{x}})},
   \nonumber
 \end{align}
-which is easily computed using MCMC methods \cite{gra:lee:2006b}.  In
+which is easily computed using MCMC methods \cite{gra:lee:2009}.  In
 the {\tt tgp} package, the reference set is taken to be the same as
 the candidate set, i.e., $\tilde{\mb{Y}} = \tilde{\mb{X}}$.
 
@@ -597,7 +597,7 @@ nearly one.
 
 Bayesians can take advantage of the limiting linear model (LLM) by
 constructing a prior for the ``mixture'' of the GP with its LLM
-\cite{gra:lee:2006}.  The key idea is an
+\cite{gra:lee:2008b}.  The key idea is an
 augmentation of the parameter space by $m_X$ indicators $\mb{b} =
 \{b\}_{i=1}^{m_X} \in \{0,1\}^{m_X}$.  The boolean $b_i$ is intended
 to select either the GP ($b_i=1$) or its LLM for the $i^{\mbox{\tiny
@@ -692,7 +692,7 @@ instead of being fixed.
 
 Prediction under the limiting GP model is a simplification of
 (\ref{eq:pred}) when it is known that $\mb{K} = (1+g)\mb{I}$.  It can
-be shown \cite{gra:lee:2006} that the predicted value of $z$ at
+be shown \cite{gra:lee:2008b} that the predicted value of $z$ at
 $\mb{x}$ is normally distributed with mean $\hat{z}(\mb{x}) =
 \mb{f}^\top(\mb{x}) \tilde{\bm{\beta}}$ and variance
 $\hat{\sigma}(\mb{x})^2 = \sigma^2 [1 +
@@ -704,7 +704,7 @@ because an $m \times m$ inversion is faster than an $n\times n$ one.
 Applying the ALC algorithm under the LLM also offers computational
 savings.  Starting with the predictive variance given in
 (\ref{eq:pred}), the expected reduction in variance under the LM is
-\cite{gra:lee:2006b}
+\cite{gra:lee:2009}
 \begin{equation}
 \Delta \hat{\sigma}^2_\mb{y} (\mb{x}) = \frac{ 
   \sigma^2 [\mb{f}^\top(\mb{y}) \mb{V}_{\tilde{\beta}_N} \mb{f}(\mb{x})]^2}
@@ -781,7 +781,7 @@ trees.
 Extending the work of Chipman et al.~\cite{chip:geor:mccu:2002}, the
 {\tt tgp} package implements a stationary GP with linear trend, or GP
 LLM, independently within each of the regions depicted by a tree
-$\mathcal{T}$ \cite{gra:lee:2006}.  Integrating out dependence on
+$\mathcal{T}$ \cite{gra:lee:2008}.  Integrating out dependence on
 $\mathcal{T}$ is accomplished by reversible-jump MCMC (RJ-MCMC) via
 tree operations {\em grow, prune, change}, and {\em
   swap}~\cite{chip:geor:mccu:1998}.
@@ -797,7 +797,7 @@ their priors\footnote{Proposed {\em grows} are the {\em only} place
 present in RJ-MCMC.  New splits are chosen uniformly from the set of
 marginalized input locations $\mb{X}$.  The {\em swap} operation is
 augmented with a {\em rotate} option to improve mixing of the Markov
-chain \cite{gra:lee:2006}.
+chain \cite{gra:lee:2008}.
 
 There are many advantages to partitioning the input space into
 regions, and fitting separate GPs (or GP LLMs) within \index{each}each
@@ -860,7 +860,7 @@ determinant calculations for (possibly) large covariance matrices.
 
 One possible solution to both computational and nonstationary modeling
 issues is to use treed sequential $D$--optimal design
-\cite{gra:lee:2006b}, where separate sequential $D$--optimal designs
+\cite{gra:lee:2009}, where separate sequential $D$--optimal designs
 are computed in each of the partitions depicted by the maximum {\em a
   posteriori} (MAP) tree $\hat{\mathcal{T}}$.  The number of
 candidates selected from each region can be proportional to the volume
@@ -886,21 +886,25 @@ research.
 The following subsections take the reader through a series of examples
 based, mostly, on synthetic data.  At least two different {\tt b*}
 models are fit for each set of data, offering comparisons and
-contrasts.  Duplicating these examples in your own {\tt R} session is
+contrasts.  Duplicating these examples in your own {\sf R} session is
 highly recommended.  The {\tt Stangle} function can help extract
-executable {\tt R} code from this document.  For example, the code for
+executable {\sf R} code from this document.  For example, the code for
 the exponential data of Section \ref{sec:exp} can be extracted with
 one command.
 \begin{verbatim}
-> Stangle(vignette("exp", package="tgp")$file))
+> Stangle(vignette("exp", package="tgp")$file)
 \end{verbatim}
 \noindent This will write a file called ``exp.R''.  Additionally, each
-of the subsections that follow is available as an {\tt R} demo.  Try
+of the subsections that follow is available as an {\sf R} demo.  Try
 {\tt demo(package="tgp")} for a listing of available demos.  To invoke
 the demo for the exponential data of Section \ref{sec:exp} try {\tt
   demo(exp, package="tgp")}.  This is equivalent to {\tt
   source("exp.R")} because the demos were created using {\tt Stangle}
 on the source files of this document.  
+\footnote{Note that this vignette functionality is only supported in 
+{\tt tgp} version $<2.x$.  In 2.x and later the vignettes were 
+coalesced in order to reduce clutter.  
+The demos in 2.x, however, still correspond to their respective sections.}
 
 Each subsection (or subsection of the appendix) starts by seeding the
 random number generator with \verb!set.seed(0)!.  This is done to
@@ -912,8 +916,8 @@ randomly) they may be quite different.
 
 Other successful uses of the methods in this package include
 applications to the Boston housing data \cite{harrison:78,
-  gra:lee:2006}, and designing an experiment for a reusable NASA
-launch vehicle \cite{glm:04,gra:lee:2006b} called the Langely
+  gra:lee:2008}, and designing an experiment for a reusable NASA
+launch vehicle \cite{glm:04,gra:lee:2009} called the Langely
 glide-back booster (LGBB).
 
 \SweaveInput{linear.iRnw}
@@ -963,7 +967,7 @@ probabilities for the MH acceptance ratio is straightforward.
 
 For more details about the MCMC algorithm and proposals, etc., please
 see the original technical report on {\em Bayesian treed Gaussian process
-models} \cite{gra:lee:2006}.
+models} \cite{gra:lee:2008}.
 
 \section{Interfaces and features}
 
@@ -980,7 +984,7 @@ parameter traces, the progress meter, and an example of how to use the
 The progress meter shows the state of the MCMC as it iterates
 through the desired number of rounds of burn--in ({\tt BTE[1]}), and
 sampling ({\tt BTE[2]-BTE[1]}), for the requested number of repeats
-({\tt R-1}).  The verbosity of progress meter print statements is
+({\sf R-1}).  The verbosity of progress meter print statements is
 controlled by the {\tt verb} arguments to the {\tt b*} 
 functions.  Providing {\tt verb=0} silences all non--warning (or
 error) statements.  To suppress warnings, try enclosing commands
@@ -1045,7 +1049,7 @@ range parameters.
 In what follows I describe customizations and enhancements that can be
 made to {\tt tgp} at compile time in order to take advantage of custom
 computing architectures.  The compilation of {\tt tgp} with a linear
-algebra library different from the one used to compile {\tt R} (e.g.,
+algebra library different from the one used to compile {\sf R} (e.g.,
 ATLAS), and the configuration and compilation of {\tt tgp} with
 parallelization is described in detail.
 
@@ -1056,11 +1060,11 @@ parallelization is described in detail.
 {\tt BLAS} and {\tt LAPACK} for fast, automatically tuned, linear
 algebra routines.  %Compared to standard {\tt BLAS} and {\tt Lapack},
 %those automatically tuned by {\tt ATLAS} are significantly faster.  
-If you know that {\tt R} has already been linked to tuned linear
+If you know that {\sf R} has already been linked to tuned linear
 algebra libraries (e.g., on {\tt OSX}), then compiling with {\tt
   ATLAS} as described below, is unnecessary---just install {\tt tgp}
 as usual.  As an alternative to linking {\tt tgp} to {\tt ATLAS}
-directly, one could re-compile all of {\tt R} linking it to {\tt
+directly, one could re-compile all of {\sf R} linking it to {\tt
   ATLAS}, or some other platform--specific {\tt BLAS}/{\tt Lapack},
 i.e., {\tt Intel}'s Math Kernel Library, or {\tt AMD}'s Core Math
 Library, as described in:
@@ -1068,7 +1072,7 @@ Library, as described in:
 \verb!http://cran.r-project.org/doc/manuals/R-admin.html!
 \end{center}
 Look for the section titled ``Linear Algebra''. While this is
-arguably best solution since all of {\tt R} benefits, the task can
+arguably best solution since all of {\sf R} benefits, the task can
 prove challenging to accomplish and may require administrator (root)
 privileges.  Linking {\tt tgp} with {\tt ATLAS} directly is described
 here.
@@ -1077,7 +1081,7 @@ GP models implemented in {\tt tgp} can get a huge benefit from tuned
 linear algebra libraries, since the MCMC requires many large matrix
 multiplications and inversions (particularly of $\mb{K}$).  In some
 cases the improvement can be as large as tenfold with {\tt ATLAS} as
-compared to the default {\tt R} linear algebra routines.  Comparisons
+compared to the default {\sf R} linear algebra routines.  Comparisons
 between {\tt ATLAS} and architecture specific libraries like {\tt MKL}
 for {\tt Intel} or {\tt veclib} for {\tt OSX} usually show the latter
 favorably, though the difference is less impressive.  For example, see

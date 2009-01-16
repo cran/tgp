@@ -14,7 +14,7 @@ z_i = 1 + 2x_i + \epsilon_, \;\;\;\;\; \mbox{where} \;\;\;
 \label{eq:linear:sim}
 \end{equation} 
 
-The following {\tt R} code takes a sample $\{\mb{X}, \mb{Z}\}$ of size
+The following {\sf R} code takes a sample $\{\mb{X}, \mb{Z}\}$ of size
 $N=50$ from (\ref{eq:linear:sim}).  It also chooses $N'=99$ evenly spaced
 predictive locations $\tilde{\mb{X}} = \mbox{\tt XX}$.
 <<>>=

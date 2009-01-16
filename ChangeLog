@@ -1,3 +1,19 @@
+2.2 (16 Jan 2009)
+---
+
+added lower bound for s2_g0, and added DEFAULT CPP macros
+to help prevent assertions which would have backed out of
+bad parameterizations anyways.  This more liberal approach
+essentially prevents assertions in the no-noise regression
+case
+
+now allow basemax != d for constant mean functions
+
+added categorical LHS for sensitivity analyses
+
+finished draft of second vignette, to be submitted to JSS
+	
+
 2.1-6 (25 Nov 2008)
 -----
 

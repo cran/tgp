@@ -13,14 +13,14 @@ $\mb{X}$.  While it was possible to specify ordinal, integer--valued,
 or even binary inputs, {\tt tgp} would treat them the same as any
 other real--valued input.  Two new arguments to {\tt
   tgp.default.params}, and thus the ellipses ({\tt ...}) argument to
-the {\tt b*} functions provide a more natural way to model with
+the {\tt b*} functions, provide a more natural way to model with
 non--real valued inputs.
 
 Classical treed methods, such as CART \cite{brei:1984}, can cope quite
 naturally with categorical, binary, and ordinal, inputs.  Categorical
 inputs can be encoded in binary, and splits can be proposed with rules
 such as $x_i < 1$.  Once a split is made on a binary input, no further
-process in need, marginally, in that dimension.  Ordinal inputs can
+process is needed, marginally, in that dimension.  Ordinal inputs can
 also be coded in binary, and thus treated as categorical, or treated
 as real--valued and handled in a default way.  GP regression, however,
 handles such non--real--valued inputs less naturally, unless (perhaps)
@@ -28,11 +28,11 @@ a custom and non--standard form of the covariance function is used.
 When inputs are scaled to lie in $[0,1]$, binary--valued inputs $x_i$
 are always a constant distance apart---at the largest possible
 distance in the range.  A separable correlation function width
-parameter $d_i$ will tend to infinity if the output does not vary with
-$x_i$, and will tend to zero if it is.  Clearly, this functionality is
-more parsimoniously served achieved by partitioning, e.g., using a
-tree.  However, trees with fancy regression models at the leaves pose
-other problems, as discussed below.
+parameter $d_i$ will tend to infinity (in the posterior) if the output
+does not vary with $x_i$, and will tend to zero if it is.  Clearly,
+this functionality is more parsimoniously achieved by partitioning,
+e.g., using a tree.  However, trees with fancy regression models at
+the leaves pose other problems, as discussed below.
 
 Consider as motivation, the following modification of the Friedman
 data \cite{freid:1991} (see also Section 3.5 of \cite{gramacy:2007}).
@@ -42,7 +42,7 @@ $I\in\{1,2,3,4\}$ that can be encoded in binary as
 \begin{align*}
 1& \equiv (0,0,0) & 2 &\equiv (0,0,1) & 3 &\equiv (0,1,0) & 4 &\equiv (1,0,0).
 \end{align*}
-Not let the function that describes the responses ($Z$), observed with
+Now let the function that describes the responses ($Z$), observed with
 standard Normal noise, have a mean
 \begin{equation}
 E(Z|\mb{x}, I) = \left\{ \begin{array}{cl}
@@ -54,10 +54,10 @@ E(Z|\mb{x}, I) = \left\{ \begin{array}{cl}
 \end{array} \right.
 \end{equation}
 that depends on the indicator $I$.  Notice that when $I=4$ the
-original Friedman data is recovered, but with the first five input
-columns in reverse order.  Irrespective of $I$, the response depends only
-on $\{x_1,\dots,x_5\}$, thus combining nonlinear, linear, and
-irrelevant effects.  When $I=3$ the response is linear $\mb{x}$.
+original Friedman data is recovered, but with the first five inputs in
+reverse order.  Irrespective of $I$, the response depends only on
+$\{x_1,\dots,x_5\}$, thus combining nonlinear, linear, and irrelevant
+effects.  When $I=3$ the response is linear $\mb{x}$.
 
 A new function has been included in the {\tt tgp} package which
 facilitates generating random realizations from (\ref{eq:f1b}).  Below
@@ -93,6 +93,9 @@ constant models are fit at the leaves of the tree.
 <<label=cat-fbcart-mapt,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
 tgp.trees(fit1, "map")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
 \includegraphics[trim=0 100 0 25]{tgp2-cat-fbcart-mapt}
 \caption{Diagrammatic depiction of the maximum {\em a' posteriori}
@@ -104,17 +107,20 @@ Figure \ref{f:fb:cart} shows that the tree does indeed partition on
 the indicators, and the other inputs, as expected.
 
 One might expect a much better fit from a treed linear model to this data,
-since the response in linear in some of its inputs.
+since the response is linear in some of its inputs.
 <<>>=
 fit2 <- btlm(X=X, Z=Z, XX=XX, verb=0)
 rmse2 <- sqrt(mean((fit2$ZZ.mean - ZZ)^2))
 rmse2
 @ 
-Unfortunately, this is not the case----the RMSEs are similar to those for
-the CART model.
+Unfortunately, this is not the case---the RMSE obtained is similar
+to the one for the CART model.
 \begin{figure}[ht!]
 <<label=cat-fbtlm-trees,fig=TRUE,echo=TRUE,width=8,height=7,include=FALSE>>=
 tgp.trees(fit2, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
 @
 \centering
 \includegraphics[trim=0 100 0 25]{tgp2-cat-fbtlm-trees}
@@ -136,7 +142,7 @@ more natural, by including them as candidates for treed partitioning,
 but ignoring them when it comes to fitting the models at the leaves of
 the tree.  The argument {\tt basemax} to {\tt tgp.default.params}, and
 thus the ellipses ({\tt ...}) argument to the {\tt b*} functions,
-allows for the specification of the last column of {\tt X} to be
+allows for the specification of the last columns of {\tt X} to be
 considered under the base (LM or GP) model.  In the context of our
 example, specifying {\tt basemax = 10} ensures that only the first 10
 inputs, i.e., $\mb{X}$ only (excluding $I$), are used to predict the
@@ -157,8 +163,11 @@ rmse3
 <<label=cat-fbtlm-mapt,fig=TRUE,echo=TRUE,width=8,height=7,include=FALSE>>=
 tgp.trees(fit3, "map")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 100 0 25]{tgp2-cat-fbtlm-mapt}
+\includegraphics[trim=0 90 0 25,scale=0.75]{tgp2-cat-fbtlm-mapt}
 \caption{Diagrammatic depiction of the maximum {\em a' posteriori}
   (MAP) tree for the boolean indicator version of the
   Friedman data in Eq.~(\ref{eq:f1b}) using a Bayesian treed linear
@@ -170,7 +179,7 @@ partition on the indicators in an appropriate way---as well as on some
 other real--valued inputs---and the result is the lower RMSE we would
 expect.
 
-A more high--powered approach would clearly be to treat all inputs as
+A more high--powered approach would clearly be to treat all inputs
 as real--valued by fitting a GP at the leaves of the tree.  Binary
 partitions are allowed on all inputs, $\mb{X}$ and $I$, but treating
 the boolean indicators as real--valued in the GP is clearly
@@ -184,14 +193,14 @@ rmse4
 @ 
 Since the design matrices would become rank--deficient if the boolean
 indicators are partitioned upon, there was no partitioning in this
-example.  Since there are large covariance matrices to invert, the
-MCMC inference is {\em very} slow.
+example.  
 <<>>=
 fit4$gpcs
 @ 
-Still, the resulting fit (obtained with much patience) is a much
-better that the Bayesian CART and treed LM (with {\tt basemax = 10})
-ones, as indicated by the RMSE.
+Since there are large covariance matrices to invert, the MCMC
+inference is {\em very} slow.  Still, the resulting fit (obtained with
+much patience) is better that the Bayesian CART and treed LM
+(with {\tt basemax = 10}) ones, as indicated by the RMSE.
 
 We would expect to get the best of both worlds if the setting {\tt
   basemax = 10} were used when fitting the treed GP model, thus 
@@ -217,6 +226,9 @@ outputs.
 h <- fit1$post$height[which.max(fit1$posts$lpost)]
 tgp.trees(fit5, "map")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
 \includegraphics[trim=0 100 0 25]{tgp2-cat-fb-mapt}
 \caption{Diagrammatic depiction of the maximum {\em a' posteriori}
@@ -232,11 +244,11 @@ improved mixing in the Markov chain when a separable covariance
 function is used.  Note that using a non--separable covariance
 function in the presence of indicators would result in a poor fit.
 Good range ($d$) settings for the indicators would not necessarily
-coincide with a a good range setting for the real--valued inputs.
+coincide with good range settings for the real--valued inputs.
 
 A complimentary setting, {\tt splitmin}, allows the user to specify
-the first column of the inputs {\tt X} on which treed partitioning is
-allowed.  From Section 3.5 of the first {\tt tgp} vignette
+the first column of the inputs {\tt X} upon which treed partitioning
+is allowed.  From Section 3.5 of the first {\tt tgp} vignette
 \cite{gramacy:2007}, it was concluded that the original formulation of
 Friedman data was stationary, and thus treed partitioning is not
 required to obtain a good fit.  The same would be true of the response
@@ -244,7 +256,8 @@ in (\ref{eq:f1b}) after conditioning on the indicators.  Therefore,
 the most parsimonious model would use {\tt splitmin = 11}, in addition
 to {\tt basemax = 10}, so that only $\mb{X}$ are under the GP, and
 only $I$ under the tree.  Fewer viable candidate inputs for treed
-partitioning should yield improved mixing in the Markov chain.
+partitioning should yield improved mixing in the Markov chain, and
+thus lower RMSE.
 <<>>=
 fit6 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, splitmin=11, verb=0)
 rmse6 <- sqrt(mean((fit6$ZZ.mean - ZZ)^2))

@@ -1,15 +1,22 @@
-\documentclass{article}
-%\documentclass[12pt]{article}
-%\usepackage{fullpage}
-%\usepackage{setspace}
-\usepackage[footnotesize]{caption}
+\documentclass[12pt]{article}
+%\usepackage[footnotesize]{caption}
+\usepackage{caption}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amscd}
 \usepackage{epsfig}
+\usepackage{fullpage}
+
+%\renewcommand{\baselinestretch}{1.5}
 
 \newcommand{\bm}[1]{\mbox{\boldmath $#1$}}
 \newcommand{\mb}[1]{\mathbf{#1}}
+
+
+\newcommand{\mc}[1]{\mathcal{#1}}
+\newcommand{\mr}[1]{\mathrm{#1}}
+\newcommand{\mbb}[1]{\mathbb{#1}}
+
 
 %\VignetteIndexEntry{new features in tgp version 2.x}
 %\VignetteKeywords{tgp}
@@ -18,7 +25,6 @@
 
 \begin{document}
 
-%\doublespacing
 
 \setkeys{Gin}{width=0.85\textwidth}
 
@@ -28,19 +34,19 @@ options(width=65)
 @ 
 
 \title{Categorical inputs, sensitivity analysis,\\ 
-  multiresolution models,\\
   optimization and importance tempering\\ 
   with {\tt tgp} version 2, an {\sf R} package for\\ 
   treed Gaussian process models}
 \author{
-    Matt A. Taddy\\
-  Applied Math \& Statistics Department\\
-  University of California, Santa Cruz, USA\\
-  taddy@ams.ucsc.edu \and
-  Robert B. Gramacy\\
+   Robert B. Gramacy\\
   Statistical Laboratory\\
   University of Cambridge, United Kingdom\\
-  bobby@statslab.cam.ac.uk}
+  bobby@statslab.cam.ac.uk  \and
+  Matthew Taddy\\
+  Booth School of Business\\
+  University of Chicago\\
+  matt.taddy@chicagobooth.edu 
+}
 \maketitle
 
 \begin{abstract}
@@ -49,53 +55,55 @@ options(width=65)
   models.  The topics covered include methods for dealing with
   categorical inputs and excluding inputs from the tree or GP part of
   the model; fully Bayesian sensitivity analysis for
-  inputs/covariates; multiresolution (treed) Gaussian process
-  modeling; sequential optimization of black-box functions; and a new
-  Monte carlo method for inference in multi-modal posterior
+  inputs/covariates; %multiresolution (treed) Gaussian process modeling; 
+  sequential optimization of black-box functions; and a new
+  Monte Carlo method for inference in multi-modal posterior
   distributions that combines simulated tempering and importance
   sampling.  These additions extend the functionality of {\tt tgp}
-  across all models in the hierarchy: from Bayesian linear models to
-  CART to treed Gaussian process with jumps to the limiting linear
-  model, except in the case of multiresolution models which apply only
-  to the (treed) GP.  It is assumed that the reader is familiar with
-  the features in earlier versions of the package, outlined in the
-  first vignette {\tt tgp.pdf} \cite{gramacy:2007}.
+  across all models in the hierarchy: from Bayesian linear models, to
+  CART, to treed Gaussian processes with jumps to the limiting linear
+  model. %, except in the case of multiresolution models which apply only
+  %to the (treed) GP.  
+  It is assumed that the reader is familiar with the baseline
+  functionality of the package, outlined in the first vignette
+  \cite{gramacy:2007}.
   \end{abstract}
 
 \subsection*{Intended audience}
 \label{sec:discaimer}
 
 This document is intended as a follow-on to the vignette for version
-1.x of the {\tt tgp} package \cite{gramacy:2007}.  
-It describes five new features that
-have been added to the package in version 2.x, and is divided into
-five essentially disjoint sections: on categorical inputs (Section
-\ref{sec:cat}), sensitivity analysis (Section \ref{sec:sens}),
-multiresolution {\tt tgp} (Section \ref{sec:mrtgp}), sequential
-optimization (Section \ref{sec:optim}), and importance tempering
-(Section \ref{sec:it}).  Each section will begin with a short
-mathematical introduction to the new feature or methodology and
-commence with extensive examples in {\sf R} on synthetic and real
-data.  This document has been authored in {\tt Sweave} (try {\tt
-  help(Sweave)}).  This means that the code quoted throughout is
-certified by {\tt R}, and the {\tt Stangle} command can be used to
-extract it.  As with the first vignette, the {\sf R} code in
-each of the sections to follow is also available as a demo in the
+1.x of the {\tt tgp} package \cite{gramacy:2007}.  It describes four
+new features that have been added to the package in version 2.x, and
+is divided into four essentially disjoint sections: on categorical
+inputs (Section \ref{sec:cat}), sensitivity analysis (Section
+\ref{sec:sens}), statistical optimization (Section \ref{sec:optim}),
+and importance tempering (Section \ref{sec:it}).  Each section will
+begin with a short mathematical introduction to the new feature or
+methodology and commence with extensive examples in {\sf R} on
+synthetic and real data.  This document has been authored in {\tt
+  Sweave} (try {\tt help(Sweave)}).  This means that the code quoted
+throughout is certified by {\sf R}, and the {\tt Stangle} command can
+be used to extract it.  As with the first vignette, the {\sf R} code
+in each of the sections to follow is also available as a demo in the
 package.  Note that this tutorial was not meant to serve as an
 instruction manual.  For more detailed documentation of the functions
-contained in the package, see the package help--manuals. At an {\tt R}
+contained in the package, see the package help--manuals. At an {\sf R}
 prompt, type {\tt help(package=tgp)}. PDF documentation is also
 available on the world-wide-web.
 \begin{center}
 \tt http://www.cran.r-project.org/doc/packages/tgp.pdf
 \end{center}
-Throughout this document it is assumed that the reader is familiar with
-the {\tt tgp} methods and models available in version 1.x of the
-package, outlined in the vignette {\tt tgp.pdf} \cite{gramacy:2007}.
+
+Each section starts by seeding the random number generator with
+\verb!set.seed(0)!.  This is done to make the results and analyses
+reproducible within this document, and in demo form.  We recommend you
+try these examples with different seeds and see what happens.  Usually
+the results will be similar, but sometimes (especially when the data
+({\tt X},{\tt Z}) is generated randomly) they may be quite different.
 
 \SweaveInput{cat.iRnw}
 \SweaveInput{sens.iRnw}
-\SweaveInput{mrtgp.iRnw}
 \SweaveInput{optim.iRnw}
 \SweaveInput{it.iRnw}
 

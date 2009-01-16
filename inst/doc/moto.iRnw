@@ -26,7 +26,7 @@ The data is
 %Dataset~\cite{silv:1985}, which is  
 %\fi 
 included as part of the {\tt MASS} library in
-{\tt R}.
+{\sf R}.
 <<>>= 
 library(MASS)
 X <- data.frame(times=mcycle[,1])

@@ -22,12 +22,12 @@ models at the locations enumerated in the {\tt XX} argument.  Even
 traces of single--parameter Markov chains can require hefty amounts of
 storage, so recording traces at each of the {\tt XX} locations can be
 an enormous memory hog.  A related warning will be given if the
-product of $|${\tt XX}$|$, \verb!(BTE[2]-BTE[1])/BTE[3]! and {\tt R}
+product of $|${\tt XX}$|$, \verb!(BTE[2]-BTE[1])/BTE[3]! and {\sf R}
 is beyond a threshold.  The easiest way to keep the storage
 requirements for traces down is to control the size of {\tt XX} and
 the thinning level {\tt BTE[3]}.  Finally, traces for most of the
 parameters are stored in output files.  The contents of the trace
-files are read into {\tt R} and stored as {\tt data.frame} objects,
+files are read into {\sf R} and stored as {\tt data.frame} objects,
 and the files are removed. The existence of partially written trace
 files in the current working directory (CWD)---while the {\tt C} code
 is executing---means that not more than one {\tt tgp} run (with

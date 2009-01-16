@@ -38,6 +38,7 @@ extern "C"
 #include <assert.h>
 #include <fstream>
 #include <time.h>
+#include <math.h>
 
 extern "C"
 {
@@ -432,22 +433,44 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
 { 
 
   /* Calculate the main effects sample: based on M1 only for now.  */
+  unsigned int bmax =  model->get_params()->T_bmax();
+  int colj;
   int ngrid = *ngrid_in;
   double span = *span_in;
   double **ZZsample = new_zero_matrix(cump->R, ngrid*cump->d);
   unsigned int nm = cump->nm;
   double *XXdraw = new_vector(nm);
   for(unsigned int i=0; i<cump->R; i++) {
-    for(unsigned int j=0; j<cump->d; j++) {
+    for(unsigned int j=0; j<bmax; j++) {
       for(unsigned int k=0; k<nm; k++) XXdraw[k] = cump->M[i][k*cump->d + j];
-      move_avg(ngrid, &sens_XX[j*ngrid],  &ZZsample[i][j*ngrid], nm, XXdraw, 
+      colj = j*ngrid;
+      move_avg(ngrid, &sens_XX[j*ngrid],  &ZZsample[i][colj], nm, XXdraw, 
 	       cump->ZZ[i], span);
     }
   }
-
+  int n0;
+  /* Main effects for the categorical variables  */
+  for(unsigned int i=0; i<cump->R; i++) {
+    for(unsigned int j=bmax; j<d; j++) {
+      n0 = 0;
+      for(unsigned int k=0; k<nm; k++){
+	if(cump->M[i][k*cump->d + j] == 0){
+	  n0++;
+	  colj = j*ngrid;
+	  ZZsample[i][colj] += cump->ZZ[i][k];
+	}
+	else{ 
+	  colj = (j+1)*(ngrid)-1;
+	  ZZsample[i][colj] += cump->ZZ[i][k];
+	}
+      }
+      
+      ZZsample[i][j*ngrid] = ZZsample[i][j*ngrid]/((double) n0);
+      ZZsample[i][(j+1)*(ngrid)-1] = ZZsample[i][(j+1)*(ngrid)-1]/((double) (nm-n0) );
+    }   
+  }
   /* calculate the average of the columns of ZZsample */
   wmean_of_columns(sens_ZZ_mean, ZZsample, cump->R, ngrid*cump->d, NULL);
-
   /* allocate pointers for holding q1 and q2 */
   double q[2] = {0.05, 0.95};
   double **Q = (double**) malloc(sizeof(double*) * 2);

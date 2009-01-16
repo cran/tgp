@@ -95,7 +95,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   g <- as.numeric(improv)
 
   ## check numirank, which is improv[2] in input
-  if(is.null(numirank) && improv) numirank <- max(min(10, nn), 0.1*nn)
+  if(is.null(numirank) && improv) numirank <- nn ## max(min(10, nn), 0.1*nn)
   else if(!is.null(numirank) && numirank > nn) stop("improv[2] must be <= nrow(XX)")
   else if(is.null(numirank)) numirank <- 0
   

@@ -49,19 +49,15 @@ tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
 }
 
 \references{
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
-Journal of Statistical Software, \bold{19}(9).
+  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian
+    Nonstationary, Semiparametric Nonlinear Regression and Design by
+    Treed Gaussian Process Models.} Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
-
 Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Adaptive design of supercomputer experiments.}
-Available as UCSC Technical Report ams2006-02. 
+\emph{Adaptive design and analysis of supercomputer experiments.}
+Technometrics, to appear.  Also avaliable on ArXiv article 0805.4359
+\url{http://arxiv.org/abs/0805.4359}
 
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
 \emph{Parameter space exploration with Gaussian process trees.} 
@@ -71,8 +67,8 @@ ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{
@@ -86,15 +82,15 @@ You will have to be patient.
 Creating treed sequential D-optimal designs is no speedy task.  At least it 
 faster than the non-treed version (see \code{\link{dopt.gp}}).
 
-This function is still considered experimental. 
-(Pardon the pun.)
-
-The example below is also part of \code{vignette("tgp")}
+The example below is also part of \code{vignette("tgp")}.
+Please see \code{vignette("tgp2")} for a similar example based on
+optimization using the \code{\link{optim.step.tgp}} 
 }
 
 \seealso{ \code{\link{bgpllm}}, \code{\link{btlm}}, \code{\link{blm}}, 
 	\code{\link{bgp}}, \code{\link{btgpllm}}, \code{\link{plot.tgp}}, 
-	\code{\link{dopt.gp}}, \code{\link{lhs}}, \code{\link{partition}}}
+	\code{\link{dopt.gp}}, \code{\link{lhs}},
+	\code{\link{partition}}, \code{\link{optim.step.tgp}}}
 
 \examples{
 #

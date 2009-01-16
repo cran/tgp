@@ -139,10 +139,71 @@ double ** new_matrix_bones(double *v, unsigned int n1, unsigned int n2)
 {
   double **M;
   int i;
-  M = (double **)  malloc(sizeof(double*) * n1);
+  M = (double **) malloc(sizeof(double*) * n1);
   M[0] = v;
   for(i=1; i<n1; i++) M[i] = M[i-1] + n2;
   return(M);
+}
+
+
+/*
+ * create an integer ** Matrix from a double * vector
+ * should be freed with the free command, rather than
+ * delete_matrix
+ */
+
+int ** new_imatrix_bones(int *v, unsigned int n1, unsigned int n2)
+{
+  int **M;
+  int i;
+  M = (int **) malloc(sizeof(double*) * n1);
+  M[0] = v;
+  for(i=1; i<n1; i++) M[i] = M[i-1] + n2;
+  return(M);
+}
+
+
+/*
+ * create a new n1 x n2 integer matrix which is allocated like
+ * and n1*n2 array, but can be referenced as a 2-d array
+ */
+
+int ** new_imatrix(unsigned int n1, unsigned int n2)
+{
+  int i;
+  int **m;
+  
+  if(n1 == 0 || n2 == 0) return NULL;
+  
+  m = (int**) malloc(sizeof(double*) * n1);
+  assert(m);
+  m[0] = (int*) malloc(sizeof(double) * (n1*n2));
+  assert(m[0]);
+  
+  for(i=1; i<n1; i++) m[i] = m[i-1] + n2;
+  
+  return m;
+}
+
+
+/*
+ * create a new n2 x n1 integer matrix which is allocated like
+ * and n1*n2 array, and copy the TRANSPOSE of n1 x n2 M into it.
+ */
+
+int ** new_t_imatrix(int** M, unsigned int n1, unsigned int n2)
+{
+  int i,j;
+  int **m;
+  
+  if(n1 <= 0 || n2 <= 0) {
+    assert(M == NULL);
+    return NULL;
+  }
+  
+  m = new_imatrix(n2, n1);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++)  m[j][i] = M[i][j];
+  return m;
 }
 
 
@@ -309,8 +370,9 @@ void delete_matrix(double** m)
   free(m);
 }
 
+
 /*
- * delete a matrix allocated as above
+ * delete an integer matrix allocated as above
  */
 
 void delete_imatrix(int** m)
@@ -1309,7 +1371,7 @@ void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1,
 
 
 /*
- * sub_pcols_matrix:
+ * sub_p_matrix:
  *
  * copy the cols v[1:n1][p[n2]] to V.  
  * must have nrow(v) == nrow(V) and ncol(V) >= lenp
@@ -1681,7 +1743,8 @@ double meanv(double *v, unsigned int n)
 
 int equalv(double *v1, double *v2, int n)
 {
-  for(unsigned int i=0; i<n; i++) if(v1[i] != v2[i]) return(0);
+  unsigned int i;
+  for(i=0; i<n; i++) if(v1[i] != v2[i]) return(0);
   return(1);
 }
 

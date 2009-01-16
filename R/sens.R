@@ -37,14 +37,6 @@ function(sens.p, d)
   ## nn.lhs is 'nm' in the .cc code.
   nn.lhs <- sens.p[1] 
   nn <-nn.lhs*(d+2)
-  ## Bobby asks Taddy: why so big?
-  ## Taddy replies to Bobby: nn.lhs is the sample size for your Monte-Carlo estimates,
-  ## but you require distinct samples to estimate variance and
-  ## expectation with respect to main effects (and total effects) for
-  ## each input (+ two more for total variation estimates).
-  ## And n(d+2) is considered 'efficient' in the SA literature,
-  ## which is why it pays to have tgp do the prediction rather than
-  ## running your simulator at each location.
   
   ## The XX matrix is of the correct size for within the .cc code.
   ## This may or may not be necessary.
@@ -54,9 +46,9 @@ function(sens.p, d)
 
   ## check shape for validity, and copy to XX
   shape <- XX[3,] <- sens.p[(2*d+2):(3*d+1)]
-  if(length(shape) != d || !all(shape > 0)) { 
+  if(length(shape) != d || !all(shape >= 0)) { 
     print(shape)
-    stop(paste("shape should be a positive ", d, "-vector", sep=""))
+    stop(paste("shape should be a non-negative ", d, "-vector", sep=""))
   }
 
   ## check mode for validity, and copy to XX
@@ -67,13 +59,14 @@ function(sens.p, d)
   }
   for(i in 1:d){
     if(mode[i] < XX[1,i] || mode[i] > XX[2,i]){
-      stop(paste("mode ", i, " should be within bounds [", XX[1,i],", ", XX[2,i],"]", sep=""))
+      stop(paste("mode ", i, " should be within bounds [", 
+                 XX[1,i],", ", XX[2,i],"]", sep=""))
     }
   }
   
-  ## Create the Man Effect Grid
-  ngrid=sens.p[4*d+2]
-  span=sens.p[4*d+3]
+  ## Create the Main Effect Grid
+  ngrid <- sens.p[4*d+2]
+  span <- sens.p[4*d+3]
   if((span > 1) || (span < 0)) stop("Bad smoothing span -- must be in (0,1).")
   MainEffectGrid <- matrix(ncol=d, nrow=ngrid)
   for(i in 1:d){ MainEffectGrid[,i] <- seq(XX[1,i], XX[2,i], length=ngrid) }
@@ -81,7 +74,7 @@ function(sens.p, d)
   ## return
   list(nn=nn, nn.lhs=nn.lhs, ngrid=ngrid, span=span, XX=XX,
        MainEffectGrid=MainEffectGrid)
-  }
+}
 
 
 ## sens:
@@ -108,14 +101,24 @@ function(X, Z, nn.lhs, model=btgp, ngrid=100, span=0.3, BTE=c(3000,8000,10),
 
   ## check the shape and mode vectors
   if(is.null(shape)) shape <- rep(1,d)
-  else if(length(shape) != d || !all(shape > 0)) { 
+  else if(length(shape) != d || !all(shape >= 0)) { 
     print(shape)
-    stop(paste("shape should be a positive ", d, "-vector", sep=""))
+    stop(paste("shape should be a non-negative ", d, "-vector", sep=""))
   }
   if(is.null(mode)) mode <- apply(as.matrix(X),2,mean)
   else if(length(mode) != d) {
     print(mode)
     stop(paste("mode should be a ", d, "-vector", sep=""))
+  }
+
+  for(i in 1:d){
+    if(shape[i]==0){
+      if(rect[i,1] != 0 || rect[i,2] != 1){
+        print(rect[i,])
+        stop(paste("rect must be [0,1] for categorical variables (i=",
+                   i,", shape[i]=",shape[i],").", sep=""))
+      }
+    }
   }
   
   ## build the sens parameter
@@ -135,7 +138,7 @@ function(X, Z, nn.lhs, model=btgp, ngrid=100, span=0.3, BTE=c(3000,8000,10),
 ## depends on whether main effects are to be plotted or not
 
 "sens.plot" <-
-function(s, maineff=TRUE, legendloc="topright", ylab="", main="Main Effects",  ...)
+function(s, maineff=TRUE, legendloc="topright",  ...)
 {
 
   ## colors used for each effect (col of X)
@@ -158,18 +161,29 @@ function(s, maineff=TRUE, legendloc="topright", ylab="", main="Main Effects",  .
     if(maineff){
       par(mfrow=c(1,3), ...)
       X <- mean0.range1(sens$Xgrid)$X
-      plot(X[,1], Zmean[,1], main=main, ylab=ylab, xlab="scaled input",
+      plot(X[,1], Zmean[,1], main="Main Effects",
+           ylab="response", xlab="scaled input",
            col=cols[1], typ="l", lwd=2, ylim=range(as.vector(Zmean)), ...)
-      for(i in 2:s$d) lines(X[,i], Zmean[,i], lwd=2, col=cols[i])
+      for(i in 2:s$d){
+        if(nlevels(factor(Zmean[,i]))==3){
+          segments(-.5, Zmean[1,i], 0, Zmean[1,i], lwd=2, col=cols[i])
+          segments(0, Zmean[nrow(Zmean),i], .5, Zmean[nrow(Zmean),i], lwd=2, col=cols[i])
+        }
+        else{ lines(X[,i], Zmean[,i], lwd=2, col=cols[i]) }
+      }
       legend(x=legendloc, legend = names(s$X), col=cols, fill=cols)
     }
     else{ par(mfrow=c(1,2), ...) }
 
     ## plot the S and T statistics
     boxplot(data.frame(sens$S), names=names(s$X),
-            main="1st order Sensitivity Indices", xlab="input variables", ylab="", ...)
-    boxplot(data.frame(sens$T), names=names(s$X),
-            main="Total Effect Sensitivity Indices", xlab="input variables", ylab="", ...)
+            main="1st order Sensitivity Indices", 
+	    xlab="input variables", ylab="", ...)
+    T0 <- sens$T
+    T0[sens$T<0] <- 0
+    boxplot(data.frame(T0), names=names(s$X),
+            main="Total Effect Sensitivity Indices", 
+	    xlab="input variables", ylab="", ...)
     
   } else {
     ## only make a main effects plots
@@ -179,10 +193,25 @@ function(s, maineff=TRUE, legendloc="topright", ylab="", main="Main Effects",  .
     pdim <- dim(as.matrix(maineff))
     par(mfrow=pdim, ...)
     for(i in ME){
-      plot(X[,i], Zmean[,i], main=main, ylab=ylab, xlab=nom[i],
-           col=cols[i], typ="l", lwd=2, ylim=c(min(Zq1[,i]), max(Zq2[,i])), ...)
-      lines(X[,i], Zq1[,i], col=cols[i], lty=2)
-      lines(X[,i], Zq2[,i], col=cols[i], lty=2)
+      if(nlevels(factor(Zmean[,i]))==3){
+        plot(c(0,1) ,c(Zmean[1,i],Zmean[nrow(Zmean),i]), main="", ylab="response", xlab=nom[i],
+             col=cols[i], pch=20, cex=2, xlim=c(-.5,1.5), xaxt="n",
+             ylim=c(min(Zq1[,i]), max(Zq2[,i])))
+        axis(1, at=c(0,1))
+        segments(-.1, Zq1[1,i], .1, Zq1[1,i], lwd=2, col=cols[i], lty=2)
+        segments(.9, Zq1[nrow(Zq1),i], 1.1, Zq1[nrow(Zq1),i], lwd=2, col=cols[i], lty=2)
+        segments(-.1, Zq2[1,i], .1, Zq2[1,i], lwd=2, col=cols[i], lty=2)
+        segments(.9, Zq2[nrow(Zq2),i], 1.1, Zq2[nrow(Zq2),i], lwd=2, col=cols[i], lty=2)
+      }
+      else{ 
+        plot(X[,i], Zmean[,i], main="", ylab="response", xlab=nom[i],
+             col=cols[i], typ="l", lwd=2, 
+             ylim=c(min(Zq1[,i]), max(Zq2[,i])), ...)
+        lines(X[,i], Zq1[,i], col=cols[i], lty=2)
+        lines(X[,i], Zq2[,i], col=cols[i], lty=2)
+      }
     }
+    mtext(text="Main effects: mean and 90 percent interval", line=-2,
+          outer=TRUE, font=2)
   }  
 }

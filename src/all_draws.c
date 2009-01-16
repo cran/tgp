@@ -35,10 +35,17 @@
 #include <stdio.h>
 #include <assert.h>
 
+/* constants used below */
 #define GA 1.0 /* 5.0 */
 #define PWR 2.0
+
+/* calculate the prior probability of the LLM */
 #define LINEAR(gamma, min, max, d) min + max / (1.0 + exp(0.0-gamma*(d-0.5)));
+
+/* minimum values for the nugget and s2_g0 */
 #define NUGMIN 1e-10
+#define S2G0MIN 1e-10
+
 
 /*
  * mle_beta:
@@ -920,7 +927,7 @@ void *state;
   if(runi(state) < alpha) *a0 = a0_new;
   
   /* proposing a new beta */
-  g0_new = unif_propose_pos(*g0, &q_fwd, &q_bak, state);
+  g0_new = unif_propose_pos(*g0-S2G0MIN, &q_fwd, &q_bak, state) + S2G0MIN;
   log_p = 0.0;
   for(i=0; i<nl; i++) {
     invgampdf_log_gelman(&lp, &(s2[i]), (*a0)/2, g0_new/2, 1); log_p += lp;
@@ -1250,7 +1257,7 @@ void *state;
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak/q_fwd);
-  /* myprintf(stderr, "nug_last=%g -> nug=%g : alpha=%g", nuglast, nug, alpha); */
+  /* myprintf(stderr, "nug_last=%g -> nug=%g : alpha=%g\n", nuglast, nug, alpha); */
   if(runi(state) > alpha) { /* myprintf(stderr, "  -- rejected\n");*/ return nuglast; }
   else { /*myprintf(stderr, "  -- accepted\n");*/ return nug; }
 }

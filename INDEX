@@ -14,6 +14,8 @@ fried.bool              a version of the First Friedman dataset, with boolean in
 interp.loess            Loess based interpolation of spatial data onto a regular grid
 lhs                     Latin Hypercube sampling
 mapT                    plot the MAP partition, or add one to an existing plot
+optim.step.tgp		one step in the optimization of a noisy black box function
+optim.ptgpf             calls the R optim function on the predictive surface of a tgp model
 partition               partition data according to the MAP tree
 plot.tgp                plotting for treed Gaussian process Models
 predict.tgp             prediction for (MAP estimates of) treed GP Models

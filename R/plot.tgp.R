@@ -54,7 +54,7 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
       cat("Cannot make sensitivity plots without sens.* matrices.\n")
       layout = "both"
     } else { ## plot the sens
-      sens.plot(x, ylab=ylab, main=main, legendloc=legendloc, maineff=maineff, ...)
+      sens.plot(x, legendloc=legendloc, maineff=maineff, ...)
       return(invisible());
     }
   }

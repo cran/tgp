@@ -150,8 +150,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     resulting in a faster implementation.  Optionally, a two-vector
     can be supplied where \code{improv[2]} is interpreted as the 
     (maximum) number of points to rank by improvement.  See the note below.
-    If not specified, then the larger of 10\% of \code{nn = nrow(XX)} 
-    and \code{min(10, nn)} is taken by default }
+    If not specified, the entire \code{XX} matrix is ranked. }
   \item{sens.p}{ Either \code{NULL} or a vector of parameters for
     sensitivity analysis, built by the function \code{\link{sens}}.
     Refer there for details}
@@ -244,7 +243,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   rounds in order to settle-in after using the observation counts.  See
   \code{\link{default.itemps}} for more details and an example
   
-  Please see \code{vignette("tgp")} for detailed illustration
+  Please see \code{vignette("tgp")} for a detailed illustration
 }
 
 \value{
@@ -253,7 +252,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   can be used to help visualize results.
 
   An object of class \code{"tgp"} is a list containing at least the
-  following components...  The code{parts} output is unique to the T
+  following components...  The \code{parts} output is unique to the T
   (tree) category functions. Tree viewing is supported by
   \code{\link{tgp.trees}}
 
@@ -336,22 +335,29 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
 }
 
 \references{
-  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
-    Bayesian Nonstationary, Semiparametric Nonlinear Regression
-    and Design by Treed Gaussian Process Models.}
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+Bayesian Nonstationary, Semiparametric Nonlinear Regression
+and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application
   to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536 
+Journal of the American Statistical Association, to appear.
+Also available as ArXiv article 0710.4536 
 \url{http://arxiv.org/abs/0710.4536}
 
-Gramacy, R. B., Lee, H. K. H. (2006).
-\emph{Adaptive design of supercomputer experiments.}
-Available as UCSC Technical Report ams2006-02.
+Gramacy, R. B. and Lee, K.H. (2008). \emph{Gaussian Processes and
+  Limiting Linear Models.}
+Computational Statistics and Data Analysis, 53, pp. 123-136.
+Also available as ArXiv article 0804.4685
+\url{http://arxiv.org/abs/0804.4685}
+
+Gramacy, R. B., Lee, H. K. H. (2009).
+\emph{Adaptive design and analysis of supercomputer experiments.}
+Technometrics, to appear. Also avaliable on ArXiv article 0805.4359
+\url{http://arxiv.org/abs/0805.4359}
 
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
@@ -361,15 +367,6 @@ Journal of the American Statistical Association, \bold{93},
 Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
-
-Gramacy, R.B., Samworth, R.J., and King, R. (2007)
-\emph{Importance Tempering.} ArXiv article 0707.4242
-\url{http://arxiv.org/abs/0707.4242}
-
-Kennedy, M.C. and O'Hagan, A. (2000).
-\emph{Predicting the output from a complex computer code when fast
-  approximations are available.}
-Biometrika, \bold{87}, 1--13.
 
 M. Schonlau and Jones, D.R. and Welch, W.J. (1998).
 \emph{Global versus local search in constrained optimization of
@@ -381,8 +378,8 @@ IMS Lecture Notes - Monograph Series 34.  11--25.
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{ Inputs \code{X, XX, Z} containing \code{NaN, NA}, or \code{Inf} are

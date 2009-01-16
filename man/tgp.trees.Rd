@@ -26,17 +26,22 @@ tgp.trees(out, heights = NULL, main = NULL, ...)
 	function from \pkg{maptree}}
 }
 
-%\details{
-  %~~ If necessary, more details than the __description__  above ~~
-%}
+\details{
+  The maximum a' posteriori (MAP) tree encountered at each height
+  (in the MCMC chain) is plotted, and the log posterior probabilities
+  are shown for comparison.  The text at the branches in the tree show
+  the splitting variable and value.  The text at the leaves show the
+  number of input data points (\code{X} and \code{Z}) that fall
+  into the region(s) along with an estimate of the variability therein.
+}
 
 \value{
 	The only output of this function is beautiful tree diagrams.
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \references{

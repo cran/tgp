@@ -19,6 +19,7 @@
 \alias{tgp.plot.parts.2d}
 \alias{tgp.plot.slice}
 \alias{tgp.plot.proj}
+\alias{tgp.cands}
 \alias{framify.X}
 \alias{slice.interp}
 \alias{slice.image}

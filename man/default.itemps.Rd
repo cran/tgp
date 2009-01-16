@@ -10,7 +10,7 @@
   harmonically or geometrically.
   The output is in a format convenient for the \code{b*} functions
   in the \pkg{tgp} package (e.g. \code{\link{btgp}}), including
-  stochastic approximation parameters \eqn{c_0}{c0} and \code{n_0}{n0}
+  stochastic approximation parameters \eqn{c_0}{c0} and \eqn{n_0}{n0}
   for tuning the uniform pseudo-prior output by this function
 }
 \usage{
@@ -72,7 +72,8 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   between \eqn{j_1}{j[i]} and \eqn{j_m}{j[m]} to fill out the ladder
   \eqn{k_i = k(j_i), i=1,\dots,(m-1)}{k[2:(m-1)] = k(j[2:(m-1)])}.
 
-  For more details, see the \emph{Importance tempering} paper cited below
+  For more details, see the \emph{Importance tempering} paper cited
+  below and a full demonstration in \code{vignette("tgp2")}
 }
 \value{
   The return value is a \code{list} which is compatible with the input argument
@@ -91,7 +92,8 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
 \references{
   Gramacy, R.B., Samworth, R.J., and King, R. (2007)
   \emph{Importance Tempering.} ArXiV article 0707.4242
-  \url{http://arxiv.org/abs/0707.4242}
+  \url{http://arxiv.org/abs/0707.4242}. To appear in
+  Statistics and Computing.
 
   For stochastic approximation and simulated tempering (ST):
   
@@ -117,8 +119,8 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \seealso{ \code{\link{btgp}} }

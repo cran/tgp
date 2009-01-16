@@ -1,10 +1,12 @@
-linear	Bayesian LM and GP LLM on linear data from vignette
-sin	Bayesian linear CART, GP, treed GP on sinusoidal data from vignette
-exp	Bayesian GP, treed GP, and treed GP LLM on exponential data from vignette
-moto	Bayesian GP, treed GP, and treed GP LLM on motorcycle accident data from vignette
-fried	Bayesian linear CART and GP LLM on first Friedman data from vignette
-as	adaptive sampling on exponential data from vignette
-traces	demonstration, visualization and interpretation of parameter traces from vignette
-pred	example of a collaborative tgp with predict.tgp from vignette
-cat	using tgp with categorical (i.e., non-real-valued) inputs
-it	illustrating the importance tempering method for improved mixing in the RJ-MCMC
+linear	Bayesian LM and GP LLM on linear data from vignette 1
+sin	Bayesian linear CART, GP, treed GP on sinusoidal data from vignette 1
+exp	Bayesian GP, treed GP, and treed GP LLM on exponential data from vignette 1
+moto	Bayesian GP, treed GP, and treed GP LLM on motorcycle accident data from vignette 1
+fried	Bayesian linear CART and GP LLM on first Friedman data from vignette 1
+as	adaptive sampling on exponential data from vignette 1
+traces	demonstration, visualization and interpretation of parameter traces from vignette 1
+pred	example of a collaborative tgp with predict.tgp from vignette 1
+cat	using tgp with categorical (i.e., non-real-valued) inputs from vignette 2
+sens    sensitivity analysis for inputs/covariates from vignette 2
+optim   sequential optimization of black-box functions from vignette 2
+it	importance tempering improved mixing in the RJ-MCMC for tgp from vignette 2

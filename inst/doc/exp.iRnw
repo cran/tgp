@@ -47,7 +47,7 @@ plot(exp.bgp, main='GP,')
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{tgp-exp-bgp}
+\includegraphics[trim=0 25 0 25]{tgp-exp-bgp}
 %\vspace{-0.5cm}
 \caption{{\em Left:} posterior predictive mean using
   {\tt bgp} on synthetic exponential data; {\em right} image plot of
@@ -79,7 +79,7 @@ plot(exp.btgp, main='treed GP,')
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{tgp-exp-btgp}
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgp}
 %\vspace{-0.25cm}
 <<label=exp-btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
 tgp.trees(exp.btgp)
@@ -102,7 +102,7 @@ surface ({\em top}) and trees ({\em bottom}).  Typical runs of the
 treed GP on this data find two, and if lucky three, partitions.  As
 might be expected, jumping to the LLM for the uninteresting,
 zero-response, part of the input space can yield even further speedups
-\cite{gra:lee:2006}. Also, Chipman et al.~recommend restarting 
+\cite{gra:lee:2008}. Also, Chipman et al.~recommend restarting 
 the Markov chain a few times in order to better explore the marginal
 posterior for $\mathcal{T}$ \cite{chip:geor:mccu:2002}.  This can be 
 important for higher dimensional inputs requiring deeper trees.
@@ -120,7 +120,7 @@ plot(exp.btgpllm, main='treed GP LLM,')
 <<echo=false,results=hide>>=
 graphics.off()
 @
-\includegraphics[trim=0 35 0 25]{tgp-exp-btgpllm}
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgpllm}
 %\vspace{-0.5cm}
 \caption{{\em Left:} posterior predictive mean using
   {\tt btgpllm} on synthetic exponential data; {\em right} image plot
