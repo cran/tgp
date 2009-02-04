@@ -2,58 +2,56 @@
 ### chunk number 1: 
 ###################################################
 library(tgp)
-library(maptree)
-#options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
 ### chunk number 2: 
 ###################################################
-fb.train <- fried.bool(500)
-X <- fb.train[,1:13]; Z <- fb.train$Y
-fb.test <- fried.bool(1000)
-XX <- fb.test[,1:13]; ZZ <- fb.test$Ytrue
+library(tgp)
+seed <- 0; set.seed(seed)
 
 
 ###################################################
 ### chunk number 3: 
 ###################################################
-names(X)
+rosenbrock <- function(x){ 
+  x <- matrix(x, ncol=2)
+  100*(x[,1]^2 - x[,2])^2 + (x[,1] - 1)^2 
+}
 
 
 ###################################################
 ### chunk number 4: 
 ###################################################
-fit1 <- bcart(X=X, Z=Z, XX=XX, verb=0)
-rmse1 <- sqrt(mean((fit1$ZZ.mean - ZZ)^2))
-rmse1
+rosenbrock(c(1,1))
 
 
 ###################################################
-### chunk number 5: cat-fbcart-mapt
+### chunk number 5: 
 ###################################################
-tgp.trees(fit1, "map")
+rect <- cbind(c(-1,-1),c(5,5))
+X <- lhs(40, rect)
+Z <- rosenbrock(X)
 
 
 ###################################################
 ### chunk number 6: 
 ###################################################
-graphics.off()
+XX <- lhs(200, rect)
+rfit <- bgp(X,Z,XX,improv=c(1,10), verb=0)
 
 
 ###################################################
 ### chunk number 7: 
 ###################################################
-fit2 <- btlm(X=X, Z=Z, XX=XX, verb=0)
-rmse2 <- sqrt(mean((fit2$ZZ.mean - ZZ)^2))
-rmse2
+cbind(rfit$improv,XX)[rfit$improv$rank <= 10,]
 
 
 ###################################################
-### chunk number 8: cat-fbtlm-trees
+### chunk number 8: optim-fit1
 ###################################################
-tgp.trees(fit2, "map")
+plot(rfit, as="improv")
 
 
 ###################################################
@@ -63,65 +61,81 @@ graphics.off()
 
 
 ###################################################
-### chunk number 10: 
+### chunk number 10: optim-fit2
 ###################################################
-fit3 <- btlm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
-rmse3 <- sqrt(mean((fit3$ZZ.mean - ZZ)^2))
-rmse3
+rfit2 <- predict.tgp(rfit, XX=XX, BTE=c(1,1000,1), improv=c(5,20), verb=0) 
+plot(rfit2, layout="as", as="improv")
 
 
 ###################################################
-### chunk number 11: cat-fbtlm-mapt
+### chunk number 11: 
 ###################################################
-tgp.trees(fit3, "map")
+graphics.off()
 
 
 ###################################################
 ### chunk number 12: 
 ###################################################
-graphics.off()
+f <- function(x) { exp2d.Z(x)$Z }
 
 
 ###################################################
 ### chunk number 13: 
 ###################################################
-fit4 <- btgpllm(X=X, Z=Z, XX=XX, verb=0)
-rmse4 <- sqrt(mean((fit4$ZZ.mean - ZZ)^2))
-rmse4
+rect <- rbind(c(-2,6), c(-2,6))
+X <- lhs(20, rect)
+Z <- f(X)
 
 
 ###################################################
 ### chunk number 14: 
 ###################################################
-fit4$gpcs
+out <- progress <- NULL
+for(i in 1:20) {
+  
+  ## get recommendations for the next point to sample
+  out <- optim.step.tgp(f, X=X, Z=Z, rect=rect, prev=out, verb=0)
+
+  ## add in the inputs, and newly sampled outputs
+  X <- rbind(X, out$X)
+  Z <- c(Z, f(out$X))
+  
+  ## keep track of progress and best optimum
+  progress <- rbind(progress, out$progress)
+}
 
 
 ###################################################
-### chunk number 15: 
+### chunk number 15: optim-progress
 ###################################################
-fit5 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
-rmse5 <- sqrt(mean((fit5$ZZ.mean - ZZ)^2))
-rmse5 
+par(mfrow=c(1,2))
+matplot(progress[,1:2], main="x progress",
+        xlab="rounds", ylab="x[,1:2]", type="l", lwd=2)
+plot(log(progress$improv), type="l", main="max log improv",
+     xlab="rounds", ylab="max log(improv)")
 
 
 ###################################################
-### chunk number 16: cat-fb-mapt
-###################################################
-h <- fit1$post$height[which.max(fit1$posts$lpost)]
-tgp.trees(fit5, "map")
-
-
-###################################################
-### chunk number 17: 
+### chunk number 16: 
 ###################################################
 graphics.off()
 
 
 ###################################################
+### chunk number 17: 
+###################################################
+out$progress[1:2]
+
+
+###################################################
 ### chunk number 18: 
 ###################################################
-fit6 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, splitmin=11, verb=0)
-rmse6 <- sqrt(mean((fit6$ZZ.mean - ZZ)^2))
-rmse6
+formals(optim)$method
+
+
+###################################################
+### chunk number 19: 
+###################################################
+formals(optim.ptgpf)$method
 
 

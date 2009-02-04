@@ -138,12 +138,12 @@ Also available as as ArXiv article 0710.4536
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{Please refer to the examples for the functions in
-"See Also" below and \code{vignette("tgp")}
+"See Also" below, \code{vignette("tgp") and \code{vignette(tgp2)} }
 }
 
 \seealso{ \code{\link{blm}}, \code{\link{btlm}}, \code{\link{bgp}},

@@ -31,7 +31,6 @@ matplot(log(all), pch=21:23,
 ###################################################
 ### chunk number 4: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
@@ -59,7 +58,8 @@ Z<-exp2d.data$Z
 ### chunk number 7: 
 ###################################################
 its <- default.itemps(m=10)
-exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE) 
+exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE,
+                 BTE=c(1000,3000,2)) 
 
 
 ###################################################
@@ -98,7 +98,7 @@ ESS(p$w)
 ###################################################
 ### chunk number 13: 
 ###################################################
-c(sum(p$itemp == 1), moto.it$ess$each[1,2:3])
+as.numeric(c(sum(p$itemp == 1), moto.it$ess$each[1,2:3]))
 
 
 ###################################################
@@ -127,76 +127,65 @@ legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 ###################################################
 ### chunk number 17: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 18: 
-###################################################
-moto.it$gpcs
-moto.reg$gpcs
-
-
-###################################################
-### chunk number 19: it-moto-ktrace
+### chunk number 18: it-moto-ktrace
 ###################################################
 plot(log(moto.it$trace$post$itemp), type="l", ylab="log(k)", xlab="samples",
      main="trace of log(k)")
 
 
 ###################################################
-### chunk number 20: 
+### chunk number 19: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 21: it-moto-khist
+### chunk number 20: it-moto-khist
 ###################################################
 b <- itemps.barplot(moto.it, plot.it=FALSE)
 barplot(t(cbind(moto.it$itemps$counts, b)), col=1:2,
         beside=TRUE, ylab="counts", xlab="itemps", 
         main="inv-temp observation counts")
-legend("topright", c("observation counts", "posterior samples"), fill=1:2)
+legend("topleft", c("observation counts", "posterior samples"), fill=1:2)
 
 
 ###################################################
-### chunk number 22: 
+### chunk number 21: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 23: 
+### chunk number 22: 
 ###################################################
 moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
                       R=3, bprior="b0", krige=FALSE, itemps=sig, verb=0)
 
 
 ###################################################
-### chunk number 24: 
+### chunk number 23: 
 ###################################################
 moto.it.sig$ess$combined
 
 
 ###################################################
-### chunk number 25: it-moto-pred
+### chunk number 24: it-moto-pred
 ###################################################
 plot(moto.it.sig)
 
 
 ###################################################
-### chunk number 26: 
+### chunk number 25: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 27: 
+### chunk number 26: 
 ###################################################
 Xcand <- lhs(10000, rbind(c(-6,6),c(-6,6)))
 X <- dopt.gp(400, X=NULL, Xcand)$XX
@@ -204,69 +193,67 @@ Z <- exp2d.Z(X)$Z
 
 
 ###################################################
-### chunk number 28: 
+### chunk number 27: 
 ###################################################
-exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,22000,10), bprior="b0", 
+exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                    trace=TRUE, krige=FALSE, R=10, verb=0)
 
 
 ###################################################
-### chunk number 29: it-exp-pred
+### chunk number 28: it-exp-pred
 ###################################################
 plot(exp.reg)
 
 
 ###################################################
-### chunk number 30: 
+### chunk number 29: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 31: 
+### chunk number 30: 
 ###################################################
 h <- exp.reg$post$height[which.max(exp.reg$posts$lpost)]
 h
 
 
 ###################################################
-### chunk number 32: it-exp-mapt
+### chunk number 31: it-exp-mapt
 ###################################################
 tgp.trees(exp.reg, "map")
 
 
 ###################################################
-### chunk number 33: 
+### chunk number 32: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 34: 
+### chunk number 33: 
 ###################################################
 its <- default.itemps(k.min=0.02)
-exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,22000,10), bprior="b0", 
+exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                trace=TRUE, krige=FALSE, itemps=its, R=10, verb=0)
 
 
 ###################################################
-### chunk number 35: 
+### chunk number 34: 
 ###################################################
 exp.it$gpcs
 exp.reg$gpcs
 
 
 ###################################################
-### chunk number 36: 
+### chunk number 35: 
 ###################################################
 p <- exp.it$trace$post
 data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess$combined)
 
 
 ###################################################
-### chunk number 37: 
+### chunk number 36: 
 ###################################################
 L <- length(p$height)
 hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
@@ -274,7 +261,7 @@ b <- hist2bar(cbind(exp.reg$trace$post$height, p$height, hw))
 
 
 ###################################################
-### chunk number 38: it-exp-height
+### chunk number 37: it-exp-height
 ###################################################
 barplot(b, beside=TRUE, col=1:3, xlab="tree height", ylab="counts", 
          main="tree heights encountered")
@@ -282,14 +269,13 @@ legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 
 
 ###################################################
-### chunk number 39: 
+### chunk number 38: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
 
 
 ###################################################
-### chunk number 40: it-exp-trace-height
+### chunk number 39: it-exp-trace-height
 ###################################################
 ylim <- range(p$height, exp.reg$trace$post$height)
 plot(p$height, type="l", main="trace of tree heights", 
@@ -299,27 +285,26 @@ legend("topright", c("tempered", "reg MCMC"), lty=c(1,1), col=1:2)
 
 
 ###################################################
+### chunk number 40: 
+###################################################
+graphics.off()
+
+
+###################################################
 ### chunk number 41: it-expit-pred
 ###################################################
 plot(exp.it)
 
 
 ###################################################
-### chunk number 42: 
-###################################################
-rl <- readline("press RETURN to continue: ")
-graphics.off()
-
-
-###################################################
-### chunk number 43: it-expit-trees
+### chunk number 42: it-expit-trees
 ###################################################
 tgp.trees(exp.it, "map")
 
 
 ###################################################
-### chunk number 44: 
+### chunk number 43: 
 ###################################################
-rl <- readline("press RETURN to continue: ")
 graphics.off()
+
 

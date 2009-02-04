@@ -57,7 +57,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
 
   ## turn improv into a data.frame where the second column is the rankings
   if(!is.null(improv)){
-    ll$irank[ll$irank == 0] <- NA
+    ll$irank[ll$irank == 0] <- ll$nn
     ll$improv <- data.frame(improv=ll$improv, rank=ll$irank)
   }
   ll$irank <- NULL

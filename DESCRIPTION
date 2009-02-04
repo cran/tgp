@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.1-6
-Date: 2008-11-25
+Version: 2.2
+Date: 2009-01-16
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy <taddy@ams.ucsc.edu>
 Depends: R (>= 2.4)
 Suggests: akima, maptree, combinat
@@ -12,9 +12,11 @@ Description: Bayesian nonstationary, semiparametric nonlinear regression
  isotropic Gaussian processes.  Provides 1-d and 2-d plotting functions 
  (with projection and slice capabilities) and tree drawing, designed for 
  visualization of tgp-class output.  Sensitivity analysis and 
- multi-resolution models are supported, and a limited set of experimental 
+ multi-resolution models are supported. Sequential experimental 
  design and adaptive sampling functions are also provided, including ALM, 
- ALC, and expected improvement.
+ ALC, and expected improvement.  The latter supports derivative-free
+ optimization of noisy black-box functions.
 Maintainer: Robert B. Gramacy  <rbgramacy@ams.ucsc.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
+Packaged: Wed Feb  4 10:43:12 2009; hornik

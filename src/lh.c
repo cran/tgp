@@ -203,6 +203,18 @@ double** beta_sample_lh(int dim, int n, double** rect, double* shape, double* mo
    from the (re-scaled) mode and the shape parameter.  */
   z = new_matrix(dim,n);
   for(i=0; i<dim; i++) {
+
+    if(shape[i]==0){ // for binary variables, draw 0-1.
+      if(mode==NULL || mode[i] > 1.0 || mode[i] < 0) mscaled=0.5;
+      else mscaled = mode[i];
+      for(j=0; j<n; j++){
+	z[i][j] = 0.0;
+	if(runi(state) < mscaled) z[i][j] = 1.0; 
+      }
+      free(r[i]);
+      continue;
+    }
+
     if(mode==NULL) mscaled = 0.5;
     else mscaled = (mode[i]-rect[0][i])/(rect[1][i] - rect[0][i]);
     if( 0 > mscaled || 1 < mscaled ) mscaled=0.5;

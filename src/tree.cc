@@ -993,7 +993,9 @@ bool Tree::change(void *state)
   /* posterior probabilities and acceptance ratio */
   assert(oldLC->leavesN() + oldRC->leavesN() == this->leavesN());
   double pklast = oldLC->leavesPosterior() + oldRC->leavesPosterior();
+#ifdef DEBUG
   assert(!isinf(pklast));
+#endif
   double pk = leavesPosterior();
 
   /* alpha = min(1,exp(A)) */
@@ -1193,7 +1195,9 @@ bool Tree::prune(double ratio, void *state)
   /* get the marginalized posterior of the current
    * leaves of this PRUNABLE node*/
   pklast = leavesPosterior();
+#ifdef DEBUG
   assert(!isinf(pklast));
+#endif
   
   /* compute the backwards split proposal probability */
   logq_bak = split_prob();

@@ -18,7 +18,7 @@ sines and cosines, and partly linear.
    \label{e:sindata}
 \end{equation}
 
-The {\tt R} code below obtains $N=100$ evenly spaced samples from this
+The {\sf R} code below obtains $N=100$ evenly spaced samples from this
 data in the domain $[0,20]$, with noise added to keep things
 interesting.  Some evenly spaced predictive locations {\tt XX} are
 also created.
@@ -126,7 +126,7 @@ Figure \ref{f:sin:btgp} shows the resulting posterior predictive
 surface ({\em top}) and MAP $\hat{\mathcal{T}}$ with height=2.
 
 Finally, speedups can be obtained if the GP is allowed to jump to the
-LLM \cite{gra:lee:2006}, since half of the response surface is {\em
+LLM \cite{gra:lee:2008}, since half of the response surface is {\em
   very} smooth, or linear.  This is not shown here since the results
 are very similar to those above, replacing {\tt btgp} with {\tt
   btgpllm}.  Each of the models fit in this section is a special case

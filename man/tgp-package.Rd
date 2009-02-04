@@ -27,8 +27,8 @@ vignettes, please use \code{help(package="tgp")}.
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \references{

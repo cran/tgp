@@ -19,14 +19,15 @@ lhs(n, rect, shape=NULL, mode=NULL)
     dimension of the domain.  For 1-d data, a vector of length 2
     is allowed}
   \item{shape}{ Optional vector of shape parameters for the Beta distribution.
-  Vector of length equal to the dimension of the domain, with elements > 1.
- If this is specified, the LH sample is proportional to a joint pdf formed by
- independent Beta distributions in each dimension of the domain, scaled and shifted to have support defined by \code{rect}.
-Only concave Beta distributions with \code{shape} > 1 are supported. }
+    Vector of length equal to the dimension of the domain, with elements > 1.
+    If this is specified, the LH sample is proportional to a joint pdf formed by
+    independent Beta distributions in each dimension of the domain,
+    scaled and shifted to have support defined by \code{rect}.
+    Only concave Beta distributions with \code{shape} > 1 are supported. }
   \item{mode}{ Optional vector of mode values for the Beta distribution.
-  Vector of length equal to the dimension of the domain, with elements within
-  the support defined by \code{rect}.  If \code{shape} is specified, but this is not,
-  then the scaled Beta distributions will be symmetric. }
+    Vector of length equal to the dimension of the domain, with elements within
+    the support defined by \code{rect}.  If \code{shape} is specified,
+    but this is not, then the scaled Beta distributions will be symmetric }
 }
 
 \value{
@@ -42,14 +43,15 @@ Only concave Beta distributions with \code{shape} > 1 are supported. }
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{The domain bounds specified by the rows of \code{rect} can
   be specified backwards with no change in effect.}
 
-\seealso{ \code{\link{tgp.design}}, \code{\link{dopt.gp}}}
+\seealso{ \code{\link{tgp.design}}, \code{\link{dopt.gp}},
+  \code{\link{sens}} }
 
 \examples{
 # get and plot a 2-d LH design

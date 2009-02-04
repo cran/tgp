@@ -614,7 +614,7 @@ void predicted_improv(n, nn, improv, Zmin, zp, zz)
 /*
  * GetImprovRank:
  *
- * implements Matt Taddy's heuristic for determining the order
+ * implements Matt Taddy's algorithm for determining the order
  * in which the nn points -- whose improv samples are recorded
  * in the cols of Imat_in over R rounds -- should be added into
  * the design in order to get the largest expected improvement.
@@ -627,15 +627,17 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
   /* duplicate Imat, since it will be modified by this method */
   unsigned int j, i, k, /* m,*/ maxj;
   double *colmean, *maxcol;
+  double **Imat;
   double maxmean;
+  unsigned int *pntind;
 
   /* allocate the ranking vector */
-  unsigned int* pntind = new_zero_uivector(nn);
+  pntind = new_zero_uivector(nn);
   assert(numirank >= 0 && numirank <= nn); 
   if(numirank == 0) return pntind;
 
   /* duplicate the Improv matrix so we can modify it */
-  double **Imat = new_dup_matrix(Imat_in, R, nn); 
+  Imat = new_dup_matrix(Imat_in, R, nn); 
 
   /* first, raise improv to the appropriate power */
   for (j=0; j<nn; j++){
@@ -657,14 +659,14 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
   pntind[maxj] = 1;
   
   /* grab column of data corresponding to the max sum of SI */
-  maxcol= new_vector(R);
+  maxcol = new_vector(R);
   for (i=0; i<R; i++) maxcol[i] = Imat[i][maxj];
 
   /* a counter for placing zero-imrov indices */
   /* m=0; */  /* See comment from Bobby below */
   
   /* Now loop and find appropriate index vector pntind */
-  // for (k=1; k<nn; k++) {
+  /* for (k=1; k<nn; k++) { */
   for (k=1; k<numirank; k++) {
 
     /* adjust Imat to account for the first k-1 locations

@@ -21,6 +21,7 @@
  *
  ********************************************************************************/
 
+#include <float.h>
 
 double log_bessel_k(double x, double nu, double exp0, double *bk, long bn);
 void K_bessel(double *x, double *alpha, long *nb,

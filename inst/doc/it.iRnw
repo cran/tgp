@@ -10,17 +10,31 @@ seed <- 0; set.seed(seed)
 
 {\em Importance tempering} (IT) is a combination of the classic method
 of importance sampling (IS) \cite{liu:2001} and {\em simulated
-  tempering} (ST) \cite{geyer:1995}.  The ST algorithm is methodology
-for efficiently sampling from a multimodal density $\pi(\theta)$ where
-standard methods, such as Metropolis--Hastings (MH)
-\cite{met:1953,hast:1970} and Gibbs Sampling (GS) \cite{geman:1984},
-fail.  It is well--known that MCMC inference in Bayesian treed methods
-suffer from poor mixing.  For example, Chipman et
+  tempering} (ST) \cite{geyer:1995}.  The ST algorithm helps obtain
+samples from a multimodal density $\pi(\theta)$ where standard
+methods, such as Metropolis--Hastings (MH) \cite{met:1953,hast:1970}
+and Gibbs Sampling (GS) \cite{geman:1984}, fail.  It is well--known
+that MCMC inference in Bayesian treed methods suffers from poor
+mixing.  For example, Chipman et
 al.~\cite{chip:geor:mccu:1998,chip:geor:mccu:2002} recommend
 periodically restarting the MCMC to avoid chains becoming stuck in
 local modes of the posterior distribution (particularly in tree
 space).  The {\tt R} argument to the {\tt b*} functions exists
 precisely to facilitate such restarts within the {\tt tgp} package.
+
+As will be shown in our examples, ST can guard against becoming
+stuck in local modes of the {\tt tgp} posterior by encouraging
+better mixing {\em between modes} via in increase in the acceptance
+rate of tree modification proposals, particularly {\em prunes}.
+However, as we will see, ST suffers from inefficiency because it 
+discards the lions share of the samples it collects.  The discarded
+samples can be recycled if they are given appropriate importance sampling
+(IS) weights.  These weights, if combined carefully, can be used
+to construct meta-estimators of expectations under the {\tt tgp} posterior 
+that have much lower variance than under ST alone.
+
+\subsection{Simulated Tempering and related methods}
+\label{sec:st}
 
 ST is an application of the MH algorithm on the product space of
 parameters and inverse temperatures $k\in [0,1]$.  That is, ST uses
@@ -95,7 +109,7 @@ and $j_m$ to fill out the ladder $k_i = k(j_i), i=1,\dots,(m-1)$.
 
 By way of comparison, consider generating the three different types of
 ladder with identical minimum inverse temperature $k_{\mbox{\tiny m}}
-= 0.1$, the default setting in {\sf tgp}.
+= 0.1$, the default setting in {\tt tgp}.
 <<>>=
 geo <- default.itemps(type="geometric")
 har <- default.itemps(type="harmonic")
@@ -104,7 +118,7 @@ sig <- default.itemps(type="sigmoidal")
 The plots in Figure \ref{f:itemps} show the resulting 
 inverse temperature ladders, and their logarithms.
 \begin{figure}[ht!]
-<<label=it-itemps,fig=TRUE,echo=TRUE,width=7,height=10,include=FALSE>>=
+<<label=it-itemps,fig=TRUE,echo=TRUE,width=6,height=9,include=FALSE>>=
 par(mfrow=c(2,1))
 all <- cbind(geo$k, har$k, sig$k)
 matplot(all, pch=21:23,
@@ -114,8 +128,11 @@ legend("topright", pch=21:23,
 matplot(log(all), pch=21:23,
         main="log(inv-temp) ladders", xlab="indx", ylab="itemp")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-itemps}
+\includegraphics[height=5.98in,width=4.5in,trim=0 20 0 20]{tgp2-it-itemps}
 \caption{Three different inverse temperature ladders, each with
 $m=40$ temperatures starting at $k_1=1$ and ending at $k_m=0.1$}
 \label{f:itemps}
@@ -136,11 +153,10 @@ $p_1$.  Before subsequent runs, specified via an {\tt R >= 2}
 argument, {\em occupation numbers} $o(k_i) = \sum_{t=1}^B 1_{\{k^{(t)}
   = k_i\}}$, are used update $p(k_i) \propto p_1(k_i)/o(k_i)$.  Note
 that, in this setting, the {\tt R} argument is used to update the
-pseudo--prior only, not to restart the Markov chain.  Examples are
-deferred to Section \ref{sec:examples}.
+pseudo--prior only, not to restart the Markov chain.  
 
-\subsection{A new optimal way to combine IS estimators}
-\label{sec:lambdas}
+\subsection{Importance sampling from tempered distributions}
+\label{sec:temp}
 
 ST provides us with $\{(\theta^{(t)},k^{(t)}): t = 1,\ldots,T\}$,
 where $\theta^{(t)}$ is an observation from $\pi_{k^{(t)}}$.  It is
@@ -157,12 +173,14 @@ $E_{\pi}\{h(\theta)\}$ by setting
 {\sum_{j=1}^{T_i} w_i(\theta_{ij})} 
 \equiv \frac{\sum_{j=1}^{T_i} w_{ij}h(\theta_{ij})}{W_i},
 \]
-say.  The efficiency of this estimator can be measured through it's
-variance, but unfortunately this can be difficult to calculate in
-general.  As a result, the notion of {\em effective sample size}
-\cite{liu:2001} plays an important role in the study of IS estimators.
-Denote the the vector of IS weights at the $i^{\mbox{\tiny th}}$
-temperature is $\mathbf{w}_i = \mathbf{w}_i(\bm{\theta}_i) =
+say.  That is, rather than obtain one estimator from ST (at the cold
+temperature), we can obtain $m$ estimators (one at each temperature)
+vi IS. The efficiency of each estimator, $i=1,\dots,m$ can be measured
+through it's variance, but unfortunately this can be difficult to
+calculate in general.  As a result, the notion of {\em effective
+  sample size} \cite{liu:2001} plays an important role in the study of
+IS estimators.  Denote the vector of IS weights at the $i^{\mbox{\tiny
+    th}}$ temperature as $\mathbf{w}_i = \mathbf{w}_i(\bm{\theta}_i) =
 (w_i(\theta_{i1}),\ldots,w_i(\theta_{iT_i}))$, where $w_i(\theta) =
 \pi(\theta)/\pi_{k_i}(\theta)$.  The ESS of $\hat{h}_i$ is defined by
 \begin{equation}
@@ -186,37 +204,43 @@ ESS <- function(w)
   return(ess)
 }
 @ 
-This should not be confused with the concept of \emph{effective sample
-size due to autocorrelation} \cite{kass:1998} (due to serially
-correlated samples coming from a Markov chain as in MCMC).
+This should not be confused with the concept of \emph{effective
+  sample size due to autocorrelation} \cite{kass:1998} (due to
+serially correlated samples coming from a Markov chain as in MCMC) as
+implemented by the {\tt effectiveSize} function in the {\tt coda}
+package \cite{coda:R} for {\sf R}.
 
-Jennison \cite{jennison:1993} was the first to suggest using a {\em
-  single} tempered distribution as a proposal in IS, though the
-question of how to choose the best temperature was neither posed or
-resolved.  It is clear that larger $k$ leads to larger ESS, but at the
-expense of poorer mixing in the Markov chain. It can be shown that the
-optimal inverse temperature $k^*$ for IS, in the sense of constructing
-a minimum variance estimator, may be significantly lower than one
-\cite{gra:samw:king:2007}.  This means that the discarded samples
-obtained when $k^{(t)} < 1$ may actually lead to more efficient
-estimators than the ones saved from the cold distribution.  However,
-the variance of such an estimator will indeed become unbounded as
-$k\rightarrow 0$, just as ESS~$\rightarrow 0$.  Generally speaking,
-calculating the variance of IS estimators is difficult, anyways, so it
-will be hard to pin down the optimal temperature for arbitrary $\pi$.
+Before attempting to combine $m$ IS estimators it is fruitful
+backtrack briefly to obtain some perspective on the topic of applying
+IS with a {\em single} tempered proposal distribution.  Jennison
+\cite{jennison:1993} put this idea forward more than a decade ago,
+though the question of how to choose the best temperature was neither
+posed or resolved.  It is clear that larger $k$ leads to lower
+variance estimators (and larger ESS), but at the expense of poorer
+mixing in the Markov chain. It can be shown that the optimal inverse
+temperature $k^*$ for IS, in the sense of constructing a minimum
+variance estimator, may be significantly lower than one
+\cite{gra:samw:king:2009}.  However, the variance of such an estimator
+will indeed become unbounded as $k\rightarrow 0$, just as
+ESS~$\rightarrow 0$.  Needless to say, the choice of how to best pick
+the best temperatures (for ST or IS) is still an open problem.  But in
+the context of the family of tempered distributions used by ST for
+mixing considerations, this means that the discarded samples obtained
+when $k^{(t)} < 1$ may actually lead to more efficient estimators than
+the ones saved from the cold distribution.  So ST is wastefull indeed.
 
-Rather than focus on choosing a single temperature, the method of {\em
-  importance tempering} (IT) combines the ``trans-temporal'' method of
-ST with IS.  An optimal heuristic based on ESS, which is easy to
-calculate, is used to combine the estimators realized at each
-temperature.  The idea is that small ESS will indicate high variance
-IS estimators which should be relegated to having only a small
-influence on the overall estimator.  Low $k_i$ may be helpful in the
-context of ST, i.e., for improving mixing in the the Markov chain and
-communication between modes of the posterior, but they can be harmful
-if given too much influence when used to calculate expectations.
+However, when combining IS estimators from the multiple temperatures
+used in ST, the deleterious effect of the high variance ones obtained
+at high temperature must be mitigated.  The possible strategies
+involved developing such a meta-estimator comprise the {\em importance
+  tempering} (IT) family of methods.  The idea is that small ESS will
+indicate high variance IS estimators which should be relegated to
+having only a small influence on the overall estimator.
 
-It is natural to consider an overall estimator of
+\subsection{A optimal way to combine IS estimators}
+\label{sec:lambdas}
+
+It is natural to consider an overall meta-estimator of
 $E_{\pi}\{h(\theta)\}$ defined by a convex combination:
 \begin{align}
 \label{eq:hhatlambda}
@@ -225,11 +249,12 @@ $E_{\pi}\{h(\theta)\}$ defined by a convex combination:
 \end{align}
 Unfortunately, if $\lambda_1,\dots,\lambda_m$ are not chosen
 carefully, $\mbox{Var}(\hat{h}_\lambda)$, can be nearly as large as
-the largest $\mbox{Var}(\hat{h}_i)$ \cite{owen:2000}.  Notice that ST
+the largest $\mbox{Var}(\hat{h}_i)$ \cite{owen:2000}, due to the
+considerations alluded to in Section \ref{sec:temp}.  Notice that ST
 is recovered as a special case when $\lambda_1=1$ and
 $\lambda_2,\dots,\lambda_m = 0$.  It may be tempting to choose
 $\lambda_i = W_i/W$, where $W = \sum_{i=1}^m W_i$.  The resulting
-estimator is equivalent to 
+estimator is equivalent to
 \begin{align}
 \label{Eq:hath}
 \hat{h} &= W^{-1} \sum_{t=1}^T w(\theta^{(t)},k^{(t)})h(\theta^{(t)}), 
@@ -266,7 +291,7 @@ the optimal $\lambda^*$.
 %\begin{thm}
 %\label{thm:lambdastar}
 Among estimators of the form~(\ref{eq:hhatlambda}), it can be shown
-\cite{gra:samw:king:2007} that $\mathrm{ESS}(\mathbf{w}^{\lambda})$ is
+\cite{gra:samw:king:2009} that $\mathrm{ESS}(\mathbf{w}^{\lambda})$ is
 maximized by $\lambda = \lambda^*$, where, for $i=1,\ldots,m$,
 \begin{align*}
 \lambda_i^* &= \frac{\ell_i}{\sum_{i=1}^m \ell_i}, & \mbox{and} && \ell_i &=
@@ -278,7 +303,7 @@ a good choice of $\lambda$, the ESS (\ref{eq:essw}) of
 $\hat{h}_{\lambda}$, would be close to the sum over $i$ of the
 effective sample sizes each of $\hat{h}_i$.  This is indeed the case
 for $\hat{h}_{\lambda^*}$, because it can be shown
-\cite{gra:samw:king:2007} that
+\cite{gra:samw:king:2009} that
 \[
 \mathrm{ESS}(\mathbf{w}^{\lambda^*}) \geq \sum_{i=1}^m \mathrm{ESS}(\mathbf{w}_i) 
 - \frac{1}{4} - \frac{1}{T}.
@@ -303,25 +328,26 @@ indeed leader to higher $\mathrm{ESS}(\mathbf{w}^{\lambda^*})$.
 \subsection{Examples}
 \label{sec:examples}
 
-Here the IT method shown in action for {\tt tgp} models.  IT is
-controlled in {\tt b*} function via the {\tt itemps} argument: a {\tt
+Here the IT method is shown in action for {\tt tgp} models.  IT is
+controlled in {\tt b*} functions via the {\tt itemps} argument: a {\tt
   data.frame} coinciding with the output of the {\tt default.itemps}
 function.  The {\tt lambda} argument to {\tt default.itemps} can be
 used to base posterior predictive inference the other IT heuristics:
 ST and the na\"ive approach (\ref{Eq:hath}).  Whenever the argument
-{\tt m = 1} is used with $k.min != 1$ the resulting estimator is
-constructed via tempered importance sampling at inverse temperature
-{\tt k.min}.  The parameters $c_0$ and $n_0$ for stochastic
-approximation of the pseudo--prior can be specified as a 2--vector {\tt
-  c0n0} argument to {\tt default.itemps}.  In the examples which
-follow we simply use the default configuration of the IT method,
-adjusting only the minimum inverse temperature via the {\tt k.min}
-argument.
+{\tt m = 1} is used with {\tt k.min != 1} the resulting estimator is
+constructed via tempered importance sampling at the single inverse
+temperature {\tt k.min}, in the style of Jennison~\cite{jennison:1993}
+as outlined in Section \ref{sec:temp}.  The parameters $c_0$ and $n_0$
+for stochastic approximation of the pseudo--prior can be specified as
+a 2--vector {\tt c0n0} argument to {\tt default.itemps}.  In the
+examples which follow we simply use the default configuration of the
+IT method, adjusting only the minimum inverse temperature via the {\tt
+  k.min} argument.
 
 Before delving into more involved examples, we illustrate the stages
 involved in a small run of importance tempering (IT) on the
-exponential data from Section 3.3 of Gramacy (2007).  The data can be
-obtained as:
+exponential data from Section 3.3 of \cite{gramacy:2007}.  The data
+can be obtained as:
 <<>>=
 exp2d.data<-exp2d.rand() 
 X<-exp2d.data$X 
@@ -333,14 +359,16 @@ geometric ladder.  A warning will be given if the default setting of
 can lead to improper posterior inference at high temperatures.
 <<>>=
 its <- default.itemps(m=10)
-exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE) 
+exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE,
+                 BTE=c(1000,3000,2)) 
 @ 
 Notice how the MCMC inference procedure starts with
 $B+T=\Sexpr{exp.btlm$BTE[1] + exp.btlm$BTE[2]}$ rounds of stochastic
 approximation (initial adjustment of the pseudo--prior) in place of
 typical (default) the $B=\Sexpr{exp.btlm$BTE[1]}$ burn--in
 rounds. Then, the first round of sampling from the posterior
-commences, over $T=\Sexpr{exp.btlm$BTE[3]}$ rounds, during which the
+commences, over $T=\Sexpr{exp.btlm$BTE[2]-exp.btlm$BTE[1]}$ 
+rounds, during which the
 observation counts in each temperature are tallied.  The progress
 meter shows the current temperature the chain is in, say {\tt
   k=0.629961}, after each of 1000 sampling rounds.  The first repeat
@@ -351,11 +379,11 @@ Any subsequent repeats begin after a similar (re-)adjustment.
 
 Before finishing, the routine summarizes the sample size and effective
 sample sizes in each rung of the temperature ladder.  The number of
-samples is given by {\tt len}, the ESS by {\tt ess}.  These quantities
-can also be recovered via {\tt traces}, as shown in the examples to
-follow. The ESS of the optimal combined IT sample is the last quantity
-printed.  This, along with the ESS and total numbers of samples in
-each temperature, can also be obtained via the {\tt tgp}-class output
+samples is given by {\tt len}, and the ESS by {\tt ess}.  These
+quantities can also be recovered via {\tt traces}, as shown later. The
+ESS of the optimal combined IT sample is the last quantity printed.
+This, along with the ESS and total numbers of samples in each
+temperature, can also be obtained via the {\tt tgp}-class output
 object.
 <<>>=
 exp.btlm$ess
@@ -375,7 +403,7 @@ moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
         bprior="b0", R=3, itemps=geo, trace=TRUE, pred.n=FALSE, verb=0)
 @ 
 Out of a total of $\Sexpr{moto.it$R*moto.it$BTE[2]/moto.it$BTE[3]}$
-from the joint chain, the resulting (optimally combined) ESS was:
+samples from the joint chain, the resulting (optimally combined) ESS was:
 <<>>=
 moto.it$ess$combined
 @ 
@@ -385,10 +413,10 @@ traces, and used to make the ESS calculation directly.
 p <- moto.it$trace$post
 ESS(p$wlambda)
 @ 
-The unadjusted weights $\mb{w}$ are also available from in the
-trace.  We can see that the na\"{i}ve choice of $\lambda_i = W_i/W$,
-leading to the estimator in (\ref{Eq:hath}), has a clearly inferior
-effective sample size.
+The unadjusted weights $\mb{w}$ are also available from {\tt
+  trace}.  We can see that the na\"{i}ve choice of $\lambda_i =
+W_i/W$, leading to the estimator in (\ref{Eq:hath}), has a clearly
+inferior effective sample size.
 <<>>=
 ESS(p$w)
 @ 
@@ -396,12 +424,12 @@ To see the benefit of IT over ST we can simply count the number of
 samples obtained when $k^{(t)} = 1$.  This can be accomplished in
 several ways: either via the traces or through the output object.
 <<>>=
-as.vector(c(sum(p$itemp == 2), moto.it$ess$each[1,2:3]))
+as.numeric(c(sum(p$itemp == 1), moto.it$ess$each[1,2:3]))
 @ 
 That is, (optimal) IT gives effectively
 $\Sexpr{signif(moto.it$ess$combined/sum(p$itemp==1), 3)}$ times more samples.
 The na\"{i}ve combination, leading to the estimator in (\ref{Eq:hath}),
-yields an estimator with effective sample size that is
+yields an estimator with am effective sample size that is
 $\Sexpr{round(100*ESS(p$w)/sum(p$itemp==1))}$\% of the number of
 samples obtained under ST.
 
@@ -421,13 +449,16 @@ hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
 b <- hist2bar(cbind(moto.reg$trace$post$height, p$height, hw))
 @
 \begin{figure}[ht!]
-<<label=it-moto-height,fig=TRUE,echo=TRUE,width=10,height=7,include=FALSE>>=
+<<label=it-moto-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
 barplot(b, beside=TRUE, col=1:3, xlab="tree height", ylab="counts", 
          main="tree heights encountered")
 legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-moto-height}
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-height}
 \caption{Barplots indicating the counts of the number of times the 
   Markov chains (for regular MCMC, combining all temperatures in the
   inverse temperature ladder, and those re-weighted via IT) were in
@@ -444,32 +475,24 @@ two trees and produces a corresponding overestimate of height four
 trees---which are clearly not supported by the data---even visiting
 trees of height five.  The IT estimator appropriately down--weights
 height one trees and provides correspondingly more realistic estimates
-of height two and four trees.
-
-The improved mixing of the ST/IT chain is also evident in the
-increased rate of accepted tree operations.  These rates can be
-accessed from the {\tt tgp}--class objects as follows.
-<<>>=
-moto.it$gpcs
-moto.reg$gpcs
-@ 
-The increased rate of {\em prune} operations explains how the
-tempered distributions helped the chain escape the local modes of deep
-trees.
+of the probability of height two and four trees.
 
 Whenever introducing another parameter into the model, like the
 inverse temperature $k$, it is important to check that the marginal
 posterior chain for that parameter is mixing well.  For ST it is
 crucial that the chain makes rapid excursions between the cold
-temperature, the hottest temperatures, and to visit each temperature
-setting roughly the same number of times.
+temperature, the hottest temperatures, and visits each temperature
+roughly the same number of times.
 \begin{figure}[ht!]
-<<label=it-moto-ktrace,fig=TRUE,echo=TRUE,width=10,height=6,include=FALSE>>=
+<<label=it-moto-ktrace,fig=TRUE,echo=TRUE,width=11,height=6,include=FALSE>>=
 plot(log(moto.it$trace$post$itemp), type="l", ylab="log(k)", xlab="samples",
      main="trace of log(k)")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-moto-ktrace}
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-ktrace}
 \caption{A trace of the MCMC samples from the marginal posterior
   distribution of the inverse temperature parameter, $k$, in 
   the motorcycle experiment}
@@ -495,10 +518,13 @@ b <- itemps.barplot(moto.it, plot.it=FALSE)
 barplot(t(cbind(moto.it$itemps$counts, b)), col=1:2,
         beside=TRUE, ylab="counts", xlab="itemps", 
         main="inv-temp observation counts")
-legend("topright", c("observation counts", "posterior samples"), fill=1:2)
+legend("topleft", c("observation counts", "posterior samples"), fill=1:2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
 @
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-moto-khist}
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-khist}
   \caption{Comparing (thinned) samples from the posterior distribution for
   the inverse temperature parameter, $k$, (posterior samples), to
   the observation counts used to update the pseudo--prior, in the
@@ -508,13 +534,13 @@ legend("topright", c("observation counts", "posterior samples"), fill=1:2)
 Figure \ref{f:khist} shows the histogram of the inverse temperatures
 visited in the Markov chain for the motorcycle experiment.  Also
 plotted is a histogram of the {\em observation counts} in each
-temperature.  The two histograms should similar shape but different
-totals.  Observation counts are tallied during every MCMC sample after
-burn--in, whereas the posterior samples of $k$ are thinned (at a rate 
-specified in {\tt BTE[3]}).  When the default {\tt trace = FALSE} argument 
-is used only the observation counts will be available in the {\tt
-  tgp}--class object, and these can be used as a surrogate for a trace
-of $k$.
+temperature.  The two histograms should have similar shape but
+different totals.  Observation counts are tallied during every MCMC
+sample after burn--in, whereas the posterior samples of $k$ are
+thinned (at a rate specified in {\tt BTE[3]}).  When the default {\tt
+  trace=FALSE} argument is used only the observation counts will be
+available in the {\tt tgp}--class object, and these can be used as a
+surrogate for a trace of $k$.
 
 The compromise IT approach obtained using the sigmoidal ladder can
 yield an increase in ESS.
@@ -531,8 +557,11 @@ moto.it.sig$ess$combined
 <<label=it-moto-pred,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>=
 plot(moto.it.sig)
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-moto-pred}
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-pred}
 \caption{Posterior predictive surface for the motorcycle data, with
   90\% quantile errorbars, obtained under IT with the sigmoidal ladder.}
   \label{f:moto:pred}
@@ -547,7 +576,7 @@ first {\tt tgp} vignette \cite{gramacy:2007}.
 Recall the synthetic 2--d exponential data of Section 3.4 of the tgp
 vignette \cite{gramacy:2007}, where the true response is given by
 \[
-z(\mb{x}) = x_1 \exp (x_1^2 - x_2^2).
+z(\mb{x}) = x_1 \exp(-x_1^2 - x_2^2).
 \]
 Here, we will take $\mb{x} \in [-6,6]\times [-6,6]$ with a
 $D$--optimal design
@@ -567,8 +596,11 @@ exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0",
 <<label=it-exp-pred,fig=TRUE,echo=TRUE,width=12.5,height=7,include=FALSE>>=
 plot(exp.reg)
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-exp-pred}
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-pred}
 \caption{Posterior predictive surface for the 2--d exponential data:
   mean surface {\em (left)} and 90\% quantile difference {\em (right)}}
   \label{f:exp:pred}
@@ -588,6 +620,9 @@ region.
 <<label=it-exp-mapt,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
 tgp.trees(exp.reg, "map")
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
 \includegraphics[trim=0 100 0 25]{tgp2-it-exp-mapt}
 \caption{Diagrammatic depiction of the maximum {\em a' posteriori} (MAP)
@@ -606,21 +641,26 @@ an excursion into deeper trees.
 Now consider using IT.  It will be important in this case to have a
 $k_{\mbox{\tiny m}}$ small enough to ensure that the tree occasionally
 prunes back to the root.  We shall therefore use a smaller
-$k_{\mbox{\tiny m}}$.% with an extra 10 rungs.
+$k_{\mbox{\tiny m}}$.  % with an extra 10 rungs.
 Generally speaking, some pilot tuning may be necessary to choose an
-appropriate $k_{\mbox{\tiny m}}$ and number of rungs $m$, though the
+appropriate $k_{\mbox{\tiny m}}$ and number of rungs $m$, although the
 defaults should give adequate performance in most cases.
 <<>>=
 its <- default.itemps(k.min=0.02)
 exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                trace=TRUE, krige=FALSE, itemps=its, R=10, verb=0)
-@
-As expected, the tempered chain moves more rapidly throughout tree space
-by accepting more tree proposals.
+@ 
+As expected, the tempered chain moves more rapidly throughout tree
+space by accepting more tree proposals.  The acceptance rates of tree
+operations can be accessed from the {\tt tgp}--class object.
 <<>>=
 exp.it$gpcs
 exp.reg$gpcs
 @ 
+The increased rate of {\em prune} operations explains how the
+tempered distributions helped the chain escape the local modes of deep
+trees.
+
 We can quickly compare the effective sample sizes of the three possible
 estimators: ST, na\"{i}ve IT, and optimal IT.
 <<>>=
@@ -643,13 +683,16 @@ hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
 b <- hist2bar(cbind(exp.reg$trace$post$height, p$height, hw))
 @
 \begin{figure}[ht!]
-<<label=it-exp-height,fig=TRUE,echo=TRUE,width=10,height=7,include=FALSE>>=
+<<label=it-exp-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
 barplot(b, beside=TRUE, col=1:3, xlab="tree height", ylab="counts", 
          main="tree heights encountered")
 legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-exp-height}
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-height}
 \caption{Barplots indicating the counts of the number of times the 
   Markov chains (for regular MCMC, combining all temperatures in the
   inverse temperature ladder, and those re-weighted via IT) were in
@@ -657,21 +700,24 @@ legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
 \label{f:exp:it:heights}
 \end{figure}
 Figure \ref{f:exp:it:heights} shows a barplot of {\tt b}, which
-illustrates that the tempered chain frequently visited trees shallow
-trees.  IT with the optimal weights shows that the standard RJ--MCMC
-chain missed many trees of height three and four with consider
-posterior support.
+illustrates that the tempered chain frequently visited shallow trees.
+IT with the optimal weights shows that the standard RJ--MCMC chain
+missed many trees of height three and four with considerable posterior
+support.
 
 \begin{figure}[ht!]
-<<label=it-exp-trace-height,fig=TRUE,echo=TRUE,width=10,height=7,include=FALSE>>=
+<<label=it-exp-trace-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
 ylim <- range(p$height, exp.reg$trace$post$height)
 plot(p$height, type="l", main="trace of tree heights", 
      xlab="t", ylab="height", ylim=ylim)
 lines(exp.reg$trace$post$height, col=2)
 legend("topright", c("tempered", "reg MCMC"), lty=c(1,1), col=1:2)
 @
+<<echo=false,results=hide>>=
+graphics.off()
+@
 \centering
-\includegraphics[trim=0 35 0 25]{tgp2-it-exp-trace-height}
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-trace-height}
 \caption{Traces of the tree heights obtained under the two Markov chains
 Markov chains (for regular MCMC, combining all temperatures in the
 inverse temperature ladder) on the 2--d exponential data.}
@@ -688,12 +734,15 @@ frequently prunes back to the tree root, and consequently discovers
 posterior modes in tree heights three and four.
 
 \begin{figure}[ht!]
-<<label=it-expit-pred,fig=TRUE,echo=TRUE,width=12.5,height=9,include=FALSE>>=
+<<label=it-expit-pred,fig=TRUE,echo=TRUE,width=14,height=8,include=FALSE>>=
 plot(exp.it)
 @
 \vspace{-0.7cm}
-<<label=it-expit-trees,fig=TRUE,echo=TRUE,width=10,height=8,include=FALSE>>=
+<<label=it-expit-trees,fig=TRUE,echo=TRUE,width=12,height=8,include=FALSE>>=
 tgp.trees(exp.it, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
 @
 \centering
 \includegraphics[trim=0 15 0 0]{tgp2-it-expit-pred}

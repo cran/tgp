@@ -53,10 +53,11 @@ function(d, meanfn=c("linear", "constant") ,
   if(meanfn == "linear") { col <- d+1 }
   else if(meanfn == "constant"){
     col <- 1
-    if(basemax != d) {
-      warning("must have basemax = d for linear mean function")
-      basemax <- d
-    }
+    ## not sure why I ever had this code here
+    ## if(basemax != d) {
+    ##    warning("must have basemax = d for constant mean function")
+    ##    basemax <- d
+    ## }
   }
 
   ## adjust the starting beta and Wi values on basemax
@@ -156,7 +157,7 @@ function(params, d)
   ## if(params$corr == "mrexpsep"){ params$tree[4] <- 1 }
 
   ## check tree basemax is > splitmin and <= than input dimension
-  if(params$tree[5] < 1 || params$tree[4] > d) {
+  if(params$tree[5] < 1 || params$tree[5] > d) {
     stop(paste("tree basemax", params$tree[5], "should be >= 1 and <= d =", d, "\n"));
   }
 

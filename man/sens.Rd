@@ -24,7 +24,7 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
     \code{NULL}.  If \code{model=NULL}, then the function just returns
     the \code{sens.p} vector of parameters to be passed with a
     regression model call.  This can be used to perform sensitivity
-    analysis through the \code{\link{predict.tgp}} framework.}
+    analysis through the \code{\link{predict.tgp}} framework}
   \item{ngrid}{The number of grid points in each input dimension upon
     which main effects will be estimated.}
   \item{span}{Smoothing parameter for main effects integration:
@@ -33,7 +33,7 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
     at the \code{ngrid} locations in each input dimension.}
   \item{BTE}{ 3-vector of Monte-Carlo parameters (B)urn in, (T)otal, and
     (E)very. Predictive samples are saved every E MCMC rounds starting
-    at round B, stopping at T. }
+    at round B, stopping at T }
   \item{rect}{ Rectangle describing the domain of the uncertainty
     distribution with respect to which the sensitivity is to be
     determined.  This defines the domain from which the LH sample
@@ -49,7 +49,11 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
     scaled and shifted to have support defined by \code{rect}.
     Only concave Beta distributions with \code{shape} > 1 are
     supported. If unspecified, the uncertainty distribution
-    is uniform over \code{rect}}
+    is uniform over \code{rect}. The specification \code{shape[i]=0}
+    instructs \code{sens} to treat the i'th dimension as a binary 
+    variable. In this case, \code{mode[i]} is the probability
+    parameter for a bernoulli uncertainty distribution, and 
+    we must also have \code{rect[i,]=c(0,1)}.  }
   \item{mode}{ Optional vector of mode values for the Beta
     uncertainty distribution. Vector of length equal to the dimension
     of the domain, with elements within the support defined by
@@ -92,6 +96,8 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
   predictive locations are actually an LHS proportional to the
   uncertainty distribution, we can also estimate the main effects
   through simple non-parametric regression (a moving average).
+
+  Please see \code{vignette("tgp2")} for a detailed illustration
 }
 
 \value{
@@ -106,7 +112,7 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
     main effects over the corresponding column of \code{sens.Xgrid}.}
   \item{ZZ.q1}{A \code{matrix}, where each column contains the 5th percentile
     main effects over the corresponding column of \code{sens.Xgrid}.}
-  \item{ZZ.q1}{A \code{matrix}, where each column contains the 5th percentile
+  \item{ZZ.q2}{A \code{matrix}, where each column contains the 5th percentile
     main effects over the corresponding column of \code{sens.Xgrid}.}
   \item{S}{A \code{matrix}, where each column contains the posterior sample
     of 1st order sensitivity indices for the corresponding input dimension.}
@@ -115,11 +121,10 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
 }
 
 \references{ 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
+R.D. Morris, A. Kottas, M. Taddy, R. Furfaro, and B. Ganapol. (2009)
+\emph{A statistical framework for the sensitivity analysis of radiative
+  transfer models.} IEEE Transactions on Geoscience and Remote Sensing,
+to appear.
 
 Saltelli, A. (2002) 
 \emph{Making best use of model evaluations to compute sensitivity indices.}
@@ -127,8 +132,8 @@ Computer Physics Communications, 145, 280-297.
 }
 
 \author{ 
-\item{}{Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}}
-\item{}{Matt Taddy, \email{taddy@ams.ucsc.edu} }
+Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
+Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{
@@ -136,12 +141,14 @@ Computer Physics Communications, 145, 280-297.
   the LH samples used for integral approximation; as with any Monte
   Carlo integration scheme, the sample size (\code{nn.lhs}) must
   increase with the dimensionality of the problem.  The total
-  sensitivity indices \eqn{T}{T} are not forced to be non-negative,
-  and if negative values occur it is probably necessary to increase
-  \code{nn.lhs}. 
+  sensitivity indices \eqn{T}{T} are forced non-negative,
+  and if negative values occur it is necessary to increase
+  \code{nn.lhs}. The \code{plot.tgp} function replaces negative values with zero
+  for illustration.
 }
 
-\seealso{  \code{\link{btgp}}, \code{\link{plot.tgp}},  \code{\link{predict.tgp}} }
+\seealso{  \code{\link{btgp}}, \code{\link{plot.tgp}},
+  \code{\link{predict.tgp}}, \code{\link{lhs}} }
 
 \examples{
 # Take a look at the air quality in New York: Sensitivity of
