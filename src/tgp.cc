@@ -50,10 +50,10 @@ void tgp(int* state_in,
 
 	 /* inputs from R */
 	 double *X_in, int *n_in, int *d_in, double *Z_in, double *XX_in, int *nn_in,
-	 int *trace_in, int *BTE_in, int* R_in, int* linburn_in, int *zcov_in, 
-	 int *improv_in, double *params_in, double *ditemps_in, int *verb_in, 
-	 double *dtree_in, double* hier_in, int *MAP_in, int *sens_ngrid, double *sens_span, 
-	 double *sens_Xgrid_in,  
+	 double *Xsplit_in, int *nsplit_in, int *trace_in, int *BTE_in, int* R_in, 
+	 int* linburn_in, int *zcov_in, int *improv_in, double *params_in, 
+	 double *ditemps_in, int *verb_in, double *dtree_in, double* hier_in, 
+	 int *MAP_in, int *sens_ngrid, double *sens_span, double *sens_Xgrid_in,  
 
 	 /* outputs to R */
 	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, double *ZZ_km_out,
@@ -78,9 +78,11 @@ void tgp(int* state_in,
   tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE_in[0], BTE_in[1], BTE_in[2], *R_in, 
 		 *linburn_in, (bool) (Zp_mean_out!=NULL), 
 		 (bool) ((Zp_ks2_out!=NULL) || (ZZ_ks2_out!=NULL)), (bool) (Ds2x_out!=NULL), 
-		 improv_in[0], (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, 
-		 params_in, ditemps_in, (bool) *trace_in, *verb_in, dtree_in, hier_in);
+		 improv_in[0], (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, Xsplit_in,
+		 *nsplit_in, params_in, ditemps_in, (bool) *trace_in, *verb_in, dtree_in, 
+		 hier_in);
   
+  /* post constructor initialization */
   tgpm->Init();
   
   /* tgp MCMC rounds are done here */
@@ -123,9 +125,10 @@ void tgp(int* state_in,
  */
 
 Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
-	 int linburn, bool pred_n, bool krige, bool delta_s2, int improv, bool sens,
-	 double *X,  double *Z, double *XX, double *dparams, double *ditemps, 
-	 bool trace, int verb, double *dtree, double *hier)
+	 int linburn, bool pred_n, bool krige, bool delta_s2, int improv, 
+	 bool sens, double *X,  double *Z, double *XX, double *Xsplit, 
+	 int nsplit, double *dparams, double *ditemps, bool trace, int verb, 
+	 double *dtree, double *hier)
 {
   itime = time(NULL);
 
@@ -169,16 +172,27 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R,
   this->trace = trace;
   this->verb = verb;
 
+  /* PROBABLY DON'T NEED TO ACTUALLY DUPLICATE THESE
+     MATRICES -- COULD USE new_matrix_bones INSTEAD */
+
   /* copy X from input */
+  assert(X);
   this->X = new_matrix(n, d);
   dupv(this->X[0], X, n*d);
   
   /* copy Z from input */
   this->Z = new_dup_vector(Z, n);
   
-  /* copy X from input */
+  /* copy XX from input */
   this->XX = new_matrix(nn, d);
   if(this->XX) dupv(this->XX[0], XX, nn*d);
+
+  /* copy Xsplit from input -- this determines the
+     bounding rectangle AND the tree split locations */
+  assert(nsplit > 0);
+  this->Xsplit = new_matrix(nsplit, d);
+  dupv(this->Xsplit[0], Xsplit, nsplit*d);
+  this->nsplit = nsplit;
   
   /* to be filled in by Init() */
   params = NULL;
@@ -208,6 +222,7 @@ Tgp::~Tgp(void)
   if(model) { delete model; model = NULL; }
   if(params) { delete params; params = NULL; }
   if(XX) { delete_matrix(XX);  XX = NULL; }
+  if(Xsplit) { delete_matrix(Xsplit);  Xsplit = NULL; }
   if(Z) { free(Z); Z = NULL; }
   if(rect) { delete_matrix(rect); rect = NULL; }
   if(X) { delete_matrix(X); X = NULL; }
@@ -236,7 +251,9 @@ void Tgp::Init(void)
   else myprintf(stdout, "Using default params.\n");
 
   /* get  the rectangle */
-  rect = getXdataRect(X, n, d, XX, nn);
+  // rect = getXdataRect(X, n, d, XX, nn);
+  /* now Xsplit governs the rectangle */
+  rect = get_data_rect(Xsplit, nsplit, d);
 
   /* construct the new model */
   model = new Model(params, d, rect, 0, trace, state);
@@ -244,13 +261,7 @@ void Tgp::Init(void)
   model->Outfile(stdout, verb);
 
   /* if treed partitioning is allowed, then set the splitting locations (Xsplit) */
-  if(params->isTree()) {
-    double **Xsplit = new_matrix(n+nn, d);
-    dup_matrix(Xsplit, X, n, d);
-    if(nn > 0) dupv(Xsplit[n], XX[0], nn*d);
-    model->set_Xsplit(Xsplit, nn+n, d);
-    delete_matrix(Xsplit);
-  }
+  if(params->isTree()) model->set_Xsplit(Xsplit, nsplit, d);
 
   /* structure for accumulating predictive information */
   cump = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), pred_n, krige, 

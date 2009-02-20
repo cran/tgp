@@ -19,8 +19,9 @@ treed GP, and treed GP LLM.  R provides an interface to the C/C++ backbone,
 and a serves as mechanism for graphically visualizing the results of inference 
 and posterior predictive surfaces under the models.  A Bayesian Monte Carlo
 based sensitivity analysis is implemented, and multi-resolution models are
-also supported.  A limited set of experimental design and adaptive sampling 
-functions are also provided, including ALM, ALC, and expected improvement.
+also supported.  Sequential experimental design and adaptive sampling 
+functions are also provided, including ALM, ALC, and expected improvement.  
+The latter supports derivative-free optimization of noisy black-box functions.
 
 For a fuller overview including a complete list of functions, demos and
 vignettes, please use \code{help(package="tgp")}.

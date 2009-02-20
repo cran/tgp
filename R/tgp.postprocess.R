@@ -25,8 +25,10 @@
 "tgp.postprocess" <-
 function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params, rmfiles=TRUE)
 {
-  ## deal with X, and names of X
+  ## deal with X, and names of X, as well as Xsplit
   ll$X <- framify.X(ll$X, Xnames, ll$d)
+  ll$Xsplit <- framify.X(ll$Xsplit, Xnames, ll$d)
+  ll$nsplit <- NULL
   
   ## deal with Z, and names of Z
   if(is.null(response)) ll$response <- "z"
@@ -75,7 +77,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   } else { ll$parts <- NULL }
   
   ## gather information about MAP trees as a function of height
-  ll$trees <- tgp.get.trees(rbind(ll$X, ll$XX), rmfiles)
+  ll$trees <- tgp.get.trees(ll$Xsplit, rmfiles)
   ll$posts <- read.table("tree_m0_posts.out", header=TRUE)
   if(ll$BTE[2] - ll$BTE[1] == 0) ll$posts <- NULL
   if(rmfiles) unlink("tree_m0_posts.out")

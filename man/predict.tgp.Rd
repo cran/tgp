@@ -3,8 +3,8 @@
 
 \title{ Predict method for Treed Gaussian process models }
 \description{
-  This generic prediction method was designed to obtain samples from the
-  posterior predictive distribution after the \code{b*}
+  This generic prediction method was designed to obtain samples
+  from the posterior predictive distribution after the \code{b*}
   functions have finished.  Samples, or kriging mean and variance
   estimates, can be obtained from the MAP model encoded in the
   \code{"tgp"}-class object, or this parameterization can be used
@@ -46,10 +46,10 @@
 	the inputs \code{X}; \code{FALSE} 
   	skips prediction at \code{X} resulting in a faster
 	implementation}
-  \item{krige}{\code{TRUE} (default) value results in collection of kriging
-	means and variances at predictive (and/or data) locations; \code{FALSE} 
-  	skips the gathering of kriging statistics giving a savings in
-	storage}
+  \item{krige}{\code{TRUE} (default) value results in collection of
+    kriging means and variances at predictive (and/or data)
+    locations; \code{FALSE} skips the gathering of kriging statistics
+    giving a savings in storage}
   \item{zcov}{If \code{TRUE} then the predictive covariance matrix is
     calculated-- can be computationally (and memory) intensive if
     \code{X} or \code{XX} is large.  Otherwise only the variances
@@ -77,9 +77,9 @@
     See the note in \code{\link{btgp}} documentation.
     If not specified, then the larger of 10\% of \code{nn = nrow(XX)} 
     and \code{min(10, nn)} is taken by default }
-  \item{sens.p}{ Either \code{NULL} or a vector of parameters for sensitivity analysis,
-  	       built by the function \code{sens}.  Refer there
-	       for details}
+  \item{sens.p}{ Either \code{NULL} or a vector of parameters for
+    sensitivity analysis, built by the function \code{\link{sens}}.
+    Refer there for details}
   \item{trace}{ \code{TRUE} results in a saving of samples from the
         posterior distribution for most of the parameters in the model.  The
         default is \code{FALSE} for speed/storage reasons. See note below }

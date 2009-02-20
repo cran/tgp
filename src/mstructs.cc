@@ -86,13 +86,9 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d,
     preds->nm = 0;
 
     /* special handling of rect when not doing sens */
-    if(rect) {
-      preds->rect=new_dup_matrix(rect,2,d);
-      preds->XX = new_normd_matrix(XX,nn,d,rect,NORMSCALE);
-    } else {
-      preds->rect = NULL; /* don't know why this is here */
-      preds->XX = new_dup_matrix(XX,nn,d);
-    }
+    assert(rect);
+    preds->rect = new_dup_matrix(rect,2,d);
+    preds->XX = new_normd_matrix(XX,nn,d,rect,NORMSCALE);
   }
 
   /* continue with allocations and assignment regardless

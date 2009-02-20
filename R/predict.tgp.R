@@ -106,18 +106,18 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
   object$itemps$c0n0 <- c(0,0)
   itemps <- check.itemps(object$itemps, object$params)
 
-  ## If SENS, set up XX ##
-  
+  ## if performing a sensitivity analysis, set up XX 
   if(!is.null(sens.p)){
     nnprime <- 0
+    if(!is.null(XX)) warning("XX generated online in sensitivity analyses")
     sens.par <- check.sens(sens.p, object$d)
     nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX
     ngrid <- sens.par$ngrid; span <- sens.par$span
-    MainEffectGrid <- as.double(sens.par$MainEffectGrid)
+    MEgrid <- as.double(sens.par$MEgrid)
     if(verb >= 1) 
       cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
   }
-  else{ nn.lhs <- 0; ngrid <- 0; MainEffectGrid <- NULL; span=NULL}
+  else{ nn.lhs <- 0; ngrid <- 0; MEgrid <- NULL; span=NULL}
 
   ## calculate the number of sampling rounds
   S = R*(BTE[2]-BTE[1])/BTE[3]
@@ -133,6 +133,8 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            Z = as.double(Z),
            XX = as.double(t(XX)),
            nn = as.integer(nn),
+           Xsplit = as.double(t(object$Xsplit)),
+           nsplit = as.integer(nrow(object$Xsplit)),
            trace = as.integer(trace),
            BTE = as.integer(BTE),
            R = as.integer(R),
@@ -147,7 +149,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            MAP = as.integer(MAP),
            sens.ngrid = as.integer(ngrid),
            sens.span = as.double(span),
-           sens.Xgrid = MainEffectGrid,
+           sens.Xgrid = MEgrid,
 
            ## begin outputs
            Zp.mean = double(pred.n * object$n),

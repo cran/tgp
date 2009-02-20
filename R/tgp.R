@@ -101,8 +101,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   
   ## check for inconsistent XX and Ds2x/improv
   if(nn == 0 && (Ds2x || improv))
-    warning(paste("need to specify XX locations for Ds2x and improv,",
-                  "and at least empty XX for SENS."))
+    warning("need to specify XX locations for Ds2x and improv")
 
   ## check the sanity of input arguments
   if(nn > 0 && sum(dim(XX)) > 0 && ncol(XX) != d) stop("XX has bad dimensions")
@@ -125,16 +124,20 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   else Zm0r1 <- NULL
 
   ## if performining a sensitivity analysis, set up XX ##
-  if(!is.null(sens.p)){
+  if(!is.null(sens.p)) {
+    if(!is.null(XX)) warning("XX generated online in sensitivity analyses")
     nnprime <- 0
     sens.par <- check.sens(sens.p, d)
     nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX
     ngrid <- sens.par$ngrid; span <- sens.par$span
-    MainEffectGrid <- as.double(sens.par$MainEffectGrid)
+    MEgrid <- as.double(sens.par$MEgrid)
     if(verb >= 2) 
       cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
-  }
-  else{ nn.lhs <- 0; ngrid <- 0; MainEffectGrid <- NULL; span <- NULL }
+  } else{ nn.lhs <- 0; ngrid <- 0; MEgrid <- NULL; span <- NULL }
+
+  ## construct the set of candidate split locations
+  Xsplit <- X
+  if(!is.null(sens.p)) Xsplit <- rbind(Xsplit, XX)
 
   ## for sens
   S = R*(BTE[2]-BTE[1])/BTE[3]
@@ -153,6 +156,8 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            Z = as.double(Z),
            XX = as.double(t(XX)),
            nn = as.integer(nn),
+           Xsplit = as.double(t(Xsplit)),
+           nsplit = as.integer(nrow(Xsplit)),
            trace = as.integer(trace),
            BTE = as.integer(BTE),
            R = as.integer(R),
@@ -167,7 +172,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            MAP = as.integer(0),
            sens.ngrid = as.integer(ngrid),
            sens.span = as.double(span),
-           sens.Xgrid = as.double(MainEffectGrid),
+           sens.Xgrid = as.double(MEgrid),
            
            ## begin outputs
            Zp.mean = double(pred.n * n),
