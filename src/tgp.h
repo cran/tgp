@@ -41,6 +41,7 @@ class Tgp
   unsigned int n;        /* n inputs (number of rows in X) */
   unsigned int d;        /* d covariates (number of cols in X) */
   unsigned int nn;       /* number of predictive locations (rows in XX) */
+  unsigned int nsplit;   /* number of rows in Xsplit, nsplit likely n+nn */
   bool trace;            /* indicates whether traces for XX should be sent to files */
   unsigned int B;        /* number of burn-in rounds */
   unsigned int T;        /* total number of MCMC rounds (including burn-in) */
@@ -64,6 +65,7 @@ class Tgp
   double **X;            /* n-by-d input (design matrix) data */
   double *Z;             /* response vector of length n */
   double **XX;           /* nn-by-d (design matrix) of predictive locations */
+  double **Xsplit;       /* (nsplit)-by-d rbind(X,XX) matrix for rect & tree splits */
   Params *params;        /* prior-parameters module */
 
   double **rect;         /* bounding rectangle of the (design matrix) data X */
@@ -76,8 +78,8 @@ class Tgp
   /* constructor and destructor */
   Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R, 
       int linburn, bool pred_n, bool krige, bool delta_s2, int improv, bool sens, 
-      double *X, double *Z, double *XX, double *dparams, double *ditemps, 
-      bool trace, int verb, double *dtree, double *hier);
+      double *X, double *Z, double *XX, double *Xsplit, int nsplit, double *dparams, 
+      double *ditemps, bool trace, int verb, double *dtree, double *hier);
   ~Tgp(void);
 
   /* a function that should only be called just after constructor */  

@@ -57,6 +57,8 @@ function(sens.p, d)
     print(mode)
     stop(paste("mode should be a ", d, "-vector", sep=""))
   }
+
+  ## check each coordinate of the mode argument
   for(i in 1:d){
     if(mode[i] < XX[1,i] || mode[i] > XX[2,i]){
       stop(paste("mode ", i, " should be within bounds [", 
@@ -68,12 +70,12 @@ function(sens.p, d)
   ngrid <- sens.p[4*d+2]
   span <- sens.p[4*d+3]
   if((span > 1) || (span < 0)) stop("Bad smoothing span -- must be in (0,1).")
-  MainEffectGrid <- matrix(ncol=d, nrow=ngrid)
-  for(i in 1:d){ MainEffectGrid[,i] <- seq(XX[1,i], XX[2,i], length=ngrid) }
+  MEgrid <- matrix(ncol=d, nrow=ngrid)
+  for(i in 1:d){ MEgrid[,i] <- seq(XX[1,i], XX[2,i], length=ngrid) }
   
   ## return
   list(nn=nn, nn.lhs=nn.lhs, ngrid=ngrid, span=span, XX=XX,
-       MainEffectGrid=MainEffectGrid)
+       MEgrid=MEgrid)
 }
 
 
@@ -99,18 +101,21 @@ function(X, Z, nn.lhs, model=btgp, ngrid=100, span=0.3, BTE=c(3000,8000,10),
   else if(nrow(rect) != d || ncol(rect) != 2)
     stop(paste("rect should be a ", d, "x2-vector", sep=""))
 
-  ## check the shape and mode vectors
+  ## check the shape LHS parameter vector
   if(is.null(shape)) shape <- rep(1,d)
   else if(length(shape) != d || !all(shape >= 0)) { 
     print(shape)
     stop(paste("shape should be a non-negative ", d, "-vector", sep=""))
   }
+
+  ## check the mode LHS parameter vector
   if(is.null(mode)) mode <- apply(as.matrix(X),2,mean)
   else if(length(mode) != d) {
     print(mode)
     stop(paste("mode should be a ", d, "-vector", sep=""))
   }
 
+  ## check the LHS rectangle in the categorical variable context
   for(i in 1:d){
     if(shape[i]==0){
       if(rect[i,1] != 0 || rect[i,2] != 1){
@@ -161,24 +166,32 @@ function(s, maineff=TRUE, legendloc="topright",  ...)
     if(maineff){
       par(mfrow=c(1,3), ...)
       X <- mean0.range1(sens$Xgrid)$X
+
+      ## plot each of the main effects in the same window -- start with the 1st
       plot(X[,1], Zmean[,1], main="Main Effects",
            ylab="response", xlab="scaled input",
            col=cols[1], typ="l", lwd=2, ylim=range(as.vector(Zmean)), ...)
-      for(i in 2:s$d){
-        if(nlevels(factor(Zmean[,i]))==3){
+
+      ## and then proceed with the rest
+      for(i in 2:s$d){  
+        if(nlevels(factor(Zmean[,i]))==3){ ## discrete response ... Taddy is this right?
           segments(-.5, Zmean[1,i], 0, Zmean[1,i], lwd=2, col=cols[i])
           segments(0, Zmean[nrow(Zmean),i], .5, Zmean[nrow(Zmean),i], lwd=2, col=cols[i])
-        }
-        else{ lines(X[,i], Zmean[,i], lwd=2, col=cols[i]) }
+        } else{ lines(X[,i], Zmean[,i], lwd=2, col=cols[i]) } ## continuous response
       }
+
+      ## add a legend to the plot so we can see which colours are for which effects
       legend(x=legendloc, legend = names(s$X), col=cols, fill=cols)
     }
     else{ par(mfrow=c(1,2), ...) }
 
     ## plot the S and T statistics
+    ## S stats first
     boxplot(data.frame(sens$S), names=names(s$X),
             main="1st order Sensitivity Indices", 
 	    xlab="input variables", ylab="", ...)
+
+    ## then T stats
     T0 <- sens$T
     T0[sens$T<0] <- 0
     boxplot(data.frame(T0), names=names(s$X),
@@ -188,14 +201,18 @@ function(s, maineff=TRUE, legendloc="topright",  ...)
   } else {
     ## only make a main effects plots
     
+    ## set up the plot
     X <- sens$Xgrid
     ME <- c(maineff)
     pdim <- dim(as.matrix(maineff))
     par(mfrow=pdim, ...)
+
+    ## for each Main Effect
     for(i in ME){
+      ## discrete response ... Taddy is this right?
       if(nlevels(factor(Zmean[,i]))==3){
-        plot(c(0,1) ,c(Zmean[1,i],Zmean[nrow(Zmean),i]), main="", ylab="response", xlab=nom[i],
-             col=cols[i], pch=20, cex=2, xlim=c(-.5,1.5), xaxt="n",
+        plot(c(0,1) ,c(Zmean[1,i],Zmean[nrow(Zmean),i]), main="", ylab="response", 
+             xlab=nom[i], col=cols[i], pch=20, cex=2, xlim=c(-.5,1.5), xaxt="n",
              ylim=c(min(Zq1[,i]), max(Zq2[,i])))
         axis(1, at=c(0,1))
         segments(-.1, Zq1[1,i], .1, Zq1[1,i], lwd=2, col=cols[i], lty=2)
@@ -203,7 +220,7 @@ function(s, maineff=TRUE, legendloc="topright",  ...)
         segments(-.1, Zq2[1,i], .1, Zq2[1,i], lwd=2, col=cols[i], lty=2)
         segments(.9, Zq2[nrow(Zq2),i], 1.1, Zq2[nrow(Zq2),i], lwd=2, col=cols[i], lty=2)
       }
-      else{ 
+      else{ ## continuous response
         plot(X[,i], Zmean[,i], main="", ylab="response", xlab=nom[i],
              col=cols[i], typ="l", lwd=2, 
              ylim=c(min(Zq1[,i]), max(Zq2[,i])), ...)
@@ -211,6 +228,8 @@ function(s, maineff=TRUE, legendloc="topright",  ...)
         lines(X[,i], Zq2[,i], col=cols[i], lty=2)
       }
     }
+
+    ## add a title to the plot
     mtext(text="Main effects: mean and 90 percent interval", line=-2,
           outer=TRUE, font=2)
   }  

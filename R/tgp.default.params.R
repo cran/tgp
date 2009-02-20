@@ -73,7 +73,7 @@ function(d, meanfn=c("linear", "constant") ,
   ## parameters shared by all models
   params <-
     list(
-         tree=c(0.5,2,max(c(10,d+2)),   # tree prior params <alpha>,<beta>,<minpart>
+         tree=c(0.5,2,max(c(10,basemax+2)),   # tree prior params <alpha>,<beta>,<minpart>
            splitmin, basemax),          # (continued)
          col=col,                       # defined above, based on meanfn
          meanfn=meanfn,                 # one of "linear" or "constant"
@@ -143,8 +143,8 @@ function(params, d)
   }
 
   ## check tree minpart is bigger than input dimension
-  if(params$tree[3] < d) {
-    stop(paste("tree minpart", params$tree[3], "should be > d =", d, "\n"));
+  if(params$tree[3] < params$tree[5]) {
+    stop(paste("tree minpart", params$tree[3], "should be > basemax =", params$tree[5], "\n"));
   }
 
   ## check tree splitmin is <= than input dimension

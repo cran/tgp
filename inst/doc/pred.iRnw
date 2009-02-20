@@ -99,10 +99,20 @@ summaries are still ``noisy'' they depict a process with smoother
 transitions across partition boundaries than ones conditioned only on
 the MAP parameterization.
 
-The {\tt predict.tgp} function can also sample from the ALC statistic and
-calculate expected improvements (EI) at the {\tt XX} locations.  
-
 <<echo=FALSE,results=HIDE>>=
 unlink("out.Rsave")
 @ 
+
+Finally, the {\tt predict.tgp} function can also sample from the ALC
+statistic and calculate expected improvements (EI) at the {\tt XX}
+locations.  While the function was designed with prediction in mind,
+it is actually far more general.  It allows a continuation of MCMC
+sampling where the {\tt b*} function left off (when {\tt MAP=FALSE})
+with a possibly new set of predictive locations {\tt XX}.  The
+intended use of this function is to obtain quick kriging--style
+predictions for a previously-fit MAP estimate (contained in a
+\verb!"tgp"!-class object) on a new set of predictive locations {\tt
+XX}.  However, it can also be used simply to extend the search for an
+MAP model when {\tt MAP=FALSE}, {\tt pred.n=FALSE}, and {\tt XX=NULL}.
+
 

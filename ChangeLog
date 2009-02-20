@@ -1,3 +1,17 @@
+2.2-1 (20 Feb 2009)
+-----
+
+Added Tree::Clear() to rejected prunes in Tree::Prune()
+
+tgp.default.params and tgp.check.params now allow the min
+partition size to depend on basemax rather than d
+
+the bounding rectangle and the valid tree-split locations
+are now governed by an Xsplit automatically generated in
+the tgp R function, and gathered from the tgp object in
+predict.tgp
+	
+
 2.2 (16 Jan 2009)
 ---
 

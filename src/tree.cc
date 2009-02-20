@@ -1231,6 +1231,7 @@ bool Tree::prune(double ratio, void *state)
     base->ClearPred();
     return true;
   } else {
+    Clear();
     return false;
   }
 }
@@ -1248,15 +1249,15 @@ bool Tree::grow(double ratio, void *state)
   tree_op = GROW;
   bool success;
   double q_fwd, pk, pklast, logp_split, alpha;
-  
+ 
   /* sane grow ? */
   assert(isLeaf());	
-  
+
   /* propose the next tree, by choosing the split point */
   /* We only partition on variables > splitmin */
   unsigned int mn = model->get_params()->T_smin();
   var = sample_seq(mn, d-1, state);
-  
+ 
   /* can't grow if this dimension does not have varying x-values */
   if(rect->boundary[0][var] == rect->boundary[1][var]) return false;
 

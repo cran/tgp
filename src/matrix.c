@@ -1614,7 +1614,9 @@ void normalize(double **X, double **rect, int N, int d, double normscale)
       else
 	X[j][i] = (X[j][i] - rect[0][i]) / norm;
       X[j][i] = normscale * X[j][i];
-      assert(X[j][i] >=0 && X[j][i] <= normscale);
+      /* if(!(X[j][i] >=0 && X[j][i] <= normscale))
+	myprintf(stdout, "X[%d][%d] = %g, normscale = %g\n", j, i, X[j][i], normscale);
+	assert(X[j][i] >=0 && X[j][i] <= normscale); */
     }
   }
 }
