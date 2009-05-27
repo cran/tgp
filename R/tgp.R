@@ -137,7 +137,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
 
   ## construct the set of candidate split locations
   Xsplit <- X
-  if(!is.null(sens.p)) Xsplit <- rbind(Xsplit, XX)
+  if(is.null(sens.p) && nn > 0) Xsplit <- rbind(Xsplit, XX)
 
   ## for sens
   S = R*(BTE[2]-BTE[1])/BTE[3]

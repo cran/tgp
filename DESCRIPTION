@@ -1,21 +1,26 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.2-1
-Date: 2009-02-20
-Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy <taddy@ams.ucsc.edu>
+Version: 2.2-2
+Date: 2009-05-27
+Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy
+        <taddy@ams.ucsc.edu>
 Depends: R (>= 2.4)
-Suggests: akima, maptree, combinat
-Description: Bayesian nonstationary, semiparametric nonlinear regression 
- and design by treed Gaussian processes with jumps to the limiting 
- linear model (LLM).  Special cases also implemented include Bayesian 
- linear models, CART, treed linear models, stationary separable and 
- isotropic Gaussian processes.  Provides 1-d and 2-d plotting functions 
- (with projection and slice capabilities) and tree drawing, designed for 
- visualization of tgp-class output.  Sensitivity analysis and 
- multi-resolution models are supported. Sequential experimental 
- design and adaptive sampling functions are also provided, including ALM, 
- ALC, and expected improvement.  The latter supports derivative-free
- optimization of noisy black-box functions.
-Maintainer: Robert B. Gramacy  <rbgramacy@ams.ucsc.edu>
+Suggests: akima, maptree
+Description: Bayesian nonstationary, semiparametric nonlinear
+        regression and design by treed Gaussian processes with jumps to
+        the limiting linear model (LLM).  Special cases also
+        implemented include Bayesian linear models, CART, treed linear
+        models, stationary separable and isotropic Gaussian processes.
+        Provides 1-d and 2-d plotting functions (with projection and
+        slice capabilities) and tree drawing, designed for
+        visualization of tgp-class output.  Sensitivity analysis and
+        multi-resolution models are supported. Sequential experimental
+        design and adaptive sampling functions are also provided,
+        including ALM, ALC, and expected improvement.  The latter
+        supports derivative-free optimization of noisy black-box
+        functions.
+Maintainer: Robert B. Gramacy <rbgramacy@ams.ucsc.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
+Repository: CRAN
+Date/Publication: 2009-05-29 07:01:30
