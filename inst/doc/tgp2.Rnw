@@ -20,7 +20,7 @@
 
 %\VignetteIndexEntry{new features in tgp version 2.x}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
+%\VignetteDepends{tgp,maptree}
 %\VignettePackage{tgp}
 
 \begin{document}

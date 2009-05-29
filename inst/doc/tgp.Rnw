@@ -12,7 +12,7 @@
 
 %\VignetteIndexEntry{a guide to the tgp package}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree,combinat}
+%\VignetteDepends{tgp,maptree}
 %\VignettePackage{tgp}
 
 \begin{document}

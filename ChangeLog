@@ -1,7 +1,17 @@
+2.2-2 (27 May 2009)
+-----
+
+caught a signifigant typo/bug in Xsplit pre-processing
+in R which was causing the bounding rectangle to be
+computed improperly
+
+removed combinat dependency
+
+
 2.2-1 (20 Feb 2009)
 -----
 
-Added Tree::Clear() to rejected prunes in Tree::Prune()
+added Tree::Clear() to rejected prunes in Tree::Prune()
 
 tgp.default.params and tgp.check.params now allow the min
 partition size to depend on basemax rather than d
