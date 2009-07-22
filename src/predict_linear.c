@@ -350,9 +350,9 @@ double tau2;
  * compute a Ds2xy row under the (limiting) linear model
  */ 
 
-void delta_sigma2_linear(ds2xy, n, col, s2, Vbf, fVbf, F, nug)
+void delta_sigma2_linear(ds2xy, n, col, s2, Vbf, fVbf, F, corr_diag)
 unsigned int n, col;
-double s2, nug, fVbf;
+double s2, corr_diag, fVbf;
 double *ds2xy, *Vbf;
 double **F;
 {
@@ -373,7 +373,7 @@ double **F;
     
     /* finish out the formula */
     numer = s2* fyVbf * fyVbf;
-    denom = 1 + nug + fVbf;
+    denom = corr_diag + fVbf;
     ds2xy[i] = numer / denom;
   }
   
@@ -441,18 +441,19 @@ double s2;
  * and do delta_sigma_linear on them too, if applicable
  */
 
-int predict_full_linear(n, zp, zpm, zps2, Kdiag,
-			nn, zz, zzm, zzs2, KKdiag,
+int predict_full_linear(n, zp, zpm, zpvm, zps2, Kdiag,
+			nn, zz, zzm, zzvm, zzs2, KKdiag,
 			Ds2xy, improv,
 			Z, col, F, FF, bmu, s2, Vb, Zmin, err, state)
 unsigned int n, nn, col;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *Z, *bmu, *improv, *Kdiag, *KKdiag;
+double *zp, *zpm, *zpvm, *zps2, *zz, *zzm, *zzvm, *zzs2, *Z, *bmu, *improv, *Kdiag, *KKdiag;
 double **F, **FF, **Vb, **Ds2xy;
 double s2, Zmin;
 int err;
 void *state;
 {
-  int warn = 0;
+  double *ezvar;
+  int i, warn = 0;
 
   /* predict at the data locations */
   
@@ -468,6 +469,14 @@ void *state;
   /* draw from the posterior predictive distribution */
   warn += predict_draw(n, zp, zpm, zps2, err, state);
 
+  /* draw from the posterior mean surface distribution (no jitter) */
+  if(zpvm) {
+    ezvar = new_vector(n);
+    for(i=0; i<n; i++) ezvar[i] = zps2[i] - s2;
+    predict_draw(n, zpvm, zpm, ezvar, err, state);
+    free(ezvar);
+  }
+
   /* predict at the new predictive locations */
 
   /* calculate the necessary means and vars for predicition */
@@ -475,6 +484,11 @@ void *state;
   
   /* draw from the posterior predicitive distribtution */
   warn += predict_draw(nn, zz, zzm, zzs2, err, state);
+  /* draw from the posterior mean surface distribution (no jitter) */
+  ezvar = new_vector(nn);
+  for(i=0; i<nn; i++) ezvar[i] = zzs2[i] - s2;
+  predict_draw(nn, zzvm, zzm, ezvar, err, state);
+  free(ezvar);
 
   /* compute IMPROV statistics */
   if(improv) {

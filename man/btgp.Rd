@@ -286,7 +286,8 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     locations (diagonal of the predictive covariance matrix).  Only
     appears when input \code{pred.n = TRUE}}
   \item{Zp.km}{Vector of (expected) kriging means at \code{X} locations}
-  \item{Zp.ks2}{Vector of (expected) kriging variances at \code{X} locations}
+  \item{Zp.vark}{Vector of posterior variance for kriging surface (no additive noise) at \code{X} locations}
+  \item{Zp.ks2}{Vector of (expected) predictive kriging variances at \code{X} locations}
   \item{ZZ.mean}{Vector of mean predictive estimates at \code{XX} locations}
   \item{ZZ.q1}{Vector of 5\% predictive quantiles at \code{XX} locations}
   \item{ZZ.q2}{Vector of 95\% predictive quantiles at \code{XX} locations}
@@ -302,7 +303,8 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     \code{XX}; Only appears when \code{zcov = TRUE} and both
     \code{pred.n = TRUE} and \code{XX != NULL}}
   \item{ZZ.km}{Vector of (expected) kriging means at \code{XX} locations}
-  \item{ZZ.ks2}{Vector of (expected) kriging variances at \code{XX} locations}
+  \item{ZZ.vark}{Vector of posterior variance for kriging surface (no additive noise) at \code{XX} locations}
+  \item{ZZ.ks2}{Vector of (expected) predictive kriging variances at \code{XX} locations}
   \item{Ds2x}{If argument \code{Ds2x=TRUE}, this vector contains ALC
     statistics for \code{XX} locations}
   \item{improv}{If argument \code{improv} is \code{TRUE} or a

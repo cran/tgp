@@ -175,12 +175,13 @@ double *p, *x, a, b;
   int i;
   
   /* sanity checks */
-  assert(a>0 && b>0);
+  assert(a>=0 && b>0);
 
   /* evaluate the pdf for each x */
   for(i=0; i<n; i++) {
     assert(x[i] > 0);
-    p[i] = a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - b*x[i]; 
+    if(a == 0) p[i] = 0;
+    else p[i] = a*log(b) - lgammafn(a) + (a-1)*log(x[i]) - b*x[i]; 
   }
 }
 

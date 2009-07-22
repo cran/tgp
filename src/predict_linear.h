@@ -25,8 +25,8 @@
 #ifndef __PREDICT_LINEAR_H__
 #define __PREDICT_LINEAR_H__
 
-int predict_full_linear(unsigned int n, double *zp, double *zpm, double *zps2, double *Kdiag,
-			unsigned int nn, double *zz, double *zzm, double *zzs2, double *KKdiag,
+int predict_full_linear(unsigned int n, double *zp, double *zpm, double *zpvm, double *zps2, double *Kdiag,
+			unsigned int nn, double *zz, double *zzm, double *zzvm, double *zzs2, double *KKdiag,
 			double **Ds2xy, double *improv, double *Z, 
 			unsigned int col, double **F, double **FF, double *bmu, 
 			double s2, double  **Vb, double Zmin, int err,
@@ -58,7 +58,7 @@ void predict_no_delta_noK(double *zmean, double *zs, unsigned int n1, unsigned i
 void predict_help_noK(unsigned int n1,unsigned int col,double *b, double **F, double **W,
 		      double tau2, double **FW, double **IDpFWFi, double *Kdiag);
 void delta_sigma2_linear(double *ds2xy, unsigned int n, unsigned int col, double s2, 
-			 double *Vbf, double fVbf, double **F, double nug);
+			 double *Vbf, double fVbf, double **F, double corr_diag);
 void predict_linear(unsigned int n, unsigned int col, double *zm, double *zs2, double **F, 
 		    double *b, double s2, double **Vb, double **Ds2xy, double *Kdiag);
 

@@ -376,8 +376,8 @@ void Tree::delete_XX(void)
  * recomputed and/or initialised when appropriate)
  */
 
-void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ, 
-		   double *ZZm, double *ZZs2, double *Ds2x, double *Improv, 
+void Tree::Predict(double *Zp, double *Zpm, double *Zpvm, double *Zps2, double *ZZ, 
+		   double *ZZm, double *ZZvm, double *ZZs2, double *Ds2x, double *Improv, 
 		   double Zmin, unsigned int wZmin, bool err, void *state)
 {
   if(!n) warning("n = %d\n", n);
@@ -388,13 +388,13 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ,
   if(nn > 0) base->UpdatePred(XX, nn, d, (bool) Ds2x);
 
   /* ready the storage for predictions */
-  double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *improv;
+  double *zp, *zpm, *zpvm, *zps2, *zz, *zzm, *zzvm, *zzs2, *improv;
   double **ds2xy;
   
   /* allocate necessary space for predictions */
-  zp = zpm = zps2 = zz = zzm = zzs2 = NULL;
-  if(Zp) { zp = new_vector(n); zpm = new_vector(n); zps2 = new_vector(n); }
-  if(nn > 0) { zz = new_vector(nn); zzm = new_vector(nn); zzs2 = new_vector(nn); }
+  zp = zpm = zpvm = zps2 = zz = zzm = zzvm = zzs2 = NULL;
+  if(Zp) { zp = new_vector(n); zpm = new_vector(n); zpvm = new_vector(n); zps2 = new_vector(n); }
+  if(nn > 0) { zz = new_vector(nn); zzm = new_vector(nn); zzvm = new_vector(nn); zzs2 = new_vector(nn); }
   assert(zp != NULL || zz != NULL);
   
   /* allocate space for Delta-sigma */
@@ -411,15 +411,17 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ,
   }
  
   /* predict */
-  base->Predict(n, zp, zpm, zps2, nn, zz, zzm, zzs2, ds2xy, improv, Zmin, err, state);
+  base->Predict(n, zp, zpm, zpvm, zps2, nn, zz, zzm, zzvm, zzs2, ds2xy, improv, Zmin, err, state);
   
   /* copy data-pred stats to the right place in their respective full matrices */
   if(zp) { 
     copy_p_vector(Zp, p, zp, n); 
     if(Zpm) copy_p_vector(Zpm, p, zpm, n); 
+    if(Zpvm) copy_p_vector(Zpvm, p, zpvm, n); 
     if(Zps2) copy_p_vector(Zps2, p, zps2, n); 
     free(zp);
-    free(zpm);
+    free(zpm);    
+    free(zpvm);
     free(zps2);
   }
 
@@ -427,9 +429,11 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zps2, double *ZZ,
   if(zz) { 
     copy_p_vector(ZZ, pp, zz, nn); 
     if(ZZm) copy_p_vector(ZZm, pp, zzm, nn); 
+    if(ZZvm) copy_p_vector(ZZvm, pp, zzvm, nn); 
     if(ZZs2) copy_p_vector(ZZs2, pp, zzs2, nn);
     free(zz); 
     free(zzm);
+    free(zzvm);
     free(zzs2);
   }
 

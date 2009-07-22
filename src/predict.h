@@ -25,8 +25,8 @@
 #ifndef __PREDICT_H__
 #define __PREDICT_H__
 
-int predict_full(unsigned int n1, double *zp, double *zpm, double *zps2, double *zpjitter,
-		 unsigned int n2, double *zz, double *zzm, double *zzs2, double *zzjitter,
+int predict_full(unsigned int n1, double *zp, double *zpm, double *zpvm, double *zps2, double *zpjitter,
+		 unsigned int n2, double *zz, double *zzm, double *zzvm, double *zzs2, double *zzjitter,
 		 double **Ds2xy, double *improv, double *Z, unsigned int col, double **F, 
 		 double **K, double **Ki, double **W, double tau2, double **FF, double **xxKx, 
 		 double ** xxKxx, double *KKdiag, double *b, double ss2, double Zmin, int err, 
@@ -63,7 +63,6 @@ void predict_no_delta(double *zzm, double *zzs2, unsigned int n1, unsigned int n
 void predict_help(unsigned int n1, unsigned int col, double *b, double **F, double *Z, 
 		  double **W, double tau2, double **K, double **Ki, double **FW, 
 		  double **KpFWFi, double *KiZmFb);
-int predict_draw(unsigned int n, double *z, double *mean, double *s, int err, void *state);
 unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, int numirank, double *w);
 void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac);
 

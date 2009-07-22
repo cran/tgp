@@ -387,13 +387,15 @@ void Model::Predict(Tree* leaf, Preds* preds, unsigned int index,
 		bool dnorm, void *state)
 {
   /* these declarations just make for shorter function arguments below */
-  double *Zp, *Zpm, *Zps2, *ZZ, *ZZm, *ZZs2, *improv, *Ds2x;
+  double *Zp, *Zpm, *Zpvm, *Zps2, *ZZ, *ZZm, *ZZvm, *ZZs2, *improv, *Ds2x;
 
   if(preds->Zp) Zp = preds->Zp[index]; else Zp = NULL;
   if(preds->Zpm) Zpm = preds->Zpm[index]; else Zpm = NULL;
+  if(preds->Zpvm) Zpvm = preds->Zpvm[index]; else Zpvm = NULL;
   if(preds->Zps2) Zps2 = preds->Zps2[index]; else Zps2 = NULL;
   if(preds->ZZ) ZZ = preds->ZZ[index]; else ZZ = NULL;
   if(preds->ZZm) ZZm = preds->ZZm[index]; else ZZm = NULL;
+  if(preds->ZZvm) ZZvm = preds->ZZvm[index]; else ZZvm = NULL;
   if(preds->ZZs2) ZZs2 = preds->ZZs2[index]; else ZZs2 = NULL;
   if(preds->Ds2x) Ds2x = preds->Ds2x[index]; else Ds2x = NULL;
   if(preds->improv) improv = preds->improv[index]; else improv = NULL;
@@ -402,7 +404,7 @@ void Model::Predict(Tree* leaf, Preds* preds, unsigned int index,
   if(preds->ZZ) Trace(leaf, index); /* checks if trace=TRUE inside Trace */
 
   /* here is where the actual prediction happens */
-  leaf->Predict(Zp, Zpm, Zps2, ZZ, ZZm, ZZs2, Ds2x, improv, Zmin, wZmin, dnorm, state);
+  leaf->Predict(Zp, Zpm, Zpvm, Zps2, ZZ, ZZm, ZZvm, ZZs2, Ds2x, improv, Zmin, wZmin, dnorm, state);
 }
 
 

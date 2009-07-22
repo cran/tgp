@@ -686,6 +686,7 @@ double log_nug_prior_pdf(nug, alpha, beta)
 double nug;
 double alpha[2], beta[2];
 {
+  if(alpha[0] <= 0) return 0;
   return(gamma_mixture_pdf(nug-NUGMIN, alpha, beta));
 }
 
@@ -693,14 +694,16 @@ double alpha[2], beta[2];
 /*
  * nug_prior_rand:
  *
- * rand draws from mixture prior for d and nug
+ * rand draws from mixture prior for d and nug, with a 
+ * hook to always return the same value
  */
 
 double nug_prior_rand(alpha, beta, state)
 double alpha[2], beta[2];
 void *state;
 {
-  return gamma_mixture_rand(alpha, beta, state) + NUGMIN;
+  if(alpha[0] <= 0) return beta[0];
+  else return gamma_mixture_rand(alpha, beta, state) + NUGMIN;
 }
 
 
@@ -1228,6 +1231,9 @@ void *state;
   unsigned int i;
   unsigned int m = 0;
   
+  /* do nothing if the prior says to fix the nug */
+  if(nug_alpha[0] == 0) return nuglast;
+
   /* propose new d, and compute proposal probability */
   nug = nug_draw(nuglast, &q_fwd, &q_bak, state);
   

@@ -1,3 +1,12 @@
+2.2-3 (22 Jul 2009)
+-----
+
+added nug.p=0 option to cause the nugget to stay fixed
+at the params$gd[1] value.  bcart, btlm, and blm now
+automatically use nug.p=0 since the nugget is not
+identified in these models 
+
+
 2.2-2 (27 May 2009)
 -----
 

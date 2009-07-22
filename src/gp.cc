@@ -396,10 +396,9 @@ bool Gp::Draw(void *state)
  * correct sizes
  */
 
-void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
-		 unsigned int nn, double *zz, double *zzm, double *zzs2,
-		 double **ds2xy, double *improv, double Zmin, bool err,
-		 void *state)
+void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zpvm, double *zps2,
+		 unsigned int nn, double *zz, double *zzm, double *zzvm, double *zzs2,
+		 double **ds2xy, double *improv, double Zmin, bool err, void *state)
 {
   assert(this->n == n);
   assert(this->nn == nn);
@@ -411,7 +410,7 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
     /* under the limiting linear */
     double *Kdiag = corr->CorrDiag(n,X);
     double *KKdiag = corr->CorrDiag(nn,XX);
-    predict_full_linear(n, zp, zpm, zps2, Kdiag, nn, zz, zzm, zzs2, KKdiag,
+    predict_full_linear(n, zp, zpm, zpvm, zps2, Kdiag, nn, zz, zzm, zzvm, zzs2, KKdiag,
 			ds2xy, improv, Z, col, F, FF, bmu, s2, Vb, Zmin, err, state);
     if(Kdiag) free(Kdiag);
     if(KKdiag) free(KKdiag);
@@ -422,7 +421,7 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zps2,
     double *KKdiag;
     if(!xxKxx) KKdiag = corr->CorrDiag(nn,XX);
     else KKdiag = NULL;
-    warn = predict_full(n, zp, zpm, zps2, zpjitter, nn, zz, zzm, zzs2, zzjitter,
+    warn = predict_full(n, zp, zpm, zpvm, zps2, zpjitter, nn, zz, zzm, zzvm, zzs2, zzjitter,
 			ds2xy, improv, Z, col, F, corr->get_K(), corr->get_Ki(), 
 			((Gp_Prior*)prior)->get_T(), tau2, FF, xxKx, xxKxx, KKdiag,
 			bmu, s2, Zmin, err, state);

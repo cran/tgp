@@ -275,14 +275,16 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, const char* w
  * get_mix_prior_params_double:
  * 
  * reading the mixture hierarchical priors from a string
+ * zero-values in alpha[0] indicate that the prior fixes
+ * the parameter to beta[0] in the prior
  */
 
 void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, const char* which)
 {
-  assert((alpha[0] = alpha_beta[0]) > 0);
-  assert((beta[0] = alpha_beta[1]) > 0);
-  assert((alpha[1] = alpha_beta[2]) > 0);
-  assert((beta[1] = alpha_beta[3]) > 0);
+  assert((alpha[0] = alpha_beta[0]) >= 0);
+  assert((beta[0] = alpha_beta[1]) >= 0);
+  assert((alpha[1] = alpha_beta[2]) >= 0);
+  assert((beta[1] = alpha_beta[3]) >= 0);
   /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
      which, alpha[0], beta[0], alpha[1], beta[1]); */
 }

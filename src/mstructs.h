@@ -47,9 +47,11 @@ typedef struct preds
   double *itemp;        /* importance sampling inv-temperature */
   double **ZZ;		/* predictions at candidates XX */
   double **ZZm;         /* Normal predictive mean at XX */
+  double **ZZvm;        /* Variance of additive mean (ignoring jitter) at XX */
   double **ZZs2;        /* Normal predictive var at XX */
   double **Zp;		/* predictions at inputs X */
   double **Zpm;         /* Normal predictive mean at X */
+  double **Zpvm;        /* Variance of additive mean (ignoring jitter) at X */
   double **Zps2;        /* Normal predictive var at X */
   double **improv;      /* expected global optimization */
   double **Ds2x;	/* delta-sigma calculation for XX */
