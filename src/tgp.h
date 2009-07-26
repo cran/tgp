@@ -90,8 +90,8 @@ class Tgp
   void Predict(void);
 
   /* posterior predictive summary statistics */
-  void GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, 
-		double *ZZ_km, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
+  void GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, double *ZZ_km, 
+		double *Zp_kvm, double *ZZ_kvm, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
 		double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,

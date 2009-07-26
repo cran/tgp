@@ -106,7 +106,7 @@ function(d, meanfn=c("linear", "constant") ,
   }
 
   ## Replace the parameters with ellipsis arguments,
-  ## these should match the entries of parames, or be "minpart"
+  ## these should match the entries of params, or be "minpart"
   plist <- list( ... )
   args <- names(plist)
   if(length(plist)>0) {
@@ -256,10 +256,12 @@ function(params, d)
   p <- c(p, as.numeric(params$gd))
 
   ## mixture of gamma (initial) prior parameters for nug
+  if(length(params$nug.p) == 1 && params$nug.p[1] == 0) params$nug.p <- rep(0,4)
   if(length(params$nug.p) != 4) {
     stop(paste("length of params$nug.p should be 4 you have", 
               length(params$nug.p),"\n"));
   }
+  if(params$nug.p[1] == 0) params$nug.p[2] <- params$gd[1]
   p <- c(p, as.numeric(params$nug.p))
 
   ## hierarchical prior params for nugget g (exponentials) or "fixed"
@@ -282,6 +284,7 @@ function(params, d)
  
   ## mixture of gamma (initial) prior parameters for range parameter d
 
+  ## if(length(params$d.p) == 1 && params$d.p[1] == 0) params$d.p <- rep(0,4)
   if(length(params$d.p) != 8 && params$corr == "mrexpsep") {
     stop(paste("length of params$d.p should be 8 you have", 
               length(params$d.p),"\n"));
@@ -290,6 +293,8 @@ function(params, d)
     stop(paste("length of params$d.p should be 4 you have", 
               length(params$d.p),"\n"));
   }
+  if(params$d.p[1] == 0) params$d.p[2] <- params$gd[2]
+  if(length(params$d.p) == 8 && params$d.p[5] == 0) params$d.p[6] <- params$gd[2]
 
   ## finally, set the params$d.p 
   p <- c(p, as.numeric(params$d.p))

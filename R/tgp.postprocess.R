@@ -40,7 +40,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   
   ## deal with predictive data locations (ZZ)
   if(ll$nn == 0 || (ll$BTE[2]-ll$BTE[1])==0 || !is.null(sens.p)) { 
-    ll$XX <- ll$ZZ.mean <- ll$ZZ.s2 <-  ll$ZZ.q <- ll$ZZ.km <- ll$ZZ.ks2 <- NULL
+    ll$XX <- ll$ZZ.mean <- ll$ZZ.s2 <-  ll$ZZ.q <- ll$ZZ.km <- ll$ZZ.ks2 <- ll$ZZ.vark <- NULL
     ll$ZZ.q1 <- ll$ZZ.med <- ll$ZZ.q2 <- ll$ZpZZ.s2 <- ll$Ds2x <- ll$improv <- NULL
   } else {
     ## do predictive input/output processing
@@ -67,7 +67,7 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
   ## NULL-out data-predictive output if unused
   if(pred.n == FALSE || ll$BTE[2]-ll$BTE[1] == 0) {
     ll$Zp.mean <- ll$Zp.q <- ll$Zp.q1 <- ll$Zp.q2 <- NULL;
-    ll$Zp.s2 <- ll$ZpZZ.s2 <-  ll$Zp.km <-  ll$Zp.ks2 <- ll$Zp.med <- NULL
+    ll$Zp.s2 <- ll$ZpZZ.s2 <-  ll$Zp.km <-  ll$Zp.vark <- ll$Zp.ks2 <- ll$Zp.med <- NULL
   }
   
   ## gather information about partitions
@@ -152,6 +152,8 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
     ll$ZZ.mean <- undo.mean0.range1(ll$ZZ.mean,Zm0r1$undo)
     ll$Zp.km <- undo.mean0.range1(ll$Zp.km,Zm0r1$undo)
     ll$ZZ.km <- undo.mean0.range1(ll$ZZ.km,Zm0r1$undo)
+    ll$Zp.vark <- undo.mean0.range1(ll$Zp.vark,Zm0r1$undo, nomean=TRUE, s2=TRUE)
+    ll$ZZ.vark <- undo.mean0.range1(ll$ZZ.vark,Zm0r1$undo, nomean=TRUE, s2=TRUE)
     ll$Zp.ks2 <- undo.mean0.range1(ll$Zp.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
     ll$ZZ.ks2 <- undo.mean0.range1(ll$ZZ.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)
     ll$ZpZZ.ks2 <- undo.mean0.range1(ll$ZpZZ.ks2,Zm0r1$undo, nomean=TRUE, s2=TRUE)

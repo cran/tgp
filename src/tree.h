@@ -124,8 +124,8 @@ class Tree
   
   /* things that model (module) will initiate 
    * on ONLY leaf nodes */
-  void Predict(double *Zp, double *Zpm, double *Zps2,double *ZZ, 
-	       double *ZZm, double *ZZs2, double *Ds2x, double *improv,
+  void Predict(double *Zp, double *Zpm, double *Zpvm, double *Zps2,double *ZZ, 
+	       double *ZZm, double *ZZvm, double *ZZs2, double *Ds2x, double *improv,
 	       double Zmin, unsigned int wZmin, bool err, void *state);
   
   /* propose tree operations */

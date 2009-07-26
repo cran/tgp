@@ -69,7 +69,6 @@ double *FFrow, *KKrow, *KiZmFb, *b;
   return zzm;
 }
 
-
 /*
  * predict_data: 
  * 
@@ -82,7 +81,7 @@ double *FFrow, *KKrow, *KiZmFb, *b;
 
 void predict_data(zpm,zps2,n1,col,FFrow,K,b,ss2,zpjitter,KiZmFb)
 unsigned int n1, col;
-double *b, *KiZmFb, *zpm, *zps2, *zpjitter;
+double *b, *KiZmFb, *zpm,  *zps2, *zpjitter;
 double **FFrow, **K;
 double ss2;
 {
@@ -420,12 +419,12 @@ int err;
  * returns the number of warnings
  */
 
-int predict_full(n1, zp, zpm, zps2, zpjitter, n2, zz, zzm, zzs2, zzjitter, 
+int predict_full(n1, zp, zpm, zpvm, zps2, zpjitter, n2, zz, zzm, zzvm, zzs2, zzjitter, 
 		 Ds2xy, improv, Z, col, F, K, Ki, W, tau2, FF, 
 		 xxKx, xxKxx, KKdiag,  b, ss2, Zmin, err, state)
 unsigned int n1, n2, col;
 int err;
-double *zp, *zpm, *zps2, *zpjitter, *zz, *zzm, *zzs2, *zzjitter, *Z, *b, *improv, *KKdiag;
+double *zp, *zpm, *zpvm, *zps2, *zpjitter, *zz, *zzm, *zzvm, *zzs2, *zzjitter, *Z, *b, *improv, *KKdiag;
 double **F, **K, **Ki, **W, **FF, **xxKx, **xxKxx, **Ds2xy;
 double ss2, tau2, Zmin;
 void *state;
@@ -476,6 +475,12 @@ void *state;
     
     /* draw from the posterior predictive distribution */
     warn += predict_draw(n2, zz, zzm, zzs2, err, state);
+    /* draw from the posterior mean surface distribution (no jitter) */
+    double *ezvar = new_vector(n2);
+    int i;
+    for(i=0; i<n2; i++) ezvar[i] = zzs2[i] - ss2*zzjitter[i];
+    predict_draw(n2, zzvm, zzm, ezvar, err, state);
+    free(ezvar);
   }
 
   if(zp) {    /* predicting at the data locations */
@@ -486,13 +491,19 @@ void *state;
     Frow = new_t_matrix(F, col, n1);
 
     /* calculate the necessary means and vars for prediction */
-    predict_data(zpm,zps2,n1,col,Frow,K,b,ss2,zpjitter,KiZmFb);
+    predict_data(zpm, zps2,n1,col,Frow,K,b,ss2,zpjitter,KiZmFb);
 
     /* clean up the transposed F-matrix */
     delete_matrix(Frow);
 
     /* draw from the posterior predictive distribution */
     warn += predict_draw(n1, zp, zpm, zps2, err, state);
+    /* draw from the posterior mean surface distribution (no jitter) */
+    double *ezvar = new_vector(n1);
+    int i;
+    for(i=0; i<n1; i++) ezvar[i] = zps2[i] - ss2*zpjitter[i];
+    predict_draw(n1, zpvm, zpm, ezvar, err, state);
+    free(ezvar);
     
   }
 

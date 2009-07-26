@@ -125,8 +125,10 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
   params$bprior <- bprior
   params$tree[1:2] <- c(0,0) # no tree
   params$gamma <- c(-1,0.2,0.7)	# force llm
+  params$nug.p <- 0 ## force a fixed nugget
+  params$gd[1] <- 0 ## fix the nugget at zero
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,
-             zcov,krige,Ds2x,improv,sens.p,trace,verb))
+             krige,zcov,Ds2x,improv,sens.p,trace,verb))
 }
 
 
@@ -168,6 +170,8 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
   params$bprior <- bprior
   params$tree[1:2] <- tree
   params$gamma <- c(-1,0.2,0.7)	# no llm
+  params$nug.p <- 0 ## force a nugget 
+  params$gd[1] <- 0 ## fix the nugget at zero
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,
              Ds2x,improv,sens.p, trace,verb))
 }

@@ -56,8 +56,8 @@ void tgp(int* state_in,
 	 int *MAP_in, int *sens_ngrid, double *sens_span, double *sens_Xgrid_in,  
 
 	 /* outputs to R */
-	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, double *ZZ_km_out,
-	 double *Zp_q_out, double *ZZ_q_out, double *Zp_s2_out, double *ZZ_s2_out, 
+	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, double *ZZ_km_out, double *Zp_kvm_out,
+	 double *ZZ_kvm_out, double *Zp_q_out, double *ZZ_q_out, double *Zp_s2_out, double *ZZ_s2_out, 
 	 double *ZpZZ_s2_out, double *Zp_ks2_out, double *ZZ_ks2_out, double *Zp_q1_out, 
 	 double *Zp_median_out, double *Zp_q2_out, double *ZZ_q1_out, double *ZZ_median_out, 
 	 double *ZZ_q2_out, double *Ds2x_out, double *improv_out, int *irank_out, 
@@ -90,8 +90,8 @@ void tgp(int* state_in,
   else tgpm->Rounds();
 
   /* gather the posterior predictive statistics from the MCMC rounds */
-  tgpm->GetStats(!((bool)*MAP_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, 
-		 Zp_q_out, ZZ_q_out, (bool) (*zcov_in), Zp_s2_out, ZZ_s2_out, ZpZZ_s2_out, 
+  tgpm->GetStats(!((bool)*MAP_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, Zp_kvm_out, 
+		 ZZ_kvm_out, Zp_q_out, ZZ_q_out, (bool) (*zcov_in), Zp_s2_out, ZZ_s2_out, ZpZZ_s2_out, 
 		 Zp_ks2_out, ZZ_ks2_out, Zp_q1_out, Zp_median_out, Zp_q2_out, ZZ_q1_out, 
 		 ZZ_median_out, ZZ_q2_out, Ds2x_out, improv_out, improv_in[1], irank_out, 
 		 ess_out);
@@ -251,7 +251,7 @@ void Tgp::Init(void)
   else myprintf(stdout, "Using default params.\n");
 
   /* get  the rectangle */
-  // rect = getXdataRect(X, n, d, XX, nn);
+  /* rect = getXdataRect(X, n, d, XX, nn); */
   /* now Xsplit governs the rectangle */
   rect = get_data_rect(Xsplit, nsplit, d);
 
@@ -590,8 +590,8 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
  * is no need for traces of weights because they should be constant
  */
 
-void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, 
-		   double *ZZ_km, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
+void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km, double *ZZ_km,  
+		   double *Zp_kvm, double *ZZ_kvm, double *Zp_q, double *ZZ_q, bool zcov, double *Zp_s2, 
 		   double *ZZ_s2, double *ZpZZ_s2, double *Zp_ks2, double *ZZ_ks2, 
 		   double *Zp_q1, double *Zp_median, double *Zp_q2, double *ZZ_q1, 
 		   double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
@@ -625,6 +625,8 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
 
     /* kriging mean */
     if(Zp_km) wmean_of_columns(Zp_km, cump->Zpm, cump->R, n, w);
+    if(Zp_km) wvar_of_columns(Zp_kvm, cump->Zpvm, cump->R, n, w);
+
 
     /* variance (computed from samples Zp) */
     if(zcov) {
@@ -652,9 +654,12 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
     
     /* mean */
     wmean_of_columns(ZZ_mean, cump->ZZ, cump->R, nn, w);
-    
+
+
     /* kriging mean */
     if(ZZ_km) wmean_of_columns(ZZ_km, cump->ZZm, cump->R, nn, w);
+    if(ZZ_km) wvar_of_columns(ZZ_kvm, cump->ZZvm, cump->R, nn, w);
+
 
     /* variance (computed from samples ZZ) */
     if(zcov) { /* calculate the covarince between all predictive locations */
@@ -792,12 +797,12 @@ void Tgp::Print(FILE *outfile)
   printRNGstate(state, stdout);
 
   /* print predictive statistic types */
-  if(pred_n || delta_s2 || improv) myprintf(stdout, "preds:");
+  if(pred_n || (delta_s2 || improv)) myprintf(stdout, "preds:");
   if(pred_n) myprintf(stdout, " data");
   if(krige && (pred_n || nn)) myprintf(stdout, " krige");
   if(delta_s2) myprintf(stdout, " ALC");
   if(improv) myprintf(stdout, " improv");
-  if(pred_n || krige && (pred_n || nn) || delta_s2 || improv) 
+  if(pred_n || (((krige && (pred_n || nn)) || delta_s2) || improv)) 
     myprintf(stdout, "\n");
   myflush(stdout);
 

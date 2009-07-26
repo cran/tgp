@@ -107,10 +107,12 @@ Preds* new_preds(double **XX, unsigned int nn, unsigned int n, unsigned int d,
   /* allocations only necessary when saving kriging data */
   if(krige) { 
     preds->ZZm = new_zero_matrix(preds->R, nn);
+    preds->ZZvm = new_zero_matrix(preds->R, nn);
     preds->ZZs2 = new_zero_matrix(preds->R, nn);
     preds->Zpm = new_zero_matrix(preds->R, n*pred_n);
+    preds->Zpvm = new_zero_matrix(preds->R, n*pred_n);
     preds->Zps2 = new_zero_matrix(preds->R, n * pred_n);
-  } else { preds->ZZm = preds->ZZs2 = preds->Zpm = preds->Zps2 = NULL; }
+  } else { preds->ZZm = preds->ZZvm = preds->ZZs2 = preds->Zpm = preds->Zpvm = preds->Zps2 = NULL; }
   
   /* allocations only necessary when calculating ALC and Improv 
    * statistics */
@@ -144,9 +146,11 @@ void import_preds(Preds* to, unsigned int where, Preds *from)
   if(from->itemp) dupv(&(to->itemp[where]), from->itemp, from->R);
   if(from->ZZ) dupv(to->ZZ[where], from->ZZ[0], from->R * from->nn);
   if(from->ZZm) dupv(to->ZZm[where], from->ZZm[0], from->R * from->nn);
+  if(from->ZZvm) dupv(to->ZZvm[where], from->ZZvm[0], from->R * from->nn);
   if(from->ZZs2) dupv(to->ZZs2[where], from->ZZs2[0], from->R * from->nn);
   if(from->Zp) dupv(to->Zp[where], from->Zp[0], from->R * from->n);
   if(from->Zpm) dupv(to->Zpm[where], from->Zpm[0], from->R * from->n);
+  if(from->Zpvm) dupv(to->Zpvm[where], from->Zpvm[0], from->R * from->n);
   if(from->Zps2) dupv(to->Zps2[where], from->Zps2[0], from->R * from->n);
   if(from->Ds2x) dupv(to->Ds2x[where], from->Ds2x[0], from->R * from->nn);
   if(from->improv) dupv(to->improv[where], from->improv[0], from->R * from->nn);
@@ -197,9 +201,11 @@ void delete_preds(Preds* preds)
   if(preds->XX) delete_matrix(preds->XX);
   if(preds->ZZ) delete_matrix(preds->ZZ);
   if(preds->ZZm) delete_matrix(preds->ZZm);
+  if(preds->ZZvm) delete_matrix(preds->ZZvm);
   if(preds->ZZs2) delete_matrix(preds->ZZs2);
   if(preds->Zp) delete_matrix(preds->Zp);
   if(preds->Zpm) delete_matrix(preds->Zpm);
+  if(preds->Zpvm) delete_matrix(preds->Zpvm);
   if(preds->Zps2) delete_matrix(preds->Zps2);
   if(preds->Ds2x) delete_matrix(preds->Ds2x);
   if(preds->improv) delete_matrix(preds->improv);

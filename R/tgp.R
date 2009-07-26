@@ -144,7 +144,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   
   # RNG seed
   state <- sample(seq(0,999), 3)
-
+  
   ## run the C code
   ll <- .C("tgp",
            
@@ -179,6 +179,8 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            ZZ.mean = double(nnprime),
            Zp.km = double(krige * pred.n * n),
            ZZ.km = double(krige * nnprime),
+           Zp.vark = double(krige * pred.n * n),
+           ZZ.vark = double(krige * nnprime),
            Zp.q = double(pred.n * n),
            ZZ.q = double(nnprime),
            Zp.s2 = double(pred.n * (zcov*n^2 + (!zcov)*n)),

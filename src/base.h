@@ -82,8 +82,8 @@ class Base
   virtual void Update(double **X, unsigned int n, unsigned int d, double *Z)=0;
   virtual void UpdatePred(double **XX, unsigned int nn, unsigned int d, bool Ds2xy)=0;
   virtual bool Draw(void *state)=0;
-  virtual void Predict(unsigned int n, double *zp, double *zpm, double *zps2,
-		       unsigned int nn, double *zz, double *zzm, double *zzs2,
+  virtual void Predict(unsigned int n, double *zp, double *zpm, double *zpvm, double *zps2,
+		       unsigned int nn, double *zz, double *zzm, double *zzvm, double *zzs2,
 		       double **ds2xy, double *improv, double Zmin, bool err, 
 		       void *state)=0;
   virtual void Match(Base* gp_old)=0;

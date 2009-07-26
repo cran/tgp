@@ -23,7 +23,7 @@
 
 
 #include "rhelp.h"
-/* #include "rand_draws.h" */
+
 #include "matrix.h"
 #include <assert.h>
 #include <math.h>
@@ -544,7 +544,7 @@ void norm_columns(double **M, double *norm, unsigned int n1, unsigned int n2)
 /*
  * wmean_of_columns:
  *
- * fill mean[n1] with the weighted mean of the columns of M (n1 x n2);
+ * fill mean[n2] with the weighted mean of the columns of M (n1 x n2);
  * weight vector should have length n1;
  */
 
@@ -569,6 +569,46 @@ void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2
     else for(j=0; j<n1; j++) mean[i] += M[j][i];	
     mean[i] = mean[i] / sw;
   }
+}
+
+/*
+ * wvar_of_columns:
+ *
+ * fill var[n2] with the weighted variance of the columns of M (n1 x n2);
+ * weight vector should have length n1;
+ */
+
+void wvar_of_columns(double *var, double **M, unsigned int n1, unsigned int n2,
+		      double *weight)
+{
+  unsigned int i,j;
+  double sw;
+  double *mean = new_vector(n2);
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(mean && M && var);
+  
+  /* find normailzation constant */
+  if(weight) sw = sumv(weight, n1); 
+  else sw = (double) n1;
+
+  /* calculate mean of columns */
+  for(i=0; i<n2; i++) {
+    mean[i] = 0;
+    if(weight) for(j=0; j<n1; j++) mean[i] += weight[j] * M[j][i];	
+    else for(j=0; j<n1; j++) mean[i] += M[j][i];	
+    mean[i] = mean[i]/sw;
+  }
+
+  /* calculate variance of columns */
+  for(i=0; i<n2; i++) {
+    var[i] = 0;
+    if(weight) for(j=0; j<n1; j++) var[i] += weight[j] * (M[j][i] - mean[i]) * (M[j][i] - mean[i]);	
+    else for(j=0; j<n1; j++) var[i] +=  (M[j][i] - mean[i]) * (M[j][i] - mean[i]);	
+    var[i] = var[i]/sw;
+  }
+
+  free(mean);
 }
 
 
@@ -1379,17 +1419,18 @@ void matrix_t_to_file(const char* file_str, double** matrix, unsigned int n1,
  */
 
 void sub_p_matrix(double **V, int *p, double **v, 
-		unsigned int nrows, unsigned int lenp)
+		  unsigned int nrows, unsigned int lenp, 
+		  unsigned int col_offset)
 {
   int i,j;
   assert(V); assert(p); assert(v); assert(nrows > 0 && lenp > 0);
   for(i=0; i<nrows; i++) for(j=0; j<lenp; j++) 
-    V[i][j] = v[i][p[j]];
+    V[i][j+col_offset] = v[i][p[j]];
 }
 
 
 /*
- * new_p_matrix::
+ * new_p_submatrix:
  *
  * create a new matrix from the columns of v, specified
  * by p.  Must have have nrow(v) == nrow(V) and ncol(V) >= ncols
@@ -1397,13 +1438,12 @@ void sub_p_matrix(double **V, int *p, double **v,
  */
 
 double **new_p_submatrix(int *p, double **v, unsigned int nrows, 
-			 unsigned int ncols)
+			 unsigned int ncols, unsigned int col_offset)
 {
   double **V;
-  if(nrows == 0 || ncols == 0) return NULL;
-  assert(p); assert(v);
-  V = new_matrix(nrows, ncols);
-  sub_p_matrix(V, p, v, nrows, ncols);
+  if(nrows == 0 || ncols+col_offset == 0) return NULL;
+  V = new_matrix(nrows, ncols + col_offset);
+  if(ncols > 0) sub_p_matrix(V, p, v, nrows, ncols, col_offset);
   return(V);
 }
 
