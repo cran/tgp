@@ -34,11 +34,11 @@ interp.loess(x, y, z, gridlen = c(40,40), span = 0.1, ...)
 }
 
 \details{
-  Uses \code{\link[bas]{expand.grid}} function to produce a uniform
+  Uses \code{\link[base]{expand.grid}} function to produce a uniform
   grid of size \code{gridlen} with domain equal to the rectangle implied
   by \code{X} and \code{Y}.  Then, a \code{\link[stats]{loess}} a smoother
   is fit to the data \code{Z = f(X,Y)}.  Finally,
-  \code{\link[base]{predict.loess}} is used to  predict onto the grid.
+  \code{\link[stats]{predict.loess}} is used to  predict onto the grid.
 }
 \value{
   The output is a list compatible with the 2-d plotting functions

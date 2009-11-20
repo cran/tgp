@@ -1,3 +1,17 @@
+2.2-4 (20 Nov 2009)
+-----
+
+added a check for a full rank design matrix in the
+pre-processing of inputs
+
+corrected some syntax errors in .Rd files caught by 
+new checks on CRAN
+
+changed sens warning to check for nn > 0 instead of null
+XX which was causing a warning to be printed every time
+regardless of whether or not there was a violation
+
+
 2.2-3 (22 Jul 2009)
 -----
 

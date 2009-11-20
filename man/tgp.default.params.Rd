@@ -61,7 +61,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
    \item{start}{\code{c(0.5,0.1,1.0,1.0)} starting values for range \eqn{d}{d},
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}
    \item{beta}{\code{rep(0,col)} starting values for beta linear parameters}
-   \item{tree}{\code{c(0.5,2,min(c(10,col+1)),1)} indicating the tree prior 
+   \item{tree}{\code{c(0.5,2,max(c(10,col+1)),1)} indicating the tree prior 
      process parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
      and \emph{splitmin}:
      \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
@@ -85,7 +85,9 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
      are the equivalent prior parameters for the range parameter(s) in the residual "fine" process.}
    \item{nug.p}{\code{c(1,1,1,1)} Mixture of gamma prior parameter (initial values)
      for the nugget parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
-     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior}
+     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior;
+     specifying \code{nug.p = 0} fixes the nugget parameter to the \dQuote{starting} 
+     calue in \code{gd[0]}, i.e., it is excluded from the MCMC}
    \item{gamma}{\code{c(10,0.2,10)}
         LLM parameters c(g, t1, t2), with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
@@ -143,7 +145,7 @@ Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 
 \note{Please refer to the examples for the functions in
-"See Also" below, \code{vignette("tgp") and \code{vignette(tgp2)} }
+"See Also" below, \code{vignette("tgp")} and \code{vignette(tgp2)}
 }
 
 \seealso{ \code{\link{blm}}, \code{\link{btlm}}, \code{\link{bgp}},

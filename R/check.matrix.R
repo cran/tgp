@@ -68,12 +68,12 @@ function(X, Z=NULL)
   ## oops, no data:
   if(length(neitherX) == 0)
     stop("no valid (non-NA NaN or Inf) data found")
-  
+
   ## combine good X and Z rows
   neither <- intersect(neitherZ, neitherX)
   X <- matrix(X[neither,], nrow=length(neither))
   Z <- Z[neither]
-  
+
   return(list(X=X, Z=Z))
 }
 
