@@ -126,7 +126,7 @@ Matt Taddy, \email{taddy@ams.ucsc.edu}
 }
 \seealso{ \code{\link{btgp}}, etc., \code{\link{optim}},
   \code{\link{optimize}}, \code{\link{tgp.design}},
-  \code{\link{predict.tgp}, \code{\link{dopt.gp}} }
+  \code{\link{predict.tgp}}, \code{\link{dopt.gp}}
   }
 \examples{
 ## optimize the simple exponential function 

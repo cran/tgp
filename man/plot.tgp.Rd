@@ -129,7 +129,7 @@
     Text is added to the plot near the \code{XX} positions of the first
     \code{1:rankmax} predictive locations with the highest ranks in the
     second column of the \code{improv} field. }
-  \item{\dots}{ Extra arguments to 1-d (\code{plot}) and 2-d plotting
+  \item{\dots}{ Extra arguments to 1-d (\code{\link[graphics]{plot}}) and 2-d plotting
     functions \code{persp} and \code{image}}
 }
 
@@ -173,11 +173,11 @@ Matt Taddy, \email{taddy@ams.ucsc.edu}
 	help files of those functions in "See Also", below
 }
 
-\seealso{ \code{\link[base]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
+\seealso{ \code{\link[graphics]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
   \code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
   \code{\link{predict.tgp}},
   \code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link[akima]{interp}},
-  \code{\link[base]{loess}}, \code{\link{sens}}}
+  \code{\link[stats]{loess}}, \code{\link{sens}}}
 
 \keyword{ hplot }
 \keyword{ tree }

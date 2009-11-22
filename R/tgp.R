@@ -54,7 +54,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   X <- XZ$X; Z <- XZ$Z
   n <- nrow(X); d <- ncol(X)
   if(is.null(n)) stop("nrow(X) is NULL")
-  
+
   ## check XX
   XX <- check.matrix(XX)$X
   if(is.null(XX)) { nn <- 0; XX <- matrix(0); nnprime <- 0 }
@@ -113,6 +113,15 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   
   ## deal with params
   if(is.null(params)) params <- tgp.default.params(d)
+
+  ## check if X is of full rank
+  if(params$meanfn == "linear" &&
+     class(try(solve(t(X[,1:params$tree[5]]) %*% X[,1:params$tree[5]]),
+               silent=TRUE)) == "try-error") {
+    stop("X[,1:", params$tree[5], "]-matrix is not of full rank", sep="")
+  }
+  
+  ## convert params into a double-vector for passing to C
   dparams <- tgp.check.params(params, d);
   if(is.null(dparams)) stop("Bad Parameter List")
 
@@ -125,7 +134,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
 
   ## if performining a sensitivity analysis, set up XX ##
   if(!is.null(sens.p)) {
-    if(!is.null(XX)) warning("XX generated online in sensitivity analyses")
+    if(nn > 0) warning("XX generated online in sensitivity analyses")
     nnprime <- 0
     sens.par <- check.sens(sens.p, d)
     nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX

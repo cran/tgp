@@ -109,7 +109,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
   ## if performing a sensitivity analysis, set up XX 
   if(!is.null(sens.p)){
     nnprime <- 0
-    if(!is.null(XX)) warning("XX generated online in sensitivity analyses")
+    if(nn > 0) warning("XX generated online in sensitivity analyses")
     sens.par <- check.sens(sens.p, object$d)
     nn <- sens.par$nn; nn.lhs <- sens.par$nn.lhs; XX <- sens.par$XX
     ngrid <- sens.par$ngrid; span <- sens.par$span
