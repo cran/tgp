@@ -6,6 +6,7 @@ library(tgp)
 seed <- 0; set.seed(seed)
 @ 
 
+
 %% Bobby says to Taddy:  Need to check that LHS stuff does the right
 %% thing for the inputs that are being treated as categorical.  Not
 %% sure what this means because exactly since "treating as categorical"
@@ -44,13 +45,27 @@ seed <- 0; set.seed(seed)
 %% Changes in the c-code only occur in tgp.cc, where the
 %% main effects calculation now takes basemax into consideration.
 
+Methods for understanding how inputs, or explanatory variables,
+contribute to the outputs, or response, of simple statistical models
+are by now classic in the literature and frequently used in
+practical application.  For example, in linear regression one can
+perform $F$--tests to ascertain the relevance of a predictor, or inspect
+the leverage of a particular input setting, or use Cooks' distance, to
+name a few.  Unfortunately, such convenient statistics/methods are not
+available for more complicated models, such as those in the {\tt tgp}
+family of nonparametric models.  A more advanced tool is needed.
+
 Sensitivity Analysis (SA) is a resolving of the sources of output
 variability by apportioning elements of this variation to different
-sets of input variables.  The edited volume by Saltelli et
-al.~\cite{SaltChanScot2000} provides a complete overview of the field.
-The analysis of response variability is useful in a variety of
-different settings.  For example, when there is a large number of
-input variables over which an objective function is to be optimized,
+sets of input variables.  It is applicable in wide generality.  The
+edited volume by Saltelli et al.~\cite{SaltChanScot2000} provides an
+overview of the field.  Valuable recent work on smoothing methods is
+found in \cite{StorHelt2008,VeigWahlGamb2009}, and Storlie, et
+al.~\cite{StorSwilHeltSall2009}, provide a nice overview of
+nonparametric regression methods for inference about sensitivity. The
+analysis of response variability is useful in a variety of different
+settings.  For example, when there is a large number of input
+variables over which an objective function is to be optimized,
 typically only a small subset will be influential within the confines
 of their uncertainty distribution.  SA can be used to reduce the input
 space of such optimizations \cite{TaddLeeGrayGrif2009}.  Other authors
@@ -103,46 +118,36 @@ measure of the output association with specific sets of variables and
 provide a basis upon which the importance of individual inputs may be
 judged.  The other common component of global SA is an accounting of
 the main effects for each input variable, $\mathbb{E}_{u_j}[z|x_j]$,
-which can be obtained as a by-product of the variance analysis.
+which can be obtained as a by-product of the variance analysis.  
 
-Our variance--based approach to SA is a version of the
-method of Sobol', wherein a deterministic objective function is
-decomposed into summands of functions on lower dimensional subsets of
-the input space. Consider the decomposition 
-\begin{equation*} \label{eqn:var_decomp}
-  f(x_1, \ldots ,x_d) = f_0 + \sum_{j=1}^df_j(x_j) +\sum_{1 \leq i < j \leq
-    d} f_{ij}(x_j,x_i) + \ldots + f_{1,\ldots,d}(x_1, \ldots ,x_d).
-\end{equation*}
-Sobol' shows \cite{Sobo1993} that, in the case of uncorrelated input
-variables, a unique orthogonal decomposition of this form is built
-through conditional marginalization of the original function with
-respect to $u$.  
-
-It is natural to extend this setting to response functions modeled
-conditionally as stochastic processes.  Instead of a response function
-$f(\mb{x})$, we speak of the full conditional distribution for
-response $z$ given inputs $\mb{x}$.  The marginal distribution for $z$
-may be defined as the marginal response distribution when $\mb{x}$ is
-allowed to vary according to $u$.  Global SA is then focused on the
-marginal conditional response distributions which arise when $z$ has
-been marginalized over one subset of covariates and the complement of
-this subset is allowed to vary according to a marginalized uncertainty
-distribution.  In particular, we can obtain the marginal conditional
-expectation $\mbb{E}[z|\mb{x}_J=\{x_j:j\in J\}]$ $=$
-$\int_{\mathbb{R}^{d-d_J}} \mbb{E}[z|\mb{x}]u(\mb{x}) d\mb{x}_{-J}$,
-where $J=\{j_1, \ldots, j_{d_J}\}$ indicates a subset of input
-variables, and the marginal uncertainty density is given by
+Our variance--based approach to SA is a version of the method of
+Sobol', wherein a deterministic objective function is decomposed into
+summands of functions on lower dimensional subsets of the input
+space. Consider the function decomposition $ f(x_1, \ldots ,x_d) = f_0
++ \sum_{j=1}^df_j(x_j) +\sum_{1 \leq i < j \leq d} f_{ij}(x_j,x_i) +
+\ldots + f_{1,\ldots,d}(x_1, \ldots ,x_d).  $ When the response $f$ is
+modeled as a stochastic process $z$ conditional on inputs $\mb{x}$, we
+can develop a similar decomposition into the response distributions
+which arise when $z$ has been marginalized over one subset of
+covariates and the complement of this subset is allowed to vary
+according to a marginalized uncertainty distribution.  In particular,
+we can obtain the marginal conditional expectation
+$\mbb{E}[z|\mb{x}_J=\{x_j:j\in J\}]$ $=$ $\int_{\mathbb{R}^{d-d_J}}
+\mbb{E}[z|\mb{x}]u(\mb{x}) d\mb{x}_{-J}$, where $J=\{j_1, \ldots,
+j_{d_J}\}$ indicates a subset of input variables, $\mb{x}_{-j}
+=\{x_j:j\notin J\}$, and the marginal uncertainty density is given by
 $u_J(\mb{x}_J) = \int_{\mathbb{R}^{d-d_J}} u(\mb{x}) d\{x_i:i \notin J
 \}$.  SA concerns the variability of $\mbb{E}[z|\mb{x}_J]$ with
-respect to changes in $\mb{x}_J$ according to $u_J(\mb{x}_J)$.
-
-In this new setting, if $u$ is such that the inputs are uncorrelated,
-Sobol's equation in (\ref{eqn:var_decomp}) may be re-written as the
-variance decomposition, $\mr{var}(\mbb{E}[z|\mb{x}]) = \sum_{j=1}^dV_j
-+ \sum_{1 \leq i < j \leq d} V_{ij} + \ldots + V_{1,\ldots,d}$, where
-$V_j = \mr{var}(\mbb{E}[z|x_j])$, $V_{ij}=\mr{var}(\mbb{E}[z|x_i,
-x_j]) - V_i - V_j$, and so on.  Clearly, when the inputs are
-correlated this identity no longer holds (although a
+respect to changes in $\mb{x}_J$ according to $u_J(\mb{x}_J)$ and, if
+$u$ is such that the inputs are uncorrelated, the variance
+decomposition is available as
+\begin{equation} \label{eqn:var_decomp}
+  \mr{var}(\mbb{E}[z|\mb{x}]) = \sum_{j=1}^dV_j
++ \sum_{1 \leq i < j \leq d} V_{ij} + \ldots + V_{1,\ldots,d},
+\end{equation}
+where $V_j = \mr{var}(\mbb{E}[z|x_j])$,
+$V_{ij}=\mr{var}(\mbb{E}[z|x_i, x_j]) - V_i - V_j$, and so on.   Clearly, when the
+inputs are correlated this identity no longer holds (although a
 ``less-than-or-equal-to'' inequality is always true).  But it is
 useful to retain an intuitive interpretation of the $V_J$'s as a
 portion of the overall marginal variance.
@@ -153,7 +158,7 @@ sum to one over all possible $J$ and are bounded to $[0,1]$.  These
 $S_J$'s provide a natural measure of the {\it importance} of a set $J$
 of inputs and serve as the basis for an elegant analysis of
 sensitivity.  The {\tt sens} function allows for easy calculation of
-two very influential sensitivity indices associated with each input:
+two very important sensitivity indices associated with each input:
 the 1$^{\rm st}$ order for the $j$th input variable,
 \begin{equation}
 S_j = \frac{\mr{var}\left(\mbb{E}\left[z|x_j\right]\right)}{\mr{var}(z)},
@@ -185,11 +190,14 @@ for optimization problems.
 Due to the many integrals involved, estimation of the sensitivity
 indices is not straightforward.  The influential paper by Oakley \&
 O'Hagan \cite{OaklOhag2004} describes an empirical Bayes estimation
-procedure for the sensitivity indices; however, some variability in
-the indices is lost due to plug-in estimation of GP model parameters
-and, more worryingly, the variance ratios are only possible in the
-form of a ratio of expected values.  Likelihood based approaches have
-also been proposed
+procedure for the sensitivity indices, however some variability in the
+indices is lost due to plug-in estimation of GP model parameters and,
+more worryingly, the variance ratios are only possible in the form of
+a ratio of expected values.  Marrel, et
+al.~\cite{MarrIoosLaurRous2009}, provide a more complete analysis of
+the GP approach to this problem, but their methods remain restricted
+to estimation of the first order Sobol indices. Likelihood based
+approaches have also been proposed
 \cite{WelcBuckSackWynnMitcMorr1992,MorrKottTaddFurfGana2008}.  The
 technique implemented in {\tt tgp} is, in contrast, fully Bayesian and
 provides a complete accounting of the uncertainty involved.  Briefly,
@@ -197,8 +205,8 @@ at each iteration of an MCMC chain sampling from the treed GP
 posterior, output is predicted over a large (carefully chosen) set of
 input locations.  Conditional on this predicted output, the
 sensitivity indices can be calculated via Monte Carlo integration.  By
-conditioning on predicted response (and working as though it were the
-observed response), we obtain a posterior sample of the indices,
+conditioning on the predicted response (and working as though it were
+the observed response), we obtain a posterior sample of the indices,
 incorporating variability from both the integral estimation and
 uncertainty about the function output.  In particular, the {\tt sens}
 function includes a {\tt model} argument which allows for SA based on
@@ -266,7 +274,7 @@ it is possible to estimate $\widehat{\mbb{E}[z]} = \frac{1}{m}
 \sum_{k=1}^m\mbb{E}[z|{\bf s}_k]$ and $\widehat{\mr{var}[z]} =
 \frac{1}{m} \mbb{E}^T[z|M]\mbb{E}[z|M] - \widehat{\mbb{E}[z]}\widehat{\mbb{E}[z]}$,
 where the convenient notation $\mbb{E}[z|M]$ is taken to mean
-$\left[\mbb{E}[z|\bm{s}_1] \cdots \mbb{E}[z|\bm{s}_m]\right]^T$.  All
+$\left[\mbb{E}[z|\mb{s}_1] \cdots \mbb{E}[z|\mb{s}_m]\right]^T$.  All
 that remains is to estimate the $D$'s.  Define a second LHS $M'$
 proportional to $u$ of the same size as $M$ and say that $N_J$ is $M'$
 with the $J$ columns replaced by the corresponding columns of $M$.
@@ -298,7 +306,11 @@ order indices, as this brings the index closer to zero for
 non-influential variables. However, it has been our experience that
 these biased estimates can be unstable, and so {\tt tgp} uses the
 standard $\widehat{\mbb{E}^2[z]} =
-\widehat{\mbb{E}[z]}\widehat{\mbb{E}[z]}$ throughout.
+\widehat{\mbb{E}[z]}\widehat{\mbb{E}[z]}$ throughout.  As a final
+point, we note that identical MCMC sampling-based integration schemes
+can be used to estimate other Sobol indices (e.g., second order, etc)
+for particular combinations of inputs, but that this would require
+customization of the {\tt tgp} software.
 
 The set of input locations which need to be evaluated for each
 calculation of the indices is $\{ M, M', N_1,\ldots,N_d \}$, and if
@@ -392,9 +404,9 @@ indices ({\tt S} and {\tt T}).
 The plot function for \verb!"tgp"!-class objects now provides a
 variety of ways to visualize the results of a sensitivity analysis.
 This capability is accessed by specifying {\tt layout="sens"} in the
-standard plot command.  By default, the mean posterior main effects
-are plotted next to boxplot summaries of the posterior sample for
-each $S_j$ and $T_j$ index, as in Figure \ref{full}.
+standard {\tt plot} command.  By default, the mean posterior main
+effects are plotted next to boxplot summaries of the posterior sample
+for each $S_j$ and $T_j$ index, as in Figure \ref{full}.
 \begin{figure}[ht!]
 <<label=sens-full,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
 plot(sf, layout="sens", legendloc="topleft")
@@ -403,7 +415,7 @@ plot(sf, layout="sens", legendloc="topleft")
 graphics.off()
 @
 \includegraphics[width=6.5in,trim=0 10 0 10]{tgp2-sens-full}
-\caption{Full sensitivity analysis results for the Freidman function.}
+\caption{Full sensitivity analysis results for the Friedman function.}
 \label{full}
 \end{figure}
 
@@ -432,7 +444,7 @@ graphics.off()
 @
 \centering
 \includegraphics[width=6.6in]{tgp2-sens-mains}
-\caption{Freidman function main effects, with posterior 90\% intervals.}
+\caption{Friedman function main effects, with posterior 90\% intervals.}
   \label{mains}
 \end{figure}
 or just the sensitivity indices (Figure \ref{indices}).
@@ -445,7 +457,7 @@ graphics.off()
 @
 \centering
 \includegraphics[width=6.5in,trim=0 15 0 15]{tgp2-sens-indices}
-\caption{Sensitivity indices for the Freidman function.}
+\caption{Sensitivity indices for the Friedman function.}
   \label{indices}
 \end{figure}
 Note that the posterior intervals shown in these plots represent
@@ -460,7 +472,7 @@ sensitivity indices show $x_1$ and $x_2$ contributing roughly
 equivalent amounts of variation, while $x_4$ is relatively more
 influential than $x_5$.  Full effect sensitivity indices for $x_3$,
 $x_4$, and $x_5$ are roughly the same as the first order indices, but
-(due to the interaction in the Freidman function) the sensitivity
+(due to the interaction in the Friedman function) the sensitivity
 indices for the total effect of $x_1$ and $x_2$ are significantly
 larger than the corresponding first order indices.  Finally, our SA is
 able to determine that $x_6$ is unrelated to the response.

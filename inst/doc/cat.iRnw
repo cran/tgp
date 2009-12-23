@@ -14,7 +14,13 @@ or even binary inputs, {\tt tgp} would treat them the same as any
 other real--valued input.  Two new arguments to {\tt
   tgp.default.params}, and thus the ellipses ({\tt ...}) argument to
 the {\tt b*} functions, provide a more natural way to model with
-non--real valued inputs.
+non--real valued inputs.  In this section we shall introduce these
+extensions, and thereby illustrate how the current version of the
+package can more gracefully handle categorical inputs.  We argue that
+the careful application of this new feature can lead to reductions in
+computational demands, improved exploration of the posterior,
+increased predictive accuracy, and more transparent interpretation of
+the effects of categorical inputs.
 
 Classical treed methods, such as CART \cite{brei:1984}, can cope quite
 naturally with categorical, binary, and ordinal, inputs.  Categorical
@@ -24,15 +30,16 @@ process is needed, marginally, in that dimension.  Ordinal inputs can
 also be coded in binary, and thus treated as categorical, or treated
 as real--valued and handled in a default way.  GP regression, however,
 handles such non--real--valued inputs less naturally, unless (perhaps)
-a custom and non--standard form of the covariance function is used.
-When inputs are scaled to lie in $[0,1]$, binary--valued inputs $x_i$
-are always a constant distance apart---at the largest possible
-distance in the range.  A separable correlation function width
-parameter $d_i$ will tend to infinity (in the posterior) if the output
-does not vary with $x_i$, and will tend to zero if it is.  Clearly,
-this functionality is more parsimoniously achieved by partitioning,
-e.g., using a tree.  However, trees with fancy regression models at
-the leaves pose other problems, as discussed below.
+a custom and non--standard form of the covariance function is used
+\cite{qian:wu:wu:2009}.  When inputs are scaled to lie in $[0,1]$,
+binary--valued inputs $x_i$ are always a constant distance apart---at
+the largest possible distance in the range.  A separable correlation
+function width parameter $d_i$ will tend to infinity (in the
+posterior) if the output does not vary with $x_i$, and will tend to
+zero if it does.  Clearly, this functionality is more parsimoniously
+achieved by partitioning, e.g., using a tree.  However, trees with
+fancy regression models at the leaves pose other problems, as
+discussed below.
 
 Consider as motivation, the following modification of the Friedman
 data \cite{freid:1991} (see also Section 3.5 of \cite{gramacy:2007}).
@@ -270,3 +277,27 @@ which are ordered appropriately before the {\tt basemax} and {\tt
 {\tt tgp} will have a formula--based interface to handle categorical
 ({\tt factors}) and other inputs more like other {\sf R} regression
 routines, e.g., {\tt lm} and {\tt glm}.
+
+The tree and binary encodings represent a particularly thrifty way to
+handle categorical inputs in a GP regression framework, however it is
+by no means the only or best approach to doing so.  A disadvantage to
+the binary coding is that it causes the introduction of several new
+variables for each categorical input.  Although they only enter the
+tree part of the model, and not the GP (where the introduction of many
+new variables could cause serious problems), this may still be
+prohibitive if the number of categories is large.  Another approach
+that may be worth considering in this case involves designing a GP
+correlation function which can explicitly handle a mixture of
+qualitative (categorical) and quantitative (real-valued) factors
+\cite{qian:wu:wu:2009}.  An advantage of our treed approach is that it
+is straightforward to inspect the effect of the categorical inputs by,
+e.g., counting the number of trees (in the posterior) which contain a
+particular binary encoding.  It is also easy to see how the
+categorical inputs interact with the real-valued ones by inspecting
+the (posterior) parameterizations of the correlation parameters in
+each partition on a binary encoding.  Both of these are naturally
+facilitated by gathering traces ({\tt trace = TRUE}), as described in
+the 1.x vignette \cite{gramacy:2007}.  In Section \ref{sec:sens} we
+discuss a third way of determining the sensitivity of the response to
+categorical and other inputs.
+
