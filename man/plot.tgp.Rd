@@ -82,7 +82,7 @@
     \link{interp.loess} interface.  The loess kernel span can be specified
     with the \code{span} parameter to this function. Another
     option, \code{method = "akima"} uses the \pkg{akima} function
-    \link[akima]{interp.old}.  In general, \pkg{akima} provides a
+    \link[akima]{interp}.  In general, \pkg{akima} provides a
     better (linear) interpolation, but the current version(s) has been
     buggy (see notes below), and so is not the default}
   \item{gridlen}{ Number of regular grid points for 2-d slices and
@@ -177,7 +177,7 @@ Matt Taddy, \email{taddy@ams.ucsc.edu}
   \code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
   \code{\link{predict.tgp}},
   \code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link[akima]{interp}},
-  \code{\link[stats]{loess}}, \code{\link{sens}}}
+  \code{\link{loess}}, \code{\link{sens}}}
 
 \keyword{ hplot }
 \keyword{ tree }

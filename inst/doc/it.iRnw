@@ -8,30 +8,42 @@ library(maptree)
 seed <- 0; set.seed(seed)
 @ 
 
-{\em Importance tempering} (IT) is a combination of the classic method
-of importance sampling (IS) \cite{liu:2001} and {\em simulated
-  tempering} (ST) \cite{geyer:1995}.  The ST algorithm helps obtain
-samples from a multimodal density $\pi(\theta)$ where standard
-methods, such as Metropolis--Hastings (MH) \cite{met:1953,hast:1970}
-and Gibbs Sampling (GS) \cite{geman:1984}, fail.  It is well--known
-that MCMC inference in Bayesian treed methods suffers from poor
-mixing.  For example, Chipman et
+It is well--known that MCMC inference in Bayesian treed methods
+suffers from poor mixing.  For example, Chipman et
 al.~\cite{chip:geor:mccu:1998,chip:geor:mccu:2002} recommend
 periodically restarting the MCMC to avoid chains becoming stuck in
 local modes of the posterior distribution (particularly in tree
-space).  The {\tt R} argument to the {\tt b*} functions exists
-precisely to facilitate such restarts within the {\tt tgp} package.
+space).  The treed GP models are or no exception, although it is worth
+remarking that using flexible GP models at the leaves of the tree
+typically results in shallower trees, and thus less pathalogical
+mixing in tree space.  Version 1.x provided some crude tools to help
+mitigate the effects of poor mixing in tree space.  For example, the
+{\tt R} argument to the {\tt b*} functions facilitates the restarts
+suggested by Chipman et al.
 
-As will be shown in our examples, ST can guard against becoming
-stuck in local modes of the {\tt tgp} posterior by encouraging
-better mixing {\em between modes} via in increase in the acceptance
-rate of tree modification proposals, particularly {\em prunes}.
-However, as we will see, ST suffers from inefficiency because it 
-discards the lions share of the samples it collects.  The discarded
-samples can be recycled if they are given appropriate importance sampling
-(IS) weights.  These weights, if combined carefully, can be used
-to construct meta-estimators of expectations under the {\tt tgp} posterior 
-that have much lower variance than under ST alone.
+A modern Monte Carlo technique for dealing with poor mixing in Markov
+chain methods is to employ {\em tempering} to flatten the
+peaks and raise the troughs in the posterior distribution so that
+movements between modes is more fluid.  One such method, called {\em
+  simulated tempering} (ST) \cite{geyer:1995}, is essentially the MCMC
+analogue of the popular simulated annealing algorithm for
+optimization.  The ST algorithm helps obtain samples from a multimodal
+density $\pi(\theta)$ where standard methods, such as
+Metropolis--Hastings (MH) \cite{met:1953,hast:1970} and Gibbs Sampling
+(GS) \cite{geman:1984}, fail.
+
+As will be shown in our examples, ST can guard against becoming stuck
+in local modes of the {\tt tgp} posterior by encouraging better mixing
+{\em between modes} via in increase in the acceptance rate of tree
+modification proposals, particularly {\em prunes}.  However, as we
+will see, ST suffers from inefficiency because it discards the lions
+share of the samples it collects.  The discarded samples can be
+recycled if they are given appropriate importance sampling (IS)
+\cite{liu:2001} weights.  These weights, if combined carefully, can be
+used to construct meta-estimators of expectations under the {\tt tgp}
+posterior that have much lower variance compared to ST alone.  This
+combined application of ST and IT is dubbed {\em importance tempering}
+\cite{gra:samw:king:2009}.
 
 \subsection{Simulated Tempering and related methods}
 \label{sec:st}
@@ -65,7 +77,7 @@ frequently to: (a) visit high temperatures (low $k$) where the
 probability of escaping local modes is increased; (b) visit $k=1$ to
 obtain samples from $\pi$.  The algorithm can be tuned by:
 (i.)~adjusting the number and location of the rungs of the temperature
-ladder; or (ii.)~setting the pseudo-prior $p(k)$ for inverse
+ladder; or (ii.)~setting the pseudo-prior $p(k)$ for the inverse
 temperature.
 
 Geyer \& Thompson \cite{geyer:1995} give ways
@@ -132,7 +144,7 @@ matplot(log(all), pch=21:23,
 graphics.off()
 @
 \centering
-\includegraphics[height=5.98in,width=4.5in,trim=0 20 0 20]{tgp2-it-itemps}
+\includegraphics[height=5.9in,width=4.5in,trim=0 20 0 20]{tgp2-it-itemps}
 \caption{Three different inverse temperature ladders, each with
 $m=40$ temperatures starting at $k_1=1$ and ending at $k_m=0.1$}
 \label{f:itemps}
@@ -175,10 +187,10 @@ $E_{\pi}\{h(\theta)\}$ by setting
 \]
 say.  That is, rather than obtain one estimator from ST (at the cold
 temperature), we can obtain $m$ estimators (one at each temperature)
-vi IS. The efficiency of each estimator, $i=1,\dots,m$ can be measured
-through it's variance, but unfortunately this can be difficult to
+via IS. The efficiency of each estimator, $i=1,\dots,m$ can be measured
+through its variance, but unfortunately this can be difficult to
 calculate in general.  As a result, the notion of {\em effective
-  sample size} \cite{liu:2001} plays an important role in the study of
+  sample size} \cite{liu:2001} (ESS) plays an important role in the study of
 IS estimators.  Denote the vector of IS weights at the $i^{\mbox{\tiny
     th}}$ temperature as $\mathbf{w}_i = \mathbf{w}_i(\bm{\theta}_i) =
 (w_i(\theta_{i1}),\ldots,w_i(\theta_{iT_i}))$, where $w_i(\theta) =
@@ -214,7 +226,7 @@ Before attempting to combine $m$ IS estimators it is fruitful
 backtrack briefly to obtain some perspective on the topic of applying
 IS with a {\em single} tempered proposal distribution.  Jennison
 \cite{jennison:1993} put this idea forward more than a decade ago,
-though the question of how to choose the best temperature was neither
+although the question of how to choose the best temperature was neither
 posed or resolved.  It is clear that larger $k$ leads to lower
 variance estimators (and larger ESS), but at the expense of poorer
 mixing in the Markov chain. It can be shown that the optimal inverse
@@ -232,12 +244,12 @@ the ones saved from the cold distribution.  So ST is wastefull indeed.
 However, when combining IS estimators from the multiple temperatures
 used in ST, the deleterious effect of the high variance ones obtained
 at high temperature must be mitigated.  The possible strategies
-involved developing such a meta-estimator comprise the {\em importance
-  tempering} (IT) family of methods.  The idea is that small ESS will
-indicate high variance IS estimators which should be relegated to
-having only a small influence on the overall estimator.
+involved in developing such a meta-estimator comprise the {\em
+  importance tempering} (IT) family of methods.  The idea is that
+small ESS will indicate high variance IS estimators which should be
+relegated to having only a small influence on the overall estimator.
 
-\subsection{A optimal way to combine IS estimators}
+\subsection{An optimal way to combine IS estimators}
 \label{sec:lambdas}
 
 It is natural to consider an overall meta-estimator of
@@ -429,7 +441,7 @@ as.numeric(c(sum(p$itemp == 1), moto.it$ess$each[1,2:3]))
 That is, (optimal) IT gives effectively
 $\Sexpr{signif(moto.it$ess$combined/sum(p$itemp==1), 3)}$ times more samples.
 The na\"{i}ve combination, leading to the estimator in (\ref{Eq:hath}),
-yields an estimator with am effective sample size that is
+yields an estimator with an effective sample size that is
 $\Sexpr{round(100*ESS(p$w)/sum(p$itemp==1))}$\% of the number of
 samples obtained under ST.
 
@@ -567,8 +579,12 @@ graphics.off()
   \label{f:moto:pred}
 \end{figure}
 Plots of the resulting predictive surface is shown in Figure
-\ref{f:moto:pred} for comparison with those in Section 3.4 of the
-first {\tt tgp} vignette \cite{gramacy:2007}.
+\ref{f:moto:pred} for comparison with those in Section 1.1 of the
+first {\tt tgp} vignette \cite{gramacy:2007}.  In particular, observe
+that the transition from the middle region to the right one is much
+less stark in this tempered version than than in the original---which
+very likely spent a disproportionate amount of time stuck in a 
+posterior mode with trees of depth three or greater.
 
 \subsubsection{Synthetic 2--d Exponential Data}
 \label{sec:exp}
@@ -587,7 +603,7 @@ Z <- exp2d.Z(X)$Z
 @ 
 
 Consider a treed GP LLM model fit to this data using the standard
-RJ--MCMC.
+MCMC.
 <<>>=
 exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
                    trace=TRUE, krige=FALSE, R=10, verb=0)
@@ -626,7 +642,7 @@ graphics.off()
 \centering
 \includegraphics[trim=0 100 0 25]{tgp2-it-exp-mapt}
 \caption{Diagrammatic depiction of the maximum {\em a' posteriori} (MAP)
-  tree for the 2--d exponential data under standard RJ--MCMC sampling }
+  tree for the 2--d exponential data under standard MCMC sampling }
   \label{f:exp:mapt}
 \end{figure}
 Figure \ref{f:exp:mapt} shows a diagrammatic representation of the MAP
@@ -673,7 +689,7 @@ reasonably certain that the \Sexpr{round(exp.it$ess$combined)} samples obtained
 via IT from the total of
 \Sexpr{round(exp.it$R*(exp.it$BTE[2]-exp.it$BTE[1])/exp.it$BTE[3])} 
 samples obtained from the posterior are far less correlated than the 
-ones obtained via standard RJ--MCMC.
+ones obtained via standard MCMC.
 
 As with the motorcycle data, we can compare the tree heights visited
 by the two chains.
@@ -701,7 +717,7 @@ graphics.off()
 \end{figure}
 Figure \ref{f:exp:it:heights} shows a barplot of {\tt b}, which
 illustrates that the tempered chain frequently visited shallow trees.
-IT with the optimal weights shows that the standard RJ--MCMC chain
+IT with the optimal weights shows that the standard MCMC chain
 missed many trees of height three and four with considerable posterior
 support.
 
@@ -718,15 +734,15 @@ graphics.off()
 @
 \centering
 \includegraphics[trim=0 25 0 25]{tgp2-it-exp-trace-height}
-\caption{Traces of the tree heights obtained under the two Markov chains
-Markov chains (for regular MCMC, combining all temperatures in the
-inverse temperature ladder) on the 2--d exponential data.}
+\caption{Traces of the tree heights obtained under the two Markov
+  chains (for regular MCMC, combining all temperatures in the inverse
+  temperature ladder) on the 2--d exponential data.}
 \label{f:exp:trace:height}
 \end{figure}
 To more directly compare the mixing in tree space between the ST and
 tempered chains, consider the trace plots of the heights of the trees
 explored by the chains shown in Figure \ref{f:exp:trace:height}.
-Despite being restarted \Sexpr{exp.reg$R} times, the regular RJ--MCMC
+Despite being restarted \Sexpr{exp.reg$R} times, the regular MCMC
 chain (almost) never visits trees of height less than five after burn--in and
 instead makes rather lengthy excursions into deeper trees, exploring
 a local mode in the posterior.  In contrast, the tempered chain

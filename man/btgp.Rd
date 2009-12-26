@@ -504,52 +504,6 @@ plot(out)			# plot the surface
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0")
 plot(out)			# plot the surface
 tgp.trees(out)		 	# plot the MAP trees
-
-
-##
-## Begin Multi-resolution TGP (mrtgp) examples
-##
-
-# Two-Fidelity model with corr="mrexpsep", 1D example:
-# Fit and plot a simple 2 resolution model where we
-# have very little 'fine' level data.
-N <- 25
-X <- runif(N)
-Y <- 2*X
-ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
-Z <- Y + ind*sin(12*X)*.75 + rnorm(N,0,.1)
-b <- btgp(X=cbind(ind,X), Z=Z, XX=cbind(rep(1,40),
-          seq(0,1,length=40)), corr="mrexpsep",
-          BTE=c(5000,10000,10))
-plot(b)
-
-# Fit a standard tgp to the 'fine' data only, and plot
-# the fit for comparison.
-Xf <- X[ind==1]
-Zf <- Z[ind==1]
-bf <- btgp(Xf, Zf, XX=seq(0,1,length=40), corr="expsep")
-points(Xf, Zf)
-lines(bf$XX[,1], bf$ZZ.mean, lty=1, col=3)
-lines(bf$XX[,1], bf$ZZ.q1, lty=3, col=3)
-lines(bf$XX[,1], bf$ZZ.q2, lty=3, col=3)
-
-# Two-Fidelity model with corr="mrexpsep", 2D example:
-# Use the exp2d data as the coarse function, and add
-# a sin term to get the fine level.
-N <- 45
-exp2d.data <- exp2d.rand(n1=30, n2=15, lh=200)
-X <- exp2d.data$X; Z <- exp2d.data$Z
-XX <- cbind(ind=rep(1,200), exp2d.data$XX)
-XX <- rbind(XX, cbind(ind=rep(0,200), exp2d.data$XX))
-ind <- sample(c(0,1),N,prob=c(.7,.3),replace=TRUE)
-Z <- Z + (ind/10)*sin(X[,1]*X[,2])
-b2 <- btgp(X=cbind(ind,X), Z=Z, XX=XX, corr="mrexpsep",
-           meanfn="constant")
-
-# Plots focusing on the different resolutions
-plot(b2, legendloc="topleft") # Plot both fine and coarse fits.
-plot(b2, mrlayout="fine") # Plot fine only.
-plot(b2, mrlayout="coarse") # Plot coarse only.
 }
 \keyword{ nonparametric }
 \keyword{ nonlinear }
