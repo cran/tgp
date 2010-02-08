@@ -54,6 +54,12 @@ tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
     Treed Gaussian Process Models.} Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
 
+Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
+Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
+Version 2, an \R Package for Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{33}(6), 1--48.
+\url{http://www.jstatsoft.org/v33/i06/}.
+
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design and analysis of supercomputer experiments.}
 Technometrics, to appear.  Also avaliable on ArXiv article 0805.4359

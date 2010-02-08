@@ -72,9 +72,17 @@ fried.bool(n = 100)
 }
 
 \references{ 
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+    Bayesian Nonstationary, Semiparametric Nonlinear Regression
+    and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
 \url{http://www.jstatsoft.org/v19/i09}
+
+Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
+Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
+Version 2, an \R Package for Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{33}(6), 1--48.
+\url{http://www.jstatsoft.org/v33/i06/}.
 
 Friedman, J. H. (1991).
 \emph{Multivariate adaptive regression splines.}
