@@ -31,7 +31,7 @@ options(width=65)
   by treed Gaussian process models}
 \author{Robert B. Gramacy\\
   Statistical Laboratory\\
-  University of Cambridge, United Kingdom\\
+  University of Cambridge\\
   bobby@statslab.cam.ac.uk}
 \maketitle
 
