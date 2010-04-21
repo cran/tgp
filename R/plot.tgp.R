@@ -59,7 +59,7 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
     }
   }
 
-  ## plots for multi-resolution tgpo
+  ## plots for multi-resolution tgp
   if(x$params$corr == "mrexpsep"){
 
     ## the "both" method uses the mr.plot function

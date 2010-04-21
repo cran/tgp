@@ -936,7 +936,7 @@ bool Tree::swap(void *state)
   assert(oldPRC->leavesN() + oldPLC->leavesN() == parent->leavesN());
   double pklast = oldPRC->leavesPosterior() 
     + oldPLC->leavesPosterior();
-  assert(!isinf(pklast));
+  assert(R_FINITE(pklast));
   double pk = parent->leavesPosterior();
   
   /* alpha = min(1,exp(A)) */
@@ -998,7 +998,7 @@ bool Tree::change(void *state)
   assert(oldLC->leavesN() + oldRC->leavesN() == this->leavesN());
   double pklast = oldLC->leavesPosterior() + oldRC->leavesPosterior();
 #ifdef DEBUG
-  assert(!isinf(pklast));
+  assert(R_FINITE(pklast));
 #endif
   double pk = leavesPosterior();
 
@@ -1131,7 +1131,7 @@ double Tree::leavesPosterior(void)
   double p = 0;
   while(first) {
     p += first->Posterior();
-    if(isinf(p)) break;
+    if(!R_FINITE(p)) break;
     first = first->next;
   }
   return p;
@@ -1200,7 +1200,7 @@ bool Tree::prune(double ratio, void *state)
    * leaves of this PRUNABLE node*/
   pklast = leavesPosterior();
 #ifdef DEBUG
-  assert(!isinf(pklast));
+  assert(R_FINITE(pklast));
 #endif
   
   /* compute the backwards split proposal probability */

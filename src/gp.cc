@@ -563,7 +563,7 @@ double Gp::MarginalLikelihood(double itemp)
   
 #ifdef DEBUG
   if(isnan(post)) warning("nan in posterior");
-  if(isinf(post)) warning("inf in posterior");
+  if(!R_FINITE(post)) warning("inf in posterior");
 #endif
   return post;
 }
@@ -602,7 +602,7 @@ double Gp::Likelihood(double itemp)
 
 #ifdef DEBUG
   if(isnan(llik)) warning("nan in likelihood");
-  if(isinf(llik)) warning("inf in likelihood");
+  if(!R_FINITE(llik)) warning("inf in likelihood");
 #endif
   return llik;
 }
@@ -661,7 +661,7 @@ double Gp::MarginalPosterior(double itemp)
   double post = post_margin_rj(n, col, lambda, Vb, corr->get_log_det_K(), p->get_T(), 
 			       tau2, p->s2Alpha(), p->s2Beta(), itemp);
 
-  //assert(!isinf(post));
+  //assert(R_FINITE(post));
 
   /* don't need to include prior for beta or s2, because
      its alread included in the above calculation */

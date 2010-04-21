@@ -1,4 +1,10 @@
-2.3-1 (8 Feb 2009)
+2.3-2 (21 April 2010)
+-----
+
+replace isinf by R_FINITE as suggested by Brian Ripley
+
+
+2.3-1 (8 Feb 2010)
 -----
 
 Added reference to second JSS paper
