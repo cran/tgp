@@ -513,7 +513,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
       /* check for numerical problems and (if none) calculate the
          within temperature ESS */
-      if(isinf(lambda[i])) {
+      if(!R_FINITE(lambda[i])) {
 	lambda[i] = 0;
 	ei = 0;
       } else ei = calc_ess(wi, len);
@@ -924,7 +924,7 @@ double calc_ess(double *w, unsigned int n)
   if(n == 0) return 0;
   else {
     double cv2 = calc_cv2(w,n);
-    if(isnan(cv2) || isinf(cv2)) {
+    if(isnan(cv2) || !R_FINITE(cv2)) {
       // warning("nan or inf found in cv2, probably due to zero weights");
       return 0.0;
     } else return(1.0/(1.0+cv2));
