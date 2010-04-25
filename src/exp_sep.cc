@@ -834,7 +834,7 @@ char** ExpSep::TraceNames(unsigned int* len)
  * exponential power distribution function 
  */
 
-ExpSep_Prior::ExpSep_Prior(const unsigned int dim) : Corr_Prior(dim)
+ExpSep_Prior::ExpSep_Prior(unsigned int dim) : Corr_Prior(dim)
 {
   corr_model = EXPSEP;
 
