@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.3-3
-Date: 2010-04-23
+Version: 2.3-4
+Date: 2010-07-19
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy
         <taddy@ams.ucsc.edu>
 Depends: R (>= 2.4)
@@ -23,4 +23,4 @@ Maintainer: Robert B. Gramacy <rbgramacy@ams.ucsc.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
 Repository: CRAN
-Date/Publication: 2010-04-25 07:27:04
+Date/Publication: 2010-07-24 20:44:22

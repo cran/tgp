@@ -62,6 +62,9 @@ Exp::Exp(unsigned int dim, Base_Prior *base_prior)
   assert(prior);
   nug = prior->Nug();
 
+  /* check if we should really be starting in the LLM */
+  if(!prior->Linear() && !prior->LLM()) linear = false;
+
   assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == EXP);
   d = ((Exp_Prior*) prior)->D();
   xDISTx = NULL;

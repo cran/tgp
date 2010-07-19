@@ -1345,7 +1345,7 @@ int Tree::part_child(FIND_OP op, double ***Xc, int **pnew, unsigned int *plen,
 		     double **Zc, Rect **newRect)
 {
   unsigned int i,j;
-  int *pchild = find_col(X, n, var, op, val, plen);
+  int *pchild = find_col(X, NULL, n, var, op, val, plen);
   if(*plen == 0) return 0;
   
   /* partition the data and predictive locations */

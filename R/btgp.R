@@ -38,7 +38,7 @@ function(X, Z, XX=NULL,
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr, ...)
   params$bprior <- bprior
-  params$tree[1:2] <- tree
+  params$tree[1:length(tree)] <- tree
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu<-nu
   return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov, 
@@ -148,7 +148,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, corr=corr,...)
   params$bprior <- bprior
-  params$tree[1:2] <- tree
+  params$tree[1:length(tree)] <- tree
   params$gamma <- gamma
   if(corr == "matern"){ params$nu <- nu }
   if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
@@ -168,7 +168,7 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat",
   else { d <- ncol(X) }
   params <- tgp.default.params(d, meanfn=meanfn, ...)
   params$bprior <- bprior
-  params$tree[1:2] <- tree
+  params$tree[1:length(tree)] <- tree
   params$gamma <- c(-1,0.2,0.7)	# no llm
   params$nug.p <- 0 ## force a nugget 
   params$gd[1] <- 0 ## fix the nugget at zero

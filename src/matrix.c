@@ -68,6 +68,23 @@ void zero(double **M, unsigned int n1, unsigned int n2)
 
 
 /*
+ * check if a (square) matrix is zeros
+ */
+
+int isZero(double **M, unsigned int m, int sym)
+{
+  unsigned int i,j, upto;
+  for(j=0; j<m; j++) {
+    upto = m;
+    if(sym) upto = j+1;
+    for(i=0; i<upto; i++)
+      if(M[j][i] != 0.0) return 0;
+  }
+  return 1;
+}
+
+
+/*
  * replace square matrix with identitiy 
  */
 
@@ -1154,55 +1171,58 @@ int* find(double *V, unsigned int n, FIND_OP op, double val, unsigned int* len)
  * EQ(==) LEQ(<=) GEQ(>=) NE(!=)
  */
 
-int* find_col(double **V, unsigned int n, unsigned int var, 
-	FIND_OP op, double val, unsigned int* len)
+int* find_col(double **V, int *pv, unsigned int n, 
+	      unsigned int var, FIND_OP op, double val, 
+	      unsigned int* len)
 {
   unsigned int i,j;
-  int *tf;
+  int *tf, *p;
   int *found;
   
   tf = new_ivector(n);
+  if(pv) p = pv;
+  else p = iseq(0,n-1);
   
   (*len) = 0;
   switch (op) {
   case GT:  
     for(i=0; i<n; i++) {
-      if(V[i][var] >  val) tf[i] = 1; 
+      if(V[p[i]][var] >  val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
     break;
   case GEQ: 
     for(i=0; i<n; i++) {
-      if(V[i][var] >= val) tf[i] = 1; 
+      if(V[p[i]][var] >= val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
     break;
   case EQ:  
     for(i=0; i<n; i++) {
-      if(V[i][var] == val) tf[i] = 1; 
+      if(V[p[i]][var] == val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
     break;
   case LEQ: 
     for(i=0; i<n; i++) {
-      if(V[i][var] <= val) tf[i] = 1; 
+      if(V[p[i]][var] <= val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
     break;
   case LT:  
     for(i=0; i<n; i++) {
-      if(V[i][var] <  val) tf[i] = 1; 
+      if(V[p[i]][var] <  val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
     break;
   case NE:  
     for(i=0; i<n; i++) {
-      if(V[i][var] != val) tf[i] = 1; 
+      if(V[p[i]][var] != val) tf[i] = 1; 
       else tf[i] = 0; 
       if(tf[i] == 1) (*len)++;
     }
@@ -1222,6 +1242,7 @@ int* find_col(double **V, unsigned int n, unsigned int var,
   }
   
   free(tf);
+  if(!pv) free(p);
   return found;
 }
 
@@ -1542,6 +1563,24 @@ Rect* new_rect(unsigned int d)
   rect->boundary = new_matrix(2, d);
   rect->opl = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
   rect->opr = (FIND_OP *) malloc(sizeof(FIND_OP) * d);
+  return rect;
+}
+
+
+/*
+ * create a new rectangle structure with the boundary populated
+ * by the contents of a double array
+ */
+
+Rect* new_drect(double **drect, int d)
+{
+  Rect *rect = new_rect(d);
+  for(unsigned int i=0; i<d; i++) {
+    rect->boundary[0][i] = drect[0][i];
+    rect->boundary[1][i] = drect[1][i];
+    rect->opl[i] = GEQ;
+    rect->opr[i] = LEQ;
+  }
   return rect;
 }
 

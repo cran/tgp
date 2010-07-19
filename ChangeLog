@@ -1,3 +1,13 @@
+2.3-4 (19 July 2010)
+-----
+
+allowed the entire $tree component from tgp.default.params
+to be written over by the tree argument to b* functions
+
+fixed a bug in the linear initialization of correlation
+functions (for non-LLM models)
+
+
 2.3-3 (23 April 2010)
 -----
 

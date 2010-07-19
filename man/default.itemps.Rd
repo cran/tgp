@@ -36,8 +36,7 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \item{lambda}{ Method for combining the importance samplers at each
     temperature.  Optimal combination (\code{"opt"}) is the default,
     weighting the IS at each temperature \eqn{k}{k} by
-    \deqn{\lambda_k \propto (\sum_i w_{ki})^2/\sum_i w_{ki}^2.}{
-      lambda[k] = sum(w[k,]))^2/sum(w[k,]^2).}
+    \deqn{\lambda_k \propto (\sum_i w_{ki})^2/\sum_i w_{ki}^2.}{lambda[k] = sum(w[k,]))^2/sum(w[k,]^2).}
     Setting \code{lambda = "naive"} allows each temperature to
     contribute equally (\eqn{\lambda_k \propto 1}{\lambda[k] = 1}, or
     equivalently ignores delineations due to temperature when using

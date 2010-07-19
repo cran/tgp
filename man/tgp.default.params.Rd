@@ -17,8 +17,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
   \item{d}{ number of input dimensions \code{ncol(X)}}
   \item{meanfn}{ A choice of mean function for the process.  When
     \code{meanfn = "linear"} (default), then we have the process
-    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{
-      Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
   where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
   part of the model (if present).  Otherwise, when
   \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
@@ -62,15 +61,16 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
      nugget \eqn{g}{g}, \eqn{\sigma^2}{s2}, and \eqn{\tau^2}{tau2}}
    \item{beta}{\code{rep(0,col)} starting values for beta linear parameters}
    \item{tree}{\code{c(0.5,2,max(c(10,col+1)),1)} indicating the tree prior 
-     process parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart}
-     and \emph{splitmin}:
+     process parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart},
+     \emph{splitmin} and \emph{basemax}:
      \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
        \alpha*(1+\eta)^\beta}{p(split leaf eta) =
        alpha*(1+depth(eta))^(-beta)}
 	with zero probability given to trees
 	with partitions containing less than \code{nmin} data points;
         \emph{splitmin} indicates the first column of \code{X} which 
-        where treed partitioning is allowed}
+        where treed partitioning is allowed; \emph{basemax} gives the
+       last column where the base model is used}
       \item{s2.p}{\code{c(5,10)} \eqn{\sigma^2}{s2} inverse-gamma prior
 	parameters \code{c(a0, g0)} where \code{g0} is scale (1/rate) parameter}
       \item{tau2.p}{\code{c(5,10)} \eqn{\tau^2}{tau2} inverse-gamma
@@ -87,7 +87,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
      for the nugget parameter \code{c(a1,g1,a2,g2)} where \code{g1} and
      \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior;
      specifying \code{nug.p = 0} fixes the nugget parameter to the \dQuote{starting} 
-     value in \code{gd[0]}, i.e., it is excluded from the MCMC}
+     value in \code{gd[1]}, i.e., it is excluded from the MCMC}
    \item{gamma}{\code{c(10,0.2,10)}
         LLM parameters c(g, t1, t2), with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
