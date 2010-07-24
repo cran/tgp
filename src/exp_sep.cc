@@ -65,6 +65,9 @@ ExpSep::ExpSep(unsigned int dim, Base_Prior *base_prior)
   prior = ((Gp_Prior*) base_prior)->CorrPrior();
   assert(prior);
 
+  /* check if we should really be starting in the LLM */
+  if(!prior->Linear() && !prior->LLM()) linear = false;
+
   /* let the prior choose the starting nugget value */
   nug = prior->Nug();
 
@@ -144,7 +147,7 @@ void ExpSep::Init(double *dexpsep)
 
   if(!prior->Linear() && prior->LLM())
     linear_pdf_sep(pb, d, dim, prior->GamLin());
-
+  
   bool lin = true;
   for(unsigned int i=0; i<dim; i++) {
     b[i] = (int) dexpsep[dim+1+i];

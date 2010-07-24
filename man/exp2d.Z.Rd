@@ -27,8 +27,7 @@
 }
 \details{
   The response is evaluated as 
-  \deqn{Z(X)=x_1 * \exp(x_1^2-x_2^2).}{Z(X) = X1 * exp(-X1^2
-                                          -X2^2),}
+  \deqn{Z(X)=x_1 * \exp(x_1^2-x_2^2).}{Z(X) = X1 * exp(-X1^2-X2^2),}
   thus creating the outputs \code{Z} and \code{Ztrue}.
   Zero-mean normal noise with \code{sd=0.001} is added to the
   responses \code{Z} and \code{ZZ}

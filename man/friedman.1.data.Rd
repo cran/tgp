@@ -27,33 +27,16 @@ fried.bool(n = 100)
   the function has 10-dim inputs \code{X} are drawn from Unif(0,1), and responses
   are \eqn{N(m(X),1)}{N(m(X),1)} where
   \eqn{m(\mathbf{x}) = E[f(\mathbf{x})]}{m(X) = E[f(X)]} and
-  \deqn{
-    m(\mathbf{x}) = 10\sin(\pi x_1 x_2) + 20(x_3-0.5)^2 + 10x_4 + 5x_5
-  }{
-    m(X) = 10*sin(pi*X[,1]*X[,2]) + 20*(X[,3]-0.5)^2 + 10*X[,4] + 5*X[,5]
-  }
+  \deqn{m(\mathbf{x}) = 10\sin(\pi x_1 x_2) + 20(x_3-0.5)^2 + 10x_4 + 5x_5}{m(X) = 10*sin(pi*X[,1]*X[,2]) + 20*(X[,3]-0.5)^2 + 10*X[,4] + 5*X[,5]}
 
    The variation \code{fried.bool} uses indicators
    \eqn{I\in \{1,2,3,4\}}{I in 1:4}.  The function also has 10-dim
    inputs \code{X} with columns distributed as Unif(0,1) and responses
    are \eqn{N(m(\mathbf{x},I), 1)}{N(m(X,I), 1)} where
    \eqn{m(\mathbf{x},I) = E(f(\mathbf{x},I)}{m(X,I) = E[f(X,I)]} and
-   \deqn{
-     m(\mathbf{x},I) = f_1(\mathbf{x})_{[I=1]} +
-     f_2(\mathbf{x})_{[I=2]} +
-     f_3(\mathbf{x})_{[I=3]} + m([x_{10},\cdots,x_1])_{[I=4]}
-   }{
-     m(X,I) = fI(X) if I in 1:3 else m(X[,10:1])
-   }
+   \deqn{m(\mathbf{x},I) = f_1(\mathbf{x})_{[I=1]} + f_2(\mathbf{x})_{[I=2]} + f_3(\mathbf{x})_{[I=3]} + m([x_{10},\cdots,x_1])_{[I=4]}}{m(X,I) = fI(X) if I in 1:3 else m(X[,10:1])}
    where
-   \deqn{
-     f_1(\mathbf{x}) = 10\sin(\pi x_1 x_2), \;
-     f_2(\mathbf{x}) = 20(x_3-0.5)^2, \; \mbox{and }
-     f_3(\mathbf{x}) = 10x_4 + 5x_5.
-   }{
-     f1(X)=10*sin(pi*X[,1]*X[,2]), f2(X)=20*(X[,3]-0.5)^2,
-     f3(X)=10*X[,4]+5*X[,5]
-   }
+   \deqn{f_1(\mathbf{x}) = 10\sin(\pi x_1 x_2), \; f_2(\mathbf{x}) = 20(x_3-0.5)^2, \; \mbox{and } f_3(\mathbf{x}) = 10x_4 + 5x_5.}{f1(X)=10*sin(pi*X[,1]*X[,2]), f2(X)=20*(X[,3]-0.5)^2, f3(X)=10*X[,4]+5*X[,5] }
 
    The indicator I is coded in binary in the output data frame as:
    \code{c(0,0,0)} for \code{I=1},

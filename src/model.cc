@@ -807,7 +807,7 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
 #ifdef PARALLEL
   if(num_produced - num_consumed > 0)
     myprintf(OUTFILE, "(r,l)=(%d,%d) ", r, num_produced - num_consumed);
-  else myprintf(OUTFILE, "r=%d", r);
+  else myprintf(OUTFILE, "r=%d ", r);
 #else
   myprintf(OUTFILE, "r=%d ", r);
 #endif

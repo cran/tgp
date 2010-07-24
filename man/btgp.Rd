@@ -63,12 +63,10 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
 	\code{ncol(XX) == ncol(X)}}
   \item{meanfn}{ A choice of mean function for the process.  When
     \code{meanfn = "linear"} (default), then we have the process
-    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{
-      Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
   where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
   part of the model (if present).  Otherwise, when
-  \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
-    Z = beta0 + W(X).}}
+  \code{meanfn = "constant"}, then \deqn{Z = \beta_0 + W(\mathbf{X})}{Z = beta0 + W(X).}}
   \item{bprior}{Linear (beta) prior, default is \code{"bflat"};
     alternates include \code{"b0"} hierarchical Normal prior,
   \code{"bmle"} empirical Bayes Normal prior, \code{"b0not"} Bayesian
@@ -81,19 +79,19 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   signal-to-noise ratio is low.  In these cases the \dQuote{proper} hierarchical
   specification \code{"b0"} or independent \code{"bmzt"} or \code{"bmznot"}
   priors may perform better}
-  \item{tree}{ 2-vector of tree process prior parameterization
+  \item{tree}{ a 2-vector containing the tree process prior parameterization
     \code{c(alpha, beta)} specifying
     \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
       \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
     automatically giving zero probability to trees
-    with partitions containing less than \code{min(c(10,nrow(X)+1))} data points.}
+    with partitions containing less than \code{min(c(10,nrow(X)+1))}
+    data points.  You may also specify a longer vector, writing over
+  more of the components of the \code{$tree} output from \code{\link{tgp.default.params}}}
   \item{gamma}{Limiting linear model parameters \code{c(g, t1, t2)},
     with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
 	\code{t1 + t2 <= 1} specifies
-	\deqn{p(b|d)=t_1 +
-	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{%
-	  p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
+	\deqn{p(b|d)=t_1 +\exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 

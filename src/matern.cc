@@ -67,6 +67,9 @@ Matern::Matern(unsigned int dim, Base_Prior *base_prior)
   prior = ((Gp_Prior*) base_prior)->CorrPrior();
   assert(prior);
 
+  /* check if we should really be starting in the LLM */
+  if(!prior->Linear() && !prior->LLM()) linear = false;
+
   /* get default nugget for starters */
   nug = prior->Nug();
 

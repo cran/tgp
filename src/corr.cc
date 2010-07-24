@@ -52,6 +52,7 @@ Corr::Corr(unsigned int dim, Base_Prior *base_prior)
   this->dim = dim;
   col = base_prior->Col();
   n = 0;
+
   linear = true;
 
   Vb_new = new_matrix(col, col);
