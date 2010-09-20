@@ -28,9 +28,13 @@ void dist(double **DIST, unsigned int m, double **X1, unsigned int n1,
 		double **X2, unsigned int n2, double pwr);
 void exp_corr_sep(double **K, unsigned int m, double **X1, unsigned int n1, 
 		double **X2, unsigned int n2, double *d, double pwr);
+void sim_corr(double **K, unsigned int m, double **X1, unsigned int n1, 
+	      double **X2, unsigned int n2, double *d, double pwr);
 void dist_symm(double **DIST, unsigned int m, double **X, unsigned int n, double pwr);
 void exp_corr_sep_symm(double **K, unsigned int m, double **X, 
 		unsigned int n, double *d, double nug, double pwr);
+void sim_corr_symm(double **K, unsigned int m, double **X, 
+		   unsigned int n, double *d, double nug, double pwr);
 void dist_to_K(double **K, double **DIST, double d, double nug, 
 		unsigned int m, unsigned int n);
 void dist_to_K_symm(double **K, double **DIST, double d, double nug, unsigned int n);

@@ -246,13 +246,16 @@ double Corr::get_delta_nug(Corr* c1, Corr* c2, void *state)
 
 void Corr::propose_new_nug(Corr* c1, Corr* c2, void *state)
 {
-  int i[2];
-  double nugnew[2];
-  propose_indices(i, 0.5, state);
-  nugnew[i[0]] = nug;
-  nugnew[i[1]] = prior->NugDraw(state);
-  c1->nug = nugnew[0];
-  c2->nug = nugnew[1];
+  if(prior->FixNug()) c1->nug = c2->nug = nug;
+  else {
+    int i[2];
+    double nugnew[2];
+    propose_indices(i, 0.5, state);
+    nugnew[i[0]] = nug;
+    nugnew[i[1]] = prior->NugDraw(state);
+    c1->nug = nugnew[0];
+    c2->nug = nugnew[1];
+  }
 }
 
 
@@ -426,7 +429,7 @@ Corr_Prior::~Corr_Prior(void)
 
 
 /*
- * Init:
+ * NugInit:
  *
  * read hiererchial prior parameters from a double-vector
  *
@@ -819,4 +822,16 @@ char** Corr_Prior::NugTraceNames(unsigned int* len)
   trace[2] = strdup("nug.a1");
   trace[3] = strdup("nug.g1");
   return trace;
+}
+
+
+/*
+ * FixNug:
+ *
+ * returns the fix_nug variable (not the prior)
+ */
+
+bool Corr_Prior::FixNug(void)
+{
+  return nug_alpha[0] == 0;
 }

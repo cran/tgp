@@ -34,7 +34,7 @@
 
 "tgp.default.params" <-
 function(d, meanfn=c("linear", "constant") ,
-         corr=c("expsep", "exp", "mrexpsep", "matern"), splitmin=1, basemax=d, ...)
+         corr=c("expsep", "exp", "mrexpsep", "matern", "sim"), splitmin=1, basemax=d, ...)
 {
   ## check the d argument, other check in tgp.check.params
   if(length(d) != 1)
@@ -85,7 +85,7 @@ function(d, meanfn=c("linear", "constant") ,
          s2.lam=c(0.2,10),		# s2 hierarc inv-gamma prior params (or "fixed")
          tau2.p=c(5,10),	       	# tau2 prior params (initial values) <a0> and <g0>
          tau2.lam=c(0.2,0.1),		# tau2 hierarch inv-gamma prior params (or "fixed")
-         corr=corr,			# correllation model (exp, or expsep)
+         corr=corr,			# correllation model (exp, expsep, matern, sim)
          gd=c(0.1, 0.5),                # start vals for nug and d
          nug.p=c(1,1,1,1),		# nug gamma-mix prior params (initial values)
          nug.lam="fixed",		# nug hierarch gamma-mix prior params (or "fixed")
@@ -246,6 +246,7 @@ function(params, d)
   else if(params$corr == "expsep") { p <- c(p, 1); }
   else if(params$corr == "matern") { p <- c(p, 2); }
   else if(params$corr == "mrexpsep") { p <- c(p,3) }
+  else if(params$corr == "sim") { p <- c(p,4) }
   else { stop(paste("params$corr =", params$corr, "not valid\n")); }
  
   ## initial settings of variance parameters
@@ -277,11 +278,11 @@ function(params, d)
     stop(paste("length of params$gamma should be 3, you have", 
               length(params$gamma),"\n"));
   }
-  if(!prod(params$gamma[2:3] > 0)) { stop("all params$gamma[2:3] must be positive\n"); }
-  if(sum(params$gamma[2:3]) >= 1.0) { stop("sum(gamma[2:3]) > 1 not allowed\n"); }
+  if(params$gamma[1] > 0 && params$corr == "sim") stop("cannot have sim corr with LLM")
+  if(!prod(params$gamma[2:3] > 0)) stop("all params$gamma[2:3] must be positive\n")
+  if(sum(params$gamma[2:3]) >= 1.0) stop("sum(gamma[2:3]) > 1 not allowed\n")
   p <- c(p, as.numeric(params$gamma))
 
- 
   ## mixture of gamma (initial) prior parameters for range parameter d
 
   ## if(length(params$d.p) == 1 && params$d.p[1] == 0) params$d.p <- rep(0,4)
