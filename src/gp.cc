@@ -39,6 +39,7 @@ extern "C"
 #include "exp_sep.h"
 #include "matern.h"
 #include "mr_exp_sep.h"
+#include "sim.h"
 #include "tree.h"
 #include "model.h"
 #include "gp.h"
@@ -1282,6 +1283,8 @@ void Gp_Prior::read_double(double * dparams)
     break;
   case 3: corr_prior = new MrExpSep_Prior(d-1);
       //myprintf(stdout, "correlation: two-level seperable power mixture\n");
+  case 4: corr_prior = new Sim_Prior(d);
+      //myprintf(stdout, "correlation: sim power exponential\n");
     break;
   default: error("bad corr model %d", (int)dparams[0]);
   }
@@ -1411,6 +1414,9 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   } else if(!strncmp(line, "mrexpsep", 8)) {
     corr_prior = new MrExpSep_Prior(d-1);
     // myprintf(stdout, "correlation: multi-res seperable power\n");
+  } else if(!strncmp(line, "sim", 3)) {
+    corr_prior = new Sim_Prior(d);
+    // myprintf(stdout, "correlation: sim power exponential\n");
   } else {
     error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }

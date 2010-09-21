@@ -1084,6 +1084,65 @@ void *state;
  * return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
+int d_sim_draw_margin(d, n, dim, col, F, X, Z, log_det_K, lambda, Vb, 
+		      K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
+		      bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 
+		      itemp, state)
+     unsigned int n, dim, col;
+double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
+double *b0, *Z, *d, *log_det_K_new;
+double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log, itemp;
+double *lambda_new, *bmu_new;
+void *state;
+{
+  double pd, pdlast, alpha;
+  unsigned int m = 0;
+
+  /* d could be null if d_new == d_new_eff, and in this case the 
+     acceptance ratio would be based solely on the prior (& qRatio) */
+
+  /* Knew = dist_to_K(dist, d, nugget)
+     compute lambda, Vb, and bmu, for the NEW d */
+  sim_corr_symm(K_new, dim, X, n, d, nug, PWR);
+  inverse_chol(K_new, Ki_new, Kchol_new, n);
+  *log_det_K_new = log_determinant_chol(Kchol_new, n);
+  *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+			       Ti, tau2, b0, itemp);
+  
+  if(d) {
+    /* adjustment for BFLAT */
+    if(T[0][0] == 0) m = col;
+  
+    /* posteriors */
+    pd = post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+    pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  
+    /* or, no posterior contribution */
+  } else { pd = 0.0; pdlast = 0.0; }
+  
+  /* compute acceptance prob; and accept or reject */
+  alpha = exp(pd - pdlast + pRatio_log)*qRatio;
+  if(isnan(alpha)) return -1;
+  if(runi(state) < alpha) return 1;
+  else return 0;
+}
+
+
+/*
+ * d_sep_draw_margin:
+ * 
+ * draws for d given the rest of the parameters except b and s2 marginalized out
+ *
+ * F[col][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col] Vb[col][col], 
+ * Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n], b0[col], Z[n], dlast[dim],
+ * d_alpha[dim][2], d_beta[dim][2]
+ *
+ * if input d=NULL and lin_new=0, then the MH ratio is just a prior ratio
+ * (plus proposal probabilities)
+ *
+ * return 1 if draw accepted, 0 if rejected, -1 if error
+ */
+
 int d_sep_draw_margin(d, n, dim, col, F, X, Z, log_det_K, lambda, Vb, 
 	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
 	bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 

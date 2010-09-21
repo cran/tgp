@@ -9,7 +9,7 @@
 }
 \usage{
 tgp.default.params(d, meanfn = c("linear", "constant"),
-                   corr = c("expsep", "exp", "mrexpsep", "matern"),
+                   corr = c("expsep", "exp", "mrexpsep", "matern", "sim"),
                    splitmin = 1, basemax = d, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -25,9 +25,10 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
-	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
-	functionality.  The option \code{"mrexpsep"} uses a
-	multi-resolution GP model}
+	the isotropic Matern (\code{"matern"}) and single-index model
+	(\code{"sim"}) as \dQuote{beta}	functionality.  The option \code{"mrexpsep"} uses a
+	multi-resolution GP model, a depricated feature in the package
+	(docs removed)}
   \item{splitmin}{ Indicates which column of the inputs \code{X} should
     be the first to allow splits via treed partitioning.  This is useful
     for excluding certain input directions from the partitioning

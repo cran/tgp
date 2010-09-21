@@ -36,7 +36,7 @@ extern "C"
 //#define PRINTNUG
 #define REJECTMAX 1000
 typedef enum CORR_MODEL 
-  {EXP=701, EXPSEP=702, MATERN=703, MREXPSEP=704} CORR_MODEL;
+  {EXP=701, EXPSEP=702, MATERN=703, MREXPSEP=704, SIM=705} CORR_MODEL;
 
 class Model;  /* not including model.h */
 class Corr_Prior;
@@ -197,6 +197,7 @@ class Corr_Prior
   double* NugTrace(unsigned int* len);
   char** NugTraceNames(unsigned int* len);
   void NugInit(double *dhier);
+  bool FixNug(void);
  
   void PrintNug(FILE *outfile);
 };

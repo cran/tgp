@@ -95,15 +95,17 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   \item{corr}{ Gaussian process correlation model. Choose between the isotropic
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
-	the isotropic Matern (\code{"matern"}) as \dQuote{beta}
-	functionality.  The option \code{"mrexpsep"} assumes 
-	within each partition a version of
-	the multi-resolution stationary GP model described in Kennedy and O'Hagan
-	(2000).  To use this option, the first column of the design
-	matrices \code{X} and \code{XX} must contain an indicator for
-	'fine' (1) or 'coarse' (0) fidelity.  \code{"mrexpsep"} is only
-	available with the \code{btgp} and \code{bgp} models, and
-	\code{linburn=TRUE} is not allowed.  See details below. }
+	the isotropic Matern (\code{"matern"}) and single-index Model (\code{"sim"}) 
+        as \dQuote{beta} functionality.  % The option \code{"mrexpsep"} assumes 
+%	within each partition a version of
+%	the multi-resolution stationary GP model described in Kennedy and O'Hagan
+%	(2000).  To use this option, the first column of the design
+%	matrices \code{X} and \code{XX} must contain an indicator for
+%	'fine' (1) or 'coarse' (0) fidelity.  \code{"mrexpsep"} is only
+%	available with the \code{btgp} and \code{bgp} models, and
+%	\code{linburn=TRUE} is not allowed.
+%       See details below. 
+  }
   \item{BTE}{ 3-vector of Monte-carlo parameters (B)urn in, (T)otal, and
     (E)very. Predictive samples are saved every E MCMC rounds starting
     at round B, stopping at T. }
@@ -131,7 +133,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     outputs \code{Zp.s2}, \code{ZZ.s2}, etc., below}
   \item{Ds2x}{\code{TRUE} results in ALC (Active Learning--Cohn)
     computation of expected reduction in uncertainty calculations at the
-    \code{X} locations, which can be used for adaptive sampling;
+    \code{XX} locations, which can be used for adaptive sampling;
     \code{FALSE} (default) skips this computation, resulting in
     a faster implementation}
   \item{improv}{\code{TRUE} results in samples from the
@@ -153,7 +155,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
     sensitivity analysis, built by the function \code{\link{sens}}.
     Refer there for details}
   \item{nu}{ \dQuote{beta} functionality: fixed smoothness parameter for
-    the Matern correlation function; nu+0.5 times differentiable
+    the Matern correlation function; \code{nu + 0.5} times differentiable
     predictive surfaces result}
   \item{trace}{ \code{TRUE} results in a saving of samples from the
     posterior distribution for most of the parameters in the model.  The
@@ -214,23 +216,23 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
   sensitivity analysis.  It should be \code{NULL} unless created by the 
   \code{sens} function.  Refer to \code{help(sens)} for details.
 
-  If \code{corr="mrexpsep"} and the matrices X and XX are properly
-  formatted with an indicator first column (0='coarse', 1='fine'),
-  the stationary GP model fit within each partition has:
-  \deqn{
-    Z_{\mbox{\tiny coarse}} \sim m(x) + \mbox{GP}(\sigma^2 + K_c)
-  }{
-    Z[coarse] ~ 'meanfn' + GP(sigma^2 * K[c])
-  } and
-  \deqn{
-    Z_{\mbox{\tiny fine}} \sim Z_{\mbox{\tiny coarse}} +
-    \mbox{GP}(\sigma^2 \delta + K_f)
-  }{
-      Z[fine]  ~  Z_coarse + GP(sigma^2 * delta * K[f])
-  }
-  Where each matrix \eqn{K_c}{K[c]} and \eqn{K_f}{K[f]} are based on the
-  same separable power exponential family plus a nugget effect that is
-  used for \code{corr="expsep"}.
+  % If \code{corr="mrexpsep"} and the matrices X and XX are properly
+  % formatted with an indicator first column (0='coarse', 1='fine'),
+  % the stationary GP model fit within each partition has:
+  % \deqn{
+  %   Z_{\mbox{\tiny coarse}} \sim m(x) + \mbox{GP}(\sigma^2 + K_c)
+  % }{
+  %   Z[coarse] ~ 'meanfn' + GP(sigma^2 * K[c])
+  % } and
+  % \deqn{
+  %   Z_{\mbox{\tiny fine}} \sim Z_{\mbox{\tiny coarse}} +
+  %   \mbox{GP}(\sigma^2 \delta + K_f)
+  % }{
+  %     Z[fine]  ~  Z_coarse + GP(sigma^2 * delta * K[f])
+  % }
+  % Where each matrix \eqn{K_c}{K[c]} and \eqn{K_f}{K[f]} are based on the
+  % same separable power exponential family plus a nugget effect that is
+  % used for \code{corr="expsep"}.
 
   If \code{itemps =! NULL} then importance tempering (IT) is performed
   to get better mixing.  After each restart (when \code{R > 1}) the

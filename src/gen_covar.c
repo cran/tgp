@@ -244,6 +244,84 @@ double pwr;
 }
 
 
+/*
+ * sim_corr_symm:
+ * 
+ * compute a (symmetric) correllation matrix from a sim
+ * (index) exponential correllation function
+ *
+ * X[n][m], K[n][n]
+ */
+
+void sim_corr_symm(K, m, X, n, d, nug, pwr)
+unsigned int m,n;
+double **X, **K;
+double *d;
+double pwr, nug;
+{
+  int i,j,k;
+  
+  /* sanity check and initialize */
+  assert(K);
+  i = k = j = 0;
+
+  for(i=0; i<n; i++) {
+  
+    /* diagonal is alwas 1+nug */
+    K[i][i] = 1.0 + nug;
+
+    /* fill in upper-triangle first */
+    for(j=i+1; j<n; j++) {
+
+      K[j][i] = 0.0;
+      /* do the same for the rest of the dimensions */
+      for(k=0; k<m; k++) 
+	K[j][i] += d[k] * (X[i][k] - X[j][k]);
+
+      /* go from log space to regular space */
+      K[j][i] = exp(0.0- sq(K[j][i]));
+
+      /* fill in the lower triangle */
+      K[i][j] = K[j][i];
+    }
+  }
+}
+
+
+/*
+ * sim_corr:
+ * 
+ * compute a correllation matrix from a sim
+ * (index) expoential correllation function
+ *
+ * X1[n1][m], X2[n2][m], K[n2][n1], d[m]
+ */
+
+void sim_corr(K, m, X1, n1, X2, n2, d, pwr)
+unsigned int m,n1,n2;
+double **X1, **X2, **K;
+double *d;
+double pwr;
+{
+  int i,j,k;
+  
+  /* sanity check and initialize */
+  assert(K);
+  i = k = j = 0;
+
+  for(i=0; i<n1; i++) {
+    for(j=0; j<n2; j++) {
+
+      K[j][i] = 0.0;
+      for(k=0; k<m; k++)
+	K[j][i] += d[k] * (X1[i][k] - X2[j][k]);
+
+      /* go from log space to regular space */
+      K[j][i] = exp(0.0-sq(K[j][i]));
+    }
+  }
+}
+
 
 /*
  * dist_to_K:

@@ -41,6 +41,7 @@ function(X, Z, XX=NULL,
   params$tree[1:length(tree)] <- tree
   params$gamma <- c(0,0.2,0.7)	# no llm
   if(corr == "matern") params$nu<-nu
+  if(linburn && corr == "sim") stop("cannot do linburn for SIM model")
   return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov, 
              Ds2x,improv,sens.p,trace,verb))
 }
@@ -102,7 +103,8 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   params$gamma <- gamma
   params$tree[1:2] <- c(0,0) # no tree
   if(corr == "matern"){ params$nu <- nu; }
-  if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
+  if(corr == "mrexpsep"){ stop("Sorry, the LLM is not yet available for corr=\"mrexpsep\"")}
+  if(corr == "sim"){ stop("Sorry, the LLM is not available for corr=\"sim\"")}
   return(tgp(X,Z,XX,BTE,R,m0r1,FALSE,params,itemps,pred.n,krige,zcov,Ds2x,
              improv,sens.p,trace, verb))
 }
@@ -151,7 +153,8 @@ function(X, Z, XX=NULL, meanfn="linear", bprior="bflat", corr="expsep",
   params$tree[1:length(tree)] <- tree
   params$gamma <- gamma
   if(corr == "matern"){ params$nu <- nu }
-  if(corr == "mrexpsep"){ stop("Sorry, the limiting linear model is not yet available for corr=\"mrexpsep\"")}
+  if(corr == "mrexpsep"){ stop("Sorry, the LLM  is not yet available for corr=\"mrexpsep\"")}
+  if(corr == "sim"){ stop("Sorry, the LLM is not available for corr=\"sim\"")}
   return(tgp(X,Z,XX,BTE,R,m0r1,linburn,params,itemps,pred.n,krige,zcov,
              Ds2x,improv,sens.p,trace,verb))
 }
