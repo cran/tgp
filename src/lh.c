@@ -204,7 +204,7 @@ double** beta_sample_lh(int dim, int n, double** rect, double* shape, double* mo
   z = new_matrix(dim,n);
   for(i=0; i<dim; i++) {
 
-    if(shape[i]==0){ // for binary variables, draw 0-1.
+    if(shape[i]==0){ /* for binary variables, draw 0-1. */
       if(mode==NULL || mode[i] > 1.0 || mode[i] < 0) mscaled=0.5;
       else mscaled = mode[i];
       for(j=0; j<n; j++){

@@ -64,7 +64,7 @@ function(n=100)
 
   ## sample n indicators in 1:4 and record their boolean coding
   I <- sample(c(1,2,3,4), n, replace=TRUE)
-  Imat <- BoolI[I,]
+  Imat <-matrix(BoolI[I,], nrow=n)
 
   ## n random inputs U(0,1) in 10 dimensions
   X <- matrix(runif(n*10), nrow=n)
@@ -85,5 +85,5 @@ function(n=100)
   Y <- Ytrue + rnorm(n, 0, 1)
 
   ## return the inputs, bookean coding and outputs
-  return(data.frame(X=X,I=Imat,Y,Ytrue))
+  return(data.frame(X=X, I=Imat, Y, Ytrue))
 }

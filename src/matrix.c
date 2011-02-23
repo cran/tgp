@@ -1574,8 +1574,9 @@ Rect* new_rect(unsigned int d)
 
 Rect* new_drect(double **drect, int d)
 {
+  unsigned int i;
   Rect *rect = new_rect(d);
-  for(unsigned int i=0; i<d; i++) {
+  for(i=0; i<d; i++) {
     rect->boundary[0][i] = drect[0][i];
     rect->boundary[1][i] = drect[1][i];
     rect->opl[i] = GEQ;
@@ -2007,6 +2008,21 @@ void add_vector(double a, double *v1, double b, double *v2, unsigned int n)
   assert(n > 0);
   assert(v1 && v2);
   add_matrix(a, &v1, b, &v2, 1, n);
+}
+
+
+/*
+ * add two integer vectors of the same size 
+ * v1 = v1 + v2
+ */
+
+void add_ivector(int *v1, int *v2, unsigned int n)
+{
+  unsigned int i;
+  if(n == 0) return;
+  assert(n > 0);
+  assert(v1 && v2);
+  for(i=0; i<n; i++) v1[i] += v2[i];
 }
 
 

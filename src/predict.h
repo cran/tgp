@@ -65,5 +65,6 @@ void predict_help(unsigned int n1, unsigned int col, double *b, double **F, doub
 		  double **KpFWFi, double *KiZmFb);
 unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g, int numirank, double *w);
 void move_avg(int nn, double* XX, double *YY, int n, double* X, double *Y, double frac);
+void sobol_indices(double *ZZ, unsigned int nn, unsigned int m, double *S, double *T);
 
 #endif

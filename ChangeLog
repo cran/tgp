@@ -1,3 +1,17 @@
+2.4-1 (23 Feb 2011)
+-----
+
+Changed my_r_process_events to always ProcessEvents and
+check for interrupts (every second)
+
+Made new sobol_indices function to clean up tgp::Sens, and
+using shape to drive categorical calculations rather than
+bmax
+
+minor edit to tgp2 doc to correct fried.bool description, and
+edit to fried.bool to fix fried.bool(1) problem
+
+
 2.4 (20 Sept 2010)
 ---
 

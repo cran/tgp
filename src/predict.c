@@ -432,9 +432,9 @@ void *state;
   /*double KiZmFb[n1]; 
     double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], 
            Frow[n1][col];*/
-  double *KiZmFb;
+  double *KiZmFb, *ezvar;
   double **FW, **KpFWFi, **KKrow, **FFrow, **Frow;
-  int /*i,*/ warn;
+  int i, warn;
 	
   /* sanity checks */
   if(!(zp || zz)) { assert(n2 == 0); return 0; }
@@ -476,8 +476,7 @@ void *state;
     /* draw from the posterior predictive distribution */
     warn += predict_draw(n2, zz, zzm, zzs2, err, state);
     /* draw from the posterior mean surface distribution (no jitter) */
-    double *ezvar = new_vector(n2);
-    int i;
+    ezvar = new_vector(n2);
     for(i=0; i<n2; i++) ezvar[i] = zzs2[i] - ss2*zzjitter[i];
     predict_draw(n2, zzvm, zzm, ezvar, err, state);
     free(ezvar);
@@ -499,8 +498,7 @@ void *state;
     /* draw from the posterior predictive distribution */
     warn += predict_draw(n1, zp, zpm, zps2, err, state);
     /* draw from the posterior mean surface distribution (no jitter) */
-    double *ezvar = new_vector(n1);
-    int i;
+    ezvar = new_vector(n1);
     for(i=0; i<n1; i++) ezvar[i] = zps2[i] - ss2*zpjitter[i];
     predict_draw(n1, zpvm, zpm, ezvar, err, state);
     free(ezvar);
@@ -788,4 +786,64 @@ void move_avg(int nn, double* XX, double *YY, int n, double* X,
   free(o);
   free(Xo);
   free(Yo);
+}
+
+
+/*
+ * sobol_indices:
+ *
+ * calculate the Sobol S and T indices using samples of the
+ * posterior predictive distribution (ZZm and ZZvar) at 
+ * nn*(d+2) locations
+ */
+ 
+void sobol_indices(double *ZZ, unsigned int nn, unsigned int m, 
+		      double *S, double *T)
+{
+  /* pointers to responses for the original two LHSs */
+  unsigned int j, k;
+  double dnn, sqEZ, lVZ, ponent, U, Uminus;
+  double *fN;
+  double *fM1 = ZZ; 
+  double *fM2 = ZZ + nn;
+
+  /* accumilate means and variances */
+  double EZ, EZ2, Evar;
+  Evar = EZ = EZ2 = 0.0;
+  for(j=0; j<nn; j++){
+    EZ += fM1[j] + fM2[j];
+    EZ2 += sq(fM1[j]) + sq(fM2[j]);
+  }
+
+  /* normalization for means and variances */
+  dnn = (double) nn;
+  EZ = EZ/(dnn*2.0);
+  EZ2 = EZ2/(dnn*2.0);
+  Evar = Evar/(dnn*2.0);
+  sqEZ = sq(EZ);
+  lVZ = log(EZ2 - sqEZ); 
+  
+  /* fill S and T matrices */
+  for(k=0; k<m; k++) { /* for each column */
+    
+    /* accumulate U and Uminus for each k: the S and T dot products */
+    fN = ZZ + (k+2)*nn;
+    U = Uminus = 0.0;
+    for(j=0; j<nn; j++) {
+      U += fM1[j]*fN[j];
+      Uminus += fM2[j]*fN[j];
+    }
+
+    /* normalization for U and Uminus */
+    U = U/(dnn - 1.0);
+    Uminus = Uminus/(dnn - 1.0);
+    
+    /* now calculate S and T */
+    ponent = U - sqEZ;
+    if(ponent < 0.0) ponent = 0;
+    S[k] = exp(log(ponent) - lVZ); 
+    ponent = Uminus - sqEZ;
+    if(ponent < 0.0) ponent = 0;
+    T[k] = 1 - exp(log(ponent) - lVZ);
+  }
 }

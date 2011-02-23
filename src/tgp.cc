@@ -444,7 +444,7 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
 { 
 
   /* Calculate the main effects sample: based on M1 only for now.  */
-  unsigned int bmax =  model->get_params()->T_bmax();
+  // unsigned int bmax =  model->get_params()->T_bmax();
   int colj;
   int ngrid = *ngrid_in;
   double span = *span_in;
@@ -452,18 +452,20 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
   unsigned int nm = cump->nm;
   double *XXdraw = new_vector(nm);
   for(unsigned int i=0; i<cump->R; i++) {
-    for(unsigned int j=0; j<bmax; j++) {
+
+    /* real-valued predictors */
+    for(unsigned int j=0; j<d; j++) { 
+      if(cump->shape[j] == 0) continue; /* categorical; do later */
       for(unsigned int k=0; k<nm; k++) XXdraw[k] = cump->M[i][k*cump->d + j];
       colj = j*ngrid;
       move_avg(ngrid, &sens_XX[j*ngrid],  &ZZsample[i][colj], nm, XXdraw, 
 	       cump->ZZ[i], span);
     }
-  }
-  int n0;
-  /* Main effects for the categorical variables  */
-  for(unsigned int i=0; i<cump->R; i++) {
-    for(unsigned int j=bmax; j<d; j++) {
-      n0 = 0;
+
+    /* categorical predictors */
+    for(unsigned int j=0; j<d; j++) { 
+      if(cump->shape[j] != 0) continue; /* continuous; did earlier */
+      unsigned int n0 = 0;
       for(unsigned int k=0; k<nm; k++){
 	if(cump->M[i][k*cump->d + j] == 0){
 	  n0++;
@@ -476,10 +478,12 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
 	}
       }
       
+      /* assign for each of {0,1} */
       ZZsample[i][j*ngrid] = ZZsample[i][j*ngrid]/((double) n0);
       ZZsample[i][(j+1)*(ngrid)-1] = ZZsample[i][(j+1)*(ngrid)-1]/((double) (nm-n0) );
     }   
   }
+
   /* calculate the average of the columns of ZZsample */
   wmean_of_columns(sens_ZZ_mean, ZZsample, cump->R, ngrid*cump->d, NULL);
   /* allocate pointers for holding q1 and q2 */
@@ -492,90 +496,9 @@ void Tgp::Sens(int *ngrid_in, double *span_in, double *sens_XX, double *sens_ZZ_
   free(Q);
    
   /* variability indices S and total variability indices T are calculated here */
-
-  double **fM1, **fM2, ***fN;
-  fM1 = new_matrix(cump->R, cump->nm);
-  fM2 = new_matrix(cump->R, cump->nm);
-  fN =  new double**[cump->d];
-  for(unsigned int k=0; k<cump->d; k++){
-    fN[k] = new_matrix(cump->R, cump->nm);
-    for(unsigned int i=0; i<cump->R; i++){
-      dupv(fM1[i], cump->ZZ[i], cump->nm);
-      dupv(fM2[i], &cump->ZZ[i][cump->nm], cump->nm);
-      dupv(fN[k][i], &cump->ZZ[i][(k+2)*cump->nm], cump->nm);
-    }
-  }
-  
-  double **U, **Uminus, *EZ, *E2ZforS, *EZ2, *VZ, *VZalt;
-  
-  U = new_matrix(cump->d, cump->R);
-  Uminus = new_matrix(cump->d, cump->R);
-  EZ = new_vector(cump->R);
-  E2ZforS = new_vector(cump->R);
-  EZ2 =  new_vector(cump->R);
-  VZ = new_vector(cump->R);
-  VZalt = new_vector(cump->R);
-
-  for(unsigned int i=0; i<cump->R; i++){
-
-    EZ[i] =0.0;
-    E2ZforS[i] = 0.0;
-    EZ2[i] = 0.0;
-    VZalt[i] = 0.0;
-    for(unsigned int j=0; j<cump->nm; j++){
-      EZ[i] += fM1[i][j] + fM2[i][j];
-      E2ZforS[i] += fM1[i][j]*fM2[i][j];
-      EZ2[i] += fM1[i][j]*fM1[i][j] + fM2[i][j]*fM2[i][j];
-      VZalt[i] += (fM1[i][j]-EZ[i])*(fM1[i][j]-EZ[i])+(fM2[i][j]-EZ[i])*(fM2[i][j]-EZ[i]);
-    }
-    EZ[i] = EZ[i]/(((double) cump->nm)*2.0);
-    E2ZforS[i] = E2ZforS[i]/((double) cump->nm);
-    EZ2[i] = EZ2[i]/(((double) cump->nm)*2.0);
-    VZ[i] =  EZ2[i] - EZ[i]*EZ[i];
-    // VZalt is guarenteed to be >0, but is very unstable.
-    VZalt[i] = VZalt[i]/(((double)cump->nm)*2.0 - 1.0); 
-    //printf("i=%d, VZ=%g, EZ=%g, (EZ)^2=%g, EZ2=%g, E2Z.S=%g, VZalt=%g\n", 
-    //       i, VZ[i], EZ[i], EZ[i]*EZ[i], EZ2[i], E2ZforS[i], VZalt[i]);
-    for(unsigned int k=0; k<cump->d; k++){
-      U[k][i] = 0.0;
-      Uminus[k][i] = 0.0;
-      for(unsigned int j=0; j<cump->nm; j++){
-	U[k][i] += fM1[i][j]*fN[k][i][j];
-	Uminus[k][i] += fM2[i][j]*fN[k][i][j];
-      }
-      U[k][i] = U[k][i]/(((double)cump->nm)-1.0);
-      Uminus[k][i] = Uminus[k][i]/(((double) cump->nm)-1.0);
-    }
-  }
-
-  /* fill in the S and T matrices; tally number of time VZalt is used intead of VZ */
-  int lessthanzero = 0;
-  for(unsigned int i=0; i<cump->R; i++){
-    for(unsigned int k=0; k<cump->d; k++){
-	if(!(VZ[i] > 0.0)){/* printf("VZ%d = %g\n", i, VZ[i]);*/ 
-	    VZ[i] = VZalt[i]; lessthanzero = 1; }
-	/* saltelli recommends.... */
-	//sens_S[i*cump->d + k] = exp(log(U[k][i] - E2ZforS[i])- log(VZ[i])); 
-	sens_S[i*cump->d + k] = exp(log(U[k][i] - EZ[i]*EZ[i])- log(VZ[i])); //unbiased
-	sens_T[i*cump->d + k] = 1- exp(log(Uminus[k][i] - EZ[i]*EZ[i]) - log(VZ[i]));
-	// numerical corrections for the boundary.  Avoidable by increasing nn.lhs.
-	if((U[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_S[i*cump->d + k] = 0.0;  
-	if((Uminus[k][i] - EZ[i]*EZ[i]) <= 0.0) sens_T[i*cump->d + k] = 1.0;
-    }
-  }
-
-  /* clean up */
-  delete_matrix(fM1);
-  delete_matrix(fM2);
-  for(unsigned int k=0; k<cump->d; k++) delete_matrix(fN[k]);
-  delete [] fN;
-  delete_matrix(U);
-  delete_matrix(Uminus);
-  free(EZ); free(E2ZforS); free(EZ2); free(VZ); free(VZalt);
-
-  if(lessthanzero) 
-    warning("negative variance values were replaced by alternative nonzero estimates. \
-\nTry setting m0r1=TRUE or increasing nn.lhs for numerical stability.\n");
+  for(unsigned int i=0; i<cump->R; i++)
+    sobol_indices(cump->ZZ[i], cump->nm, cump->d, 
+		  &(sens_S[i*(cump->d)]), &(sens_T[i*(cump->d)]));
 }  
 
 

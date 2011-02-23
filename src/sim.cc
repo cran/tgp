@@ -261,10 +261,14 @@ void Sim::propose_new_d(double* d_new, double *q_fwd, double *q_bak, void *state
   /* simple identity RW-MVN proposal */
   rnorm_mult(d_new, dim, state);
   for(unsigned int i=0; i<dim; i++) {
-    d_new[i] *= 0.1;
+    d_new[i] *= 0.2;
     d_new[i] += d[i];
-    if(runi(state) < 0.5) d_new[i] = 0.0 - d_new[i];
   }
+  
+  if(runi(state) < 1.0/((double) dim)) 
+    for(unsigned int i=0; i<dim; i++)
+      if(runi(state) < 0.5) d_new[i] = 0.0 - d_new[i];
+
 }
 
 

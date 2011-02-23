@@ -12,7 +12,7 @@ sines and cosines, and partly linear.
 \begin{equation}
     z(x) = \left\{ \begin{array}{cl}
     \sin\left(\frac{\pi x}{5}\right)
-        + \frac{1}{5}\cos\left(\frac{4\pi x}{5}\right) & x < 10 \\
+        + \frac{1}{5}\cos\left(\frac{4\pi x}{5}\right) & x < 9.6 \\
 	x/10-1 & \mbox{otherwise}
    \end{array} \right. 
    \label{e:sindata}
