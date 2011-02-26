@@ -117,5 +117,4 @@ class Tgp
 /* input and output data processing */
 double ** getXdataRect(double **X, unsigned int n, unsigned int d, double **XX, 
 		       unsigned int nn);
-
 #endif

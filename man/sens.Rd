@@ -171,8 +171,6 @@ plot(s, layout="sens", ylab="Ozone", maineff=FALSE)
 
 # plot only the main effects, side by side
 plot(s, layout="sens", ylab="Ozone", main="", maineff=t(1:3))
-mtext(text="Main effects: mean and 90\% interval", line=-2,
-      outer=TRUE, font=2)
 
 # build a 'sens.p' parameter vector for a data-dependent
 # informative uncertainty distribution.  For each variable,

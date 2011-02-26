@@ -311,7 +311,6 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
 	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
 		    preds->mode, state); 
 	dupv(preds->M[index/preds->mult], preds->XX[0], preds->d * preds->nm);
-	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
 	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
       }
 

@@ -10,7 +10,7 @@ There has been considerable recent interest in the use of
 statistically generated search patterns (i.e., locations of relatively
 likely optima) for optimization.  A popular approach is to estimate a
 statistical (surrogate) model, and use it to design a set of
-well-chosen canidates for further evaluation by a direct optimization
+well-chosen candidates for further evaluation by a direct optimization
 routine.  Such statistically designed search patterns can be used
 either to direct the optimization completely (e.g.,
 \cite{JoneSchoWelc1998} or \cite{RommShoe2007}) or to work in hybrid

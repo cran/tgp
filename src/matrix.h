@@ -170,6 +170,7 @@ void copy_sub_ivector(int *V, int *p, int *v, unsigned int n);
 int* new_sub_ivector(int *p, int *v, unsigned int n);
 int sumiv(int *v, unsigned int n);
 int meaniv(int *iv, unsigned int n);
+void add_ivector(int *v1, int *v2, unsigned int n);
 
 unsigned int* new_uivector(unsigned int n);
 unsigned int* new_dup_uivector(unsigned int *iv, unsigned int n);

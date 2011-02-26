@@ -136,12 +136,11 @@ time_t my_r_process_events(time_t itime)
   time_t ntime = time(NULL);
 
   if(ntime - itime > 1) {
-#if  ( defined(HAVE_AQUA) || defined(Win32) )
-    R_ProcessEvents();
-#else
-    R_CheckUserInterrupt();
-#endif
     R_FlushConsole();
+    R_CheckUserInterrupt();
+#if  (defined(HAVE_AQUA) || defined(Win32) || defined(Win64))
+    R_ProcessEvents();
+#endif
     itime = ntime;
   }
 #endif
