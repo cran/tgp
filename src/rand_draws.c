@@ -280,8 +280,8 @@ void *state;
  * and cov is an n*n array whose lower triabgular 
  * elements are a cholesky decomposition and the 
  * diagonal has the pivots. requires a choleski 
- * decomposition be performed first.
- * code from Herbie
+ * decomposition be performed first. mu can be null
+ * for a zero mean; code from Herbie
  */
 
 void mvnrnd(x, mu, cov, n, state)
@@ -299,7 +299,7 @@ void *state;
 		for(i=0;i<j+1;i++) {
 			x[j] += cov[j][i]*rn[i];
 		}
-		x[j] += mu[j];
+		if(mu) x[j] += mu[j];
 	}
 	free(rn);
 }

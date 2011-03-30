@@ -45,7 +45,7 @@ Journal of Statistical Software, \bold{33}(6), 1--48.
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application to computer modeling}
 Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
+Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
 
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}

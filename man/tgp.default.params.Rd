@@ -65,8 +65,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
      process parameters \eqn{\alpha}{alpha}, \eqn{\beta}{beta}, \emph{minpart},
      \emph{splitmin} and \emph{basemax}:
      \deqn{p_{\mbox{\tiny split}}(\eta, \mathcal{T}) =
-       \alpha*(1+\eta)^\beta}{p(split leaf eta) =
-       alpha*(1+depth(eta))^(-beta)}
+       \alpha*(1+\eta)^\beta}{p(split leaf eta) = alpha*(1+depth(eta))^(-beta)}
 	with zero probability given to trees
 	with partitions containing less than \code{nmin} data points;
         \emph{splitmin} indicates the first column of \code{X} which 
@@ -93,8 +92,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
         LLM parameters c(g, t1, t2), with growth parameter \code{g > 0}
   	minimum parameter \code{t1 >= 0} and maximum parameter \code{t1 >= 0}, where
 	\code{t1 + t2 <= 1} specifies \deqn{p(b|d)=t_1 +
-	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 +
-	  exp(-g*(t2-t1)/(d-0.5))}}
+	  \exp\left\{\frac{-g(t_2-t_1)}{d-0.5}\right\}}{p(b|d)= t1 + exp(-g*(t2-t1)/(d-0.5))}}
       \item{d.lam}{\code{"fixed"} Hierarchical exponential distribution
 	parameters to \code{a1}, \code{g1}, \code{a2}, and \code{g2}
 	of the prior distribution for the range parameter \code{d.p};
@@ -121,8 +119,11 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
    \item{nugf.p}{\code{c(1,1,1,1)}  Parameters in the mixture of gammas prior
        on the residual \dQuote{fine} process nugget parameter for
        \code{corr="mrexpsep"}: \code{c(a1,g1,a2,g2)} where \code{g1} and
-     \code{g2} are scale (1/rate) parameters; default reduces to simple exponential prior.
-   }
+     \code{g2} are scale (1/rate) parameters; default reduces to simple
+     exponential prior.}
+   \item{dp.sim}{\code{basemax * basemax} RW-MVN
+     proposal covariance matrix for GP-SIM models; only appears when
+       \code{corr="sim"}, the default is \code{diag(rep(0.2, basemax))}}
 }
 
 
@@ -142,8 +143,13 @@ Journal of Statistical Software, \bold{33}(6), 1--48.
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application to computer modeling}
 Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
+Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
+
+Robert B. Gramacy, Heng Lian (2011).
+\emph{Gaussian process single-index models as emulators for computer
+  experiments}.  Available as ArXiv article 1009.4241
+\url{http://arxiv.org/abs/1009.4241}
 
 \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
 }

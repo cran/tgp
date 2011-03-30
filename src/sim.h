@@ -44,7 +44,8 @@ class Sim : public Corr
   Sim(unsigned int dim, Base_Prior *base_prior);
   virtual Corr& operator=(const Corr &c);
   virtual ~Sim(void);
-  virtual void Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX);
+  virtual void Update(unsigned int n1, unsigned int n2, double **K, 
+		      double **X, double **XX);
   virtual void Update(unsigned int n1, double **X);
   virtual void Update(unsigned int n1, double **K, double **X);
   virtual int Draw(unsigned int n, double **F, double **X, double *Z, double *lambda, 
@@ -85,6 +86,8 @@ class Sim_Prior : public Corr_Prior
  private:
 
   double *d;
+  double **dp_cov_chol; /* prior standard deviation for proposals */
+  // double **dp_Rho;      /* prior standard deviation for proposals */
   double **d_alpha;	/* d gamma-mixture prior alphas */
   double **d_beta;	/* d gamma-mixture prior beta */
   bool   fix_d;		/* estimate d-mixture parameters or not */
@@ -113,6 +116,8 @@ class Sim_Prior : public Corr_Prior
   double* D(void);
   double** DAlpha(void);
   double** DBeta(void);
+  double** DpCov_chol(void);
+  // double** DpRho(void);
   void default_d_priors(void);
   void default_d_lambdas(void);
   double log_Prior(double *d);

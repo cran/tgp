@@ -1,3 +1,11 @@
+2.4-2 (30 March 2011)
+-----
+
+added dp.sim to tgp.default.params so that MVN proposal
+covariance matrix can be specified by the user in GP-SIM
+models
+
+
 2.4-1 (23 Feb 2011)
 -----
 

@@ -94,6 +94,7 @@ function(d, meanfn=c("linear", "constant") ,
          delta.p=c(),                   # delta parameter for high fidelity variance
          nugf.p=c(),                    # residual process nugget gamma-mix prior params
          d.lam="fixed",			# d lambda hierarch gamma-mix prior params (or "fixed")
+         dp.sim=diag(0.2,basemax),      # d-proposal covariance for sim correlaton
          nu=c()                         # matern correlation smoothing parameter
          )
 
@@ -133,18 +134,20 @@ function(params, d)
 {
   ## check the number of parameters
   if(is.null(params)) return(matrix(-1));
-  if(length(params) != 21) {
-    stop(paste("Number of params should be 21, you have", length(params), "\n"));
+  if(length(params) != 22) {
+    stop(paste("Number of params should be 22, you have", length(params), "\n"));
   }
         
   ## tree prior parameters
   if(length(params$tree) != 5) {
-    stop(paste("length of params$tree should be 5, you have", length(params$tree), "\n"));
+    stop(paste("length of params$tree should be 5, you have",
+               length(params$tree), "\n"));
   }
 
   ## check tree minpart is bigger than input dimension
-  if(params$tree[3] < params$tree[5]) {
-    stop(paste("tree minpart", params$tree[3], "should be > basemax =", params$tree[5], "\n"));
+  basemax <- params$tree[5]
+  if(params$tree[3] < basemax) {
+    stop(paste("tree minpart", params$tree[3], "should be > basemax =", basemax, "\n"));
   }
 
   ## check tree splitmin is <= than input dimension
@@ -152,13 +155,9 @@ function(params, d)
     stop(paste("tree splitmin", params$tree[4], "should be >= 1 and <= d =", d, "\n"));
   }
 
-  ## Splitmin = 1 indicated that the first row of the design matrix is not to be split.
-  ## Taddy: this is now handled in tgp.default.params
-  ## if(params$corr == "mrexpsep"){ params$tree[4] <- 1 }
-
   ## check tree basemax is > splitmin and <= than input dimension
-  if(params$tree[5] < 1 || params$tree[5] > d) {
-    stop(paste("tree basemax", params$tree[5], "should be >= 1 and <= d =", d, "\n"));
+  if(basemax < 1 || params$tree[5] > d) {
+    stop(paste("tree basemax", basemax, "should be >= 1 and <= d =", d, "\n"));
   }
 
   ## tree alpha and beta parameters
@@ -168,11 +167,13 @@ function(params, d)
   if(params$meanfn == "linear") {
     meanfn <- 0;
     if(params$col != d+1)
-      stop(paste("col=", params$col, " should be d+1=", d+1, "with linear mean function",  sep=""))
+      stop(paste("col=", params$col, " should be d+1=", d+1,
+                 "with linear mean function",  sep=""))
   } else if(params$meanfn == "constant"){
     meanfn <- 1;
     if(params$col != 1)
-      stop(paste("col=", params$col, " should be 1 with constant mean function",  sep=""))
+      stop(paste("col=", params$col,
+                 " should be 1 with constant mean function",  sep=""))
   } else { cat(paste("params$meanfn =", params$meanfn, "not valid\n")); meanfn <- 0; }
   p <- c(p, meanfn)
   
@@ -187,8 +188,8 @@ function(params, d)
   else { stop(paste("params$bprior =", params$bprior, "not valid\n")); }
   
   ## initial settings of beta linear prior mean parameters
-  if(length(params$beta) != min(params$col, params$tree[5]+1)) {
-    stop(paste("length of params$beta should be", min(params$col, params$tree[5]+1),
+  if(length(params$beta) != min(params$col, basemax+1)) {
+    stop(paste("length of params$beta should be", min(params$col, basemax+1),
                "you have", length(params$beta), "\n"));
   }
 
@@ -322,9 +323,17 @@ function(params, d)
   if(params$d.lam[1] == "fixed") p <- c(p, rep(-1, 4))
   else p <- c(p, as.numeric(params$d.lam))
 
+  ## add sd for proposals for sim-d parameters
+  if(params$corr == "sim") {
+    if(nrow(params$dp.sim) != basemax || ncol(params$dp.sim) != basemax)
+      stop("dp.sim should be ", basemax, "x", basemax, "\n");
+    p <- c(p,as.numeric(params$dp.sim))
+  }
+
   ## nu smoothness parameter for Matern correlation function
   if(params$corr == "matern") {
-    if(params$nu < 0) stop(paste("nu should be greater than zero, you have",  params$nu, "\n"))
+    if(params$nu < 0) stop(paste("nu should be greater than zero, you have",
+                                 params$nu, "\n"))
   }
   p <- c(p, as.numeric(params$nu))
 

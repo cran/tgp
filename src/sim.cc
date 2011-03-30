@@ -27,6 +27,7 @@ extern "C"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"
+#include "linalg.h"
 #include "rand_pdf.h"
 #include "all_draws.h"
 #include "gen_covar.h"
@@ -254,21 +255,55 @@ void Sim::Update(unsigned int n1, unsigned int n2, double **K,
  * propose new d values. 
  */
 
+/* extern "C" {
+double orthant_miwa(int m, double *mu, double **Rho, int log2G,
+                  int conesonly, int *nconep);
+#define _orthant_miwa orthant_miwa
+} */
+/* use code from Peter Craig: gridcalc.c orschm.c, orthant.c/h
+   with minor modifications to get to compile */
+
 void Sim::propose_new_d(double* d_new, double *q_fwd, double *q_bak, void *state)
 {
-  *q_bak = *q_fwd = 1.0;
-  
-  /* simple identity RW-MVN proposal */
-  rnorm_mult(d_new, dim, state);
-  for(unsigned int i=0; i<dim; i++) {
-    d_new[i] *= 0.2;
-    d_new[i] += d[i];
-  }
-  
-  if(runi(state) < 1.0/((double) dim)) 
-    for(unsigned int i=0; i<dim; i++)
-      if(runi(state) < 0.5) d_new[i] = 0.0 - d_new[i];
+  /* pointer to sim prior */
+  Sim_Prior* sp = (Sim_Prior*) prior;
 
+  /* calculate old signs */
+  /* double *signs = new_zero_vector(dim);
+  for(unsigned int i=0; i<dim; i++) {
+    if(d[i] > 0) signs[i] = 1.0; else signs[i] = -1.0;
+  } */
+
+  /* calculate probability of old signs */
+  /* double **P = new_zero_matrix(dim, dim);
+  linalg_dgemm(CblasNoTrans,CblasNoTrans,dim,dim,1,
+               1.0,&signs,dim,&signs,1,0.0,P,dim);
+  double **RhoP = new_dup_matrix(sp->DpRho(), dim, dim);
+  for(unsigned int i=0; i<dim*dim; i++) (*RhoP)[i] *= (*P)[i];
+  int cones;
+  *q_bak = orthant_miwa(dim, NULL, RhoP, 8, 0, &cones); */
+
+  /* RW-MVN proposal */
+  mvnrnd(d_new, d, sp->DpCov_chol(), dim, state);
+  
+  /* random signs from same MVN */
+  /* mvnrnd(signs, NULL, sp->DpCov_chol(), dim, state);
+  for(unsigned int i=0; i<dim; i++) {
+    if(signs[i] > 0) signs[i] = 1.0; else signs[i] = -1.0;
+    d_new[i] = signs[i] * fabs(d_new[i]);
+    } */
+
+  /* calculate probability of proposed signs */
+  /* linalg_dgemm(CblasNoTrans,CblasNoTrans,dim,dim,1,
+               1.0,&signs,dim,&signs,1,0.0,P,dim);
+  dup_matrix(RhoP, sp->DpRho(), dim, dim);
+  for(unsigned int i=0; i<dim*dim; i++) (*RhoP)[i] *= (*P)[i];
+  *q_fwd = orthant_miwa(dim, NULL, RhoP, 8, 0, &cones); */
+
+  /* clean up */
+  /* free(signs);
+  delete_matrix(RhoP);
+  delete_matrix(P); */
 }
 
 
@@ -611,6 +646,8 @@ Sim_Prior::Sim_Prior(unsigned int dim) : Corr_Prior(dim)
 
   /* default starting values and initial parameterization */
   d = ones(dim, 0.5);
+  dp_cov_chol = new_id_matrix(dim);
+  // dp_Rho = new_id_matrix(dim);
   d_alpha = new_zero_matrix(dim, 2);
   d_beta = new_zero_matrix(dim, 2);
   default_d_priors();	/* set d_alpha and d_beta */
@@ -669,6 +706,8 @@ Sim_Prior::Sim_Prior(Corr_Prior *c) : Corr_Prior(c)
   corr_model = e->corr_model;
   dupv(gamlin, e->gamlin, 3);
   d = new_dup_vector(e->d, dim);
+  dp_cov_chol = new_dup_matrix(e->dp_cov_chol, dim, dim);
+  // dp_Rho = new_dup_matrix(e->dp_Rho, dim, dim);
   fix_d = e->fix_d;
   d_alpha = new_dup_matrix(e->d_alpha, dim, 2);
   d_beta = new_dup_matrix(e->d_beta, dim, 2);
@@ -688,6 +727,8 @@ Sim_Prior::Sim_Prior(Corr_Prior *c) : Corr_Prior(c)
 Sim_Prior::~Sim_Prior(void)
 {
   free(d);
+  delete_matrix(dp_cov_chol);
+  // delete_matrix(dp_Rho);
   delete_matrix(d_alpha);
   delete_matrix(d_beta);
 }
@@ -730,6 +771,26 @@ void Sim_Prior::read_double(double *dparams)
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, dparams, "d lambda");
   }
   dparams += 4; /* reset */
+
+  /* read the covariance for d proposals */
+  dupv(*dp_cov_chol, dparams, dim*dim);
+  dparams += dim*dim;
+
+  /* calculate the correlation matrix Rho */
+  /* double *s = new_vector(dim);
+  for(unsigned int i=0; i<dim; i++) 
+    s[i] = sqrt(dp_cov_chol[i][i]);
+  double **S = new_zero_matrix(dim, dim);
+  linalg_dgemm(CblasNoTrans,CblasNoTrans,dim,dim,1,
+               1.0,&s,dim,&s,1,0.0,S,dim);
+  for(unsigned int i=0; i<dim*dim; i++) 
+    (*dp_Rho)[i] = (*dp_cov_chol)[i] / (*S)[i];
+  delete_matrix(S);
+  free(s); */
+
+ /* Choleski decompose */
+  int info = linalg_dpotrf(dim, dp_cov_chol);
+  assert(info == 0); 
 }
 
 
@@ -846,6 +907,32 @@ double** Sim_Prior::DBeta(void)
 {
   return d_beta;
 }
+
+
+/*
+ * DpCov_chol:
+ *
+ * return the Cholesky decomposed covariance matrix for
+ * the proposal distribution
+ */
+
+double** Sim_Prior::DpCov_chol(void)
+{
+  return dp_cov_chol;
+}
+
+
+/*
+ * DpRho:
+ *
+ * return the Cholesky decomposed covariance matrix for
+ * the proposal distribution
+ */
+
+/* double** Sim_Prior::DpRho(void)
+{
+  return dp_Rho;
+} */
 
 
 /*

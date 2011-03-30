@@ -15,7 +15,8 @@ limiting linear model (LLM).  The package contains functions which facilitate
 inference for seven regression models of varying complexity using Markov chain
 Monte Carlo (MCMC): linear model, CART (Classification and Regression
 Tree), treed linear model, Gaussian process (GP),  GP with jumps to the LLM, 
-treed GP, and treed GP LLM.  R provides an interface to the C/C++ backbone, 
+GP single-index models, treed GPs, treed GP LLMs, and treed GP single-index
+models.  R provides an interface to the C/C++ backbone, 
 and a serves as mechanism for graphically visualizing the results of inference 
 and posterior predictive surfaces under the models.  A Bayesian Monte Carlo
 based sensitivity analysis is implemented, and multi-resolution models are
@@ -48,8 +49,13 @@ Journal of Statistical Software, \bold{33}(6), 1--48.
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application to computer modeling}
 Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
+Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
+
+Robert B. Gramacy, Heng Lian (2011).
+\emph{Gaussian process single-index models as emulators for computer
+  experiments}.  Available as ArXiv article 1009.4241
+\url{http://arxiv.org/abs/1009.4241}
 
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design of supercomputer experiments.}
