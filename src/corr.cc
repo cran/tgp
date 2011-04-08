@@ -493,7 +493,7 @@ void Corr_Prior::fix_nug_prior(void)
 /*
  * read_double_nug:
  *
- * read the a prior paramter vector of doubles for
+ * read the a prior parameter vector of doubles for
  * items pertaining to the nugget, coming from R
  */
 
@@ -535,7 +535,7 @@ void Corr_Prior::read_double_nug(double *dparams)
 /*
  * read_ctrlfile_nug:
  *
- * read the a prior paramter the control file
+ * read the a prior parameter the control file
  * items pertaining to the nugget
  */
 
@@ -592,7 +592,7 @@ double Corr_Prior::Nug(void)
 /*
  * NugAlpha:
  *
- * return the starting nugget alpha paramter
+ * return the starting nugget alpha parameter
  * vector for the mixture gamma prior
  */
 
@@ -605,7 +605,7 @@ double *Corr_Prior::NugAlpha(void)
 /*
  * NugBeta:
  *
- * return the starting nugget beta paramter
+ * return the starting nugget beta parameter
  * vector for the mixture gamma prior
  */
 

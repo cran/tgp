@@ -74,7 +74,7 @@ Friedman, J. H. (1991).
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application to computer modeling}
 Journal of the American Statistical Association, \bold{to appear}.
-Also available as as ArXiv article 0710.4536
+Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
 
 Chipman, H., George, E., \& McCulloch, R. (2002).

@@ -229,7 +229,7 @@ double ss2, corr_diag, tau2;
  * FF,FW,W,xxKx,KpFWF,KpFWFi,b,ss2,nug,KiZmFb
  *
  * Also calls delta_sigma2 at each predictive location,
- * becuase it uses many of the same computed quantaties 
+ * because it uses many of the same computed quantaties 
  * as needed to compute the predictive variance.
  *
  * b[col], KiZmFb[n1], z[n2] FFrow[n2][col], KKrow[n2][n1], 
@@ -746,7 +746,7 @@ void move_avg(int nn, double* XX, double *YY, int n, double* X,
     Yo[i] = Y[o[i]-1];
   }
 
-  /* window paramters */
+  /* window parameters */
   w = new_vector(n);  /* window weights */
   l = 0;              /* lower index of window */
   u = q-1;            /* upper index of the window */

@@ -136,7 +136,7 @@ Gp::Gp(double **X, double *Z, Base *old, bool economy) : Base(X, Z, old, economy
  * Dup:
  * 
  * create a new Gp base model from an old one; cannot use old->X 
- * and old->Z becuase they are pointers to the old copy of the 
+ * and old->Z because they are pointers to the old copy of the 
  * treed partition from which this function is likely to have been
  * called.  The economy argument allows a memory efficient 
  * duplication which does not copy the covariance matrices, as these
@@ -378,7 +378,7 @@ bool Gp::Draw(void *state)
   unsigned int info = beta_draw_margin(b, col, Vb, bmu, s2, state);
   if(info != 0) b[0] = mean; 
   
-  /* tau2: last becuase of Vb and lambda */
+  /* tau2: last because of Vb and lambda */
   if(p->BetaPrior() != BFLAT && p->BetaPrior() != B0NOT && p->BetaPrior() != BMZNOT)
     tau2 = tau2_draw(col, p->get_Ti(), s2, b, p->get_b0(), 
 		     p->tau2Alpha(), p->tau2Beta(), state);

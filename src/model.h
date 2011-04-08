@@ -119,6 +119,7 @@ class Model
   void predict_master(Tree *leaf, Preds *preds, int index, void* state);
   void Predict(Tree* leaf, Preds* preds, unsigned int index, bool dnorm, void *state);
   Tree** CopyPartitions(unsigned int *numLeaves);
+  void MAPreplace(void);
   void predict_xx(Tree* ll, Preds* preds, int index, bool dnorm, void *state);
   void cut_branch(void *state);
   void cut_root(void);

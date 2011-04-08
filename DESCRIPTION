@@ -1,27 +1,26 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.4-1
-Date: 2011-02-23
+Version: 2.4-2
+Date: 2011-03-30
 Author: Robert B. Gramacy <rbgramacy@ams.ucsc.edu> and Matt A. Taddy
         <taddy@ams.ucsc.edu>
 Depends: R (>= 2.10)
 Suggests: akima, maptree, MASS
 Description: Bayesian nonstationary, semiparametric nonlinear
-        regression and design by treed Gaussian processes with jumps to
-        the limiting linear model (LLM).  Special cases also
+        regression and design by treed Gaussian processes (GPs) with
+        jumps to the limiting linear model (LLM).  Special cases also
         implemented include Bayesian linear models, CART, treed linear
-        models, stationary separable and isotropic Gaussian processes.
-        Provides 1-d and 2-d plotting functions (with projection and
-        slice capabilities) and tree drawing, designed for
-        visualization of tgp-class output.  Sensitivity analysis and
-        multi-resolution models are supported. Sequential experimental
-        design and adaptive sampling functions are also provided,
-        including ALM, ALC, and expected improvement.  The latter
-        supports derivative-free optimization of noisy black-box
+        models, stationary separable and isotropic GPs, and GP
+        single-index models.  Provides 1-d and 2-d plotting functions
+        (with projection and slice capabilities) and tree drawing,
+        designed for visualization of tgp-class output.  Sensitivity
+        analysis and multi-resolution models are supported. Sequential
+        experimental design and adaptive sampling functions are also
+        provided, including ALM, ALC, and expected improvement.  The
+        latter supports derivative-free optimization of noisy black-box
         functions.
 Maintainer: Robert B. Gramacy <rbgramacy@ams.ucsc.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
-Packaged: 2011-02-24 23:46:52 UTC; rgramacy
 Repository: CRAN
-Date/Publication: 2011-02-26 08:22:40
+Date/Publication: 2011-04-08 13:50:15

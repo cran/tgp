@@ -218,7 +218,7 @@ double corr_diag, ss2, tau2;
  * terms of FF,FW,W,xxKx,IDpFWF,IDpFWFi,b,ss2,Kdiag
  *
  * Also calls delta_sigma2 at each predictive location,
- * becuase it uses many of the same computed quantaties 
+ * because it uses many of the same computed quantaties 
  * as needed to compute the predictive variance.
  *
  * b[col], z[n2] FFrow[n2][col] IDpFWFi[n1][n1], 

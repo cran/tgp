@@ -56,14 +56,14 @@ void tgp(int* state_in,
 	 int *MAP_in, int *sens_ngrid, double *sens_span, double *sens_Xgrid_in,  
 
 	 /* outputs to R */
-	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, double *ZZ_km_out, double *Zp_kvm_out,
-	 double *ZZ_kvm_out, double *Zp_q_out, double *ZZ_q_out, double *Zp_s2_out, double *ZZ_s2_out, 
-	 double *ZpZZ_s2_out, double *Zp_ks2_out, double *ZZ_ks2_out, double *Zp_q1_out, 
-	 double *Zp_median_out, double *Zp_q2_out, double *ZZ_q1_out, double *ZZ_median_out, 
-	 double *ZZ_q2_out, double *Ds2x_out, double *improv_out, int *irank_out, 
-	 double *ess_out, double *gpcs_rates_out,
-	 double *sens_ZZ_mean_out, double *sens_ZZ_q1_out,double *sens_ZZ_q2_out, 
-	 double *sens_S_out,  double *sens_T_out)
+	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, 
+	 double *ZZ_km_out, double *Zp_kvm_out, double *ZZ_kvm_out, double *Zp_q_out, 
+	 double *ZZ_q_out, double *Zp_s2_out, double *ZZ_s2_out, double *ZpZZ_s2_out, 
+	 double *Zp_ks2_out, double *ZZ_ks2_out, double *Zp_q1_out, double *Zp_median_out, 
+	 double *Zp_q2_out, double *ZZ_q1_out, double *ZZ_median_out, double *ZZ_q2_out, 
+	 double *Ds2x_out, double *improv_out, int *irank_out, double *ess_out, 
+	 double *gpcs_rates_out, double *sens_ZZ_mean_out, double *sens_ZZ_q1_out,
+	 double *sens_ZZ_q2_out, double *sens_S_out,  double *sens_T_out)
 {
 
   /* create the RNG state */
@@ -212,7 +212,7 @@ Tgp::Tgp(void *state, int n, int d, int nn, int B, int T, int E, int R,
  * ~Tgp: (destructor)
  *
  * typical destructor function.  Checks to see if the class objects
- * are NULL first becuase this might be called from within 
+ * are NULL first because this might be called from within 
  * tgp_cleanup if tgp was interrupted during computation
  */
 
@@ -341,6 +341,9 @@ void Tgp::Rounds(void)
 
   /* this should only happen if trace==TRUE */
   model->PrintLinarea();
+
+  /*******/
+  model->MAPreplace();
 
   /* write the preds out to files */
   if(trace && T-B>0) {

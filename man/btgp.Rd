@@ -367,6 +367,11 @@ Gramacy, R. B., Lee, H. K. H. (2009).
 Technometrics, to appear. Also avaliable on ArXiv article 0805.4359
 \url{http://arxiv.org/abs/0805.4359}
 
+Robert B. Gramacy, Heng Lian (2011).
+\emph{Gaussian process single-index models as emulators for computer
+  experiments}.  Available as ArXiv article 1009.4241
+\url{http://arxiv.org/abs/1009.4241}
+
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
 Journal of the American Statistical Association, \bold{93},

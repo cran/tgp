@@ -378,7 +378,7 @@ void Model::predict_master(Tree *leaf, Preds *preds, int index, void* state)
  * 
  * predict at one of the leaves of the tree.
  * this was made into a function in order to help simplify 
- * the rounds() function.  Also, now fascilitates paramter
+ * the rounds() function.  Also, now fascilitates parameter
  * traces for the GPs which govern the XX locations.
  */
 
@@ -1182,6 +1182,31 @@ Tree** Model::CopyPartitions(unsigned int *numLeaves)
   }
   free(leaves);
   return copies;
+}
+
+
+/*
+ * MAPreplace:
+ * 
+ * set the current model tree to be the MAP one that
+ * is stored
+ */
+
+void Model::MAPreplace(void)
+{
+  Tree* maxt = maxPosteriors();
+  assert(maxt);
+  if(t) delete t;
+  t = new Tree(maxt, true);
+  
+  /* get leaves ready for use */
+  unsigned int len;
+  Tree** leaves = t->leavesList(&len);
+  for(unsigned int i=0; i<len; i++) {
+    leaves[i]->Update();
+    leaves[i]->Compute();
+  }
+  free(leaves);
 }
 
 

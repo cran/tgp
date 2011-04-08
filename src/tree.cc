@@ -114,14 +114,14 @@ Tree::Tree(const Tree *told, bool economy)
   parent = leftChild = rightChild = next = NULL;
   
   /* things that must be NULL 
-   * becuase they point to other tree nodes */
+   * because they point to other tree nodes */
   XX = NULL;
   pp = NULL;
   nn = 0;
   
   /* data */
   assert(told->rect); 	rect = new_dup_rect(told->rect);
-  assert(told->X); 	X = new_dup_matrix(told->X,n,d);
+  assert(told->X); 	X = new_dup_matrix(told->X, n, d);
   assert(told->Z); 	Z = new_dup_vector(told->Z, n);
   assert(told->p);	p = new_dup_ivector(told->p, n); 
   
@@ -1051,7 +1051,7 @@ bool Tree::match(Tree* oldT, void *state)
       if(tree_op != CHANGE) return false;
       
 #ifdef CPRUNEOP
-      /* growing failed becuase of <= MINPART, try CPRUNE */
+      /* growing failed because of <= MINPART, try CPRUNE */
       tree_op = CPRUNE;
       if(!oldT->rightChild->isLeaf()) return match(oldT->rightChild, state);
       else if(!oldT->leftChild->isLeaf()) return match(oldT->leftChild, state);
