@@ -262,10 +262,10 @@ unsigned int Params::T_bmax(void)
 
 void get_mix_prior_params(double *alpha, double *beta, char *line, const char* which)
 {
-  assert((alpha[0] = atof(strtok(line, " \t\n#"))) > 0);
-  assert((beta[0] = atof(strtok(NULL, " \t\n#"))) > 0);
-  assert((alpha[1] = atof(strtok(NULL, " \t\n#"))) > 0);
-  assert((beta[1] = atof(strtok(NULL, " \t\n#"))) > 0);
+  alpha[0] = atof(strtok(line, " \t\n#")); assert(alpha[0] > 0);
+  beta[0] = atof(strtok(NULL, " \t\n#")); assert(beta[0] > 0);
+  alpha[1] = atof(strtok(NULL, " \t\n#")); assert(alpha[1] > 0);
+  beta[1] = atof(strtok(NULL, " \t\n#")); assert(beta[1] > 0);
   /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
      which, alpha[0], beta[0], alpha[1], beta[1]); */
 } 
@@ -281,10 +281,10 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, const char* w
 
 void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta, const char* which)
 {
-  assert((alpha[0] = alpha_beta[0]) >= 0);
-  assert((beta[0] = alpha_beta[1]) >= 0);
-  assert((alpha[1] = alpha_beta[2]) >= 0);
-  assert((beta[1] = alpha_beta[3]) >= 0);
+  alpha[0] = alpha_beta[0]; assert(alpha[0] >= 0);
+  beta[0] = alpha_beta[1]; assert(beta[0] >= 0);
+  alpha[1] = alpha_beta[2]; assert(alpha[1] >= 0);
+  beta[1] = alpha_beta[3]; assert(beta[1] >= 0);
   /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
      which, alpha[0], beta[0], alpha[1], beta[1]); */
 }

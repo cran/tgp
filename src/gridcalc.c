@@ -46,7 +46,7 @@ extern double nrml_lq(double p, double ueps, double peps, int *itr);
 void gridcalc(struct GRID *g)
 {
   int     hgrd=(g->n)/2, ngrd=2*hgrd, nres=(hgrd<100)?3:6;
-  int     i, itr;
+  int     i; /*, itr; */
   double  pdelta;
 
   g->z[0] = -8.0;

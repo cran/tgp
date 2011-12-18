@@ -211,7 +211,8 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
       else val = (dtree[2] - rect[0][var]) / norm;
 
       /* create children split at (var,val) */
-      assert(grow_children());
+      bool success = grow_children();
+      assert(success);
       
       /* recursively read the left and right children from dtree */
       unsigned int left = 1;
@@ -718,7 +719,8 @@ void Tree::swapData(Tree* t)
   if(t == rightChild) op = GT;
   else { assert(t == leftChild); op = LEQ; }
   
-  assert(part_child(op, &Xc, &pnew, &plen, &Zc, &newRect));
+  bool success = part_child(op, &Xc, &pnew, &plen, &Zc, &newRect);
+  assert(success);
   t->X = Xc;
   t->p = pnew;
   t->Z = Zc;
@@ -1056,8 +1058,10 @@ bool Tree::match(Tree* oldT, void *state)
       if(!oldT->rightChild->isLeaf()) return match(oldT->rightChild, state);
       else if(!oldT->leftChild->isLeaf()) return match(oldT->leftChild, state);
       else {
-	if(runi(state) > 0.5) assert(match(oldT->leftChild, state));
-	else assert(match(oldT->rightChild, state));
+        bool success = false;
+	if(runi(state) > 0.5) success = match(oldT->leftChild, state);
+	else success = match(oldT->rightChild, state);
+        assert(success);
 	return true;
       }
 #endif

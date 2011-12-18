@@ -118,8 +118,8 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \seealso{ \code{\link{btgp}} }

@@ -51,7 +51,7 @@ fried.bool(n = 100)
   \item{I.1, \dots, I.3}{boolean version of the indicators provided only
     for \code{fried.bool}, as described above}
   \item{Y}{sample responses (with N(0,1) noise)}
-  \item{Ytruth}{true responses (without noise)}
+  \item{Ytrue}{true responses (without noise)}
 }
 
 \references{ 
@@ -85,8 +85,8 @@ Machine Learning, \bold{48}, 303--324.
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \note{An example using the original version of the data

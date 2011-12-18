@@ -1063,7 +1063,7 @@ void *state;
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
   alpha = exp(pd - pdlast)*qRatio;
-  if(isnan(alpha)) return -1;
+  if(ISNAN(alpha)) return -1;
   if(runi(state) < alpha) return 1;
   else return 0;
 }
@@ -1122,7 +1122,7 @@ void *state;
   
   /* compute acceptance prob; and accept or reject */
   alpha = exp(pd - pdlast + pRatio_log)*qRatio;
-  if(isnan(alpha)) return -1;
+  if(ISNAN(alpha)) return -1;
   if(runi(state) < alpha) return 1;
   else return 0;
 }
@@ -1191,7 +1191,7 @@ void *state;
   
   /* compute acceptance prob; and accept or reject */
   alpha = exp(pd - pdlast + pRatio_log)*qRatio;
-  if(isnan(alpha)) return -1;
+  if(ISNAN(alpha)) return -1;
   if(runi(state) < alpha) return 1;
   else return 0;
 }
@@ -1256,7 +1256,7 @@ void *state;
   /* compute acceptance prob */
   /*alpha = exp(pd - pdlast + plin)*(q_bak/q_fwd);*/
   alpha = exp(pd - pdlast)*qRatio;
-  if(isnan(alpha)) return -1;
+  if(ISNAN(alpha)) return -1;
   if(runi(state) < alpha) return 1;
   else return 0;
 }

@@ -28,7 +28,7 @@ Given some data $\{\mb{X},\mb{Z}\}$, the first step in sequential
 design using {\tt tgp} is to fit a treed GP LLM model to the data,
 without prediction, in order to infer the MAP tree
 $\hat{\mathcal{T}}$.
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", R=5, verb=0)
 @ 
 \begin{figure}[ht!]

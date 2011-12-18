@@ -36,7 +36,7 @@ quite well behaved.  In two dimensions one has a choice between the
 isotropic and separable correlation functions.  Separable is the
 default in the {\tt tgp} package.  For illustrative purposes here, I
 shall use the isotropic power family.
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0) 	
 @
 \begin{figure}[ht!]
@@ -68,7 +68,7 @@ A treed GP seems more appropriate for this data. It can separate out
 the large uninteresting part of the input space from the interesting part.
 The result is speedier inference and region-specific estimates of
 predictive uncertainty.  
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
 @ 
 \begin{figure}[ht!]

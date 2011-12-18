@@ -66,8 +66,8 @@ Gramacy, R.B., Samworth, R.J., and King, R. (2007)
 }
 
 \author{
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \seealso{ \code{\link{default.itemps}}, \code{vignette(tgp2)}, 

@@ -935,7 +935,6 @@ void Model::init_parallel_preds(void)
   
 #else
   error("init_parallel_preds: not compiled for pthreads\n");
-  exit(0);
 #endif
 }
 

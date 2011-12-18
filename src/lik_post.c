@@ -92,11 +92,11 @@ double a0, g0, tau2, lambda, log_detK, itemp;
 	     myflush(stderr); */
   
   /* make sure we got a good p */
-  if(isnan(p)) {
+  if(ISNAN(p)) {
     p = 0.0-1e300*1e300;
     /* warning("post_margin_rj, p is NAN"); */
 #ifdef DEBUG
-    assert(!isnan(p));
+    assert(!ISNAN(p));
 #endif
   }
 
@@ -145,11 +145,11 @@ double a0, g0, lambda, log_detK, itemp;
   p = 0.5*one + two;
   
   /* make sure we got a good p */
-  if(isnan(p)) {
+  if(ISNAN(p)) {
     p = 0.0-1e300*1e300;
     /* warning("post_margin, p is NAN"); */
 #ifdef DEBUG
-    assert(!isnan(p));
+    assert(!ISNAN(p));
 #endif
   }
 

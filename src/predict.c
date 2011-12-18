@@ -400,7 +400,7 @@ int err;
     
 #ifdef DEBUG
     /* accumulate counts of nan and inf errors */
-    if(isnan(z[i]) || s2[i] == 0) fnan++;
+    if(ISNAN(z[i]) || s2[i] == 0) fnan++;
     if(!R_FINITE(z[i])) finf++;
 #endif
   }
@@ -566,7 +566,7 @@ void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
     
     /* finish the calculation as long as there weren't any
        numerical instabilities */
-    if(!R_FINITE(d) || !R_FINITE(p) || isnan(d) || isnan(p)) {     
+    if(!R_FINITE(d) || !R_FINITE(p) || ISNAN(d) || ISNAN(p)) {     
       improv[i] = 0.0;
     } else improv[i] = diff * p + zzs*d;
     

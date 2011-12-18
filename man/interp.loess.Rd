@@ -60,8 +60,8 @@ interp.loess(x, y, z, gridlen = c(40,40), span = 0.1, ...)
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \note{ 
