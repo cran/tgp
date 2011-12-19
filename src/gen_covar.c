@@ -532,7 +532,7 @@ long nb;
 
 	    /* default to K=1.0 when there is numerical instability 
 	       in the bessel calculation */
-	    if(isnan(K[i][j]) ) K[i][j] = 1.0;
+	    if(ISNAN(K[i][j]) ) K[i][j] = 1.0;
 	  }
         }
       }
@@ -597,7 +597,7 @@ long nb;
 
       /* default to K=1.0 when there is numerical instability
 	 in the bessel calculation */
-      if(isnan(K[i][j])) K[i][j] = 1.0;
+      if(ISNAN(K[i][j])) K[i][j] = 1.0;
 
       /* fill in the lower triangle */
       K[j][i] = K[i][j];

@@ -155,8 +155,8 @@ Robert B. Gramacy, Heng Lian (2011).
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \note{Please refer to the examples for the functions in

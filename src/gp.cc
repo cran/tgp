@@ -563,7 +563,7 @@ double Gp::MarginalLikelihood(double itemp)
 			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
   
 #ifdef DEBUG
-  if(isnan(post)) warning("nan in posterior");
+  if(ISNAN(post)) warning("nan in posterior");
   if(!R_FINITE(post)) warning("inf in posterior");
 #endif
   return post;
@@ -602,7 +602,7 @@ double Gp::Likelihood(double itemp)
   if(Kdiag) free(Kdiag);
 
 #ifdef DEBUG
-  if(isnan(llik)) warning("nan in likelihood");
+  if(ISNAN(llik)) warning("nan in likelihood");
   if(!R_FINITE(llik)) warning("inf in likelihood");
 #endif
   return llik;

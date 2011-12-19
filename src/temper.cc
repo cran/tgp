@@ -573,7 +573,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
     myprintf(stdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
 	     tlen, tess, ((double)wlen)*calc_ess(w,wlen));
     double lce = wlen*(wlen-1.0)*gamma_sum/(sq(wlen)-gamma_sum);
-    if(isnan(lce)) lce = 1;
+    if(ISNAN(lce)) lce = 1;
     myprintf(stdout, "lambda-combined ess=%g\n", lce);
   }
 
@@ -924,7 +924,7 @@ double calc_ess(double *w, unsigned int n)
   if(n == 0) return 0;
   else {
     double cv2 = calc_cv2(w,n);
-    if(isnan(cv2) || !R_FINITE(cv2)) {
+    if(ISNAN(cv2) || !R_FINITE(cv2)) {
       // warning("nan or inf found in cv2, probably due to zero weights");
       return 0.0;
     } else return(1.0/(1.0+cv2));

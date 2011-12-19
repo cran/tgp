@@ -55,6 +55,7 @@ int isZero(double **M, unsigned int m, int sym);
 void id(double **M, unsigned int n);
 double ** new_id_matrix(unsigned int n);
 double ** new_zero_matrix(unsigned int n1, unsigned int n2);
+int ** new_zero_imatrix(unsigned int n1, unsigned int n2);
 double ** new_matrix(unsigned int m, unsigned int n);
 double ** new_matrix_bones(double *v, unsigned int n1, unsigned int n2);
 int ** new_imatrix_bones(int *v, unsigned int n1, unsigned int n2);
@@ -62,11 +63,15 @@ int ** new_t_imatrix(int** M, unsigned int n1, unsigned int n2);
 int ** new_imatrix(unsigned int n1, unsigned int n2);
 double ** new_t_matrix(double** M, unsigned int n1_old, unsigned int n2_old);
 double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2);
+int ** new_dup_imatrix(int** M, unsigned int n1, unsigned int n2);
 double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2);
 void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2);
+void dup_imatrix(int** M1, int **M2, unsigned int n1, unsigned int n2);
 void swap_matrix(double **M1, double **M2, unsigned int n1, unsigned int n2);
 double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2, 
-		unsigned int n1_new, unsigned int n2_new);
+			    unsigned int n1_new, unsigned int n2_new);
+int ** new_bigger_imatrix(int** M, unsigned int n1, unsigned int n2, 
+			  unsigned int n1_new, unsigned int n2_new);
 double ** new_normd_matrix(double** M, unsigned int n1, unsigned int n2, 
 		double **rect, double normscale);
 void delete_matrix(double** m);

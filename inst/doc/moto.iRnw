@@ -36,7 +36,7 @@ Figure \ref{f:moto:bgp} shows how a stationary GP is able to capture
 the nonlinearity in the response but fails to capture the input
 dependent noise and increased smoothness (perhaps linearity) in
 parts of the input space.
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 moto.bgp <- bgp(X=X, Z=Z, verb=0)
 @ 
 Progress indicators are suppressed.
@@ -59,7 +59,7 @@ graphics.off()
 A Bayesian Linear CART model is able to capture the input dependent
 noise but fails to capture the waviness of the
 ``whiplash''---center--- segment of the response.
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 moto.btlm <- btlm(X=X, Z=Z, verb=0)
 @ 
 Figure \ref{f:moto:btlm} shows the resulting piecewise linear
@@ -87,7 +87,7 @@ linear.  One might further hypothesize that the right--hand region is
 also linear, perhaps with the same mean as the left--hand region, only
 with higher noise.  The {\tt b*} functions can force
 an i.i.d.~hierarchical linear model by setting \verb!bprior="b0"!.
-<<echo=TRUE,results=HIDE>>=
+<<echo=TRUE,results=hide>>=
 moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
 @ 

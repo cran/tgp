@@ -146,7 +146,7 @@ function(params, d)
 
   ## check tree minpart is bigger than input dimension
   basemax <- params$tree[5]
-  if(params$tree[3] < basemax) {
+  if(params$tree[3] <= basemax) {
     stop(paste("tree minpart", params$tree[3], "should be > basemax =", basemax, "\n"));
   }
 

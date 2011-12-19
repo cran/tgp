@@ -99,7 +99,7 @@ summaries are still ``noisy'' they depict a process with smoother
 transitions across partition boundaries than ones conditioned only on
 the MAP parameterization.
 
-<<echo=FALSE,results=HIDE>>=
+<<echo=FALSE,results=hide>>=
 unlink("out.Rsave")
 @ 
 

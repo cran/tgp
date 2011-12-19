@@ -124,6 +124,19 @@ double ** new_zero_matrix(unsigned int n1, unsigned int n2)
 
 
 /*
+ * same as new_imatrix, but zeros out the matrix
+ */
+
+int ** new_zero_imatrix(unsigned int n1, unsigned int n2)
+{
+  unsigned int i, j;
+  int **m = new_imatrix(n1, n2);
+  for(i=0; i<n1; i++) for(j=0; j<n2; j++) m[i][j] = 0;
+  return m;
+}
+
+
+/*
  * create a new n1 x n2 matrix which is allocated like
  * and n1*n2 array, but can be referenced as a 2-d array
  */
@@ -243,6 +256,27 @@ double ** new_dup_matrix(double** M, unsigned int n1, unsigned int n2)
   return m;
 }
 
+
+/*
+ * create a new n1 x n2 matrix which is allocated like
+ * and n1*n2 array, and copy the of n1 x n2 M into it.
+ */
+
+int ** new_dup_imatrix(int** M, unsigned int n1, unsigned int n2)
+{
+  int **m;
+
+  if(n1 <= 0 || n2 <= 0) {
+    /* assert(M == NULL); */
+    return NULL;
+  }
+ 
+  m = new_imatrix(n1, n2);
+  dup_imatrix(m, M, n1, n2);
+  return m;
+}
+
+
 /*
  * create a new n1 x (n2-1) matrix which is allocated like
  * an n1*(n2-1) array, and copy M[n1][2:n2] into it.
@@ -274,6 +308,19 @@ void dup_matrix(double** M1, double **M2, unsigned int n1, unsigned int n2)
   if(n1 == 0 || n2 == 0) return;
   assert(M1 && M2);
   for(i=0; i<n1; i++) dupv(M1[i], M2[i], n2);
+}
+
+
+/*
+ * copy M2 to M1 for integer matrices
+ */
+
+void dup_imatrix(int** M1, int **M2, unsigned int n1, unsigned int n2)
+{
+  unsigned int i;
+  if(n1 == 0 || n2 == 0) return;
+  assert(M1 && M2);
+  for(i=0; i<n1; i++) dupiv(M1[i], M2[i], n2);
 }
 
 
@@ -333,6 +380,48 @@ double ** new_bigger_matrix(double** M, unsigned int n1, unsigned int n2,
     m = new_zero_matrix(n1_new, n2_new);
     dup_matrix(m, M, n1, n2);
     delete_matrix(M);
+  }
+  return m;
+}
+
+
+/*
+ * create a bigger n1 x n2 matrix which is allocated like
+ * and n1*n2 array, and copy the of n1 x n2 M into it.
+ * deletes the old matrix -- integer version
+ */
+
+int ** new_bigger_imatrix(int** M, unsigned int n1, unsigned int n2, 
+			  unsigned int n1_new, unsigned int n2_new)
+{
+  int i;
+  int **m;
+  
+  assert(n1_new >= n1);
+  assert(n2_new >= n2);
+  
+  if(n1_new <= 0 || n2_new <= 0) {
+    assert(M == NULL);
+    return NULL;
+  }
+  
+  if(M == NULL) {
+    assert(n1 == 0 || n2 == 0);
+    return new_zero_imatrix(n1_new, n2_new);
+  }
+  
+  if(n2 == n2_new) {
+    m = (int**) malloc(sizeof(int*) * n1_new);
+    assert(m);
+    m[0] = realloc(M[0], sizeof(int) * n1_new * n2_new);
+    free(M);
+    assert(m[0]);
+    for(i=1; i<n1_new; i++) m[i] = m[i-1] + n2_new;
+    zeroiv(m[n1], (n1_new-n1)*n2_new);
+  } else {
+    m = new_zero_imatrix(n1_new, n2_new);
+    dup_imatrix(m, M, n1, n2);
+    delete_imatrix(M);
   }
   return m;
 }

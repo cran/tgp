@@ -43,8 +43,8 @@ lhs(n, rect, shape=NULL, mode=NULL)
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@ams.ucsc.edu}, and
-Matt Taddy, \email{taddy@ams.ucsc.edu}
+Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
+Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \note{The domain bounds specified by the rows of \code{rect} can
