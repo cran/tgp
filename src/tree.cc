@@ -213,6 +213,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
       /* create children split at (var,val) */
       bool success = grow_children();
       assert(success);
+      success = TRUE; /* for NDEBUG */
       
       /* recursively read the left and right children from dtree */
       unsigned int left = 1;
@@ -236,7 +237,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
 
 unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int d_pred)
 {
-  // fprintf(stderr, "d_pred = %d, d = %d\n", d_pred, d);
+  // fprintf(mystderr, "d_pred = %d, d = %d\n", d_pred, d);
   assert(d_pred == d);
   assert(isLeaf());
   
@@ -719,14 +720,19 @@ void Tree::swapData(Tree* t)
   if(t == rightChild) op = GT;
   else { assert(t == leftChild); op = LEQ; }
   
+  /* create the partition */
   bool success = part_child(op, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success);
+  success = TRUE; /* for NDEBUG */
+
+  /* copy */
   t->X = Xc;
   t->p = pnew;
   t->Z = Zc;
   t->rect = newRect;
   t->n = plen;
   
+  /* sanity checks */
   assert(n == leftChild->n + rightChild->n);
   assert(nn == leftChild->nn + rightChild->nn);
   assert(t->n == t->leftChild->n + t->rightChild->n);
@@ -1137,7 +1143,9 @@ double Tree::leavesPosterior(void)
     p += first->Posterior();
     if(!R_FINITE(p)) break;
     first = first->next;
+    numLeaves--;
   }
+  assert(numLeaves == 0);
   return p;
 }
 
@@ -1178,7 +1186,9 @@ unsigned int Tree::leavesN(void)
   while(first) {
     N += first->n;
     first = first->next;
+    numLeaves--;
   }
+  assert(numLeaves == 0);
   return N;
 }
 
@@ -1289,9 +1299,9 @@ bool Tree::grow(double ratio, void *state)
   pklast = this->Posterior();
   alpha = ratio*exp(pk-pklast+logp_split)/q_fwd;
   
-  /* myprintf(stderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
+  /* myprintf(mystderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
      var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
-     myflush(stderr); */
+     myflush(mystderr); */
  
   /* accept or reject? */
   bool ret_val = true;

@@ -1,0 +1,170 @@
+\subsection{Synthetic 2-d Exponential Data}
+\label{sec:exp}
+
+<<echo=false,results=hide>>=
+library(tgp)
+library(maptree)
+##options(width=65)
+seed <- 0; set.seed(seed)
+@ 
+
+The next example involves a two-dimensional input space in $[-2,6]
+\times [-2,6]$.  The true response is given by
+\begin{equation} 
+z(\mb{x}) =  x_1
+\exp(-x_1^2 - x_2^2). \label{e:2dtoy} 
+\end{equation} 
+A small amount of Gaussian noise (with sd $=0.001$) is added.  Besides
+its dimensionality, a key difference between this data set and the
+last one is that it is not defined using step functions; this smooth
+function does not have any artificial breaks between regions.  The
+{\tt tgp} package provides a function for data subsampled from a grid
+of inputs and outputs described by (\ref{e:2dtoy}) which concentrates
+inputs ({\tt X}) more heavily in the first quadrant where the response
+is more interesting.  Predictive locations ({\tt XX}) are the remaining
+grid locations.
+<<>>=
+exp2d.data <- exp2d.rand()
+X <- exp2d.data$X; Z <- exp2d.data$Z
+XX <- exp2d.data$XX
+@ 
+
+The treed LM is clearly just as inappropriate for this data as it was
+for the sinusoidal data in the previous section.  However, a
+stationary GP fits this data just fine.  After all, the process is
+quite well behaved.  In two dimensions one has a choice between the
+isotropic and separable correlation functions.  Separable is the
+default in the {\tt tgp} package.  For illustrative purposes here, I
+shall use the isotropic power family.
+<<echo=TRUE,results=hide>>=
+exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0) 	
+@
+\begin{figure}[ht!]
+\centering
+<<label=exp-bgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.bgp, main='GP,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-bgp}
+%\vspace{-0.5cm}
+\caption{{\em Left:} posterior predictive mean using
+  {\tt bgp} on synthetic exponential data; {\em right} image plot of
+  posterior predictive variance with data locations {\tt X} (dots) and
+  predictive locations {\tt XX} (circles).}
+\label{f:exp:bgp}
+\end{figure}
+Progress indicators are suppressed. Figure \ref{f:exp:bgp} shows the
+resulting posterior predictive surface under the GP in terms of means
+({\em left}) and variances ({\em right}) in the default
+layout.  The sampled locations ({\tt
+  X}) are shown as dots on the {\em right} image plot.  Predictive
+locations ({\tt XX}) are circles.  Predictive uncertainty for the
+stationary GP model is highest where sampling is lowest, despite that
+the process is very uninteresting there.  
+
+A treed GP seems more appropriate for this data. It can separate out
+the large uninteresting part of the input space from the interesting part.
+The result is speedier inference and region-specific estimates of
+predictive uncertainty.  
+<<echo=TRUE,results=hide>>=
+exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=exp-btgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgp, main='treed GP,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgp}
+%\vspace{-0.25cm}
+<<label=exp-btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
+tgp.trees(exp.btgp)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=50 65 50 10]{tgp-exp-btgptrees}
+\vspace{-0.5cm}
+\caption{{\em Top-Left:} posterior predictive mean using
+  {\tt btgp} on synthetic exponential data; {\em top-right} image plot
+  of posterior predictive variance with data locations {\tt X} (dots)
+  and predictive locations {\tt XX} (circles).  {\tt Bottom:} MAP
+  trees of each height encountered in the Markov chain with
+  $\hat{\sigma}^2$ and the number of observations $n$ at the leaves.}
+\label{f:exp:btgp}
+\end{figure}
+Figure \ref{f:exp:btgp} shows the resulting posterior predictive
+surface ({\em top}) and trees ({\em bottom}).  Typical runs of the
+treed GP on this data find two, and if lucky three, partitions.  As
+might be expected, jumping to the LLM for the uninteresting,
+zero-response, part of the input space can yield even further speedups
+\cite{gra:lee:2008}. Also, Chipman et al.~recommend restarting 
+the Markov chain a few times in order to better explore the marginal
+posterior for $\mathcal{T}$ \cite{chip:geor:mccu:2002}.  This can be 
+important for higher dimensional inputs requiring deeper trees.
+The {\tt tgp} default is {\tt R = 1}, i.e., one chain with no
+restarts.  Here two chains---one restart---are obtained using {\tt
+  R = 2}.
+<<>>=
+exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2) 	
+@
+\begin{figure}[ht!]
+\centering
+<<label=exp-btgpllm,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgpllm}
+%\vspace{-0.5cm}
+\caption{{\em Left:} posterior predictive mean using
+  {\tt btgpllm} on synthetic exponential data; {\em right} image plot
+  of posterior predictive variance with data locations {\tt X} (dots)
+  and predictive locations {\tt XX} (circles).}
+\label{f:exp:btgpllm}
+\end{figure}
+Progress indicators show where the LLM ({\tt corr=0($d$)}) or the GP
+is active.  Figure \ref{f:exp:btgpllm} shows how similar the resulting
+posterior predictive surfaces are compared to the treed GP (without
+LLM).  Appendix \ref{sec:traces} shows how parameter traces can be used
+to calculate the posterior probabilities of regional and
+location--specific linearity in this example.
+
+\begin{figure}[ht!]
+\centering
+<<label=exp-1dbtgpllm1,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(1))
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\vspace{-0.65cm}
+<<label=exp-1dbtgpllm2,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(2))
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 10 0 25]{tgp-exp-1dbtgpllm1}
+\includegraphics[trim=0 25 0 10]{tgp-exp-1dbtgpllm2}
+%\vspace{-0.5cm}
+\caption{1-d projections of the posterior predictive surface ({\em left})
+and normed predictive intervals ({\em right}) of the 1-d tree GP LLM
+analysis of the synthetic exponential data.  The {\em top} plots show
+projection onto the first input, and the {\em bottom} ones show the
+second.}
+\label{f:exp:1dbtgpllm}
+\end{figure}
+
+Finally, viewing 1-d projections of {\tt tgp}-class output is possible
+by supplying a scalar {\tt proj} argument to the {\tt plot.tgp}.
+Figure \ref{f:exp:1dbtgpllm} shows the two projections for {\tt
+  exp.btgpllm}.  In the {\em left} surface plots the open circles
+indicate the mean of posterior predictive distribution.  Red lines
+show the 90\% intervals, the norm of which are shown on the {\em
+  right}.

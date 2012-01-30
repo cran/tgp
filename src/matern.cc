@@ -38,7 +38,6 @@ extern "C"
 #include "matern.h"
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 //#include <string.h>
 #include <Rmath.h>
@@ -688,7 +687,7 @@ void Matern_Prior::read_double(double *dparams)
 
   /* starting value for the range parameter */
   d = dparams[1];
-  // myprintf(stdout, "starting range=%g\n", d);
+  // myprintf(mystdout, "starting range=%g\n", d);
 
   /* reset dparams to start after the nugget gamlin params */
   dparams += 13;
@@ -699,7 +698,7 @@ void Matern_Prior::read_double(double *dparams)
 
   /* d hierarchical lambda prior parameters */
   if((int) dparams[0] == -1)
-    { fix_d = true; /*myprintf(stdout, "fixing d prior\n");*/ }
+    { fix_d = true; /*myprintf(mystdout, "fixing d prior\n");*/ }
   else {
     fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, 
@@ -709,7 +708,7 @@ void Matern_Prior::read_double(double *dparams)
 
   /* read the fixed nu parameter */
   nu = dparams[0];
-  // myprintf(stdout, "fixed nu=%g\n", nu);
+  // myprintf(mystdout, "fixed nu=%g\n", nu);
   dparams += 1; /* reset */
 }
 
@@ -731,7 +730,7 @@ void Matern_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* read the d parameter from the control file */
   ctrlfile->getline(line, BUFFMAX);
   d = atof(strtok(line, " \t\n#"));
-  myprintf(stdout, "starting d=%g\n", d);
+  myprintf(mystdout, "starting d=%g\n", d);
     
   /* read d and nug-hierarchical parameters (mix of gammas) */
   ctrlfile->getline(line, BUFFMAX);
@@ -741,7 +740,7 @@ void Matern_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
   if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-    { fix_d = true; myprintf(stdout, "fixing d prior\n"); }
+    { fix_d = true; myprintf(mystdout, "fixing d prior\n"); }
   else {
     fix_d = false;
     get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
@@ -750,7 +749,7 @@ void Matern_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* read the (fixed) nu parameter */
   ctrlfile->getline(line, BUFFMAX);
   nu = atof(strtok(line, " \t\n#"));
-  myprintf(stdout, "fixed nu=%g\n", nu);
+  myprintf(mystdout, "fixed nu=%g\n", nu);
 }
 
 
@@ -923,7 +922,7 @@ void Matern_Prior::SetBasePrior(Base_Prior *base_prior)
 
 void Matern_Prior::Print(FILE *outfile)
 {
-  myprintf(stdout, "corr prior: matern\n");
+  myprintf(mystdout, "corr prior: matern\n");
 
   /* print nugget stuff first */
   PrintNug(outfile);
@@ -932,7 +931,7 @@ void Matern_Prior::Print(FILE *outfile)
   // myprintf(outfile, "starting d=%g\n", d);
 
   /* nu, smoothness parameter */
-  myprintf(stdout, "fixed nu=%g\n", nu);
+  myprintf(mystdout, "fixed nu=%g\n", nu);
 
   /* range gamma prior */
   myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n", 
@@ -941,7 +940,7 @@ void Matern_Prior::Print(FILE *outfile)
   /* range gamma hyperprior */
   if(fix_d) myprintf(outfile, "d prior fixed\n");
   else {
-    myprintf(stdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+    myprintf(mystdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
 	     d_beta_lambda[1]);
   }

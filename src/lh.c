@@ -23,7 +23,6 @@
 
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
@@ -124,7 +123,7 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
   /* allocate and copy the input-space rectangle */
   rect = new_matrix(2, *dim_in);
   dupv(rect[0], rect_in, 2*(*dim_in));
-  /* printMatrix(rect, 2, *dim_in, stdout); */
+  /* printMatrix(rect, 2, *dim_in, mystdout); */
 
   /* get the latin hypercube sample */
   if(shape == NULL) s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);

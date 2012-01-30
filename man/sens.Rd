@@ -192,7 +192,7 @@ sens.p <- suppressWarnings(sens(X=X,Z=Z,nn.lhs=300, model=NULL,
 # Use predict.tgp to quickly analyze with respect to this new
 # uncertainty distribution without re-running the MCMC, then
 # plot the results.
-s.new <- predict.tgp(s, BTE=c(1,1000,1), sens.p=sens.p, verb=1) 
+s.new <- predict(s, BTE=c(1,1000,1), sens.p=sens.p, verb=1) 
 plot(s.new, layout="sens", ylab="Ozone", main="main effects")
 }
 \keyword{ htest }

@@ -125,7 +125,7 @@ sens.p <- suppressWarnings(sens(X=X,Z=Z,nn.lhs=300, model=NULL, rect=rect, shape
 ###################################################
 ### chunk number 19: sens-air2
 ###################################################
-s.air2 <- predict.tgp(s.air, BTE=c(1,1000,1), sens.p=sens.p, verb=0) 
+s.air2 <- predict(s.air, BTE=c(1,1000,1), sens.p=sens.p, verb=0) 
 plot(s.air2, layout="sens")
 
 

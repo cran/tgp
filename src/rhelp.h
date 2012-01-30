@@ -7,6 +7,8 @@
 /* this is now covered by -D RPRINT flags in Makevars */
 /*#define RPRINT*/
 
+extern FILE *mystdout, *mystderr;
+
 #ifndef RPRINT
 void warning(const char *str, ...);
 void error(const char *str, ...);

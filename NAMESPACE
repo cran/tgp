@@ -1,5 +1,19 @@
-# Default NAMESPACE created by R
-# Remove the previous line if you edit this file
+# Load the shared object
+useDynLib(tgp)
 
-# Export all names
-exportPattern(".")
+# Exports
+export(blm, btlm, bcart, bgp, bgpllm, btgp, btgpllm,
+       default.itemps, dopt.gp, exp2d.Z, exp2d.rand,
+       friedman.1.data, fried.bool, interp.loess, 
+       itemps.barplot, hist2bar, lhs, mapT, optim.step.tgp,
+       optim.ptgpf, partition, sens, tgp.default.params,
+       tgp.design, tgp.trees)
+
+# Import all packages listed as Imports or Depends
+# (none)
+
+# S3
+S3method(print, tgp)
+S3method(plot, tgp)
+S3method(predict, tgp)
+S3method(print, tgptraces)

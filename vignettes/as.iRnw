@@ -1,0 +1,130 @@
+\subsection{Adaptive Sampling}
+\label{sec:as}
+
+<<echo=false,results=hide>>=
+library(tgp)
+library(maptree)
+#options(width=65)
+seed <- 0; set.seed(seed)
+@ 
+
+In this section, sequential design of experiments, a.k.a.~{\em
+  adaptive sampling}, is demonstrated on the exponential data of
+Section \ref{sec:exp}.  Gathering, again, the data:
+<<>>=
+exp2d.data <- exp2d.rand(lh=0, dopt=10)
+X <- exp2d.data$X
+Z <- exp2d.data$Z
+Xcand <- lhs(1000, rbind(c(-2,6),c(-2,6)))
+@ 
+In contrast with the data from Section \ref{sec:exp}, which was
+based on a grid, the above code generates a randomly subsampled
+$D$--optimal design $\mb{X}$ from LH candidates, and random responses
+$\mb{Z}$.  As before, design configurations are more densely packed in the
+interesting region.  Candidates $\tilde{\mb{X}}$ are from a large
+LH--sample.
+
+Given some data $\{\mb{X},\mb{Z}\}$, the first step in sequential
+design using {\tt tgp} is to fit a treed GP LLM model to the data,
+without prediction, in order to infer the MAP tree
+$\hat{\mathcal{T}}$.
+<<echo=TRUE,results=hide>>=
+exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", R=5, verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=as-mapt,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
+tgp.trees(exp1)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=50 50 50 20]{tgp-as-mapt}
+\vspace{-1cm}
+\caption{MAP trees of each height encountered in the
+  Markov chain for the exponential data, showing $\hat{\sigma}^2$ and
+  the number of observations $n$ at the leaves.  $\hat{\mathcal{T}}$
+  is the one with the maximum $\log(p)$ above.}
+\label{f:mapt}
+\end{figure} 
+The trees are shown in Figure \ref{f:mapt}.
+Then, use the {\tt tgp.design} function to create $D$--optimal candidate
+designs in each region of $\hat{\mathcal{T}}$.  For the purposes of
+illustrating the {\tt improv} statistic, I have manually added the
+known (from calculus) global minimum to {\tt XX}.
+<<>>=
+XX <- tgp.design(200, Xcand, exp1)
+XX <- rbind(XX, c(-sqrt(1/2),0))
+@ 
+Figure \ref{f:cands} shows the sampled {\tt XX} locations (circles)
+amongst the input locations {\tt X} (dots) and MAP partition
+$(\hat{\mathcal{T}})$.  Notice how the candidates {\tt XX} are spaced
+out relative to themselves, and relative to the inputs {\tt X}, unless
+they are near partition boundaries.  The placing of configurations
+near region boundaries is a symptom particular to $D$--optimal designs.
+This is desirable for experiments with {\tt tgp} models, as model
+uncertainty is usually high there \cite{chaloner:1995}.
+\begin{figure}[ht!]
+\centering
+<<label=as-cands,fig=TRUE,echo=TRUE,width=5,height=5,include=FALSE>>=
+plot(exp1$X, pch=19, cex=0.5)
+points(XX)
+mapT(exp1, add=TRUE)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 0 0 45]{tgp-as-cands}
+\vspace{-0.5cm}
+\caption{Treed $D$--optimal candidate locations {\tt XX}
+  (circles), input locations {\tt X} (dots), and MAP tree
+  $\hat{\mathcal{T}}$}
+\label{f:cands}
+\end{figure} 
+
+Now, the idea is to fit the treed GP LLM model, again, in order to
+assess uncertainty in the predictive surface at those new candidate
+design points.  The following code gathers all three adaptive sampling
+statistics: ALM, ALC, \& EI.
+<<echo=TRUE>>=
+exp.as <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", improv=TRUE, 
+                        Ds2x=TRUE, R=5, verb=0)
+@ 
+
+Figure \ref{f:as} shows the posterior predictive estimates of the
+adaptive sampling statistics.  The error surface, on the {\em left},
+summarizes posterior predictive uncertainty by a norm of quantiles.
+%%Since the combined data and predictive locations are not densely
+%%packed in the input space, the {\tt loess} smoother may have trouble
+%%with the interpolation.  One option is increase the {\tt tgp}-default
+%%kernel span supplied to {\tt loess}, e.g., {\tt span = 0.5}.  Or,
+%\verb!method="akima"! can be used instead.
+\begin{figure}[ht!]
+\centering
+<<label=as-expas,fig=TRUE,echo=TRUE,width=12,height=4,include=FALSE>>=
+par(mfrow=c(1,3), bty="n")
+plot(exp.as, main="tgpllm,", layout="as", as="alm")
+plot(exp.as, main="tgpllm,", layout='as', as='alc')
+plot(exp.as, main="tgpllm,", layout='as', as='improv')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+% do the including over here instead
+\includegraphics[trim=75 0 75 20]{tgp-as-expas}
+\vspace{-0.5cm}
+\caption{{\em Left}: Image plots of adaptive sampling
+  statistics and MAP trees $\hat{\mathcal{T}}$; {\em Left}; ALM
+  adaptive sampling image for (only) candidate locations {\tt XX} (circles);
+  {\em center}: ALC; and {\em right:} EI.}
+\label{f:as}
+\end{figure} 
+
+In accordance with the ALM algorithm, candidate locations {\tt XX}
+with largest predictive error would be sampled (added into the design)
+next.  These are most likely to be in the interesting region, i.e.,
+the first quadrant. However, these results depend heavily on the
+clumping of the original design in the un-interesting areas, and on
+the estimate of $\hat{\mathcal{T}}$.  Adaptive sampling via the ALC,
+or EI (or both) algorithms proceeds similarly, following the surfaces
+shown in {\em center} and {\em right} panels of Figure \ref{f:as}.

@@ -248,7 +248,7 @@ void Tgp::Init(void)
   /* use default parameters */
   params = new Params(d);
   if((int) dparams[0] != -1) params->read_double(dparams);
-  else myprintf(stdout, "Using default params.\n");
+  else myprintf(mystdout, "Using default params.\n");
 
   /* get  the rectangle */
   /* rect = getXdataRect(X, n, d, XX, nn); */
@@ -258,7 +258,7 @@ void Tgp::Init(void)
   /* construct the new model */
   model = new Model(params, d, rect, 0, trace, state);
   model->Init(X, n, d, Z, its, tree, treecol, hier);
-  model->Outfile(stdout, verb);
+  model->Outfile(mystdout, verb);
 
   /* if treed partitioning is allowed, then set the splitting locations (Xsplit) */
   if(params->isTree()) model->set_Xsplit(Xsplit, nsplit, d);
@@ -274,7 +274,7 @@ void Tgp::Init(void)
   }
 
   /* print the parameters of this module */
-  if(verb >= 2) Print(stdout);
+  if(verb >= 2) Print(mystdout);
 }  
 
 
@@ -310,7 +310,7 @@ void Tgp::Rounds(void)
     model->Sample(preds, T-B, state);
 
     /* print tree statistics */
-    if(verb >= 1) model->PrintTreeStats(stdout);
+    if(verb >= 1) model->PrintTreeStats(mystdout);
 
     /* accumulate predictive information */
     import_preds(cump, preds->R * i, preds);		
@@ -320,7 +320,7 @@ void Tgp::Rounds(void)
 
     /* prune the tree all the way back unless importance tempering */
     if(R > 1) {
-      if(verb >= 1) myprintf(stdout, "finished repetition %d of %d\n", i+1, R);
+      if(verb >= 1) myprintf(mystdout, "finished repetition %d of %d\n", i+1, R);
       if(its->Numit() == 1) model->cut_root();
     }
 
@@ -331,7 +331,7 @@ void Tgp::Rounds(void)
   }
 
   /* cap off the printing */
-  if(verb >= 1) myflush(stdout);
+  if(verb >= 1) myflush(mystdout);
 
   /* print the rectangle of the MAP partition */
   model->PrintBestPartitions();   
@@ -398,13 +398,13 @@ void Tgp::Predict(void)
 
     /* done with this repetition; prune the tree all the way back */
     if(R > 1) {
-      myprintf(stdout, "finished repetition %d of %d\n", i+1, R);
+      myprintf(mystdout, "finished repetition %d of %d\n", i+1, R);
       // model->cut_root();
     }
   }
 
   /* cap of the printing */
-  if(verb >= 1) myflush(stdout);
+  if(verb >= 1) myflush(mystdout);
 
   /* these is here to maintain compatibility with tgp::Rounds() */
 
@@ -663,13 +663,13 @@ void tgp_cleanup(void)
     deleteRNGstate(tgp_state);
     tgp_state = NULL;
     if(tgpm->Verb() >= 1) 
-      myprintf(stderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
+      myprintf(mystderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
   }
 
   /* free tgp model */
   if(tgpm) { 
     if(tgpm->Verb() >= 1)
-      myprintf(stderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
+      myprintf(mystderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
     delete tgpm; 
     tgpm = NULL; 
   }
@@ -710,27 +710,27 @@ double ** getXdataRect(double **X, unsigned int n, unsigned int d, double **XX,
 
 void Tgp::Print(FILE *outfile)
 {
-  myprintf(stdout, "\n");
+  myprintf(mystdout, "\n");
 
   /* DEBUG: print the input parameters */
-  myprintf(stdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
+  myprintf(mystdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
 	   n, d, nn, B, T, E, R, linburn);
 
   /* print the importance tempring information */
-  its->Print(stdout);
+  its->Print(mystdout);
 
   /* print the random number generator state */
-  printRNGstate(state, stdout);
+  printRNGstate(state, mystdout);
 
   /* print predictive statistic types */
-  if(pred_n || (delta_s2 || improv)) myprintf(stdout, "preds:");
-  if(pred_n) myprintf(stdout, " data");
-  if(krige && (pred_n || nn)) myprintf(stdout, " krige");
-  if(delta_s2) myprintf(stdout, " ALC");
-  if(improv) myprintf(stdout, " improv");
+  if(pred_n || (delta_s2 || improv)) myprintf(mystdout, "preds:");
+  if(pred_n) myprintf(mystdout, " data");
+  if(krige && (pred_n || nn)) myprintf(mystdout, " krige");
+  if(delta_s2) myprintf(mystdout, " ALC");
+  if(improv) myprintf(mystdout, " improv");
   if(pred_n || (((krige && (pred_n || nn)) || delta_s2) || improv)) 
-    myprintf(stdout, "\n");
-  myflush(stdout);
+    myprintf(mystdout, "\n");
+  myflush(mystdout);
 
   /* print the model, uses the internal model 
      printing variable OUTFILE */

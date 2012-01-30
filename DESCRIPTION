@@ -1,24 +1,26 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.4-3
-Date: 2011-12-18
-Author: Robert B. Gramacy <rbgramacy@chicagobooth.edu> and Matt A. Taddy <taddy@chicagobooth.edu>
+Version: 2.4-5
+Date: 2012-01-30
+Author: Robert B. Gramacy <rbgramacy@chicagobooth.edu> and Matt A.
+        Taddy <taddy@chicagobooth.edu>
 Depends: R (>= 2.14.0)
 Suggests: akima, maptree, MASS
-Description: Bayesian nonstationary, semiparametric nonlinear regression 
- and design by treed Gaussian processes (GPs) with jumps to the limiting 
- linear model (LLM).  Special cases also implemented include Bayesian 
- linear models, CART, treed linear models, stationary separable and 
- isotropic GPs, and GP single-index models.  Provides 1-d and 2-d plotting functions 
- (with projection and slice capabilities) and tree drawing, designed for 
- visualization of tgp-class output.  Sensitivity analysis and 
- multi-resolution models are supported. Sequential experimental 
- design and adaptive sampling functions are also provided, including ALM, 
- ALC, and expected improvement.  The latter supports derivative-free
- optimization of noisy black-box functions.
+Description: Bayesian nonstationary, semiparametric nonlinear
+        regression and design by treed Gaussian processes (GPs) with
+        jumps to the limiting linear model (LLM).  Special cases also
+        implemented include Bayesian linear models, CART, treed linear
+        models, stationary separable and isotropic GPs, and GP
+        single-index models.  Provides 1-d and 2-d plotting functions
+        (with projection and slice capabilities) and tree drawing,
+        designed for visualization of tgp-class output.  Sensitivity
+        analysis and multi-resolution models are supported. Sequential
+        experimental design and adaptive sampling functions are also
+        provided, including ALM, ALC, and expected improvement.  The
+        latter supports derivative-free optimization of noisy black-box
+        functions.
 Maintainer: Robert B. Gramacy <rbgramacy@chicagobooth.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
-Packaged: 2011-12-18 16:35:38 UTC; bobby
 Repository: CRAN
-Date/Publication: 2011-12-19 11:17:38
+Date/Publication: 2012-02-02 21:13:28

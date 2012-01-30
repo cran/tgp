@@ -63,7 +63,7 @@ graphics.off()
 ###################################################
 ### chunk number 10: optim-fit2
 ###################################################
-rfit2 <- predict.tgp(rfit, XX=XX, BTE=c(1,1000,1), improv=c(5,20), verb=0) 
+rfit2 <- predict(rfit, XX=XX, BTE=c(1,1000,1), improv=c(5,20), verb=0) 
 plot(rfit2, layout="as", as="improv")
 
 

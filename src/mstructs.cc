@@ -172,7 +172,7 @@ Preds *combine_preds(Preds *to, Preds *from)
   assert(from);
   if(to == NULL) return from;
   
-  if(to->nn != from->nn) myprintf(stderr, "to->nn=%d, from->nn=%d\n", to->nn, from->nn);
+  if(to->nn != from->nn) myprintf(mystderr, "to->nn=%d, from->nn=%d\n", to->nn, from->nn);
   assert(to->nn == from->nn);  
   assert(to->d == from->d); 
   assert(to->mult == from->mult);
