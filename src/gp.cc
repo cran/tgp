@@ -46,7 +46,6 @@ extern "C"
 #include "base.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <fstream>
 using namespace std;
@@ -353,9 +352,9 @@ bool Gp::Draw(void *state)
   }
 
   /* handle possible errors in corr->Draw() */
-  if(success == -1) myprintf(stderr, "NOTICE: max tree warnings (%d), ", i);
-  else if(success == -2)  myprintf(stderr, "NOTICE: mixing problem, ");
-  if(success < 0) { myprintf(stderr, "backup to model\n"); return false; }
+  if(success == -1) myprintf(mystderr, "NOTICE: max tree warnings (%d), ", i);
+  else if(success == -2)  myprintf(mystderr, "NOTICE: mixing problem, ");
+  if(success < 0) { myprintf(mystderr, "backup to model\n"); return false; }
   
   /* check the updated-ness of xxKx and xxKxx */
   if(success && xxKx) {
@@ -1200,12 +1199,12 @@ void Gp_Prior::read_double(double * dparams)
   int bp = (int) dparams[0];
  /* read the beta linear prior model */
   switch (bp) {
-  case 0: beta_prior=B0; /* myprintf(stdout, "linear prior: b0 hierarchical\n"); */ break;
-  case 1: beta_prior=BMLE; /* myprintf(stdout, "linear prior: emperical bayes\n"); */ break;
-  case 2: beta_prior=BFLAT; /* myprintf(stdout, "linear prior: flat\n"); */ break;
-  case 3: beta_prior=B0NOT; /* myprintf(stdout, "linear prior: cart\n"); */ break;
-  case 4: beta_prior=BMZT; /* myprintf(stdout, "linear prior: b0 fixed with free tau2\n"); */ break;
-  case 5: beta_prior=BMZNOT; /* myprintf(stdout, "linear prior: b0 fixed with fixed tau2\n"); */ break;
+  case 0: beta_prior=B0; /* myprintf(mystdout, "linear prior: b0 hierarchical\n"); */ break;
+  case 1: beta_prior=BMLE; /* myprintf(mystdout, "linear prior: emperical bayes\n"); */ break;
+  case 2: beta_prior=BFLAT; /* myprintf(mystdout, "linear prior: flat\n"); */ break;
+  case 3: beta_prior=B0NOT; /* myprintf(mystdout, "linear prior: cart\n"); */ break;
+  case 4: beta_prior=BMZT; /* myprintf(mystdout, "linear prior: b0 fixed with free tau2\n"); */ break;
+  case 5: beta_prior=BMZNOT; /* myprintf(mystdout, "linear prior: b0 fixed with fixed tau2\n"); */ break;
   default: error("bad linear prior model %d", (int)dparams[0]); break;
   }
   
@@ -1218,8 +1217,8 @@ void Gp_Prior::read_double(double * dparams)
   /* read starting/prior beta linear regression parameter (mean) vector */
   dupv(b, dparams, col);
   if(beta_prior != BFLAT) dupv(b0, dparams, col);
-  /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout, HUMAN); */
+  /* myprintf(mystdout, "starting beta=");
+     printVector(b, col, mystdout, HUMAN); */
   dparams += col; /* reset */
 
   /* reading the starting/prior beta linear regression parameter (inv-cov) matrix */
@@ -1232,39 +1231,39 @@ void Gp_Prior::read_double(double * dparams)
   /* read starting (initial values) parameter */
   s2 = dparams[0];
   if(beta_prior != BFLAT) tau2 = dparams[1];
-  // myprintf(stdout, "starting s2=%g tau2=%g\n", s2, tau2);
+  // myprintf(mystdout, "starting s2=%g tau2=%g\n", s2, tau2);
 
   /* read s2 hierarchical prior parameters */
   s2_a0 = dparams[2];
   s2_g0 = dparams[3];
-  // myprintf(stdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
+  // myprintf(mystdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
   dparams += 4; /* reset */
 
   /* s2 hierarchical lambda prior parameters */
   if((int) dparams[0] == -1) 
-    { fix_s2 = true; /* myprintf(stdout, "fixing s2 prior\n"); */ }
+    { fix_s2 = true; /* myprintf(mystdout, "fixing s2 prior\n"); */ }
   else {
     s2_a0_lambda = dparams[0];
     s2_g0_lambda = dparams[1];
-    // myprintf(stdout, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
+    // myprintf(mystdout, "s2 lambda[a0,g0]=[%g,%g]\n", s2_a0_lambda, s2_g0_lambda);
   }
 
   /* read tau2 hierarchical prior parameters */
   if(beta_prior != BFLAT && beta_prior != B0NOT) {
       tau2_a0 = dparams[2];
       tau2_g0 = dparams[3];
-      // myprintf(stdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
+      // myprintf(mystdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
   }
   dparams += 4; /* reset */
 
   /* tau2 hierarchical lambda prior parameters */
   if(beta_prior != BFLAT && beta_prior != B0NOT) {
     if((int) dparams[0] == -1)
-      { fix_tau2 = true; /* myprintf(stdout, "fixing tau2 prior\n"); */ }
+      { fix_tau2 = true; /* myprintf(mystdout, "fixing tau2 prior\n"); */ }
     else {
       tau2_a0_lambda = dparams[0];
       tau2_g0_lambda = dparams[1];
-      // myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
+      // myprintf(mystdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
       //          tau2_a0_lambda, tau2_g0_lambda);
     }
   }
@@ -1273,18 +1272,18 @@ void Gp_Prior::read_double(double * dparams)
   /* read the corr model */
   switch ((int) dparams[0]) {
   case 0: corr_prior = new Exp_Prior(d);
-      //myprintf(stdout, "correlation: isotropic power exponential\n");
+      //myprintf(mystdout, "correlation: isotropic power exponential\n");
     break;
   case 1: corr_prior = new ExpSep_Prior(d);
-      //myprintf(stdout, "correlation: separable power exponential\n");
+      //myprintf(mystdout, "correlation: separable power exponential\n");
     break;
   case 2: corr_prior = new Matern_Prior(d);
-      //myprintf(stdout, "correlation: isotropic matern\n");
+      //myprintf(mystdout, "correlation: isotropic matern\n");
     break;
   case 3: corr_prior = new MrExpSep_Prior(d-1);
-      //myprintf(stdout, "correlation: two-level seperable power mixture\n");
+      //myprintf(mystdout, "correlation: two-level seperable power mixture\n");
   case 4: corr_prior = new Sim_Prior(d);
-      //myprintf(stdout, "correlation: sim power exponential\n");
+      //myprintf(mystdout, "correlation: sim power exponential\n");
     break;
   default: error("bad corr model %d", (int)dparams[0]);
   }
@@ -1320,22 +1319,22 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "bmznot", 7)) {
     beta_prior = BMZNOT;
-    myprintf(stdout, "beta prior: b0 fixed with fixed tau2 \n");
+    myprintf(mystdout, "beta prior: b0 fixed with fixed tau2 \n");
   } else if(!strncmp(line, "bmzt", 5)) {
     beta_prior = BMZT;
-    myprintf(stdout, "beta prior: b0 fixed with free tau2 \n");
+    myprintf(mystdout, "beta prior: b0 fixed with free tau2 \n");
   } else if(!strncmp(line, "bmle", 4)) {
     beta_prior = BMLE;
-    myprintf(stdout, "beta prior: emperical bayes\n");
+    myprintf(mystdout, "beta prior: emperical bayes\n");
   } else if(!strncmp(line, "bflat", 5)) {
     beta_prior = BFLAT;
-    myprintf(stdout, "beta prior: flat \n");
+    myprintf(mystdout, "beta prior: flat \n");
   } else if(!strncmp(line, "b0not", 5)) {
     beta_prior = B0NOT;
-    myprintf(stdout, "beta prior: cart \n");
+    myprintf(mystdout, "beta prior: cart \n");
   } else if(!strncmp(line, "b0", 2)) {
     beta_prior = B0;
-    myprintf(stdout, "beta prior: b0 hierarchical \n");
+    myprintf(mystdout, "beta prior: b0 hierarchical \n");
   } else {
     error("%s is not a valid beta prior", strtok(line, "\t\n#"));
   }
@@ -1346,27 +1345,27 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* read the beta regression coefficients from the control file */
   ctrlfile->getline(line, BUFFMAX);
   read_beta(line);
-  myprintf(stdout, "starting beta=");
-  printVector(b, col, stdout, HUMAN);
+  myprintf(mystdout, "starting beta=");
+  printVector(b, col, mystdout, HUMAN);
   
   /* read the s2 and tau2 initial parameter from the control file */
   ctrlfile->getline(line, BUFFMAX);
   s2 = atof(strtok(line, " \t\n#"));
   if(beta_prior != BFLAT) tau2 = atof(strtok(NULL, " \t\n#"));
-  myprintf(stdout, "starting s2=%g tau2=%g\n", s2, tau2);
+  myprintf(mystdout, "starting s2=%g tau2=%g\n", s2, tau2);
   
   /* read the s2-prior parameters (s2_a0, s2_g0) from the control file */
   ctrlfile->getline(line, BUFFMAX);
   s2_a0 = atof(strtok(line, " \t\n#"));
   s2_g0 = atof(strtok(NULL, " \t\n#"));
-  myprintf(stdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
+  myprintf(mystdout, "s2[a0,g0]=[%g,%g]\n", s2_a0, s2_g0);
 
   /* read the tau2-prior parameters (tau2_a0, tau2_g0) from the ctrl file */
   ctrlfile->getline(line, BUFFMAX);
   if(beta_prior != BFLAT && beta_prior != B0NOT) {
     tau2_a0 = atof(strtok(line, " \t\n#"));
     tau2_g0 = atof(strtok(NULL, " \t\n#"));
-    myprintf(stdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
+    myprintf(mystdout, "tau2[a0,g0]=[%g,%g]\n", tau2_a0, tau2_g0);
   }
 
   /* read the s2-prior hierarchical parameters 
@@ -1375,11 +1374,11 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
   if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-    { fix_s2 = true; myprintf(stdout, "fixing s2 prior\n"); }
+    { fix_s2 = true; myprintf(mystdout, "fixing s2 prior\n"); }
   else {
     s2_a0_lambda = atof(strtok(line, " \t\n#"));
     s2_g0_lambda = atof(strtok(NULL, " \t\n#"));
-    myprintf(stdout, "s2 lambda[a0,g0]=[%g,%g]\n", 
+    myprintf(mystdout, "s2 lambda[a0,g0]=[%g,%g]\n", 
 	     s2_a0_lambda, s2_g0_lambda);
   }
   
@@ -1390,11 +1389,11 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   strcpy(line_copy, line);
   if(beta_prior != BFLAT && beta_prior != B0NOT) {
     if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-      { fix_tau2 = true; myprintf(stdout, "fixing tau2 prior\n"); }
+      { fix_tau2 = true; myprintf(mystdout, "fixing tau2 prior\n"); }
     else {
       tau2_a0_lambda = atof(strtok(line, " \t\n#"));
       tau2_g0_lambda = atof(strtok(NULL, " \t\n#"));
-      myprintf(stdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
+      myprintf(mystdout, "tau2 lambda[a0,g0]=[%g,%g]\n", 
 	       tau2_a0_lambda, tau2_g0_lambda);
     }
   }
@@ -1404,19 +1403,19 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "expsep", 6)) {
     corr_prior = new ExpSep_Prior(d);
-    // myprintf(stdout, "correlation: separable power exponential\n");
+    // myprintf(mystdout, "correlation: separable power exponential\n");
   } else if(!strncmp(line, "exp", 3)) {
     corr_prior = new Exp_Prior(d);
-    // myprintf(stdout, "correlation: isotropic power exponential\n");
+    // myprintf(mystdout, "correlation: isotropic power exponential\n");
   } else if(!strncmp(line, "matern", 6)) {
     corr_prior = new Matern_Prior(d);
-    // myprintf(stdout, "correlation: isotropic matern\n");
+    // myprintf(mystdout, "correlation: isotropic matern\n");
   } else if(!strncmp(line, "mrexpsep", 8)) {
     corr_prior = new MrExpSep_Prior(d-1);
-    // myprintf(stdout, "correlation: multi-res seperable power\n");
+    // myprintf(mystdout, "correlation: multi-res seperable power\n");
   } else if(!strncmp(line, "sim", 3)) {
     corr_prior = new Sim_Prior(d);
-    // myprintf(stdout, "correlation: sim power exponential\n");
+    // myprintf(mystdout, "correlation: sim power exponential\n");
   } else {
     error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }
@@ -1506,8 +1505,8 @@ void Gp_Prior::read_beta(char *line)
     b[i] = atof(l);
   }
   
-  /* myprintf(stdout, "starting beta=");
-     printVector(b, col, stdout, HUMAN) */
+  /* myprintf(mystdout, "starting beta=");
+     printVector(b, col, mystdout, HUMAN) */
 }
 
 /*
@@ -1681,19 +1680,19 @@ void Gp_Prior::Print(FILE* outfile)
 
   /* beta prior */
   switch (mean_fn) {
-  case LINEAR: myprintf(stdout, "mean function: linear\n"); break;
-  case CONSTANT: myprintf(stdout, "mean function: constant\n"); break;
-  case TWOLEVEL: myprintf(stdout, "mean function: two-level\n"); break;
+  case LINEAR: myprintf(mystdout, "mean function: linear\n"); break;
+  case CONSTANT: myprintf(mystdout, "mean function: constant\n"); break;
+  case TWOLEVEL: myprintf(mystdout, "mean function: two-level\n"); break;
   default: error("mean function not recognized");  break;
   }
   /* beta prior */
   switch (beta_prior) {
-  case B0: myprintf(stdout, "beta prior: b0 hierarchical\n"); break;
-  case BMLE: myprintf(stdout, "beta prior: emperical bayes\n"); break;
-  case BFLAT: myprintf(stdout, "beta prior: flat\n"); break;
-  case B0NOT: myprintf(stdout, "beta prior: cart\n"); break;
-  case BMZT: myprintf(stdout, "beta prior: b0 fixed with free tau2\n"); break;
-  case BMZNOT: myprintf(stdout, "beta prior: b0 fixed with fixed tau2\n"); break;
+  case B0: myprintf(mystdout, "beta prior: b0 hierarchical\n"); break;
+  case BMLE: myprintf(mystdout, "beta prior: emperical bayes\n"); break;
+  case BFLAT: myprintf(mystdout, "beta prior: flat\n"); break;
+  case B0NOT: myprintf(mystdout, "beta prior: cart\n"); break;
+  case BMZT: myprintf(mystdout, "beta prior: b0 fixed with free tau2\n"); break;
+  case BMZNOT: myprintf(mystdout, "beta prior: b0 fixed with fixed tau2\n"); break;
   default: error("beta prior not supported");  break;
   }
 

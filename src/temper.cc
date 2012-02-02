@@ -30,7 +30,6 @@ extern "C" {
 }
 #include "temper.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <math.h>
 
@@ -482,7 +481,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
   /* for pretty printing */
   if(verb >= 1)
-    myprintf(stdout, "\neffective sample sizes:\n");
+    myprintf(mystdout, "\neffective sample sizes:\n");
 
   /* for each temperature */
   for(unsigned int i=0; i<numit; i++) {
@@ -533,7 +532,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
     /* print individual ess */
     if(verb >= 1)
-      myprintf(stdout, "%d: itemp=%g, len=%d, ess=%g\n", //, sw=%g\n", 
+      myprintf(mystdout, "%d: itemp=%g, len=%d, ess=%g\n", //, sw=%g\n", 
 	       i, itemps[i], len, ei*len); //, sumv(wi, len));
 
     /* clean up */
@@ -570,11 +569,11 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
   /* print totals */
   if(verb >= 1) {
-    myprintf(stdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
+    myprintf(mystdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
 	     tlen, tess, ((double)wlen)*calc_ess(w,wlen));
     double lce = wlen*(wlen-1.0)*gamma_sum/(sq(wlen)-gamma_sum);
     if(ISNAN(lce)) lce = 1;
-    myprintf(stdout, "lambda-combined ess=%g\n", lce);
+    myprintf(mystdout, "lambda-combined ess=%g\n", lce);
   }
 
   /* clean up */
@@ -666,7 +665,7 @@ double Temper::LambdaST(double *w, double *itemp, unsigned int wlen, unsigned in
   copy_p_vector(w, p, wi, len);
 
   /* print totals */
-  if(verb >= 1) myprintf(stdout, "\nST sample size=%d\n", len);
+  if(verb >= 1) myprintf(mystdout, "\nST sample size=%d\n", len);
 
   /* return the overall effective sample size */
   return((double) len);
@@ -693,7 +692,7 @@ double Temper::LambdaNaive(double *w, unsigned int wlen, unsigned int verb)
   double ess = ((double)wlen)*calc_ess(w, wlen);
 
   /* print totals */
-  if(verb >= 1) myprintf(stdout, "\nnaive IT ess=%g\n", ess);
+  if(verb >= 1) myprintf(mystdout, "\nnaive IT ess=%g\n", ess);
 
   /* return the overall effective sample size */
   return(ess);

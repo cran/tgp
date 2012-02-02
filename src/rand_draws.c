@@ -30,7 +30,6 @@
 #include "rhelp.h"
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <Rmath.h> 
 #include "randomkit.h"
@@ -194,7 +193,7 @@ double runi(void *state)
     unsigned long rv;
     assert(state);
     rv = rk_random((rk_state*) state);
-    /* myprintf(stderr, "(%d)",  ((int)(10000000 * (((double) rv)/RK_MAX))));
+    /* myprintf(mystderr, "(%d)",  ((int)(10000000 * (((double) rv)/RK_MAX))));
        if(((int)(10000000 * (((double) rv)/RK_MAX))) == 7294478) assert(0); */
     return ((double) rv) / RK_MAX;
   }

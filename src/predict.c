@@ -24,7 +24,6 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include "rand_draws.h"
 #include "rand_pdf.h"
@@ -89,7 +88,7 @@ double ss2;
 
   /* Note that now K is passed with jitter included.
      This was previously removed in the predict_full fn. */
-  /* printf("zp: "); printVector(zpjitter,5,stdout, HUMAN); */
+  /* printf("zp: "); printVector(zpjitter,5,mystdout, HUMAN); */
   
   /* for each point at which we want a prediction */
   for(i=0; i<n1; i++) {
@@ -550,7 +549,7 @@ void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
   /* calculate best minimum so far */
   /* fmin = min(Z, n, &which);*/
   fmin = Zmin;
-  /* myprintf(stderr, "Zmin = %g, min(zzm) = %g\n", Zmin, min(zzm, nn, &which)); */
+  /* myprintf(mystderr, "Zmin = %g, min(zzm) = %g\n", Zmin, min(zzm, nn, &which)); */
 
   for(i=0; i<nn; i++) {
 
@@ -778,7 +777,7 @@ void move_avg(int nn, double* XX, double *YY, int n, double* X,
     /* record the (normalized) weighted average in the window */
     sumW = sumv(&(w[l]), q);
     YY[i] = vmult(&(w[l]), &(Yo[l]), q)/sumW;
-    /*printf("YY = "); printVector(YY, nn, stdout, HUMAN);*/
+    /*printf("YY = "); printVector(YY, nn, mystdout, HUMAN);*/
   }
   
   /* clean up */

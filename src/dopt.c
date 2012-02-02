@@ -125,7 +125,7 @@ void *state;
   int a, f;
   
   assert(n2 >= n);
-  /* myprintf(stderr, "d=%g, nug=%g\n", d, nug); */
+  /* myprintf(mystderr, "d=%g, nug=%g\n", d, nug); */
 
   /* set fixed into X */
   dup_matrix(X, fixed, n1, m);
@@ -172,7 +172,7 @@ void *state;
       
       /* choose random used and available X row */
       if(verb && (i+1) % verb == 0)
-	myprintf(stdout, "dopt round %d of %d, changes=%d, ldet=%g\n", 
+	myprintf(mystdout, "dopt round %d of %d, changes=%d, ldet=%g\n", 
 		 i+1, iter, changes, log_det);
       
       /* [f, fi] = sample(1, free, fprobs, seeds(1)); */
@@ -203,7 +203,7 @@ void *state;
        * see if its worth doing the new one
        */
 
-      /* myprintf(stdout, "i=%d, n+n1=%d, log_det=%.20f, new=%.20f\n", 
+      /* myprintf(mystdout, "i=%d, n+n1=%d, log_det=%.20f, new=%.20f\n", 
 	 i, n+n1, log_det, log_det_new); */
       
       if(log_det < log_det_new) {

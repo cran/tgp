@@ -38,7 +38,6 @@ extern "C"
 #include "exp_sep.h"
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <string>
@@ -939,8 +938,8 @@ void ExpSep_Prior::read_double(double *dparams)
 
   /* read the starting value(s) for the range parameter(s) */
   for(unsigned int i=0; i<dim; i++) d[i] = dparams[1];
-  /*myprintf(stdout, "starting d=");
-    printVector(d, dim, stdout, HUMAN); */
+  /*myprintf(mystdout, "starting d=");
+    printVector(d, dim, mystdout, HUMAN); */
 
   /* reset the d parameter to after nugget and gamlin params */
   dparams += 13;
@@ -956,7 +955,7 @@ void ExpSep_Prior::read_double(double *dparams)
 
   /* d hierarchical lambda prior parameters */
   if((int) dparams[0] == -1)
-    { fix_d = true; /*myprintf(stdout, "fixing d prior\n");*/ }
+    { fix_d = true; /*myprintf(mystdout, "fixing d prior\n");*/ }
   else {
     fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, dparams, "d lambda");
@@ -983,8 +982,8 @@ void ExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   d[0] = atof(strtok(line, " \t\n#"));
   for(unsigned int i=1; i<dim; i++) d[i] = d[0];
-  myprintf(stdout, "starting d=", d);
-  printVector(d, dim, stdout, HUMAN);
+  myprintf(mystdout, "starting d=", d);
+  printVector(d, dim, mystdout, HUMAN);
 
   /* read d and nug-hierarchical parameters (mix of gammas) */
   double alpha[2], beta[2];
@@ -999,7 +998,7 @@ void ExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
   if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-    { fix_d = true; myprintf(stdout, "fixing d prior\n"); }
+    { fix_d = true; myprintf(mystdout, "fixing d prior\n"); }
   else {
     fix_d = false;
     get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
@@ -1239,7 +1238,7 @@ void ExpSep_Prior::SetBasePrior(Base_Prior *base_prior)
 
 void ExpSep_Prior::Print(FILE *outfile)
 {
-  myprintf(stdout, "corr prior: separable power\n");
+  myprintf(mystdout, "corr prior: separable power\n");
 
   /* print nugget stuff first */
   PrintNug(outfile);
@@ -1261,7 +1260,7 @@ void ExpSep_Prior::Print(FILE *outfile)
   /* range gamma hyperprior */
   if(fix_d) myprintf(outfile, "d prior fixed\n");
   else {
-    myprintf(stdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+    myprintf(mystdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
 	     d_beta_lambda[1]);
   }

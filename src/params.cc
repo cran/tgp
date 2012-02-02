@@ -30,7 +30,6 @@ extern "C"
 #include "params.h"
 #include "gp.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <fstream>
 using namespace std;
@@ -112,7 +111,7 @@ Params::~Params(void)
 void Params::read_double(double *dparams)
 {
   /* read tree prior values alpha, beta and minpart */
-  // printVector(dparams, 5, stdout, HUMAN);
+  // printVector(dparams, 5, mystdout, HUMAN);
   t_alpha = dparams[0];
   t_beta = dparams[1];
   t_minpart = (unsigned int) dparams[2];
@@ -127,8 +126,8 @@ void Params::read_double(double *dparams)
   int mf = (int) dparams[5];
   MEAN_FN mean_fn = LINEAR;
   switch (mf) {
-  case 0: mean_fn=LINEAR; /* myprintf(stdout, "linear mean\n"); */ break;
-  case 1: mean_fn=CONSTANT;/*  myprintf(stdout, "constant mean\n");*/  break;
+  case 0: mean_fn=LINEAR; /* myprintf(mystdout, "linear mean\n"); */ break;
+  case 1: mean_fn=CONSTANT;/*  myprintf(mystdout, "constant mean\n");*/  break;
   default: error("bad mean function %d", (int)dparams[5]); break;
   }
 
@@ -167,10 +166,10 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   if(!strncmp(line, "linear", 6)) {
     mean_fn = LINEAR;
-    myprintf(stdout, "mean function: linear\n");
+    myprintf(mystdout, "mean function: linear\n");
   } else if(!strncmp(line, "constant", 8)) {
     mean_fn = CONSTANT;
-    myprintf(stdout, "mean function: constant\n");
+    myprintf(mystdout, "mean function: constant\n");
   } else {
     error("%s is not a valid mean function", strtok(line, "\t\n#"));
   }
@@ -179,7 +178,7 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
   prior = new Gp_Prior(/*d*/ t_basemax,  mean_fn);
 
   /* prints the tree prior parameter settings */
-  Print(stdout);
+  Print(mystdout);
 
   /* read the rest of the parameters into the corr prior module */
   prior->read_ctrlfile(ctrlfile);
@@ -266,7 +265,7 @@ void get_mix_prior_params(double *alpha, double *beta, char *line, const char* w
   beta[0] = atof(strtok(NULL, " \t\n#")); assert(beta[0] > 0);
   alpha[1] = atof(strtok(NULL, " \t\n#")); assert(alpha[1] > 0);
   beta[1] = atof(strtok(NULL, " \t\n#")); assert(beta[1] > 0);
-  /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+  /* myprintf(mystdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
      which, alpha[0], beta[0], alpha[1], beta[1]); */
 } 
 
@@ -285,7 +284,7 @@ void get_mix_prior_params_double(double *alpha, double *beta, double *alpha_beta
   beta[0] = alpha_beta[1]; assert(beta[0] >= 0);
   alpha[1] = alpha_beta[2]; assert(alpha[1] >= 0);
   beta[1] = alpha_beta[3]; assert(beta[1] >= 0);
-  /* myprintf(stdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+  /* myprintf(mystdout, "%s[a,b][0,1]=[%g,%g],[%g,%g]\n", 
      which, alpha[0], beta[0], alpha[1], beta[1]); */
 }
 

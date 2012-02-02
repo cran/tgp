@@ -24,7 +24,6 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include "rhelp.h"
 #include "rand_draws.h"

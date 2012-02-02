@@ -75,7 +75,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
   if(parallel) { init_parallel_preds(); consumer_start(); }
   
   /* stuff to do with printing */
-  OUTFILE = stdout;
+  OUTFILE = mystdout;
   verb = 2;
   this->trace = trace;
 
@@ -1399,7 +1399,7 @@ void Model::DrawInvTemp(void* state, bool burnin)
   //double diff_post = pnew - p;
   double diff_lik =  llnew - ll;
 
-  //myprintf(stderr, "diff=%g\n", diff_post-diff_lik);
+  //myprintf(mystderr, "diff=%g\n", diff_post-diff_lik);
   //assert(diff_post == diff_lik);
 
   /* add in the priors for the itemp (weights) */
@@ -1718,7 +1718,7 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
 	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
 		    preds->mode, state); 
 	dupv(preds->M[r/preds->mult], preds->XX[0], preds->d * preds->nm);
-	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, stdout);
+	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, mystdout);
 	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
       }
 
