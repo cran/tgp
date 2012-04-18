@@ -53,12 +53,6 @@ double *FFrow, *b;
   /* f(x)' * beta */
   zm = linalg_ddot(col, FFrow, 1, b, 1);
   
-#ifdef DEBUG
-  /* checking for an old bug, where predictions went wild */
-  if(abs(zz) > 10e10) 
-    warning("(predict) abs(zz)=%g > 10e10", zm);
-#endif
-  
   return zm;
 }
 

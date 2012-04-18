@@ -284,6 +284,7 @@ void Sim::propose_new_d(double* d_new, double *q_fwd, double *q_bak, void *state
 
   /* RW-MVN proposal */
   mvnrnd(d_new, d, sp->DpCov_chol(), dim, state);
+  *q_fwd = *q_bak = 1.0;
   
   /* random signs from same MVN */
   /* mvnrnd(signs, NULL, sp->DpCov_chol(), dim, state);
@@ -1006,8 +1007,9 @@ double Sim_Prior::log_Prior(double *d)
   assert(gamlin[0] <= 0);
 
   /* sum the log priors for each of the d-parameters */
-  for(unsigned int i=0; i<dim; i++)
+  for(unsigned int i=0; i<dim; i++) {
     prob += log_d_prior_pdf(fabs(d[i]), d_alpha[i], d_beta[i]);
+  }
 
   /* if not allowing the LLM, then we're done */
   assert(gamlin[0] <= 0);
@@ -1069,6 +1071,7 @@ void Sim_Prior::SetBasePrior(Base_Prior *base_prior)
 {
   this->base_prior = base_prior;
 }
+
 
 /*
  * Print:

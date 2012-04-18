@@ -117,7 +117,7 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
     if(verb >= 1) 
       cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
   }
-  else{ nn.lhs <- 0; ngrid <- 0; MEgrid <- NULL; span=NULL}
+  else{ nn.lhs <- ngrid <- 0; MEgrid <- span <- double(0) }
 
   ## calculate the number of sampling rounds
   S = R*(BTE[2]-BTE[1])/BTE[3]
@@ -150,6 +150,13 @@ function(object, XX=NULL, BTE=c(0,1,1), R=1, MAP=TRUE, pred.n=TRUE, krige=TRUE,
            sens.ngrid = as.integer(ngrid),
            sens.span = as.double(span),
            sens.Xgrid = MEgrid,
+
+           ## output dimensions for checking NULL
+           pred.n = as.integer(pred.n),
+           nnprime = as.integer(nnprime),
+           krige = as.integer(krige),
+           bDs2x = as.integer(Ds2x),
+           improv = as.integer(as.logical(improv) * nnprime),
 
            ## begin outputs
            Zp.mean = double(pred.n * object$n),

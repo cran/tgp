@@ -109,6 +109,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   if(BTE[1] < 0 || BTE[2] <= 0 || BTE[1] > BTE[2]) stop("bad B and T: must have 0<=B<=T")
   if(BTE[3] <= 0 || ((BTE[2]-BTE[1] != 0) && (BTE[2]-BTE[1] < BTE[3])))
     stop("bad E arg: if T-B>0, then must have T-B>=E")
+  if((BTE[2] - BTE[1]) %% BTE[3] != 0) stop("E must divide T-B")
   if(R < 0) stop("R must be positive")
   
   ## deal with params
@@ -142,7 +143,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
     MEgrid <- as.double(sens.par$MEgrid)
     if(verb >= 2) 
       cat(paste("Predict at", nn, "LHS XX locs for sensitivity analysis\n"))
-  } else{ nn.lhs <- 0; ngrid <- 0; MEgrid <- NULL; span <- NULL }
+  } else{ nn.lhs <- ngrid <- 0; MEgrid <- span <- double(0) }
 
   ## construct the set of candidate split locations
   Xsplit <- X
@@ -176,12 +177,19 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            dparams = as.double(dparams),
            itemps = as.double(itemps),
            verb = as.integer(verb),
-           tree = as.double(NULL),
-           hier = as.double(NULL),
+           tree = as.double(-1),
+           hier = as.double(-1),
            MAP = as.integer(0),
            sens.ngrid = as.integer(ngrid),
            sens.span = as.double(span),
            sens.Xgrid = as.double(MEgrid),
+
+           ## output dimensions for checking NULL
+           pred.n = as.integer(pred.n),
+           nnprime = as.integer(nnprime),
+           krige = as.integer(krige),
+           bDs2x = as.integer(Ds2x),
+           improv = as.integer(as.logical(improv) * nnprime),
            
            ## begin outputs
            Zp.mean = double(pred.n * n),
@@ -221,5 +229,6 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   ## can be shared by predict.tgp()
   ll <- tgp.postprocess(ll, Xnames, response, pred.n, zcov, Ds2x, improv,
                         sens.p, Zm0r1, params, rmfiles)
+  
   return(ll)
 }

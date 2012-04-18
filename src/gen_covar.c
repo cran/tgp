@@ -32,8 +32,6 @@
 #include "rhelp.h"
 #include "bessel_k.h"
 
-#define DEBUG
-
 /* #define THRESH 0.5 */
 
 

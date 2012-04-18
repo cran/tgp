@@ -1,3 +1,19 @@
+2.4-7 (18 April 2012)
+-----
+
+fixed NULL issue in lh_sample
+
+
+2.4-6 (14 April 2012)
+-----
+
+Added check that E divides T-B
+
+Corrected bug in slice grid causing overflow
+
+Corrected NULL problems pointed out by BR
+
+
 2.4-5 (30 January 2012)
 -----
 

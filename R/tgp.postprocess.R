@@ -91,7 +91,10 @@ function(ll, Xnames, response, pred.n, zcov, Ds2x, improv, sens.p, Zm0r1, params
 
   ## clear the verb, state, tree and MAP fields for output
   ll$verb <- NULL; ll$state <- NULL; ll$tree <- NULL; ll$MAP <- NULL; ll$nt <- NULL
-  ll$ncol <- NULL; ll$hier <- NULL; 
+  ll$ncol <- NULL; ll$hier <- NULL;
+
+  ## clear output dimensions
+  ll$pred.n <- ll$nnprime <- ll$krige <- ll$bDs2x <- NULL
 
   ## consolidate itemps
   nt <- as.integer(ll$itemps[1])
