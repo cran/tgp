@@ -47,12 +47,14 @@ function(n, rect, shape=NULL, mode=NULL)
     stop(paste("For beta sampling, length(shape) should be ", d,
                ", you have ", length(shape), ", and all positive",
                sep=""))
+  if(is.null(shape)) shape <- -1
 
   ## check the mode argument is positive and of length 1
   if(!is.null(mode) && length(mode) != d && all(mode > 0))
     stop(paste("To specify sampling modes, length(mode) should be ", d,
                ", you have ", length(mode), ", and all positive",
                sep=""))
+  if(is.null(mode)) mode <- -1
   
   ## choose a random state for the C code
   state <- sample(seq(0,999), 3)

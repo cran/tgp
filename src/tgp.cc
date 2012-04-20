@@ -51,9 +51,12 @@ void tgp(int* state_in,
 	 /* inputs from R */
 	 double *X_in, int *n_in, int *d_in, double *Z_in, double *XX_in, int *nn_in,
 	 double *Xsplit_in, int *nsplit_in, int *trace_in, int *BTE_in, int* R_in, 
-	 int* linburn_in, int *zcov_in, int *improv_in, double *params_in, 
+	 int* linburn_in, int *zcov_in, int *g_in, double *params_in, 
 	 double *ditemps_in, int *verb_in, double *dtree_in, double* hier_in, 
 	 int *MAP_in, int *sens_ngrid, double *sens_span, double *sens_Xgrid_in,  
+
+	 /* output dimensions for checking NULL */
+	 int* predn_in, int* nnprime_in, int *krige_in, int* Ds2x_in, int *improv_in,
 
 	 /* outputs to R */
 	 double *Zp_mean_out, double *ZZ_mean_out, double *Zp_km_out, 
@@ -70,30 +73,39 @@ void tgp(int* state_in,
   unsigned int lstate = three2lstate(state_in);
   tgp_state = newRNGstate(lstate);
 
-  /* check that the improv input agrees with improv output */
-  if(*improv_in) assert(improv_out != NULL);
+  /* possibly create NULL pointers that couldn't be passed by .C -- not sure if all are needed */
+  if(dtree_in[0] < 0) dtree_in = NULL;
+  if(hier_in[0] < 0) hier_in = NULL;
+  if((*predn_in * *n_in) == 0) 
+    Zp_q1_out = Zp_q_out = Zp_q2_out = Zp_median_out = Zp_mean_out = NULL;
+  if(*nnprime_in == 0)
+    ZZ_q1_out = ZZ_q_out = ZZ_q2_out = ZZ_median_out = ZZ_mean_out = NULL;
+  if((*krige_in * *predn_in * *n_in) == 0) Zp_km_out = Zp_kvm_out = Zp_ks2_out = NULL;
+  if((*krige_in * *nnprime_in) == 0) ZZ_km_out = ZZ_kvm_out = ZZ_ks2_out = NULL;
+  if((*Ds2x_in * *nnprime_in) == 0) Ds2x_out = NULL;
+  if((*improv_in * *nnprime_in) == 0) { improv_out = NULL; irank_out = NULL; }
 
   /* copy the input parameters to the tgp class object where all the MCMC 
      work gets done */
   tgpm = new Tgp(tgp_state, *n_in, *d_in, *nn_in, BTE_in[0], BTE_in[1], BTE_in[2], *R_in, 
 		 *linburn_in, (bool) (Zp_mean_out!=NULL), 
 		 (bool) ((Zp_ks2_out!=NULL) || (ZZ_ks2_out!=NULL)), (bool) (Ds2x_out!=NULL), 
-		 improv_in[0], (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, Xsplit_in,
+		 g_in[0], (bool) (*sens_ngrid > 0), X_in, Z_in, XX_in, Xsplit_in,
 		 *nsplit_in, params_in, ditemps_in, (bool) *trace_in, *verb_in, dtree_in, 
 		 hier_in);
   
   /* post constructor initialization */
   tgpm->Init();
-  
+
   /* tgp MCMC rounds are done here */
   if(*MAP_in) tgpm->Predict();
   else tgpm->Rounds();
 
   /* gather the posterior predictive statistics from the MCMC rounds */
   tgpm->GetStats(!((bool)*MAP_in), Zp_mean_out, ZZ_mean_out, Zp_km_out, ZZ_km_out, Zp_kvm_out, 
-		 ZZ_kvm_out, Zp_q_out, ZZ_q_out, (bool) (*zcov_in), Zp_s2_out, ZZ_s2_out, ZpZZ_s2_out, 
-		 Zp_ks2_out, ZZ_ks2_out, Zp_q1_out, Zp_median_out, Zp_q2_out, ZZ_q1_out, 
-		 ZZ_median_out, ZZ_q2_out, Ds2x_out, improv_out, improv_in[1], irank_out, 
+		 ZZ_kvm_out, Zp_q_out, ZZ_q_out, (bool) (*zcov_in), Zp_s2_out, ZZ_s2_out,
+		 ZpZZ_s2_out, Zp_ks2_out, ZZ_ks2_out, Zp_q1_out, Zp_median_out, Zp_q2_out, 
+		 ZZ_q1_out, ZZ_median_out, ZZ_q2_out, Ds2x_out, improv_out, g_in[1], irank_out, 
 		 ess_out);
 
   /* sensitivity analysis? */
@@ -265,7 +277,7 @@ void Tgp::Init(void)
 
   /* structure for accumulating predictive information */
   cump = new_preds(XX, nn, pred_n*n, d, rect, R*(T-B), pred_n, krige, 
-		       its->IT_ST_or_IS(), delta_s2, improv, sens, E);
+		   its->IT_ST_or_IS(), delta_s2, improv, sens, E);
   /* make sure the first col still indicates the coarse or fine process */
   if(params->BasePrior()->BaseModel() == GP){
     if( ((Gp_Prior*) params->BasePrior())->CorrPrior()->CorrModel() == MREXPSEP ){ 
@@ -581,7 +593,6 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
     /* mean */
     wmean_of_columns(ZZ_mean, cump->ZZ, cump->R, nn, w);
 
-
     /* kriging mean */
     if(ZZ_km) wmean_of_columns(ZZ_km, cump->ZZm, cump->R, nn, w);
     if(ZZ_km) wvar_of_columns(ZZ_kvm, cump->ZZvm, cump->R, nn, w);
@@ -628,14 +639,6 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
       assert(cump->improv);
       
       wmean_of_columns(improvec, cump->improv, cump->R, cump->nn, w);
-      /* TADDY's file output for improv trace   
-      matrix_to_file("improv.txt", cump->improv, cump->R, cump->nn);
-      int **IRANK = new int*[2];
-      IRANK[0] = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, 1, w);
-      IRANK[1] = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, 2, w);
-      dupiv(irank, IRANK[0], nn);
-      intmatrix_to_file("irank.txt", IRANK, 2, cump->nn);
-      delete_imatrix(IRANK); */
       int *ir = (int*) GetImprovRank(cump->R, cump->nn, cump->improv, improv, numirank, w);
       dupiv(irank, ir, nn);
       free(ir);

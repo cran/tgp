@@ -485,7 +485,7 @@ double d;
 double alpha[2], beta[2];
 {
   double p1, p2, lp;
-  
+
   gampdf_log_gelman(&p1, &d, alpha[0], beta[0], 1);
   gampdf_log_gelman(&p2, &d, alpha[1], beta[1], 1);
   lp = log(0.5*(exp(p1)+exp(p2)));

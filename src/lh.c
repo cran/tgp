@@ -126,7 +126,7 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
   /* printMatrix(rect, 2, *dim_in, mystdout); */
 
   /* get the latin hypercube sample */
-  if(shape == NULL) s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
+  if(*shape < 0) s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
   else s = beta_sample_lh(*dim_in, *n_in, rect, shape, mode, state);
 
   dupv(s_out, s[0], (*n_in)*(*dim_in));
