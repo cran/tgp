@@ -139,6 +139,7 @@ matplot(log(cbind(sig$k, geo$k, har$k)), pch=21:23,
         main="log(inv-temp) ladders", xlab="indx",
         ylab="itemp")
 
+\dontrun{
 ## using Importance Tempering (IT) to improve mixing
 ## on the motorcycle accident dataset
 library(MASS)
@@ -160,6 +161,7 @@ par(mfrow=c(1,1))
 barplot(b, beside=TRUE, xlab="tree height", ylab="counts", col=1:3,
         main="tree heights encountered")
 legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
+}
 }
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the

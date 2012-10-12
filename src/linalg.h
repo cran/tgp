@@ -26,6 +26,7 @@
 #define __LINALG_H__ 
 
 #include "matrix.h"
+#include "rhelp.h"
 
 #ifndef CBLAS_ENUM_DEFINED_H
    #define CBLAS_ENUM_DEFINED_H
@@ -36,17 +37,17 @@
    enum CBLAS_SIDE  {CblasLeft=141, CblasRight=142};
 #endif
 
-
 #define FORTPACK
 #define FORTBLAS
 
 #ifdef FORTPACK
 #define dpotrf dpotrf_
-extern void dpotrf(char*, int*, double*, int*, int*);
+extern void dpotrf(char*, size_t*, double*, size_t*, long*);
 #define dtrsv dtrsv_
 extern void dtrsv(char*, char*, char*, int*, double*, int*, double*, int*); 
 #define dposv dposv_
-extern void dposv(char *, int *, int *, double*, int *, double*, int *, int *);
+/* extern void dposv(char *, int *, int *, double*, int *, double*, int *, int *); */
+extern void dposv(char *, size_t *, size_t *, double*, size_t*, double*, size_t*, long*);
 #define dgesv dgesv_
 extern void dgesv(int *,int *,double *,int*,int*,double*,int*,int*);
 #else
@@ -55,21 +56,30 @@ extern void dgesv(int *,int *,double *,int*,int*,double*,int*,int*);
 
 #ifdef FORTBLAS
 #define dgemm dgemm_
-extern void dgemm(char*, char*,  int*, int*, int*, double*,
-		  double*, int*, double*, int*, double*, double*, int*);
+/* extern void dgemm(char*, char*,  int*, int*, int*, double*,
+   double*, int*, double*, int*, double*, double*, int*); */
+extern void dgemm(char*, char*,  size_t*, size_t*, size_t*, double*,
+		  double*, size_t*, double*, size_t*, double*, double*, size_t*);
 #define dsymm dsymm_
-extern void dsymm(char*, char*, int*, int*, double*,
-		  double*, int*, double*, int*, double*, double*, int*);
+/* extern void dsymm(char*, char*, int*, int*, double*,
+   double*, int*, double*, int*, double*, double*, int*); */
+extern void dsymm(char*, char*, size_t*, size_t*, double*,
+		  double*, size_t*, double*, size_t*, double*, double*, size_t*);
 #define dgemv dgemv_
-extern void dgemv(char*, int*, int*, double*, double*, int*, 
-                  double*, int*, double*, double*, int*);
+/* extern void dgemv(char*, int*, int*, double*, double*, int*, 
+   double*, int*, double*, double*, int*); */
+extern void dgemv(char*, size_t*, size_t*, double*, double*, size_t*, 
+                  double*, size_t*, double*, double*, size_t*);
 #define dsymv dsymv_
-extern void dsymv(char*, int*, double*, double*, int*, 
-                  double*, int*, double*, double*, int*);
+/*extern void dsymv(char*, int*, double*, double*, int*, 
+  double*, int*, double*, double*, int*); */
+extern void dsymv(char*, size_t*, double*, double*, size_t*, 
+                  double*, size_t*, double*, double*, size_t*);
 #define ddot ddot_
-extern double ddot(int*, double*, int*, double*, int*);
+extern double ddot(size_t*, double*, size_t*, double*, size_t*);
 #define daxpy daxpy_
-extern void daxpy(int*, double*, double*, int*, double*, int*);
+/* extern void daxpy(int*, double*, double*, int*, double*, int*); */
+extern void daxpy(size_t*, double*, double*, size_t*, double*, size_t*);
 #define dtrsv dtrsv_
 extern void dtrsv(char*, char*, char*, int*, double*, int*, double*, int*);
 #else

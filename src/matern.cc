@@ -245,7 +245,7 @@ void Matern::Update(unsigned int n, double **X)
     nd = n;
   }
   dist_symm(xDISTx, dim, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nug, n);
   //delete_matrix(xDISTx);
 }
 
@@ -262,7 +262,7 @@ void Matern::Update(unsigned int n, double **K, double **X)
    
   double ** xDISTx = new_matrix(n, n);
   dist_symm(xDISTx, dim, X, n, PWR);
-  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nb, nug, n);
+  matern_dist_to_K_symm(K, xDISTx, d, nu, bk, nug, n);
   delete_matrix(xDISTx);
 }
 
@@ -279,7 +279,7 @@ void Matern::Update(unsigned int n1, unsigned int n2, double **K, double **X, do
   
   double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, dim, XX, n1, X, n2, PWR);
-  matern_dist_to_K(K, xxDISTx, d, nu, bk, nb, nug, n1, n2);
+  matern_dist_to_K(K, xxDISTx, d, nu, bk, nug, n1, n2);
   delete_matrix(xxDISTx);
 }
 
@@ -335,9 +335,9 @@ int Matern::Draw(unsigned int n, double **F, double **X, double *Z,
       matern_d_draw_margin(n, col, d_new, d, F, Z, xDISTx, log_det_K, *lambda, Vb, K_new, 
 			   Ki_new, Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new,  
 			   gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), tau2, 
-			   nug, nu, bk, nb, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
+			   nug, nu, bk, q_bak/q_fwd, ep->DAlpha(), ep->DBeta(), 
 			   gp_prior->s2Alpha(), gp_prior->s2Beta(), (int) lin_new, itemp, 
-			    state);
+			   state);
   }
   
   /* did we accept the new draw? */

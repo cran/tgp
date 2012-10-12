@@ -38,13 +38,13 @@ void sim_corr_symm(double **K, unsigned int m, double **X,
 void dist_to_K(double **K, double **DIST, double d, double nug, 
 		unsigned int m, unsigned int n);
 void dist_to_K_symm(double **K, double **DIST, double d, double nug, unsigned int n);
-void matern_dist_to_K(double **K, double **DIST, double d,  double nu, double *bk, long nb,
+void matern_dist_to_K(double **K, double **DIST, double d,  double nu, double *bk,
 		      double nug, unsigned int m, unsigned int n);
 void matern_dist_to_K_symm(double **K, double **DIST, double d,  double nu, double *bk,
-			   long nb, double nug, unsigned int n);
+			   double nug, unsigned int n);
 void inverse_chol(double **M, double **Mi, double **Mutil, unsigned int n);
 void inverse_lu(double **M, double **Mi, double **Mutil, unsigned int n);
 void solve_chol(double *x, double **A, double *b, unsigned int n);
-
+double log_bessel_k(double x, double nu, double exp0, double *bk, long bn);
 
 #endif

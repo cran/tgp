@@ -83,6 +83,7 @@ void center_rows(double **M, double *center, unsigned int n1, unsigned int n2);
 void norm_columns(double **M, double *norm, unsigned int n1, unsigned int n2);
 void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
 		      double(*f)(double));
+void sum_of_columns(double *s, double **M, unsigned int n1, unsigned int n2);
 void sum_of_each_column_f(double *s, double **M, unsigned int *n1, 
 			  unsigned int n2, double(*f)(double));
 void wmean_of_columns(double *mean, double **M, unsigned int n1, unsigned int n2, 
@@ -106,6 +107,10 @@ double **new_p_submatrix(int *p, double **v, unsigned int nrows, unsigned int nc
 			 unsigned int col_offset);
 void sub_p_matrix(double **V, int *p, double **v, unsigned int nrows, 
 		  unsigned int lenp, unsigned int col_offset);
+double **new_p_submatrix_rows(int *p, double **v, unsigned int nrows, 
+			      unsigned int ncols, unsigned int row_offset);
+void sub_p_matrix_rows(double **V, int *p, double **v, unsigned int ncols, 
+		       unsigned int lenp, unsigned int row_offset);
 void copy_p_matrix(double **V, int *p1, int *p2, double **v, unsigned int n1, 
 		   unsigned int n2);
 void add_p_matrix(double a, double **V, int *p1, int *p2, double b, double **v, 
