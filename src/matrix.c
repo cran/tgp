@@ -733,10 +733,33 @@ void sum_of_columns_f(double *s, double **M, unsigned int n1, unsigned int n2,
   if(n1 <= 0 || n2 <= 0) {return;}
   assert(s && M);
   
-  /* calculate mean of columns */
+  /* calculate sum of columns */
   for(i=0; i<n2; i++) {
-    s[i] = 0;
-    for(j=0; j<n1; j++) s[i] += f(M[j][i]);
+    s[i] = f(M[0][i]);
+    for(j=1; j<n1; j++) s[i] += f(M[j][i]);
+  }
+}
+
+
+/*
+ * sum_of_columns:
+ *
+ * fill sum[n1] with the sum of the columns of M (n1 x n2);
+ * each element of which is sent through function f() first;
+ */
+
+void sum_of_columns(double *s, double **M, unsigned int n1, unsigned int n2)
+{
+  unsigned int i,j;
+
+  /* sanity checks */
+  if(n1 <= 0 || n2 <= 0) {return;}
+  assert(s && M);
+  
+  /* calculate sum of columns */
+  for(i=0; i<n2; i++) {
+    s[i] = M[0][0];
+    for(j=1; j<n1; j++) s[i] += M[j][i];
   }
 }
 
@@ -758,10 +781,11 @@ void sum_of_each_column_f(double *s, double **M, unsigned int *n1,
   if(n2 <= 0) {return;}
   assert(s && M);
   
-  /* calculate mean of columns */
+  /* calculate sum of columns */
   for(i=0; i<n2; i++) {
-    s[i] = 0;
-    for(j=0; j<n1[i]; j++) s[i] += f(M[j][i]);
+    if(n1[i] > 0) s[i] = f(M[j][i]);
+    else s[i] = 0;
+    for(j=1; j<n1[i]; j++) s[i] += f(M[j][i]);
   }
 }
 
@@ -1556,6 +1580,43 @@ double **new_p_submatrix(int *p, double **v, unsigned int nrows,
   return(V);
 }
 
+
+/*
+ * sub_p_matrix_rows:
+ *
+ * copy the rows v[1:n1][p[n2]] to V.  
+ * must have ncol(v) == ncol(V) and nrow(V) >= lenp
+ * and nrow(v) >= max(p)
+ */
+
+void sub_p_matrix_rows(double **V, int *p, double **v, 
+		       unsigned int ncols, unsigned int lenp, 
+		       unsigned int row_offset)
+{
+  int i;
+  assert(V); assert(p); assert(v); assert(ncols > 0 && lenp > 0);
+  for(i=0; i<lenp; i++) 
+    dupv(V[i+row_offset], v[p[i]], ncols);
+}
+
+
+/*
+ * new_p_submatrix_rows:
+ *
+ * create a new matrix from the rows of v, specified
+ * by p.  Must have have ncol(v) == ncol(V) and nrow(V) >= nrows
+ * and nrow(v) >= max(p)
+ */
+
+double **new_p_submatrix_rows(int *p, double **v, unsigned int nrows, 
+			      unsigned int ncols, unsigned int row_offset)
+{
+  double **V;
+  if(nrows+row_offset == 0 || ncols == 0) return NULL;
+  V = new_matrix(nrows + row_offset, ncols);
+  if(nrows > 0) sub_p_matrix_rows(V, p, v, ncols, nrows, row_offset);
+  return(V);
+}
 
 /*
  * copy_p_matrix:

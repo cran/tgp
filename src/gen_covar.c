@@ -30,7 +30,6 @@
 #include "linalg.h"
 #include "gen_covar.h"
 #include "rhelp.h"
-#include "bessel_k.h"
 
 /* #define THRESH 0.5 */
 
@@ -487,11 +486,10 @@ double *b, *x;
  * K[n][m], DIST[n][m]
  */
 
-void matern_dist_to_K(K, DIST, d, nu, bk, nb, nug, m, n)
+void matern_dist_to_K(K, DIST, d, nu, bk, nug, m, n)
 unsigned int m,n;
 double **K, **DIST, *bk;
 double d, nug, nu;
-long nb;
 {
   int i,j;
   double c;
@@ -521,8 +519,7 @@ long nb;
 	    K[i][j] = nu*(log(DIST[i][j])-log(d));
 	    
 	    /* bessel calculation */
-	    /* K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0)); */
-	    K[i][j] += log_bessel_k(DIST[i][j]/d, nu, 1.0, bk, nb);
+	    K[i][j] += log(bessel_k_ex(DIST[i][j]/d, nu, 1.0, bk));
 
 	    /* go from log space to regular space */
 	    K[i][j] = exp(K[i][j]-c);
@@ -550,11 +547,10 @@ long nb;
  * K[n][n], DIST[n][n]
  */
 
-void matern_dist_to_K_symm(K, DIST, d, nu, bk, nb, nug, n)
+void matern_dist_to_K_symm(K, DIST, d, nu, bk, nug, n)
 unsigned int n;
 double **K, **DIST, *bk;
 double d, nug, nu;
-long nb;
 {
   int i,j;
   double c;
@@ -586,8 +582,7 @@ long nb;
       K[i][j] = nu*(log(DIST[i][j])-log(d));
       
       /* bessel calculation */
-      /* K[i][j] += log(bessel_k(DIST[i][j]/d, nu, 1.0)); */
-      K[i][j] += log_bessel_k(DIST[i][j]/d, nu, 1.0, bk, nb);
+      K[i][j] += log(bessel_k_ex(DIST[i][j]/d, nu, 1.0, bk));
 
       /* go from log space to regular space */
       K[i][j] = exp(K[i][j]-c);

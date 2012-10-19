@@ -189,7 +189,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
            nnprime = as.integer(nnprime),
            krige = as.integer(krige),
            bDs2x = as.integer(Ds2x),
-           improv = as.integer(as.logical(improv) * nnprime),
+           bimprov = as.integer(as.logical(improv) * nnprime),
            
            ## begin outputs
            Zp.mean = double(pred.n * n),

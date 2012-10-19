@@ -27,9 +27,6 @@
 #include <R.h>
 FILE *mystdout = (FILE*) 0;
 FILE *mystderr = (FILE*) 1;
-#else
-FILE *mystdout = stdio;
-FILE *mystderr = stderr;
 #endif
 #include <stdarg.h>
 #include <time.h>

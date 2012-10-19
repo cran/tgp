@@ -93,7 +93,7 @@ int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlas
 			 double **Kchol_new, double *log_det_K_new, double *lambda_new, 
 			 double **VB_new, double *bmu_new, double *b0, double **Ti, 
 			 double **T, double tau2, double nug, double nu, double *bk, 
-			 long nb, double pRatio, double *d_alpha, double *d_beta, 
+			 double pRatio, double *d_alpha, double *d_beta, 
 			 double a0, double g0, int lin, double itemp,
 			 void *state);
 double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, double **F, 

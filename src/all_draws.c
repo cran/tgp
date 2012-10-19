@@ -1208,7 +1208,7 @@ void *state;
 
 int matern_d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, K_new,
 			 Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-			 b0, Ti, T, tau2, nug, nu, bk, nb, qRatio, d_alpha, d_beta, a0, 
+			 b0, Ti, T, tau2, nug, nu, bk, qRatio, d_alpha, d_beta, a0, 
 			 g0, lin, itemp, state)
 unsigned int n, col;
 int lin;
@@ -1217,7 +1217,6 @@ double *b0, *Z, *bk;
 double d_alpha[2], d_beta[2];
 double d, dlast, nug, nu, a0, g0, lambda, tau2, log_det_K, qRatio, itemp;
 double *lambda_new, *bmu_new, *log_det_K_new;
-long nb;
 void *state;
 {
   double pd, pdlast, alpha;
@@ -1230,7 +1229,7 @@ void *state;
   /* Knew = dist_to_K(dist, d, nugget);
      compute lambda, Vb, and bmu, for the NEW d */
   if(! lin) {	/* regular */
-    matern_dist_to_K_symm(K_new, DIST, d, nu, bk, nb, nug, n);
+    matern_dist_to_K_symm(K_new, DIST, d, nu, bk, nug, n);
     inverse_chol(K_new, Ki_new, Kchol_new, n);
     *log_det_K_new = log_determinant_chol(Kchol_new, n);
     *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
