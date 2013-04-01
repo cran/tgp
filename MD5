@@ -1,12 +1,11 @@
-4b6653919336887b06cee62a1d137383 *ChangeLog
-0bdf99329818578ba1147e4a3bf06f6b *DESCRIPTION
+f28474e75685b291d3979c36403e7ccf *ChangeLog
+c69e65c08b129e6e336c106d6d8a60de *DESCRIPTION
 b84738697ab332f3042e16de92e9420e *INDEX
-204e516c1211c20142a0af5f9e86aa28 *LICENSE
 d3bbee3716d352f42e167921db07aab3 *NAMESPACE
 2b25f8615fc58fa288ef0d0b3d7ef3e0 *R/btgp.R
 d62cc5b2b7203f4b94647830d1c8cd73 *R/check.matrix.R
 3baf3bbc79b7a061fae989fc329d1f47 *R/default.itemps.R
-a18baf6a14e2eb9da2ed37938fa43cde *R/exp2d.R
+4a035497f663b856b9450bfc7fd9b278 *R/exp2d.R
 951ef8c644b0a22d6722564190efd66f *R/friedman.1.data.R
 9a3c7f4f872fc8ec3fdff0c10d83bba9 *R/lhs.R
 cf6f6d40875b697a94b2fb4fd812cd15 *R/mapT.R
@@ -27,7 +26,6 @@ a0876ccd7d1159d81acd73cc091a4e64 *R/tgp.plot.slice.R
 f47a264bbe0fca8f60e39d893a3f80fc *R/tgp.postprocess.R
 21af361fc357c91c43074ad161273590 *R/tgp.read.traces.R
 a76b9b71506e4db1b37473630dd2b950 *R/tgp.trees.R
-176330c69a24e1a61b001aff8715afec *R/zzz.R
 d77f4eb76d59d9f4c85bdee74bce7b5e *README
 5fa52fcb41828cc983e0509a2a5f404a *data/exp2d.rda
 bb12c5c06151a8a7a542038b628aa1fe *demo/00Index
@@ -88,7 +86,7 @@ b703411ef8549db3b74412ec64d02e64 *src/all_draws.h
 37573f3fa856b77a76a232572ac20dd8 *src/base.h
 fc1562bb5d7d6ea12ca37c8d1ea1e07f *src/corr.cc
 447cb1af1fc39a5bd2b5a313d5c9b7fb *src/corr.h
-ef82ea114279b89f601095967b974e37 *src/dopt.c
+2ab041d99061db7d471710702e7abcde *src/dopt.c
 8f92a351cacd58155c78a0232fa1575e *src/dopt.h
 0516979d951e70b65440a911659147bd *src/exp.cc
 82365c48e6b082befafec7b72fed24ee *src/exp.h
@@ -108,9 +106,9 @@ c651e50a7f9e4fb7a3a6cbcb0df56824 *src/linalg.h
 52371e91736361411faf5786323b101f *src/list.h
 0a1135993df14464e81d35c60a0276f3 *src/matern.cc
 6e199cf7b6afe7e73219a72418cd6b05 *src/matern.h
-8f1f14041b025e37ae551baa925fc00d *src/matrix.c
+ce3567d127314af8231f1b7932a99901 *src/matrix.c
 7e1dc1ff793653a73184a0d943a01ac3 *src/matrix.h
-ad2a8db91e38ba726e77babf4be780ed *src/model.cc
+90e3a23378f05c8a26613ea2a87c5f41 *src/model.cc
 17aab050a33da1ab8ec5e0ee9aa1f3b9 *src/model.h
 f09aca8c5e7db3ec4dcd69e495ae0ae9 *src/mr_exp_sep.cc
 86b0eeb293929f1bcd0d852111138471 *src/mr_exp_sep.h
@@ -136,7 +134,7 @@ a74efafad03685acd59eb6edccd3a185 *src/temper.cc
 9cab37ec7a79da5d9f0ca1c59b133203 *src/temper.h
 9f9881205558ffeb7512c1b3fd05860a *src/tgp.cc
 119fc3370516cb64b80acda8b9d5873b *src/tgp.h
-5ba7053f9a3a171e1262510a142fd07e *src/tree.cc
+75db15762de9edd1d5e6fab003ec31c9 *src/tree.cc
 a6146701fcb0f7cb25d06468f67586d8 *src/tree.h
 84d2196daeaf6586bd33b84baa9548ce *vignettes/as.iRnw
 e754722722b581ec9125b47b916fd84e *vignettes/cat.iRnw

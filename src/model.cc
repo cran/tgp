@@ -1464,7 +1464,7 @@ double Model::Posterior(bool record)
     }
 
     /* write a line to the file recording the trace of the posteriors */
-    myprintf(POSTTRACEFILE, "%d %d %.20f %.20f %.20f %.20f\n", 
+    myprintf(POSTTRACEFILE, "%d %d %15f %15f %15f %15f\n", 
 	     t->Height(), t->numLeaves(), full_post, its->Itemp(), 
 	     full_post_temp, w);
     myflush(POSTTRACEFILE);

@@ -21,6 +21,10 @@
 #
 #*******************************************************************************
 
+## for R CMD CHECK
+if(getRversion() >= "2.15.1") utils::globalVariables("exp2d", package="tgp")
+
+
 ## exp2d.Z:
 ##
 ## sample from he 2-d exponential data at locations X with
@@ -123,7 +127,7 @@ if(n1 + n2 >= 441) { stop("n1 + n2 must be <= 441") }
 if(dopt != 1) { warning("argument dopt != 1 only makes sens when !is.null(lh)") }
 
 ## load the data
-data(exp2d); n <- dim(exp2d)[1]
+data(exp2d, envir=environment()); n <- dim(exp2d)[1]
 
     ## get the X columns
     si <- (1:n)[1==apply(exp2d[,1:2] <= 2, 1, prod)]

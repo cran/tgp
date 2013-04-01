@@ -503,8 +503,8 @@ void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
   for(i=0; i<n; i++) {
     for(j=0; j<col; j++) {
 #ifdef DEBUG
-      if(j==col-1) myprintf(outfile, "%.20f\n", M[i][j]);
-      else myprintf(outfile, "%.20f ", M[i][j]);
+      if(j==col-1) myprintf(outfile, "%15f\n", M[i][j]);
+      else myprintf(outfile, "%15f ", M[i][j]);
 #else
       if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
       else myprintf(outfile, "%g ", M[i][j]);
@@ -783,7 +783,7 @@ void sum_of_each_column_f(double *s, double **M, unsigned int *n1,
   
   /* calculate sum of columns */
   for(i=0; i<n2; i++) {
-    if(n1[i] > 0) s[i] = f(M[j][i]);
+    if(n1[i] > 0) s[i] = f(M[0][i]);
     else s[i] = 0;
     for(j=1; j<n1[i]; j++) s[i] += f(M[j][i]);
   }
@@ -2198,7 +2198,7 @@ void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type)
 {
   unsigned int i;
   if(type==HUMAN) for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
-  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%.20f ", v[i]);
+  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%15f ", v[i]);
   else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }
@@ -2219,7 +2219,7 @@ void printSymmMatrixVector(double **m, unsigned int n, FILE *outfile,
   else if(type==MACHINE) 
     for(i=0; i<n; i++) 
       for(j=i; j<n; j++) 
-	myprintf(outfile, "%.20f ", m[i][j]);
+	myprintf(outfile, "%15f ", m[i][j]);
   else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }
