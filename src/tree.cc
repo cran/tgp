@@ -1741,7 +1741,7 @@ void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root) const
     myprintf(outfile, "\"<%-5g\" \">%-5g\" ", vn, vn);
 
     /* print val again, this time in higher precision */
-    myprintf(outfile, "%.20f ", vn);
+    myprintf(outfile, "%15f ", vn);
   }
 
   /* not skipping the printing of leaf (GP) paramerters */

@@ -203,7 +203,7 @@ void *state;
        * see if its worth doing the new one
        */
 
-      /* myprintf(mystdout, "i=%d, n+n1=%d, log_det=%.20f, new=%.20f\n", 
+      /* myprintf(mystdout, "i=%d, n+n1=%d, log_det=%.15, new=%15f\n", 
 	 i, n+n1, log_det, log_det_new); */
       
       if(log_det < log_det_new) {

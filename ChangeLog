@@ -1,3 +1,14 @@
+2.4-9 (01 April 2013)
+-----
+
+Changed printed tables to 15 digits to comply with new
+read.table checks
+
+removed zzz.R and moved LICENSE to License
+
+global exp2d and data call made fancy to pass checks
+
+
 2.4-8 (13 Oct 2012)
 -----
 

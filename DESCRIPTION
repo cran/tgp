@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.4-8
-Date: 2012-10-12
+Version: 2.4-9
+Date: 2013-04-01
 Author: Robert B. Gramacy <rbgramacy@chicagobooth.edu> and Matt A.
         Taddy <taddy@chicagobooth.edu>
 Depends: R (>= 2.14.0)
@@ -22,6 +22,6 @@ Description: Bayesian nonstationary, semiparametric nonlinear
 Maintainer: Robert B. Gramacy <rbgramacy@chicagobooth.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
-Packaged: 2012-10-13 22:14:07 UTC; rgramacy
+NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2012-10-19 15:03:42
+Date/Publication: 2013-04-04 20:46:33
