@@ -1,27 +1,26 @@
 Package: tgp
 Title: Bayesian treed Gaussian process models
-Version: 2.4-9
-Date: 2013-04-01
-Author: Robert B. Gramacy <rbgramacy@chicagobooth.edu> and Matt A.
-        Taddy <taddy@chicagobooth.edu>
+Version: 2.4-11
+Date: 2014-11-28
+Author: Robert B. Gramacy <rbgramacy@chicagobooth.edu> and Matt A. Taddy <taddy@chicagobooth.edu>
 Depends: R (>= 2.14.0)
-Suggests: akima, maptree, MASS
-Description: Bayesian nonstationary, semiparametric nonlinear
-        regression and design by treed Gaussian processes (GPs) with
-        jumps to the limiting linear model (LLM).  Special cases also
-        implemented include Bayesian linear models, CART, treed linear
-        models, stationary separable and isotropic GPs, and GP
-        single-index models.  Provides 1-d and 2-d plotting functions
-        (with projection and slice capabilities) and tree drawing,
-        designed for visualization of tgp-class output.  Sensitivity
-        analysis and multi-resolution models are supported. Sequential
-        experimental design and adaptive sampling functions are also
-        provided, including ALM, ALC, and expected improvement.  The
-        latter supports derivative-free optimization of noisy black-box
-        functions.
-Maintainer: Robert B. Gramacy <rbgramacy@chicagobooth.edu>
+Imports: maptree
+Suggests: MASS
+Description: Bayesian nonstationary, semiparametric nonlinear regression 
+ and design by treed Gaussian processes (GPs) with jumps to the limiting 
+ linear model (LLM).  Special cases also implemented include Bayesian 
+ linear models, CART, treed linear models, stationary separable and 
+ isotropic GPs, and GP single-index models.  Provides 1-d and 2-d plotting functions 
+ (with projection and slice capabilities) and tree drawing, designed for 
+ visualization of tgp-class output.  Sensitivity analysis and 
+ multi-resolution models are supported. Sequential experimental 
+ design and adaptive sampling functions are also provided, including ALM, 
+ ALC, and expected improvement.  The latter supports derivative-free
+ optimization of noisy black-box functions.
+Maintainer: Robert B. Gramacy  <rbgramacy@chicagobooth.edu>
 License: LGPL
 URL: http://www.ams.ucsc.edu/~rbgramacy/tgp.html
+Packaged: 2014-11-28 20:10:23 UTC; bobby
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-04-04 20:46:33
+Date/Publication: 2014-12-08 07:49:57

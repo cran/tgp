@@ -336,7 +336,7 @@ double tau2;
   /*double ZmFb[n1]; double KpFWF[n1][n1]; int p[n1]; */
   double *ZmFb;
   double **KpFWF;
-  int info;
+  /* int info; */
   
   /* ZmFb = Zdat - F * beta; first, copy Z */
   /* THIS IS Z-FB AGAIN, definately should move this up one level */
@@ -360,7 +360,7 @@ double tau2;
   /* KpFWFi = inv(K + FWF') */
   id(KpFWFi, n1);
   /* compute inverse, replacing KpFWF with its cholesky decomposition */
-  info = linalg_dgesv(n1, KpFWF, KpFWFi);
+  /* info = */ linalg_dgesv(n1, KpFWF, KpFWFi);
   delete_matrix(KpFWF);
 }
 
@@ -636,7 +636,7 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
   unsigned int j, i, k, /* m,*/ maxj;
   double *colmean, *maxcol;
   double **Imat;
-  double maxmean;
+  /* double maxmean; */
   unsigned int *pntind;
 
   /* allocate the ranking vector */
@@ -661,7 +661,7 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
   
   /* which column yields the maximum improvement */
   maxj = 0;
-  maxmean = max(colmean, nn, &maxj);
+  /* maxmean = */ max(colmean, nn, &maxj);
 
   /* the maxj-th input is ranked first */
   pntind[maxj] = 1;
@@ -687,7 +687,7 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
     wmean_of_columns(colmean, Imat, R, nn, w);
 
     /* which column yeilds the maximum improvement */
-    maxmean = max(colmean, nn, &maxj);
+    /* maxmean =*/ max(colmean, nn, &maxj);
 
     /* the maxj-th column is ranked k+1st */
     /* make sure that pntind[maxj] is not already filled */

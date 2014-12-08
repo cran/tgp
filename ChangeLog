@@ -1,3 +1,20 @@
+2.4-11 (28 November 2014)
+------
+
+removed akima from package
+
+
+2.4-10 (27 November 2014)
+------
+
+added mean0.range1 to NAMESPACE for use in the plgp
+package
+
+cleaned up some warnings in new pedantic gcc compile
+
+moved akima and maptree to Imports
+
+
 2.4-9 (01 April 2013)
 -----
 

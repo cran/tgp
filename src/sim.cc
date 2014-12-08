@@ -788,10 +788,10 @@ void Sim_Prior::read_double(double *dparams)
   delete_matrix(S);
   free(s); */
 
- /* Choleski decompose */
+  /* Choleski decompose */
   int info = linalg_dpotrf(dim, dp_cov_chol);
   assert(info == 0); 
-  info = 0; /* for NDEBUG */
+  if(info == 0) myprintf(mystdout, "bad Cholesky in read_double\n"); /* for NDEBUG */
 }
 
 

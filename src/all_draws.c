@@ -60,7 +60,7 @@ double **F;
 {
   double **aux1, **Vb;
   double *by;
-  int info;
+  /* int info; */
   
   /* zero out by and b */
   by = new_zero_vector(col); 
@@ -73,7 +73,7 @@ double **F;
   
   /* Vb = inv(F'*F) */
   Vb = new_id_matrix(col);
-  info = linalg_dgesv(col, aux1, Vb);
+  /* info = */ linalg_dgesv(col, aux1, Vb);
   delete_matrix(aux1);
   
   /* by = Z*F */
@@ -107,7 +107,7 @@ double **F, **Ti, **Vb;
 double tau2, itemp;
 {
   double **Vbi, **Fgi;
-  int info;
+  /* int info; */
   unsigned int i, j;
 
   /* sanity check for inv-temperature */
@@ -136,7 +136,7 @@ double tau2, itemp;
   /* Vb = inv(F'*F + Ti/tau2); is inv(aux1) */
   id(Vb, col);
   if(col==1) Vb[0][0] = 1.0/Vbi[0][0];
-  else info = linalg_dgesv(col, Vbi, Vb);
+  else /* info = */ linalg_dgesv(col, Vbi, Vb);
   delete_matrix(Vbi);
   
   /* by = Z*F/(1+g) + b0'*Ti/tau2; 
@@ -249,7 +249,7 @@ double **F, **Ki, **Ti, **Vb;
 double tau2, itemp;
 {
   double **KiF, **Vbi;
-  int info;
+  /* int info; */
 
   /* sanity check for temperature */
   assert(itemp >= 0);
@@ -266,7 +266,7 @@ double tau2, itemp;
   /* Vb = inv(F'*KiF + Ti/tau2) */
   id(Vb, col);
   if(col==1) Vb[0][0] = 1.0/Vbi[0][0];
-  else info = linalg_dgesv(col, Vbi, Vb);
+  else /* info = */ linalg_dgesv(col, Vbi, Vb);
   delete_matrix(Vbi);
   
   /* by = Z*KiF + b0'*Ti/tau2 */
@@ -1426,7 +1426,7 @@ void *state;
 {
   double **sbb0, **S;
   double *bmb0;
-  int i, nu, info;
+  int i, nu /* , info*/;
   
   /* sbb0 = zeros(length(b0)); */
   sbb0 = new_zero_matrix(col, col);
@@ -1450,7 +1450,7 @@ void *state;
   linalg_daxpy(col*col, rho, *V, 1, *sbb0, 1);
   
   /* then invert: S = inv(sbb0) */
-  info = linalg_dgesv(col, sbb0, S);
+  /* info = */ linalg_dgesv(col, sbb0, S);
   delete_matrix(sbb0);
 
   /* rho parameter */
@@ -1475,7 +1475,7 @@ double *b0, *s2, *mu, *tau2;
 double **b, **Ti, **Ci;
 void *state;
 {
-  int i, info;
+  int i /* , info*/;
   double s2i_sum, s2i;
   double **Vb0i, **Vb0;
   double *b_s2i_sum, *left, *right, *bm;
@@ -1523,7 +1523,7 @@ void *state;
 
   /* first: get the choleski decomposition */
   /* note that this changes the cov variable (Vb0) */
-  info = linalg_dpotrf(col, Vb0);
+  /* info =*/ linalg_dpotrf(col, Vb0);
 
   /* now get the draw using the choleski decomposition */
   mvnrnd(b0, bm, Vb0, col, state);

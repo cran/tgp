@@ -244,6 +244,16 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     assert(((int)ceil(((double)(T-B))/preds->R)) == (int)preds->mult);
   }
 
+  /* TESTING TREE DISTANCE */
+  /* double **td1, **td2; int *tdp; double *th, *tad;
+  if(preds) {
+    td1 = new_zero_matrix(preds->nn, preds->nn);
+    td2 = new_zero_matrix(preds->nn, preds->nn);
+    th = new_zero_vector(preds->nn);
+    tad = new_zero_vector(preds->nn);
+    tdp = iseq(0, preds->nn);
+  } */
+
   /* for the leavesList function in the for loop below */
   unsigned int numLeaves = 1;
   
@@ -257,8 +267,8 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     if((r+1)%4 == 0) DrawInvTemp(state, r < (int)B);
 
     /* propose tree changes */
-    bool treemod = false;
-    if((r+1)%4 == 0) treemod = modify_tree(state);
+    /* bool treemod = false; */
+    if((r+1)%4 == 0) /* treemod = */ modify_tree(state);
     
     /* get leaves of the tree */
     Tree **leaves = t->leavesList(&numLeaves);
@@ -302,22 +312,25 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
       /* keep track of MAP, and calculate importance sampling weight */
       double w = Posterior(true); /* must call Posterior for mapt */
       if(its->IT_ST_or_IS()) {
-	preds->w[index/preds->mult] = w;
-	preds->itemp[index/preds->mult] = its->Itemp();
+        preds->w[index/preds->mult] = w;
+        preds->itemp[index/preds->mult] = its->Itemp();
       }
 
       /* For random XX (eg sensitivity analysis), draw the predictive locations */
       if(preds->nm > 0){
-	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
-		    preds->mode, state); 
-	dupv(preds->M[index/preds->mult], preds->XX[0], preds->d * preds->nm);
-	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
+        sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
+          preds->mode, state); 
+        dupv(preds->M[index/preds->mult], preds->XX[0], preds->d * preds->nm);
+        normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
       }
+
+      /* TESTING TREE DISTANCE */
+      // t->Distance(preds->XX, tdp, preds->nn, td1, th, td2, tad);
 
       /* predict for each leaf */
       /* make sure to do this after calculation of preds->w[r], above */
       for(unsigned int i=0; i<numLeaves; i++)
-	predict_master(leaves[i], preds, index, state);
+        predict_master(leaves[i], preds, index, state);
       
       /* keeping track of the average number of partitions */
       double m = ((double)(r-B)) / preds->mult;
@@ -343,8 +356,21 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
   if(parallel) wrap_up_predictions(); 
 
   /* normalize Ds2x, i.e., divide by the total (not within-partition) XX locs */
-  if(preds && preds->Ds2x) 
+  if(preds && preds->Ds2x)
     scalev(preds->Ds2x[0], preds->R * preds->nn, 1.0/preds->nn);
+
+  /* TESTING TREE DISTANCE */
+  /* if(preds) {
+    scalev(*td1, preds->nn * preds->nn, 1.0/preds->R);
+    matrix_to_file("node_dist.txt", td1, preds->nn, preds->nn);
+    scalev(*td2, preds->nn * preds->nn, 1.0/preds->R);
+    matrix_to_file("nodeabs_dist.txt", td2, preds->nn, preds->nn);
+    delete_matrix(td1);
+    delete_matrix(td2);
+    free(tdp);
+    free(th);
+    free(tad);
+  } */
 }
 
 

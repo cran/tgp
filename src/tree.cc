@@ -213,7 +213,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
       /* create children split at (var,val) */
       bool success = grow_children();
       assert(success);
-      success = TRUE; /* for NDEBUG */
+      if(success == false) myprintf(mystdout, "bad grow_children\n");
       
       /* recursively read the left and right children from dtree */
       unsigned int left = 1;
@@ -343,12 +343,14 @@ void Tree::new_data(double **X_new, unsigned int n_new, unsigned int d_new,
   /* data for left child */
   success = part_child(LEQ, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success);
+  if(success == false) myprintf(mystdout, "bad part_child\n");
   /* assert that the rectangles are equal */
   delete_rect(newRect);
   leftChild->new_data(Xc, plen, d_new, Zc, pnew);
   
   success = part_child(GT, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success); /* rectangles must be equal */
+  if(success == false) myprintf(mystdout, "bad part_child\n");
   delete_rect(newRect);
   rightChild->new_data(Xc, plen, d_new, Zc, pnew);
 }
@@ -723,7 +725,7 @@ void Tree::swapData(Tree* t)
   /* create the partition */
   bool success = part_child(op, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success);
-  success = TRUE; /* for NDEBUG */
+  if(success == false) myprintf(mystdout, "bad part_child in swapData\n");
 
   /* copy */
   t->X = Xc;
@@ -1065,10 +1067,10 @@ bool Tree::match(Tree* oldT, void *state)
       else if(!oldT->leftChild->isLeaf()) return match(oldT->leftChild, state);
       else {
         bool success = false;
-	if(runi(state) > 0.5) success = match(oldT->leftChild, state);
-	else success = match(oldT->rightChild, state);
+	      if(runi(state) > 0.5) success = match(oldT->leftChild, state);
+	      else success = match(oldT->rightChild, state);
         assert(success);
-	return true;
+	      return success;
       }
 #endif
     }
@@ -2369,4 +2371,55 @@ void Tree::NewInvTemp(double itemp)
     rightChild->NewInvTemp(itemp);
     leftChild->NewInvTemp(itemp);
   }
+}
+
+
+/*
+ * Distance:
+ *
+ * returns, via d1 and d2, two distance measures between pairs
+ * of XX locations: d1 gives the number of nodes in the tree
+ * along the shortest path; d2 sums the distances to the partition
+ * boundary along that path, with any nodes in the same region
+ * having distance zero
+ */
+
+void Tree::Distance(double **XX, int *p, const unsigned int plen, 
+  double **d1, double *h, double **d2, double *ad)
+{
+  if(isLeaf()) {
+    for(unsigned int i=0; i<plen; i++) {
+      h[p[i]] = depth;
+      ad[p[i]] = 0.0;
+    }
+    return;
+  }
+
+  /** partition the XXs */
+  int *pl = new_ivector(plen);
+  int *pr = new_ivector(plen);
+  unsigned int pllen = 0;
+  unsigned int prlen = 0;
+  for(unsigned int i=0; i<plen; i++) {
+    if(XX[p[i]][var] < val) pl[pllen++] = p[i];
+    else pr[prlen++] = p[i];
+  }
+
+  /* recurse down the children */
+  leftChild->Distance(XX, pl, pllen, d1, h, d2, ad);
+  rightChild->Distance(XX, pr, prlen, d1, h, d2, ad);
+
+  /* accumulate distance to boundary as we recurse back up */
+  for(unsigned int i=0; i<plen; i++) ad[p[i]] += fabs(XX[p[i]][var] - val); 
+
+  /* add to d for the cross terms */
+  for(unsigned int i=0; i<pllen; i++) 
+    for(unsigned int j=0; j<prlen; j++) {
+      d1[pr[j]][pl[i]] = d1[pl[i]][pr[j]] += h[p[i]] + h[p[j]] - depth;
+      d2[pr[j]][pl[i]] = d2[pl[i]][pr[j]] += ad[p[i]] + ad[p[j]];
+    }
+
+  /* clean up */
+  free(pl);
+  free(pr);
 }

@@ -29,7 +29,7 @@
 "mr.plot" <-
 function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
          main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, legendloc="topright",
-         method="loess", gridlen=c(40,40), span=0.1, ...)
+         gridlen=c(40,40), span=0.1, ...)
 {
   ## 1-d plot of 1-d data described by two columns (resolutions)
   if( x$d==2 ){
@@ -108,7 +108,7 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
      ## plot the coarse predictive (mean or median) surface
      smain <- paste(main, x$response, "coarse", center$name)
      slice.image(Xc[,1], Xc[,2], p=pc, z=Zc, xlab=xlab, ylab=ylab,
-                 main=smain, method=method, gridlen=gridlen,span=span,
+                 main=smain, gridlen=gridlen,span=span,
                  xlim=range(X[,proj[1]]), ylim=range(X[,proj[2]]), ...)
      ## add inputs and predictive locations
      points(x$X[x$X[,1]==0,proj], pch=20, ...)
@@ -120,7 +120,7 @@ function(x, pparts=TRUE, proj=NULL, center="mean", layout="both",
      ## plot the fine predictive (mean or median) surface
      smain <- paste(main, x$response, "fine", center$name)
      slice.image(Xf[,1], Xf[,2], p=pf, z=Zf, xlab=xlab, ylab=ylab,
-                 main=smain, method=method, gridlen=gridlen, span=span,
+                 main=smain, gridlen=gridlen, span=span,
                  xlim=range(X[,proj[1]]), ylim=range(X[,proj[2]]), ...)
      ## add inputs and predictive locations
      points(x$X[x$X[,1]==1,proj], pch=20, ...)

@@ -33,7 +33,7 @@
 "plot.tgp" <-
 function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL, 
          center="mean", layout="both", main=NULL, xlab=NULL, ylab=NULL,
-         zlab=NULL, pc="pc", method="loess", gridlen=c(40,40), span=0.1,
+         zlab=NULL, pc="pc", gridlen=c(40,40), span=0.1,
          legendloc="topright", maineff=TRUE, mrlayout="both", rankmax=20, ...)
 {
   ## check for valid layout
@@ -66,7 +66,7 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
     if(mrlayout == "both"){
       mr.plot(x,pparts=pparts, proj=proj, center=center, layout="both",
               main=main, xlab=xlab, ylab=ylab, zlab=zlab, legendloc=legendloc,
-              method=method, gridlen=gridlen, span=span, ...)
+              gridlen=gridlen, span=span, ...)
       return(invisible())
 
       ## whereas the "coarse" and "fine" methods use the regular
@@ -154,12 +154,12 @@ function(x, pparts=TRUE, proj=NULL, slice=NULL, map=NULL, as=NULL,
     if(x$d == 2 || is.null(slice)) { # 2-d slice projection plot
       tgp.plot.proj(x, pparts=pparts, proj=proj, map=map, as=as, center=center,
                     layout=layout, main=main, xlab=xlab, ylab=ylab, zlab=zlab,
-                    pc=pc, method=method, gridlen=gridlen, span=span, rankmax=rankmax,
+                    pc=pc, gridlen=gridlen, span=span, rankmax=rankmax,
                     ...)
     } else { # 2-d slice plot
       tgp.plot.slice(x, pparts=pparts, slice=slice, map=map, as=as, center=center,
                      layout=layout, main=main, xlab=xlab, ylab=ylab, zlab=zlab,
-                     pc=pc, method=method, gridlen=gridlen, span=span, ...)    
+                     pc=pc, gridlen=gridlen, span=span, ...)    
     }
   } else { ## ERROR
     cat(paste("Sorry: no plot defind for ", x$d, "-d tgp data\n", sep=""))

@@ -406,7 +406,7 @@ unsigned int n;
 double **M, **Mi, **Mutil;
 {
   unsigned int i,j;
-  int info;
+  /* int info; */
   
   /* first make Mi the identity */	
   id(Mi, n);
@@ -415,7 +415,7 @@ double **M, **Mi, **Mutil;
   for(i=0; i<n; i++) for(j=0; j<=i; j++) Mutil[i][j] = M[i][j];
   
   /* create inverse of M in Mi, and return choleski in Mutil */
-  info = linalg_dposv(n, Mutil, Mi);
+  /* info = */ linalg_dposv(n, Mutil, Mi);
 }
 
 
@@ -436,7 +436,7 @@ void inverse_lu(M, Mi, Mutil, n)
 unsigned int n;
 double **M, **Mi, **Mutil;
 {
-  int info;
+  /* int info; */
   
   /* first make Mi the identity */	
   /* and make a (full) copy of M */
@@ -445,7 +445,7 @@ double **M, **Mi, **Mutil;
   /* not sure that a full copy is necessary actually */
   
   /* then use LAPACK */
-  info = linalg_dgesv(n, Mutil, Mi);
+  /* info =*/ linalg_dgesv(n, Mutil, Mi);
 }
 
 

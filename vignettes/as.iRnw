@@ -97,8 +97,7 @@ summarizes posterior predictive uncertainty by a norm of quantiles.
 %%Since the combined data and predictive locations are not densely
 %%packed in the input space, the {\tt loess} smoother may have trouble
 %%with the interpolation.  One option is increase the {\tt tgp}-default
-%%kernel span supplied to {\tt loess}, e.g., {\tt span = 0.5}.  Or,
-%\verb!method="akima"! can be used instead.
+%%kernel span supplied to {\tt loess}, e.g., {\tt span = 0.5}.
 \begin{figure}[ht!]
 \centering
 <<label=as-expas,fig=TRUE,echo=TRUE,width=12,height=4,include=FALSE>>=

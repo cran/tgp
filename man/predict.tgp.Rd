@@ -106,16 +106,29 @@
 }
 
 \note{
+  It is important to note that this function is not a replacement
+  for supplying \code{XX} to the \code{b*} functions, which is the only
+  way to get fully Bayesian samples from the posterior prediction
+  at new inputs.  It is only intended as a post-analysis (diagnostic)
+  tool.
+
   Inputs \code{XX} containing \code{NaN, NA}, or \code{Inf} are
   discarded with non-fatal warnings.  Upon execution, MCMC reports are
-  made every 1,000 rounds to indicate progress
+  made every 1,000 rounds to indicate progress.
+
+  If \code{XX}s are provided which fall outside the range of \code{X}
+  inputs provided to the original \code{b*} function, then those will
+  not be extrapolated properly, due to the way that bounding rectangles
+  are defined in the original run.  For a workaround, supply
+  \code{out$Xsplit <- rbind(X, XX)} before running \code{predict} on
+  \code{out}.
 
   See note for \code{\link{btgp}} or another \code{b*} function
-  regarding the handling and appropriate specification of \code{traces}
+  regarding the handling and appropriate specification of \code{traces}.
 
   The \code{"tgp"} class output produced by \code{predict.tgp} can
   also be used as input to \code{predict.tgp}, as well as others (e.g.,
-  \code{\link{plot.tgp}}
+  \code{\link{plot.tgp}}.
 }
 
 \value{

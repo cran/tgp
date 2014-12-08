@@ -31,10 +31,6 @@
 "tgp.trees" <-
 function(out, heights=NULL, main=NULL, ...)
 {
-  ## load maptree
-  if(require(maptree) == FALSE)
-    stop("library(maptree) required for tree plotting\n");
-
   ## get the full set of heights if none specified, and length
   if(is.null(heights)) heights <- out$posts$height
   else if(heights == "map") { ## only plot the MAP

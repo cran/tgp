@@ -321,10 +321,10 @@ void *state;
 {
     /*double x_temp[n];*/
     double *x_temp;
-    int i, j, info;
+    int i, j /*, info*/;
 
     /* get the choleski decomposition */
-    info = linalg_dpotrf(n, cov);
+    /* info =*/ linalg_dpotrf(n, cov);
 
     /* get CASES draws from a multivariate normal */
     x_temp = (double*) malloc(sizeof(double) * n);

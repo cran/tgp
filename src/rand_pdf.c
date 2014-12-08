@@ -132,14 +132,14 @@ double **cov;
   double log_det_sigma, discrim;
   /*double xx[n];*/
   double *xx;
-  int info;
+  /* int info; */
   
   /* duplicate of the x vector */
   xx = new_dup_vector(x, n);
   
   /* R = chol(covlow) */
   /* AND Step 2 of xx = (x - mu) / R; */
-  info = linalg_dpotrf(n, cov);
+  /* info =*/ linalg_dpotrf(n, cov);
   
   /* det_sigma = prod(diag(R)) .^ 2 */
   log_det_sigma = log_determinant_chol(cov, n);

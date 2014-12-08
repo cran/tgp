@@ -25,7 +25,7 @@
 "tgp.plot.proj" <-
 function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
          layout=layout,	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", method="loess", gridlen=40, span=0.1, rankmax=20,...)
+         pc="pc", gridlen=40, span=0.1, rankmax=20,...)
 {
   ## will call stop() if something is wrong with the proj
   
@@ -85,10 +85,10 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
   } else if(pc == "pc") { # perspective and image plots
     if(layout == "both" || layout == "surf")
       slice.persp(X[,1],X[,2],p,Z.mean,xlab=xlab,ylab=ylab,zlab=zlab,main=smain,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
     if(layout == "both" || layout == "as") { # error/as plot
       slice.image(XX[,1],XX[,2],pp,ZZ.q,xlab=xlab,ylab=ylab,main=emain,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
       if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
@@ -102,7 +102,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
   } else if(pc == "c") { # double-image plot
     if(layout == "both" || layout == "surf") {
       slice.image(X[,1],X[,2],p,Z.mean,xlab=xlab,ylab=ylab,main=smain,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
       if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
@@ -110,7 +110,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
     }
     if(layout == "both" || layout == "as") {
       slice.image(XX[,1],XX[,2],pp,ZZ.q,xlab=xlab,ylab=ylab,main=emain,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
       if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)

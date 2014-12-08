@@ -317,7 +317,7 @@ double tau2;
   /*double IDpFWF[n1][n1];
     int p[n1]; */
   double **IDpFWF;
-  int i, info;
+  int i /*, info*/;
   
   /* FW = F*W; first zero-out FW */
   zero(FW, col, n1);
@@ -332,7 +332,7 @@ double tau2;
   /* IDpFWFi = inv(K + FWF') */
   id(IDpFWFi, n1);
   /* compute inverse, replacing KpFWF with its cholesky decomposition */
-  info = linalg_dgesv(n1, IDpFWF, IDpFWFi);
+  /* info =*/ linalg_dgesv(n1, IDpFWF, IDpFWFi);
   delete_matrix(IDpFWF);
 }
 

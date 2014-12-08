@@ -31,7 +31,7 @@
 "tgp.plot.slice" <-
 function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
          layout="both", main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", method="loess", gridlen=40, span=0.1,...)
+         pc="pc", gridlen=40, span=0.1,...)
 {
   ## choose center as median or mean (i.e., X & Z data)
   ## (this hasn't been tested since the addition of the tgp.choose.center() function
@@ -90,14 +90,14 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
   if(pc == "c") { # double-image plot
     if(layout == "both" || layout == "surf") {
       slice.image(Xd.1,Xd.2,p,Z.mean,main=smain,xlab=xlab,ylab=ylab,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
       if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$X[ppn,d[2]], pch=21)
     }
     if(layout == "both" || layout == "as") {
       slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
-                      method=method,gridlen=gridlen,span=span,...)
+                      gridlen=gridlen,span=span,...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
       if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
@@ -107,10 +107,10 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
   } else if(pc == "pc") {	# perspactive and image plot
     if(layout == "both" || layout == "surf")
       slice.persp(Xd.1,Xd.2,p,Z.mean,main=smain,xlab=xlab,ylab=ylab,zlab=zlab,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
     if(layout == "both" || layout == "as") {
       slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
-                  method=method,gridlen=gridlen,span=span,...)
+                  gridlen=gridlen,span=span,...)
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
       if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
@@ -146,9 +146,9 @@ function(x,y,p,z,levels=NULL,xlab="x",ylab="y",main="",xlim=NULL,ylim=NULL, ...)
 
 "slice.image" <-
 function(x,y,p,z,xlim=NULL, ylim=NULL,
-         method="loess", gridlen=c(40,40), span=0.05, col=terrain.colors(128), ...)
+         gridlen=c(40,40), span=0.05, col=terrain.colors(128), ...)
 {
-  g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
+  g <- slice.interp(x,y,p,z,xlim,ylim,gridlen=gridlen,span=span)
   if(missing(ylim)) ylim <- range(y)
   if(missing(xlim)) xlim <- range(x)
   image(g, col=col,xlim=xlim,ylim=ylim,...)
@@ -162,9 +162,9 @@ function(x,y,p,z,xlim=NULL, ylim=NULL,
 
 "slice.image.contour" <-
 function(x,y,p,z, xlim=NULL, ylim=NULL,
-         method="loess", gridlen=c(40,40), span=0.05, ...)
+         gridlen=c(40,40), span=0.05, ...)
 {
-  g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
+  g <- slice.interp(x,y,p,z,xlim,ylim,gridlen=gridlen,span=span)
   if(missing(ylim)) ylim <- range(y)
   if(missing(xlim)) xlim <- range(x)
   image(g, col=terrain.colors(128),xlim=xlim,ylim=ylim,...)
@@ -179,9 +179,9 @@ function(x,y,p,z, xlim=NULL, ylim=NULL,
 
 "slice.persp" <-
 function(x,y,p,z,theta=-30,phi=20,xlim=NULL, ylim=NULL,
-         method="loess", gridlen=c(40,40), span=0.05, ...)
+         gridlen=c(40,40), span=0.05, ...)
 {
-  g <- slice.interp(x,y,p,z,xlim,ylim,method=method,gridlen=gridlen,span=span)
+  g <- slice.interp(x,y,p,z,xlim,ylim,gridlen=gridlen,span=span)
   if(missing(ylim)) ylim <- range(y)
   if(missing(xlim)) xlim <- range(x)
   persp(g, theta=theta, phi=phi, axes=TRUE, box=TRUE, xlim=xlim, ylim=ylim, ...)
@@ -193,11 +193,11 @@ function(x,y,p,z,theta=-30,phi=20,xlim=NULL, ylim=NULL,
 ## interpolate the x, y, z data specified onto a regular 2-d
 ## grid, perhaps making a slice specified by the p-vector indicating
 ## which entries of x, y, and z should be used.  This is necessary
-## in order to plot using persp, contour, image, etc.  Two methods
-## are supported: loess and akima
+## in order to plot using persp, contour, image, etc.  
+## loess is used for interpolation
 
 "slice.interp" <-
-function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, method="loess", gridlen=c(40,40),
+function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, gridlen=c(40,40),
          span=0.05, ...)
 {
   ## check gridlen
@@ -219,21 +219,6 @@ function(x, y, p=NULL, z, xlim=NULL, ylim=NULL, method="loess", gridlen=c(40,40)
     p <- y>=ylim[1] & y<=ylim[2]
     x <- x[p]; y <- y[p]; z <- z[p]
   }
-  
-  # try to use akima, if specified
-  if(method == "akima") {
-    if(require(akima) == FALSE) {
-      warning("library(akima) required for 2-d plotting\ndefaulting to loess interpolation\n");
-    } else {
-      return(interp(x,y,z, duplicate="mean", linear=FALSE, 
-                    xo=seq(min(x), max(x), length=gridlen[1]),
-                    yo=seq(min(y), max(y), length=gridlen[2]), extrap=TRUE))
-    }
-  }
-
-  # try to default to loess
-  if(method != "loess") 
-      cat(paste("method [", method, "] unknown, using loess\n", sep=""))
   
   # use loess
   return(interp.loess(x,y,z, duplicate="mean", gridlen=gridlen, span=span, ...))

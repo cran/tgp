@@ -48,7 +48,7 @@ dopt.gp(nn, X=NULL, Xcand, iter=5000, verb=0)
   \item{Xcand}{Input argument: \code{data.frame} of candidate locations \code{Xcand}}
   \item{ncand}{Number of rows in \code{Xcand}, i.e., \code{nncand = dim(Xcand)[1]}}
   \item{fi}{Vector of length \code{nn}  describing the selected new design locations
-  	as indices into \code{XXcand}}
+  	as indices into \code{Xcand}}
   \item{XX}{\code{data.frame} of selected new design locations, i.e., 
   	\code{XX = Xcand[fi,]}}
 }

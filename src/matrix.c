@@ -503,8 +503,8 @@ void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
   for(i=0; i<n; i++) {
     for(j=0; j<col; j++) {
 #ifdef DEBUG
-      if(j==col-1) myprintf(outfile, "%15f\n", M[i][j]);
-      else myprintf(outfile, "%15f ", M[i][j]);
+      if(j==col-1) myprintf(outfile, "%.15e\n", M[i][j]);
+      else myprintf(outfile, "%.15e ", M[i][j]);
 #else
       if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
       else myprintf(outfile, "%g ", M[i][j]);
@@ -1150,10 +1150,10 @@ double* dseq(double from, double to, double by)
   unsigned int n,i;
   double *s = NULL;
   
-  by = abs(by);
+  by = fabs(by);
   
-  if(from <= to) n = (unsigned int) (to - from)/abs(by) + 1;
-  else n = (unsigned int) (from - to)/abs(by) + 1;
+  if(from <= to) n = (unsigned int) (to - from)/fabs(by) + 1;
+  else n = (unsigned int) (from - to)/fabs(by) + 1;
   
   if( n == 0 ) return NULL;
   
@@ -2198,7 +2198,7 @@ void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type)
 {
   unsigned int i;
   if(type==HUMAN) for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
-  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%15f ", v[i]);
+  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%.15e ", v[i]);
   else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }
@@ -2219,7 +2219,7 @@ void printSymmMatrixVector(double **m, unsigned int n, FILE *outfile,
   else if(type==MACHINE) 
     for(i=0; i<n; i++) 
       for(j=i; j<n; j++) 
-	myprintf(outfile, "%15f ", m[i][j]);
+	myprintf(outfile, "%.15e ", m[i][j]);
   else error("bad PRINT_PREC type");
   myprintf(outfile, "\n");
 }

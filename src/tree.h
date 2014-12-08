@@ -201,6 +201,10 @@ class Tree
   /* gathering traces of parameters */
   void Trace(unsigned int index, FILE* XXTRACEFILE);
   char** TraceNames(unsigned int *len, bool full);
+
+  void Distance(double **XX, int *p, const unsigned int plen, 
+    double **d1, double *h, double **d2, double *ad);
+
 };
 
 #endif

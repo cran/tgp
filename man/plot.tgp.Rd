@@ -13,7 +13,7 @@
 \method{plot}{tgp}(x, pparts = TRUE, proj = NULL, slice = NULL,
          map = NULL, as = NULL, center = "mean", layout = "both",
          main = NULL, xlab = NULL, ylab = NULL, zlab = NULL, pc = "pc",
-         method = "loess", gridlen = c(40,40), span = 0.1,
+         gridlen = c(40,40), span = 0.1,
          legendloc = "topright", maineff = TRUE,  mrlayout="both",
          rankmax = 20, ...)
 }
@@ -74,30 +74,17 @@
   \item{pc}{ Selects perspective-posterior mean and image-error plots
   	(\code{pc = "pc"}, the default) or a double--image plot (\code{pc
 	  = "c"})} (only valid for 2-d plots)
-  \item{method}{ Method of interpolation onto a regular grid for
-    perspective and image plotting of 2-d slices and projections.
-    Ignored for 1-d plots and projections.
-    Default is \code{method = "loess"} which results in the
-    use of the built-in \code{\link[stats]{loess}} function via the provided
-    \link{interp.loess} interface.  The loess kernel span can be specified
-    with the \code{span} parameter to this function. Another
-    option, \code{method = "akima"} uses the \pkg{akima} function
-    \link[akima]{interp}.  In general, \pkg{akima} provides a
-    better (linear) interpolation, but the current version(s) has been
-    buggy (see notes below), and so is not the default}
   \item{gridlen}{ Number of regular grid points for 2-d slices and
     projections in x and y.  The default of \code{gridlen = c(40,40)}
     causes a \code{40 * 40}
     grid of \code{X}, \code{Y}, and \code{Z} values to be computed.
     Ignored for 1-d plots and projections}
-  \item{span}{ Span for \code{\link[stats]{loess}} kernel. This argument
-    is ignored for 1-d plots and projections, and 2-d plots with
-    \code{method  = "akima"}. The \pkg{tgp} package default (\code{span =
+  \item{span}{ Span for \code{\link[stats]{loess}} kernel. 
+    The \pkg{tgp} package default (\code{span =
       0.1}) is set lower than the \code{\link[stats]{loess}} default.
     Smaller spans can lead to warnings from \code{\link[stats]{loess}}
     when the data or predictive locations are sparse and ugly plots may
-    result.  In this case, try increasing the span, or use the
-    \code{method = "akima"} option}
+    result.  In this case, try increasing the span}
   \item{legendloc}{ Location of the \code{\link{legend}} included in the
     plots of sensitivity analyses produced with \code{layout = "sens"},
     or 1-d plots of multi-resolution models (with \code{corr = "mrexpsep"})
@@ -151,20 +138,6 @@ Matt Taddy, \email{taddy@chicagobooth.edu}
 	objects.  Users are encouraged to use the source code for 
 	this function in order to develop custom plotting functions.
 
-	There seems to be two bugs in the \code{\link[akima]{interp}}
-	function oft he \pkg{akima} package.  The first, benign,
-	bug causes \code{NA}s
-	to appear when plotting 2-d surfaces.  The result is white
-	rectangles (or \dQuote{holes}) in the surfaces.  This affect is
-	most severe when \code{x$X} and \code{x$XX} together form a
-	regular grid, or close to a regular grid.  The second, malign,
-	bug can cause segmentation faults when plotting projections,
-	causing the entire R session to crash.
-	Please note this is \emph{not} a bug in the \pkg{tgp} package,
-	rather it is a bug in the \pkg{akima} package.
-	Instead, interpolation by the \code{\link[stats]{loess}}
-	function is provided
-	as a workaround, and is the default (\code{method = "loess"}).  
 	1-d projections for 3-d or higher data are also available
 	by specifying a 1-d projection argument (e.g. \code{proj=c(1)}
 	for projecting onto the first input variable).
@@ -176,8 +149,7 @@ Matt Taddy, \email{taddy@chicagobooth.edu}
 \seealso{ \code{\link[graphics]{plot}}, \code{\link{bgpllm}}, \code{\link{btlm}}, 
   \code{\link{blm}}, \code{\link{bgp}}, \code{\link{btgpllm}},
   \code{\link{predict.tgp}},
-  \code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link[akima]{interp}},
-  \code{\link{loess}}, \code{\link{sens}}}
+  \code{\link{tgp.trees}}, \code{\link{mapT}}, \code{\link{loess}}, \code{\link{sens}}}
 
 \keyword{ hplot }
 \keyword{ tree }
