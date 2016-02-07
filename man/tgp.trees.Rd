@@ -45,7 +45,7 @@ Matt Taddy, \email{taddy@chicagobooth.edu}
 }
 
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \note{ Plotting trees that the \pkg{maptree} library is installed, which

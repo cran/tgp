@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <Rmath.h>
 extern "C"
 {
 #include "lh.h"
@@ -31,7 +32,6 @@ extern "C"
 #include "rand_pdf.h"
 #include "gen_covar.h"
 #include "rhelp.h"
-#include <Rmath.h>
 }
 #include "model.h"
 #include <stdlib.h>
@@ -75,7 +75,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
   if(parallel) { init_parallel_preds(); consumer_start(); }
   
   /* stuff to do with printing */
-  OUTFILE = mystdout;
+  OUTFILE = MYstdout;
   verb = 2;
   this->trace = trace;
 
@@ -346,7 +346,7 @@ void Model::rounds(Preds *preds, unsigned int B, unsigned int T, void *state)
     free(leaves); 
 
     /* periodically check R for interrupts and flush console every second */
-    itime = my_r_process_events(itime);
+    itime = MY_r_process_events(itime);
   }
   
   /* send a full set of leaves out for prediction */
@@ -638,10 +638,10 @@ void Model::cut_branch(void *state)
   unsigned int k = (unsigned int) sample_seq(0,len,state);
   if(k == len) { 
     if(verb >= 1) 
-      myprintf(OUTFILE, "tree unchanged (no branches removed)\n");
+      MYprintf(OUTFILE, "tree unchanged (no branches removed)\n");
   } else {
     if(verb >= 1) 
-      myprintf(OUTFILE, "removed %d leaves from the tree\n", nodes[k]->numLeaves());
+      MYprintf(OUTFILE, "removed %d leaves from the tree\n", nodes[k]->numLeaves());
     nodes[k]->cut_branch();
   }
   free(nodes);
@@ -659,10 +659,10 @@ void Model::cut_root(void)
 { 
   if(t->isLeaf()) {
     if(verb >= 1)
-      myprintf(OUTFILE, "removed 0 leaves from the tree\n");
+      MYprintf(OUTFILE, "removed 0 leaves from the tree\n");
   } else {
     if(verb >= 1) 
-      myprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
+      MYprintf(OUTFILE, "removed %d leaves from the tree\n", t->numLeaves());
   }
   t->cut_branch();
 }
@@ -720,11 +720,11 @@ void Model::new_data(double **X, unsigned int n, unsigned int d, double* Z, doub
 
 void Model::PrintTreeStats(FILE* outfile)
 {
-  if(grow_try > 0) myprintf(outfile, "Grow: %.4g%c, ", 100* (double)grow/grow_try, '%');
-  if(prune_try > 0) myprintf(outfile, "Prune: %.4g%c, ", 100* (double)prune/prune_try, '%');
-  if(change_try > 0) myprintf(outfile, "Change: %.4g%c, ", 100* (double)change/change_try, '%');
-  if(swap_try > 0) myprintf(outfile, "Swap: %.4g%c", 100* (double)swap/swap_try, '%');
-  if(grow_try > 0) myprintf(outfile, "\n");
+  if(grow_try > 0) MYprintf(outfile, "Grow: %.4g%c, ", 100* (double)grow/grow_try, '%');
+  if(prune_try > 0) MYprintf(outfile, "Prune: %.4g%c, ", 100* (double)prune/prune_try, '%');
+  if(change_try > 0) MYprintf(outfile, "Change: %.4g%c, ", 100* (double)change/change_try, '%');
+  if(swap_try > 0) MYprintf(outfile, "Swap: %.4g%c", 100* (double)swap/swap_try, '%');
+  if(grow_try > 0) MYprintf(outfile, "\n");
 }
 
 
@@ -831,47 +831,47 @@ void Model::PrintState(unsigned int r, unsigned int numLeaves, Tree** leaves)
   /* print round information */
 #ifdef PARALLEL
   if(num_produced - num_consumed > 0)
-    myprintf(OUTFILE, "(r,l)=(%d,%d) ", r, num_produced - num_consumed);
-  else myprintf(OUTFILE, "r=%d ", r);
+    MYprintf(OUTFILE, "(r,l)=(%d,%d) ", r, num_produced - num_consumed);
+  else MYprintf(OUTFILE, "r=%d ", r);
 #else
-  myprintf(OUTFILE, "r=%d ", r);
+  MYprintf(OUTFILE, "r=%d ", r);
 #endif
   
   /* this is here so that the progress meter in SampleMap doesn't need to print
      the same tree information each time */
   if(numLeaves > 0) {
 
-    // myprintf(OUTFILE, " d=");
+    // MYprintf(OUTFILE, " d=");
 
     /* print the (correllation) state (d-values and maybe nugget values) */
     for(unsigned int i=0; i<numLeaves; i++) {
       char *state = leaves[i]->State(i);
-      myprintf(OUTFILE, "%s", state);
-      if(i != numLeaves-1) myprintf(OUTFILE, " ");
+      MYprintf(OUTFILE, "%s", state);
+      if(i != numLeaves-1) MYprintf(OUTFILE, " ");
       free(state);
     }
     
     /* a delimeter */
-    myprintf(OUTFILE, "; ");
+    MYprintf(OUTFILE, "; ");
     
     /* print maximum posterior prob tree height */
     Tree *maxt = maxPosteriors();
-    if(maxt) myprintf(OUTFILE, "mh=%d ", maxt->Height());
+    if(maxt) MYprintf(OUTFILE, "mh=%d ", maxt->Height());
     
     /* print partition sizes */
-    if(numLeaves > 1) myprintf(OUTFILE, "n=(");
-    else myprintf(OUTFILE, "n=");
+    if(numLeaves > 1) MYprintf(OUTFILE, "n=(");
+    else MYprintf(OUTFILE, "n=");
     for(unsigned int i=0; i<numLeaves-1; i++)
-      myprintf(OUTFILE, "%d,", leaves[i]->getN());
-    if(numLeaves > 1) myprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
-    else myprintf(OUTFILE, "%d", leaves[numLeaves-1]->getN());
+      MYprintf(OUTFILE, "%d,", leaves[i]->getN());
+    if(numLeaves > 1) MYprintf(OUTFILE, "%d)", leaves[numLeaves-1]->getN());
+    else MYprintf(OUTFILE, "%d", leaves[numLeaves-1]->getN());
     
   }
 
   /* cap off the printing */
-  if(its->Numit() > 1) myprintf(OUTFILE, " k=%g", its->Itemp());
-  myprintf(OUTFILE, "\n");
-  myflush(OUTFILE);  
+  if(its->Numit() > 1) MYprintf(OUTFILE, " k=%g", its->Itemp());
+  MYprintf(OUTFILE, "\n");
+  MYflush(OUTFILE);  
 }
 
 
@@ -1097,7 +1097,7 @@ void Model::predict_consumer(void)
 /*
  * predict_consumer_c:
  * 
- * a dummy c-style function that calls the
+ * a dumMY c-style function that calls the
  * consumer function from the Model class
  */
 
@@ -1174,8 +1174,8 @@ void Model::wrap_up_predictions(void)
       tlen = tlist->Len();
       diff = num_produced - num_consumed;
       if(verb >= 1) {
-        myprintf(OUTFILE, "waiting for (%d, %d) predictions\n", tlen, diff); 
-        myflush(OUTFILE); 
+        MYprintf(OUTFILE, "waiting for (%d, %d) predictions\n", tlen, diff); 
+        MYflush(OUTFILE); 
       }
     }
     pthread_mutex_unlock(l_mut);
@@ -1380,11 +1380,11 @@ FILE* Model::OpenFile(const char *prefix, const char *type)
 void Model::PrintTree(FILE* outfile)
 {
   assert(outfile);
-  myprintf(outfile, "rows var n dev yval splits.cutleft splits.cutright ");
+  MYprintf(outfile, "rows var n dev yval splits.cutleft splits.cutright ");
 
   /* the following are for printing a higher precision val, and base model
      parameters for reconstructing trees later */
-  myprintf(outfile, "val ");
+  MYprintf(outfile, "val ");
   TraceNames(outfile, true);
   this->t->PrintTree(outfile, iface_rect, NORMSCALE, 1);
 }
@@ -1425,7 +1425,7 @@ void Model::DrawInvTemp(void* state, bool burnin)
   //double diff_post = pnew - p;
   double diff_lik =  llnew - ll;
 
-  //myprintf(mystderr, "diff=%g\n", diff_post-diff_lik);
+  //MYprintf(MYstderr, "diff=%g\n", diff_post-diff_lik);
   //assert(diff_post == diff_lik);
 
   /* add in the priors for the itemp (weights) */
@@ -1486,14 +1486,14 @@ double Model::Posterior(bool record)
     /* allocate the trace files for printing posteriors*/   
     if(!POSTTRACEFILE) {
       POSTTRACEFILE = OpenFile("trace", "post");
-      myprintf(POSTTRACEFILE, "height leaves lpost itemp tlpost w\n");
+      MYprintf(POSTTRACEFILE, "height leaves lpost itemp tlpost w\n");
     }
 
     /* write a line to the file recording the trace of the posteriors */
-    myprintf(POSTTRACEFILE, "%d %d %15f %15f %15f %15f\n", 
+    MYprintf(POSTTRACEFILE, "%d %d %15f %15f %15f %15f\n", 
 	     t->Height(), t->numLeaves(), full_post, its->Itemp(), 
 	     full_post_temp, w);
-    myflush(POSTTRACEFILE);
+    MYflush(POSTTRACEFILE);
   }
 
   return w;
@@ -1515,7 +1515,7 @@ void Model::PrintPosteriors(void)
   /* open a file to write the posterior information to */
   sprintf(filestr, "tree_m%d_posts.out", Id);
   FILE *postsfile = fopen(filestr, "w");
-  myprintf(postsfile, "height lpost ");
+  MYprintf(postsfile, "height lpost ");
   PriorTraceNames(postsfile, true);
 
   /* unsigned int t_minpart, t_splitmin;
@@ -1530,11 +1530,11 @@ void Model::PrintPosteriors(void)
     FILE *treefile = fopen(filestr, "w");
 
     /* add maptree-relevant headers */
-    myprintf(treefile, "rows var n dev yval splits.cutleft splits.cutright ");
+    MYprintf(treefile, "rows var n dev yval splits.cutleft splits.cutright ");
 
     /* the following are for printing a higher precision val, and base model
      parameters for reconstructing trees later */
-    myprintf(treefile, "val ");
+    MYprintf(treefile, "val ");
 
     /* add parameter trace relevant headers */
     TraceNames(treefile, true);
@@ -1545,7 +1545,7 @@ void Model::PrintPosteriors(void)
 
     /* add information about height and posteriors to file */
     assert(i+1 == posteriors->trees[i]->Height());
-    myprintf(postsfile, "%d %g ", posteriors->trees[i]->Height(), posteriors->posts[i]);
+    MYprintf(postsfile, "%d %g ", posteriors->trees[i]->Height(), posteriors->posts[i]);
     
     /* add prior parameter trace information to the posts file */
     unsigned int tlen;
@@ -1640,7 +1640,7 @@ void Model::Linburn(unsigned int B, void *state)
 {
   double gam = Linear();
   //if(gam) {
-    if(verb > 0) myprintf(OUTFILE, "\nlinear model init:\n");
+    if(verb > 0) MYprintf(OUTFILE, "\nlinear model init:\n");
     rounds(NULL, B, B, state);
     ResetLinear(gam);
   //}
@@ -1655,7 +1655,7 @@ void Model::Linburn(unsigned int B, void *state)
 
 void Model::Burnin(unsigned int B, void *state)
 {
-  if(verb >= 1 && B>0) myprintf(OUTFILE, "\nburn in:\n");
+  if(verb >= 1 && B>0) MYprintf(OUTFILE, "\nburn in:\n");
   rounds(NULL, B, B, state);
 }
 
@@ -1672,7 +1672,7 @@ void Model::StochApprox(unsigned int B, void *state)
 {
   if(!its->DoStochApprox()) return;
   if(verb >= 1 && B>0) 
-    myprintf(OUTFILE, "\nburn in: [with stoch approx (c0,n0)=(%g,%g)]\n",
+    MYprintf(OUTFILE, "\nburn in: [with stoch approx (c0,n0)=(%g,%g)]\n",
 	     its->C0(), its->N0());
 
   /* do the rounds of stochastic approximation */
@@ -1697,9 +1697,9 @@ void Model::Sample(Preds *preds, unsigned int R, void *state)
   if(R == 0) return;
 
   if(verb >= 1 && R>0) {
-    myprintf(OUTFILE, "\nSampling @ nn=%d pred locs:", preds->nn);
-    if(trace) myprintf(OUTFILE, " [with traces]");
-    myprintf(OUTFILE, "\n");
+    MYprintf(OUTFILE, "\nSampling @ nn=%d pred locs:", preds->nn);
+    if(trace) MYprintf(OUTFILE, " [with traces]");
+    MYprintf(OUTFILE, "\n");
   }
 		       
   rounds(preds, 0, R, state);
@@ -1718,7 +1718,7 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
   if(R == 0) return;
   assert(preds);
 
-  if(verb >=1) myprintf(OUTFILE, "\nKriging @ nn=%d predictive locs:\n", preds->nn);
+  if(verb >=1) MYprintf(OUTFILE, "\nKriging @ nn=%d predictive locs:\n", preds->nn);
 
   /* get leaves of the tree */
   unsigned int numLeaves;
@@ -1744,7 +1744,7 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
 	sens_sample(preds->XX, preds->nn, preds->d, preds->bnds, preds->shape, 
 		    preds->mode, state); 
 	dupv(preds->M[r/preds->mult], preds->XX[0], preds->d * preds->nm);
-	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, mystdout);
+	//printf("xx: \n"); printMatrix(preds->XX, preds->nn, preds->d, MYstdout);
 	normalize(preds->XX, preds->rect, preds->nn, preds->d, 1.0);
       }
 
@@ -1761,7 +1761,7 @@ void Model::Predict(Preds *preds, unsigned int R, void *state)
     }
 
     /* periodically check R for interrupts and flush console every second */
-    itime = my_r_process_events(itime);
+    itime = MY_r_process_events(itime);
   }
 
   /* clean up */
@@ -1806,10 +1806,10 @@ void Model::TraceNames(FILE * outfile, bool full)
   unsigned int len;
   char **trace_names = t->TraceNames(&len, full);
   for(unsigned int i=0; i<len; i++) {
-    myprintf(outfile, "%s ", trace_names[i]);
+    MYprintf(outfile, "%s ", trace_names[i]);
     free(trace_names[i]);
   }
-  myprintf(outfile, "\n");
+  MYprintf(outfile, "\n");
   free(trace_names);
 }
 
@@ -1828,10 +1828,10 @@ void Model::PriorTraceNames(FILE * outfile, bool full)
   unsigned int len;
   char **trace_names = base_prior->TraceNames(&len, full);
   for(unsigned int i=0; i<len; i++) {
-    myprintf(outfile, "%s ", trace_names[i]);
+    MYprintf(outfile, "%s ", trace_names[i]);
     free(trace_names[i]);
   }
-  myprintf(outfile, "\n");
+  MYprintf(outfile, "\n");
   free(trace_names);
 }
 
@@ -1859,13 +1859,13 @@ void Model::Trace(Tree *leaf, unsigned int index)
   if(!XXTRACEFILE) {
     /* trace of GP parameters for each XX input location */
     XXTRACEFILE = OpenFile("trace", "XX");
-    myprintf(XXTRACEFILE, "ppi index ");
+    MYprintf(XXTRACEFILE, "ppi index ");
     TraceNames(XXTRACEFILE, false);
   }
 
   /* actual printing of trace for a tree leaf */
   leaf->Trace(index, XXTRACEFILE);
-  myflush(XXTRACEFILE);
+  MYflush(XXTRACEFILE);
 
   /* unlock */
 #ifdef PARALLEL

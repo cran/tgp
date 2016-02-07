@@ -387,7 +387,7 @@ M. Schonlau and Jones, D.R. and Welch, W.J. (1998).
 In "New Developments and applications in experimental design", 
 IMS Lecture Notes - Monograph Series 34.  11--25.
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

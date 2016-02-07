@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -88,7 +89,7 @@ double ss2;
 
   /* Note that now K is passed with jitter included.
      This was previously removed in the predict_full fn. */
-  /* printf("zp: "); printVector(zpjitter,5,mystdout, HUMAN); */
+  /* printf("zp: "); printVector(zpjitter,5,MYstdout, HUMAN); */
   
   /* for each point at which we want a prediction */
   for(i=0; i<n1; i++) {
@@ -549,7 +550,7 @@ void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
   /* calculate best minimum so far */
   /* fmin = min(Z, n, &which);*/
   fmin = Zmin;
-  /* myprintf(mystderr, "Zmin = %g, min(zzm) = %g\n", Zmin, min(zzm, nn, &which)); */
+  /* MYprintf(MYstderr, "Zmin = %g, min(zzm) = %g\n", Zmin, min(zzm, nn, &which)); */
 
   for(i=0; i<nn; i++) {
 
@@ -681,7 +682,7 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
        chosen to reduce improv */
     for (j=0; j<nn; j++)
       for (i=0; i<R; i++)
-	Imat[i][j] = myfmax(maxcol[i], Imat[i][j]);
+	Imat[i][j] = MYfmax(maxcol[i], Imat[i][j]);
   
     /* compute the mean of each row */
     wmean_of_columns(colmean, Imat, R, nn, w);
@@ -757,14 +758,14 @@ void move_avg(int nn, double* XX, double *YY, int n, double* X,
     search=1;
     while(search){
       if(u==(n-1)) search = 0;
-      else if( myfmax(fabs(XX[i]-Xo[l+1]), fabs(XX[i]-Xo[u+1])) > 
-               myfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]))) search = 0;
+      else if( MYfmax(fabs(XX[i]-Xo[l+1]), fabs(XX[i]-Xo[u+1])) > 
+               MYfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]))) search = 0;
       else{ l++; u++; }
     }
     /*printf("l=%d, u=%d, Xo[l]=%g, Xo[u]=%g, XX[i]=%g \n", l, u, Xo[l],Xo[u],XX[i]);*/
 
     /* width of the window in X-space */
-    range = myfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]));
+    range = MYfmax(fabs(XX[i]-Xo[l]), fabs(XX[i]-Xo[u]));
     
     /* calculate the weights in the window; 
      * every weight outside the window will be zero */
@@ -777,7 +778,7 @@ void move_avg(int nn, double* XX, double *YY, int n, double* X,
     /* record the (normalized) weighted average in the window */
     sumW = sumv(&(w[l]), q);
     YY[i] = vmult(&(w[l]), &(Yo[l]), q)/sumW;
-    /*printf("YY = "); printVector(YY, nn, mystdout, HUMAN);*/
+    /*printf("YY = "); printVector(YY, nn, MYstdout, HUMAN);*/
   }
   
   /* clean up */

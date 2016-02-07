@@ -114,7 +114,7 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \emph{Monte Carlo Strategies in Scientific Computing.}
   New York: Springer.  Chapter 10 (pages 213 \& 233)
 
-  \url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+  \url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

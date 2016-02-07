@@ -637,7 +637,7 @@ void Exp_Prior::read_double(double *dparams)
 
   /* starting value for the range parameter */
   d = dparams[1];
-  //myprintf(mystdout, "starting d=%g\n", d);
+  //MYprintf(MYstdout, "starting d=%g\n", d);
 
   /* reset dparams to start after the nugget gamlin params */
   dparams += 13;
@@ -648,7 +648,7 @@ void Exp_Prior::read_double(double *dparams)
 
   /* d hierarchical lambda prior parameters */
   if((int) dparams[0] == -1)
-    { fix_d = true; /*myprintf(mystdout, "fixing d prior\n");*/ }
+    { fix_d = true; /*MYprintf(MYstdout, "fixing d prior\n");*/ }
   else {
     fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, 
@@ -675,7 +675,7 @@ void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* read the d parameter from the control file */
   ctrlfile->getline(line, BUFFMAX);
   d = atof(strtok(line, " \t\n#"));
-  myprintf(mystdout, "starting d=%g\n", d);
+  MYprintf(MYstdout, "starting d=%g\n", d);
     
   /* read d and nug-hierarchical parameters (mix of gammas) */
   ctrlfile->getline(line, BUFFMAX);
@@ -685,7 +685,7 @@ void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
   if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-    { fix_d = true; myprintf(mystdout, "fixing d prior\n"); }
+    { fix_d = true; MYprintf(MYstdout, "fixing d prior\n"); }
   else {
     fix_d = false;
     get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
@@ -850,22 +850,22 @@ void Exp_Prior::SetBasePrior(Base_Prior *base_prior)
 
 void Exp_Prior::Print(FILE *outfile)
 {
-  myprintf(mystdout, "corr prior: isotropic power\n");
+  MYprintf(MYstdout, "corr prior: isotropic power\n");
 
   /* print nugget stuff first */
   PrintNug(outfile);
 
   /* range parameter */
-  // myprintf(outfile, "starting d=%g\n", d);
+  // MYprintf(outfile, "starting d=%g\n", d);
 
   /* range gamma prior */
-  myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+  MYprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	   d_alpha[0], d_beta[0], d_alpha[1], d_beta[1]);
   
   /* range gamma hyperprior */
-  if(fix_d) myprintf(outfile, "d prior fixed\n");
+  if(fix_d) MYprintf(outfile, "d prior fixed\n");
   else {
-    myprintf(mystdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+    MYprintf(MYstdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
 	     d_beta_lambda[1]);
   }

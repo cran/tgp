@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 #include "rand_pdf.h"
 #include "rand_draws.h"
 #include "matrix.h"
@@ -158,16 +159,16 @@ void printRNGstate(void *state, FILE* outfile)
   switch (RNG) {
   case CRAN:
     assert(!state);
-    myprintf(outfile, "RNG state CRAN comes from R\n");
+    MYprintf(outfile, "RNG state CRAN comes from R\n");
     break;
   case RK:
     assert(state);
-    myprintf(outfile, "RNG state RK using rk_seed\n");
+    MYprintf(outfile, "RNG state RK using rk_seed\n");
     break;
   case ERAND: {
       unsigned short *s = (unsigned short *) state;
       assert(s);
-      myprintf(outfile, "RNG state = %d %d %d\n", s[0], s[1], s[2]);
+      MYprintf(outfile, "RNG state = %d %d %d\n", s[0], s[1], s[2]);
     }
     break;
   default: 
@@ -193,7 +194,7 @@ double runi(void *state)
     unsigned long rv;
     assert(state);
     rv = rk_random((rk_state*) state);
-    /* myprintf(mystderr, "(%d)",  ((int)(10000000 * (((double) rv)/RK_MAX))));
+    /* MYprintf(MYstderr, "(%d)",  ((int)(10000000 * (((double) rv)/RK_MAX))));
        if(((int)(10000000 * (((double) rv)/RK_MAX))) == 7294478) assert(0); */
     return ((double) rv) / RK_MAX;
   }

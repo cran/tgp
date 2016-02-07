@@ -123,7 +123,7 @@ void lh_sample(int *state_in, int *n_in, int* dim_in, double* rect_in,
   /* allocate and copy the input-space rectangle */
   rect = new_matrix(2, *dim_in);
   dupv(rect[0], rect_in, 2*(*dim_in));
-  /* printMatrix(rect, 2, *dim_in, mystdout); */
+  /* printMatrix(rect, 2, *dim_in, MYstdout); */
 
   /* get the latin hypercube sample */
   if(*shape < 0) s = rect_sample_lh(*dim_in, *n_in, rect, 1, state);
@@ -420,9 +420,9 @@ void printRect(FILE* outfile, int d, double** rect)
   int j,i;
   for(j=0; j<2; j++) {
     for(i=0; i<d; i++) {
-      myprintf(outfile, " %5.4g", rect[j][i]);
+      MYprintf(outfile, " %5.4g", rect[j][i]);
     }
-    myprintf(outfile, "\n");
+    MYprintf(outfile, "\n");
   }
 }
 

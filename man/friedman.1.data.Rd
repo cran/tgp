@@ -81,7 +81,7 @@ Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

@@ -54,6 +54,6 @@
   waiting for proper documentation to be written :)).
 }
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 \keyword{ internal }

@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 #include <math.h>
 #include "rand_pdf.h"
 #include "rand_draws.h"
@@ -32,6 +33,7 @@
 #include "all_draws.h"
 #include "rhelp.h"
 #include <assert.h>
+#include <stdlib.h>
 
 /* constants used below */
 #define GA 1.0 /* 5.0 */
@@ -219,7 +221,7 @@ double tau2, itemp;
   /* now for lambda */
   lambda = ZZ + b0Tib0 - BVBiB;
   
-  /* myprintf(mystderr, 
+  /* MYprintf(MYstderr, 
      "noK: n=%d, itemp=%g, ZZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
      n, itemp, ZZ, tau2, b0Tib0, BVBiB, lambda); */
 
@@ -339,7 +341,7 @@ double tau2, itemp;
   /* now for lambda */
   lambda = ZKiZ + b0Tib0/tau2 - BVBiB;
 
-  /* myprintf(mystderr, "n=%d, itemp=%g, ZKiZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
+  /* MYprintf(MYstderr, "n=%d, itemp=%g, ZKiZ=%g, tau2=%g, b0Tib0/tau2=%g, BVBiB=%g, lambda=%g\n", 
     n, itemp, ZKiZ, tau2, b0Tib0/tau2, BVBiB, lambda); */
 
   /* this is here because when itemp=0 lambda should be 0, but
@@ -422,7 +424,7 @@ void *state;
   /* s2 = 1/gamrnd(alpha, 1/g, 1) */
   /* return 1.0 / (1.0/g * rgamma(alpha)); */
   inv_gamma_mult_gelman(&x, alpha, g, 1, state);
-  /* myprintf(mystderr, "alpha = %g, beta = %g  =>  x = %g\n", alpha, g, x); */
+  /* MYprintf(MYstderr, "alpha = %g, beta = %g  =>  x = %g\n", alpha, g, x); */
   return x;
 }
 
@@ -1055,7 +1057,7 @@ void *state;
   pdlast = post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   pdlast += log_d_prior_pdf(dlast, d_alpha, d_beta);
   
-  /* if(lin && pd > pdlast) myprintf(mystderr, "pd=%g, pdlast=%g, qRatio=%g\n",
+  /* if(lin && pd > pdlast) MYprintf(MYstderr, "pd=%g, pdlast=%g, qRatio=%g\n",
      pd, pdlast, qRatio); */
 
   /* compute acceptance prob */
@@ -1319,9 +1321,9 @@ void *state;
   
   /* accept or reject */
   alpha = exp(pnug - pnuglast)*(q_bak/q_fwd);
-  /* myprintf(mystderr, "nug_last=%g -> nug=%g : alpha=%g\n", nuglast, nug, alpha); */
-  if(runi(state) > alpha) { /* myprintf(mystderr, "  -- rejected\n");*/ return nuglast; }
-  else { /*myprintf(mystderr, "  -- accepted\n");*/ return nug; }
+  /* MYprintf(MYstderr, "nug_last=%g -> nug=%g : alpha=%g\n", nuglast, nug, alpha); */
+  if(runi(state) > alpha) { /* MYprintf(MYstderr, "  -- rejected\n");*/ return nuglast; }
+  else { /*MYprintf(MYstderr, "  -- accepted\n");*/ return nug; }
 }
 
 
@@ -1402,7 +1404,7 @@ void *state;
   
   if(runi(state) > alpha){
     /* printf("nugs %g %g\n",nug, nugfine); */
-    /*printVector(newnugs, 2, mystdout, HUMAN); */
+    /*printVector(newnugs, 2, MYstdout, HUMAN); */
     newnugs[0] = nug;
     newnugs[1] = nugfine;
   }

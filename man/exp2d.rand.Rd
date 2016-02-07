@@ -85,7 +85,7 @@ Journal of the American Statistical Association, \bold{to appear}.
 Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{\link{exp2d.Z}},

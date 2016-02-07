@@ -154,7 +154,7 @@ double **cov;
   discrim = linalg_ddot(n, xx, 1, xx, 1);
   free(xx);
   
-  /*myprintf(mystderr, "discrim = %g, log(deg_sigma) = %g\n", discrim, log_det_sigma);*/
+  /*MYprintf(MYstderr, "discrim = %g, log(deg_sigma) = %g\n", discrim, log_det_sigma);*/
   return -0.5 * (discrim + log_det_sigma) - n*M_LN_SQRT_2PI;
 }
 

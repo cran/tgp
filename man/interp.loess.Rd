@@ -56,7 +56,7 @@ interp.loess(x, y, z, gridlen = c(40,40), span = 0.1, ...)
 }
 
 \references{
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

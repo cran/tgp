@@ -12,6 +12,15 @@ export(blm, btlm, bcart, bgp, bgpllm, btgp, btgpllm,
 # Import all packages listed as Imports or Depends
 importFrom(maptree, draw.tree)
 
+## required for new CRAN checks
+importFrom("grDevices", "rainbow", "terrain.colors")
+importFrom("graphics", "abline", "axis", "barplot", "boxplot",
+           "contour", "image", "legend", "lines", "mtext", "par",
+           "persp", "plot", "points", "segments", "text", "title")
+importFrom("stats", "loess", "optim", "optimize", "predict", "proj",
+           "rnorm", "runif")
+importFrom("utils", "data", "read.table")
+
 # S3
 S3method(print, tgp)
 S3method(plot, tgp)

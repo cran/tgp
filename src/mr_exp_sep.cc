@@ -1220,8 +1220,8 @@ void MrExpSep_Prior::read_double(double *dparams)
 
   /* read the starting value(s) for the range parameter(s) */
   for(unsigned int i=0; i<(2*dim); i++) d[i] = dparams[1];
-  /*myprintf(mystdout, "starting d=");
-    printVector(d, (2*dim), mystdout, HUMAN); */
+  /*MYprintf(MYstdout, "starting d=");
+    printVector(d, (2*dim), MYstdout, HUMAN); */
 
   /* reset the d parameter to after nugget and gamlin params */
   dparams += 13;
@@ -1239,15 +1239,15 @@ void MrExpSep_Prior::read_double(double *dparams)
     dupv(d_alpha[i+dim], alpha, 2);
     dupv(d_beta[i+dim], beta, 2);
   }
-  //printMatrix(d_alpha, 2*dim, 2, mystdout);
-  //printMatrix(d_beta, 2*dim, 2, mystdout);
+  //printMatrix(d_alpha, 2*dim, 2, MYstdout);
+  //printMatrix(d_beta, 2*dim, 2, MYstdout);
   dparams +=4;
  
   get_mix_prior_params_double(alpha, beta, dparams, "d");
   dupv(delta_alpha, alpha, 2);
   dupv(delta_beta, beta, 2);
-  //printVector(delta_alpha, 2, mystdout, HUMAN);
-  //printVector(delta_beta, 2, mystdout, HUMAN);
+  //printVector(delta_alpha, 2, MYstdout, HUMAN);
+  //printVector(delta_beta, 2, MYstdout, HUMAN);
   dparams +=4;
  
   get_mix_prior_params_double(alpha, beta, dparams, "d");
@@ -1258,7 +1258,7 @@ void MrExpSep_Prior::read_double(double *dparams)
 
   /* d hierarchical lambda prior parameters */
   if((int) dparams[0] == -1)
-    { fix_d = true;  /* myprintf(mystdout, "fixing d prior\n"); */}
+    { fix_d = true;  /* MYprintf(MYstdout, "fixing d prior\n"); */}
   else {
     fix_d = false;
     get_mix_prior_params_double(d_alpha_lambda, d_beta_lambda, dparams, "d lambda");
@@ -1288,8 +1288,8 @@ void MrExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   d[0] = atof(strtok(line, " \t\n#"));
   for(unsigned int i=1; i<(2*dim); i++) d[i] = d[0];
-  myprintf(mystdout, "starting d=", d);
-  printVector(d, (2*dim), mystdout, HUMAN);
+  MYprintf(MYstdout, "starting d=", d);
+  printVector(d, (2*dim), MYstdout, HUMAN);
 
   /* read d and nug-hierarchical parameters (mix of gammas) */
   double alpha[2], beta[2];
@@ -1316,7 +1316,7 @@ void MrExpSep_Prior::read_ctrlfile(ifstream *ctrlfile)
   ctrlfile->getline(line, BUFFMAX);
   strcpy(line_copy, line);
   if(!strcmp("fixed", strtok(line_copy, " \t\n#")))
-    { fix_d = true; myprintf(mystdout, "fixing d prior\n"); }
+    { fix_d = true; MYprintf(MYstdout, "fixing d prior\n"); }
   else {
     fix_d = false;
     get_mix_prior_params(d_alpha_lambda, d_beta_lambda, line, "d lambda");  
@@ -1657,29 +1657,29 @@ void MrExpSep_Prior::SetBasePrior(Base_Prior *base_prior)
 
 void MrExpSep_Prior::Print(FILE *outfile)
 {
-  myprintf(mystdout, "corr prior: separable power\n");
+  MYprintf(MYstdout, "corr prior: separable power\n");
 
   /* print nugget stuff first */
   PrintNug(outfile);
 
   /* range parameter */
-  /* myprintf(outfile, "starting d=\n");
+  /* MYprintf(outfile, "starting d=\n");
      printVector(d, (2*dim), outfile, HUMAN); */
 
   /* range gamma prior, just print once */
-  myprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n",
+  MYprintf(outfile, "d[a,b][0,1]=[%g,%g],[%g,%g]\n",
 	   d_alpha[0][0], d_beta[0][0], d_alpha[0][1], d_beta[0][1]);
 
   /* print many times, one for each dimension instead? */
   /*for(unsigned int i=0; i<(2*dim); i++) {
-       myprintf(outfile, "d[a,b][%d][0,1]=[%g,%g],[%g,%g]\n", i,
+       MYprintf(outfile, "d[a,b][%d][0,1]=[%g,%g],[%g,%g]\n", i,
 	     d_alpha[i][0], d_beta[i][0], d_alpha[i][1], d_beta[i][0]);
     }*/
  
   /* range gamma hyperprior */
-  if(fix_d) myprintf(outfile, "d prior fixed\n");
+  if(fix_d) MYprintf(outfile, "d prior fixed\n");
   else {
-    myprintf(mystdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
+    MYprintf(MYstdout, "d lambda[a,b][0,1]=[%g,%g],[%g,%g]\n", 
 	     d_alpha_lambda[0], d_beta_lambda[0], d_alpha_lambda[1], 
 	     d_beta_lambda[1]);
   }

@@ -172,7 +172,7 @@ Preds *combine_preds(Preds *to, Preds *from)
   assert(from);
   if(to == NULL) return from;
   
-  if(to->nn != from->nn) myprintf(mystderr, "to->nn=%d, from->nn=%d\n", to->nn, from->nn);
+  if(to->nn != from->nn) MYprintf(MYstderr, "to->nn=%d, from->nn=%d\n", to->nn, from->nn);
   assert(to->nn == from->nn);  
   assert(to->d == from->d); 
   assert(to->mult == from->mult);
@@ -429,9 +429,9 @@ void print_linarea(Linarea *lin_area, FILE *outfile)
 {
   if(!lin_area) return;
   // FILE *outfile = OpenFile("trace", "linarea");
-  myprintf(outfile, "count\t la ba\n");
+  MYprintf(outfile, "count\t la ba\n");
   for(unsigned int i=0; i<lin_area->size; i++) {
-    myprintf(outfile, "%d\t %g %g\n", 
+    MYprintf(outfile, "%d\t %g %g\n", 
 	     lin_area->counts[i], lin_area->la[i], lin_area->ba[i]);
   }
   fclose(outfile);

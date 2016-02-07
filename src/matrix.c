@@ -290,9 +290,9 @@ double ** new_shift_matrix(double** M, unsigned int n1, unsigned int n2)
     return NULL;
   }
   m = new_matrix(n1, (n2-1));
-  /* printMatrix(M, n1, n2, mystdout); */
+  /* printMatrix(M, n1, n2, MYstdout); */
   for(i=0; i<n1; i++) for(j=0; j<(n2-1); j++) m[i][j] = M[i][j+1];
-  /* printMatrix(m, n1, (n2-1), mystdout); */
+  /* printMatrix(m, n1, (n2-1), MYstdout); */
   return m;
 }
 
@@ -503,11 +503,11 @@ void printMatrix(double **M, unsigned int n, unsigned int col, FILE *outfile)
   for(i=0; i<n; i++) {
     for(j=0; j<col; j++) {
 #ifdef DEBUG
-      if(j==col-1) myprintf(outfile, "%.15e\n", M[i][j]);
-      else myprintf(outfile, "%.15e ", M[i][j]);
+      if(j==col-1) MYprintf(outfile, "%.15e\n", M[i][j]);
+      else MYprintf(outfile, "%.15e ", M[i][j]);
 #else
-      if(j==col-1) myprintf(outfile, "%g\n", M[i][j]);
-      else myprintf(outfile, "%g ", M[i][j]);
+      if(j==col-1) MYprintf(outfile, "%g\n", M[i][j]);
+      else MYprintf(outfile, "%g ", M[i][j]);
 #endif
     }
   }
@@ -527,11 +527,11 @@ void printIMatrix(int **M, unsigned int n, unsigned int col, FILE *outfile)
   for(i=0; i<n; i++) {
     for(j=0; j<col; j++) {
 #ifdef DEBUG
-      if(j==col-1) myprintf(outfile, "%d\n", M[i][j]);
-      else myprintf(outfile, "%d ", M[i][j]);
+      if(j==col-1) MYprintf(outfile, "%d\n", M[i][j]);
+      else MYprintf(outfile, "%d ", M[i][j]);
 #else
-      if(j==col-1) myprintf(outfile, "%d\n", M[i][j]);
-      else myprintf(outfile, "%d ", M[i][j]);
+      if(j==col-1) MYprintf(outfile, "%d\n", M[i][j]);
+      else MYprintf(outfile, "%d ", M[i][j]);
 #endif
     }
   }
@@ -550,8 +550,8 @@ void printMatrixT(double **M, unsigned int n, unsigned int col, FILE *outfile)
   if(n > 0 && col > 0) assert(M);
   for(i=0; i<col; i++) {
     for(j=0; j<n; j++) {
-      if(j==n-1) myprintf(outfile, "%g\n", M[j][i]);
-      else myprintf(outfile, "%g ", M[j][i]);
+      if(j==n-1) MYprintf(outfile, "%g\n", M[j][i]);
+      else MYprintf(outfile, "%g ", M[j][i]);
     }
   }
 }
@@ -758,7 +758,7 @@ void sum_of_columns(double *s, double **M, unsigned int n1, unsigned int n2)
   
   /* calculate sum of columns */
   for(i=0; i<n2; i++) {
-    s[i] = M[0][0];
+    s[i] = M[0][i];
     for(j=1; j<n1; j++) s[i] += M[j][i];
   }
 }
@@ -1471,7 +1471,7 @@ void mean_to_file(const char *file_str, double **M, unsigned int T, unsigned int
   wmean_of_columns(Mm, M, T, n, NULL);
   MmOUT = fopen(file_str, "w");
   assert(MmOUT);
-  for(i=0; i<n; i++) myprintf(MmOUT, "%g\n", Mm[i]);
+  for(i=0; i<n; i++) MYprintf(MmOUT, "%g\n", Mm[i]);
   fclose(MmOUT);
   free(Mm);
 }
@@ -1489,7 +1489,7 @@ void vector_to_file(const char* file_str, double* vector, unsigned int n)
   
   VOUT = fopen(file_str, "w");
   assert(VOUT);
-  for(i=0; i<n; i++) myprintf(VOUT, "%g\n", vector[i]);
+  for(i=0; i<n; i++) MYprintf(VOUT, "%g\n", vector[i]);
   fclose(VOUT);
 }
 
@@ -1647,7 +1647,7 @@ void check_means(double *mean, double *q1, double *median,
   int replace = 0;
   for(i=0; i<n; i++) {
     if(mean[i] > q2[i] || mean[i] < q1[i]) {
-      myprintf(mystdout, "replacing %g with (%g,%g,%g)\n", 
+      MYprintf(MYstdout, "replacing %g with (%g,%g,%g)\n", 
 	       mean[i], q1[i], median[i], q2[i]);
       mean[i] = median[i];
       replace++;
@@ -1656,7 +1656,7 @@ void check_means(double *mean, double *q1, double *median,
   
   /* let us know what happened */
   if(replace > 0) 
-    myprintf(mystdout, "NOTICE: %d predictive means replaced with medians\n", 
+    MYprintf(MYstdout, "NOTICE: %d predictive means replaced with medians\n", 
 	     replace);
 }
 
@@ -1673,7 +1673,7 @@ unsigned int matrix_constrained(int *p, double **X, unsigned int n1,
 {
   unsigned int i,j, count;
   count = 0;
-  /* printRect(mystderr, rect->d, rect->boundary); */
+  /* printRect(MYstderr, rect->d, rect->boundary); */
   for(i=0; i<n1; i++) {
     p[i] = 1;
     for(j=0; j<n2; j++) {
@@ -1798,14 +1798,14 @@ double rect_area_maxd(Rect* rect, unsigned int maxd)
 void print_rect(Rect *r, FILE* outfile)
 {
   unsigned int i;
-  myprintf(outfile, "# %d dim rect (area=%g) with boundary:\n", 
+  MYprintf(outfile, "# %d dim rect (area=%g) with boundary:\n", 
 	   r->d, rect_area(r));
   printMatrix(r->boundary, 2, r->d, outfile);
-  myprintf(outfile, "# opl and opr\n");
-  for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opl[i]);
-  myprintf(outfile, "\n");
-  for(i=0; i<r->d; i++) myprintf(outfile, "%d ", r->opr[i]);
-  myprintf(outfile, "\n");
+  MYprintf(outfile, "# opl and opr\n");
+  for(i=0; i<r->d; i++) MYprintf(outfile, "%d ", r->opl[i]);
+  MYprintf(outfile, "\n");
+  for(i=0; i<r->d; i++) MYprintf(outfile, "%d ", r->opr[i]);
+  MYprintf(outfile, "\n");
 }
 
 
@@ -1844,7 +1844,7 @@ void normalize(double **X, double **rect, int N, int d, double normscale)
 	X[j][i] = (X[j][i] - rect[0][i]) / norm;
       X[j][i] = normscale * X[j][i];
       /* if(!(X[j][i] >=0 && X[j][i] <= normscale))
-	myprintf(mystdout, "X[%d][%d] = %g, normscale = %g\n", j, i, X[j][i], normscale);
+	MYprintf(MYstdout, "X[%d][%d] = %g, normscale = %g\n", j, i, X[j][i], normscale);
 	assert(X[j][i] >=0 && X[j][i] <= normscale); */
     }
   }
@@ -2197,10 +2197,10 @@ void add_p_vector(double a, double *V, int *p, double b, double *v, unsigned int
 void printVector(double *v, unsigned int n, FILE *outfile, PRINT_PREC type)
 {
   unsigned int i;
-  if(type==HUMAN) for(i=0; i<n; i++) myprintf(outfile, "%g ", v[i]);
-  else if(type==MACHINE) for(i=0; i<n; i++) myprintf(outfile, "%.15e ", v[i]);
+  if(type==HUMAN) for(i=0; i<n; i++) MYprintf(outfile, "%g ", v[i]);
+  else if(type==MACHINE) for(i=0; i<n; i++) MYprintf(outfile, "%.15e ", v[i]);
   else error("bad PRINT_PREC type");
-  myprintf(outfile, "\n");
+  MYprintf(outfile, "\n");
 }
 
 
@@ -2215,13 +2215,13 @@ void printSymmMatrixVector(double **m, unsigned int n, FILE *outfile,
   if(type==HUMAN)
     for(i=0; i<n; i++) 
       for(j=i; j<n; j++) 
-	myprintf(outfile, "%g ", m[i][j]);
+	MYprintf(outfile, "%g ", m[i][j]);
   else if(type==MACHINE) 
     for(i=0; i<n; i++) 
       for(j=i; j<n; j++) 
-	myprintf(outfile, "%.15e ", m[i][j]);
+	MYprintf(outfile, "%.15e ", m[i][j]);
   else error("bad PRINT_PREC type");
-  myprintf(outfile, "\n");
+  MYprintf(outfile, "\n");
 }
 
 
@@ -2386,8 +2386,8 @@ void iones(int *iv, unsigned int n, int scale)
 void printIVector(int *iv, unsigned int n, FILE *outfile)
 {
   unsigned int i;
-  for(i=0; i<n; i++) myprintf(outfile, "%d ", iv[i]);
-  myprintf(outfile, "\n");
+  for(i=0; i<n; i++) MYprintf(outfile, "%d ", iv[i]);
+  MYprintf(outfile, "\n");
 }
 
 
@@ -2403,7 +2403,7 @@ void ivector_to_file(const char* file_str, int* vector, unsigned int n)
   
   VOUT = fopen(file_str, "w");
   assert(VOUT);
-  for(i=0; i<n; i++) myprintf(VOUT, "%d\n", vector[i]);
+  for(i=0; i<n; i++) MYprintf(VOUT, "%d\n", vector[i]);
   fclose(VOUT);
 }
 
@@ -2505,14 +2505,14 @@ double sq(double x)
 
 
 /*
- * myfmax:
+ * MYfmax:
  *
  * seems like some systems are missing the prototype
  * for the fmax function which should be in math.h --
  * so I wrote my own
  */
 
-double myfmax(double a, double b)
+double MYfmax(double a, double b)
 {
   if(a >= b) return a;
   else return b;
@@ -2520,14 +2520,14 @@ double myfmax(double a, double b)
 
 
 /*
- * myfmin:
+ * MYfmin:
  *
  * seems like some systems are missing the prototype
  * for the fmin function which should be in math.h --
  * so I wrote my own
  */
 
-double myfmin(double a, double b)
+double MYfmin(double a, double b)
 {
   if(a <= b) return a;
   else return b;

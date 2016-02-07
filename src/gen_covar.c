@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>

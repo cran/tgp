@@ -260,7 +260,7 @@ void Tgp::Init(void)
   /* use default parameters */
   params = new Params(d);
   if((int) dparams[0] != -1) params->read_double(dparams);
-  else myprintf(mystdout, "Using default params.\n");
+  else MYprintf(MYstdout, "Using default params.\n");
 
   /* get  the rectangle */
   /* rect = getXdataRect(X, n, d, XX, nn); */
@@ -270,7 +270,7 @@ void Tgp::Init(void)
   /* construct the new model */
   model = new Model(params, d, rect, 0, trace, state);
   model->Init(X, n, d, Z, its, tree, treecol, hier);
-  model->Outfile(mystdout, verb);
+  model->Outfile(MYstdout, verb);
 
   /* if treed partitioning is allowed, then set the splitting locations (Xsplit) */
   if(params->isTree()) model->set_Xsplit(Xsplit, nsplit, d);
@@ -286,7 +286,7 @@ void Tgp::Init(void)
   }
 
   /* print the parameters of this module */
-  if(verb >= 2) Print(mystdout);
+  if(verb >= 2) Print(MYstdout);
 }  
 
 
@@ -302,7 +302,7 @@ void Tgp::Rounds(void)
   for(unsigned int i=0; i<R; i++) {
 
     /* for periodically passing control back to R */
-    itime = my_r_process_events(itime);
+    itime = MY_r_process_events(itime);
     
     /* Linear Model Initialization rounds -B thru 1 */
     if(linburn) model->Linburn(B, state);
@@ -322,7 +322,7 @@ void Tgp::Rounds(void)
     model->Sample(preds, T-B, state);
 
     /* print tree statistics */
-    if(verb >= 1) model->PrintTreeStats(mystdout);
+    if(verb >= 1) model->PrintTreeStats(MYstdout);
 
     /* accumulate predictive information */
     import_preds(cump, preds->R * i, preds);		
@@ -332,7 +332,7 @@ void Tgp::Rounds(void)
 
     /* prune the tree all the way back unless importance tempering */
     if(R > 1) {
-      if(verb >= 1) myprintf(mystdout, "finished repetition %d of %d\n", i+1, R);
+      if(verb >= 1) MYprintf(MYstdout, "finished repetition %d of %d\n", i+1, R);
       if(its->Numit() == 1) model->cut_root();
     }
 
@@ -343,7 +343,7 @@ void Tgp::Rounds(void)
   }
 
   /* cap off the printing */
-  if(verb >= 1) myflush(mystdout);
+  if(verb >= 1) MYflush(MYstdout);
 
   /* print the rectangle of the MAP partition */
   model->PrintBestPartitions();   
@@ -397,7 +397,7 @@ void Tgp::Predict(void)
   for(unsigned int i=0; i<R; i++) {
 
     /* for periodically passing control back to R */
-    itime = my_r_process_events(itime);
+    itime = MY_r_process_events(itime);
 
     /* do the MCMC rounds B,...,T */
     preds = new_preds(XX, nn, pred_n*n, d, rect, T-B, pred_n, krige, 
@@ -410,13 +410,13 @@ void Tgp::Predict(void)
 
     /* done with this repetition; prune the tree all the way back */
     if(R > 1) {
-      myprintf(mystdout, "finished repetition %d of %d\n", i+1, R);
+      MYprintf(MYstdout, "finished repetition %d of %d\n", i+1, R);
       // model->cut_root();
     }
   }
 
   /* cap of the printing */
-  if(verb >= 1) myflush(mystdout);
+  if(verb >= 1) MYflush(MYstdout);
 
   /* these is here to maintain compatibility with tgp::Rounds() */
 
@@ -535,7 +535,7 @@ void Tgp::GetStats(bool report, double *Zp_mean, double *ZZ_mean, double *Zp_km,
 		   double *ZZ_median, double *ZZ_q2, double *Ds2x, double *improvec,
 		   int numirank, int* irank, double *ess)
 {
-  itime = my_r_process_events(itime);
+  itime = MY_r_process_events(itime);
 
   /* possibly adjust weights by the chosen lambda method,
      and possibly write the trace out to a file*/
@@ -666,13 +666,13 @@ void tgp_cleanup(void)
     deleteRNGstate(tgp_state);
     tgp_state = NULL;
     if(tgpm->Verb() >= 1) 
-      myprintf(mystderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
+      MYprintf(MYstderr, "INTERRUPT: tgp RNG leaked, is now destroyed\n");
   }
 
   /* free tgp model */
   if(tgpm) { 
     if(tgpm->Verb() >= 1)
-      myprintf(mystderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
+      MYprintf(MYstderr, "INTERRUPT: tgp model leaked, is now destroyed\n");
     delete tgpm; 
     tgpm = NULL; 
   }
@@ -713,27 +713,27 @@ double ** getXdataRect(double **X, unsigned int n, unsigned int d, double **XX,
 
 void Tgp::Print(FILE *outfile)
 {
-  myprintf(mystdout, "\n");
+  MYprintf(MYstdout, "\n");
 
   /* DEBUG: print the input parameters */
-  myprintf(mystdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
+  MYprintf(MYstdout, "n=%d, d=%d, nn=%d\nBTE=(%d,%d,%d), R=%d, linburn=%d\n", 
 	   n, d, nn, B, T, E, R, linburn);
 
   /* print the importance tempring information */
-  its->Print(mystdout);
+  its->Print(MYstdout);
 
   /* print the random number generator state */
-  printRNGstate(state, mystdout);
+  printRNGstate(state, MYstdout);
 
   /* print predictive statistic types */
-  if(pred_n || (delta_s2 || improv)) myprintf(mystdout, "preds:");
-  if(pred_n) myprintf(mystdout, " data");
-  if(krige && (pred_n || nn)) myprintf(mystdout, " krige");
-  if(delta_s2) myprintf(mystdout, " ALC");
-  if(improv) myprintf(mystdout, " improv");
+  if(pred_n || (delta_s2 || improv)) MYprintf(MYstdout, "preds:");
+  if(pred_n) MYprintf(MYstdout, " data");
+  if(krige && (pred_n || nn)) MYprintf(MYstdout, " krige");
+  if(delta_s2) MYprintf(MYstdout, " ALC");
+  if(improv) MYprintf(MYstdout, " improv");
   if(pred_n || (((krige && (pred_n || nn)) || delta_s2) || improv)) 
-    myprintf(mystdout, "\n");
-  myflush(mystdout);
+    MYprintf(MYstdout, "\n");
+  MYflush(MYstdout);
 
   /* print the model, uses the internal model 
      printing variable OUTFILE */

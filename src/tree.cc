@@ -21,6 +21,7 @@
  *
  ********************************************************************************/
 
+#include "R.h"
 
 extern "C" 
 {
@@ -213,7 +214,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
       /* create children split at (var,val) */
       bool success = grow_children();
       assert(success);
-      if(success == false) myprintf(mystdout, "bad grow_children\n");
+      if(success == false) MYprintf(MYstdout, "bad grow_children\n");
       
       /* recursively read the left and right children from dtree */
       unsigned int left = 1;
@@ -237,7 +238,7 @@ void Tree::Init(double *dtree, unsigned int ncol, double **rect)
 
 unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int d_pred)
 {
-  // fprintf(mystderr, "d_pred = %d, d = %d\n", d_pred, d);
+  // fprintf(MYstderr, "d_pred = %d, d = %d\n", d_pred, d);
   assert(d_pred == d);
   assert(isLeaf());
   
@@ -343,14 +344,14 @@ void Tree::new_data(double **X_new, unsigned int n_new, unsigned int d_new,
   /* data for left child */
   success = part_child(LEQ, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success);
-  if(success == false) myprintf(mystdout, "bad part_child\n");
+  if(success == false) MYprintf(MYstdout, "bad part_child\n");
   /* assert that the rectangles are equal */
   delete_rect(newRect);
   leftChild->new_data(Xc, plen, d_new, Zc, pnew);
   
   success = part_child(GT, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success); /* rectangles must be equal */
-  if(success == false) myprintf(mystdout, "bad part_child\n");
+  if(success == false) MYprintf(MYstdout, "bad part_child\n");
   delete_rect(newRect);
   rightChild->new_data(Xc, plen, d_new, Zc, pnew);
 }
@@ -725,7 +726,7 @@ void Tree::swapData(Tree* t)
   /* create the partition */
   bool success = part_child(op, &Xc, &pnew, &plen, &Zc, &newRect);
   assert(success);
-  if(success == false) myprintf(mystdout, "bad part_child in swapData\n");
+  if(success == false) MYprintf(MYstdout, "bad part_child in swapData\n");
 
   /* copy */
   t->X = Xc;
@@ -912,7 +913,7 @@ bool Tree::swap(void *state)
   if(parent->var == var) {
     bool success =  rotate(state);
     if(success && verb >= 3) 
-      myprintf(OUTFILE, "**ROTATE** @depth %d, var=%d, val=%g\n", 
+      MYprintf(OUTFILE, "**ROTATE** @depth %d, var=%d, val=%g\n", 
 	       depth, var+1, val);
     return success;
   }
@@ -954,7 +955,7 @@ bool Tree::swap(void *state)
   
   /* accept or reject? */
   if(runi(state) < alpha) {
-    if(verb >= 3) myprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
+    if(verb >= 3) MYprintf(OUTFILE, "**SWAP** @depth %d: [%d,%g] <-> [%d,%g]\n", 
 			   depth, var+1, val, (parent->var)+1, parent->val);
     if(oldPRC) delete oldPRC;
     if(oldPRC) delete oldPLC;
@@ -1020,10 +1021,10 @@ bool Tree::change(void *state)
     if(oldLC) delete oldLC;
     if(oldRC) delete oldRC;
     if(tree_op == CHANGE && verb >= 4) 
-      myprintf(OUTFILE, "**CHANGE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
+      MYprintf(OUTFILE, "**CHANGE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
 	       depth, var+1, old_val, val, leftChild->n, rightChild->n);
     else if(tree_op == CPRUNE && verb >= 1)
-      myprintf(OUTFILE, "**CPRUNE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
+      MYprintf(OUTFILE, "**CPRUNE** @depth %d: var=%d, val=%g->%g, n=(%d,%d)\n", 
 	       depth, var+1, old_val, val, leftChild->n, rightChild->n);
     return true;
   } else { /* reject */
@@ -1244,7 +1245,7 @@ bool Tree::prune(double ratio, void *state)
 
   /* accept or reject? */
   if(runi(state) < alpha) {
-    if(verb >= 1) myprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var+1, val);
+    if(verb >= 1) MYprintf(OUTFILE, "**PRUNE** @depth %d: [%d,%g]\n", depth, var+1, val);
     delete leftChild; 
     delete rightChild;
     leftChild = rightChild = NULL;
@@ -1301,9 +1302,9 @@ bool Tree::grow(double ratio, void *state)
   pklast = this->Posterior();
   alpha = ratio*exp(pk-pklast+logp_split)/q_fwd;
   
-  /* myprintf(mystderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
+  /* MYprintf(MYstderr, "%d:%g : alpha=%g, ratio=%g, pk=%g, pklast=%g, logp_s=%g, q_fwd=%g\n",
      var, val, alpha, ratio, pk, pklast, logp_split, q_fwd);
-     myflush(mystderr); */
+     MYflush(MYstderr); */
  
   /* accept or reject? */
   bool ret_val = true;
@@ -1315,7 +1316,7 @@ bool Tree::grow(double ratio, void *state)
   } else {
     Clear();
     if(verb >= 1) 
-      myprintf(OUTFILE, "**GROW** @depth %d: [%d,%g], n=(%d,%d)\n", 
+      MYprintf(OUTFILE, "**GROW** @depth %d: [%d,%g], n=(%d,%d)\n", 
 	       depth, var+1, val, leftChild->n, rightChild->n);
   }
   return ret_val;
@@ -1720,18 +1721,18 @@ Tree** Tree::buildTreeList(unsigned int len)
 void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root) const
 {
   /* print the node number, followinf by <leaf> or the splitting dimension */
-  if(isLeaf()) myprintf(outfile, "%d <leaf>\t", root);
-  else myprintf(outfile, "%d %d ", root, var);
+  if(isLeaf()) MYprintf(outfile, "%d <leaf>\t", root);
+  else MYprintf(outfile, "%d %d ", root, var);
 
   /* print the defiance (which is just zero since this is unused)
      and the variance (s2) in the partition */
-  myprintf(outfile, "%d 0 %.4f ", n, base->Var());
+  MYprintf(outfile, "%d 0 %.4f ", n, base->Var());
 
   /* don't print split information if this is a leaf, but do print the params */
   if(isLeaf()) {
 
     /* skipping the split locations */
-    myprintf(outfile, "\"\" \"\" 0 ");
+    MYprintf(outfile, "\"\" \"\" 0 ");
 
   } else {
   
@@ -1740,10 +1741,10 @@ void Tree::PrintTree(FILE* outfile, double** rect, double scale, int root) const
     vn = (rect[1][var] - rect[0][var])*vn + rect[0][var];
     
     /* print the split locations */
-    myprintf(outfile, "\"<%-5g\" \">%-5g\" ", vn, vn);
+    MYprintf(outfile, "\"<%-5g\" \">%-5g\" ", vn, vn);
 
     /* print val again, this time in higher precision */
-    myprintf(outfile, "%15f ", vn);
+    MYprintf(outfile, "%15f ", vn);
   }
 
   /* not skipping the printing of leaf (GP) paramerters */
@@ -2332,7 +2333,7 @@ void Tree::Trace(unsigned int index, FILE* XXTRACEFILE)
 
   /* write to the XX trace file */
   for(unsigned int i=0; i<nn; i++) {
-    myprintf(XXTRACEFILE, "%d %d ", pp[i]+1, index+1);
+    MYprintf(XXTRACEFILE, "%d %d ", pp[i]+1, index+1);
     printVector(trace, len, XXTRACEFILE, MACHINE);
   }
 

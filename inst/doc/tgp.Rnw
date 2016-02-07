@@ -315,14 +315,14 @@ inputs {\tt XX}, which can be accessed via the {\tt ZZ.q} output
 field.  Details on the ALM, ALC, and EI algorithms are provided in
 Section \ref{sec:model}.
 
-Calculation of EI statistics is considered to be ``beta''
-functionality in this version of the {\tt tgp} package.  It has not
-been adequately tested, and its implementation is likely to change
-substantially in future versions of the package.  In particular, the
-search for good candidate configurations $\tilde{\mb{X}}$ at which EI
-statistics can be gathered, analogous to the branch and bound Expected
-Global Optimization (EGO) algorithm \cite{jones:schonlau:welch:1998},
-is still an open research question.
+Calculation of EI statistics was considered  ``beta''
+functionality while this document was being prepared.  At that time
+it had not been adequately tested, and its implementation changed
+substantially in future versions of the package. For updates
+see the follow-on vignette 
+\cite{gra:taddy:2010}, or \verb!vignette("tgp2")!.
+That document also discusses sensitivity analysis, handling of
+categorical inputs, and importance tempring.
 
 The functions included in the package which explicitly aid in the
 sequential design of experiments are {\tt tgp.design} and {\tt

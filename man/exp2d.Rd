@@ -48,7 +48,7 @@ Journal of the American Statistical Association, \bold{to appear}.
 Also available as ArXiv article 0710.4536
 \url{http://arxiv.org/abs/0710.4536}
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \note{This data is used in the examples of the functions listed below in

@@ -149,7 +149,7 @@ Robert B. Gramacy, Heng Lian (2011).
   experiments}.  Available as ArXiv article 1009.4241
 \url{http://arxiv.org/abs/1009.4241}
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

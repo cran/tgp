@@ -69,7 +69,7 @@ Gray, G.A., Martinez-Canales, M., Taddy, M.A., Lee, H.K.H., and
 Gramacy, R.B. (2007) \emph{Enhancing Parallel Pattern Search Optimization with
 a Gaussian Process Oracle}, SAND2006-7946C, Proceedings of the NECDC
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 

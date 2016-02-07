@@ -23,6 +23,8 @@
  ********************************************************************************/
 
 
+#include "R.h"
+
 extern "C" {
 #include "rand_draws.h"
 #include "matrix.h"
@@ -481,7 +483,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
   /* for pretty printing */
   if(verb >= 1)
-    myprintf(mystdout, "\neffective sample sizes:\n");
+    MYprintf(MYstdout, "\neffective sample sizes:\n");
 
   /* for each temperature */
   for(unsigned int i=0; i<numit; i++) {
@@ -532,7 +534,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
     /* print individual ess */
     if(verb >= 1)
-      myprintf(mystdout, "%d: itemp=%g, len=%d, ess=%g\n", //, sw=%g\n", 
+      MYprintf(MYstdout, "%d: itemp=%g, len=%d, ess=%g\n", //, sw=%g\n", 
 	       i, itemps[i], len, ei*len); //, sumv(wi, len));
 
     /* clean up */
@@ -569,11 +571,11 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
 
   /* print totals */
   if(verb >= 1) {
-    myprintf(mystdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
+    MYprintf(MYstdout, "total: len=%d, ess.sum=%g, ess(w)=%g\n", 
 	     tlen, tess, ((double)wlen)*calc_ess(w,wlen));
     double lce = wlen*(wlen-1.0)*gamma_sum/(sq(wlen)-gamma_sum);
     if(ISNAN(lce)) lce = 1;
-    myprintf(mystdout, "lambda-combined ess=%g\n", lce);
+    MYprintf(MYstdout, "lambda-combined ess=%g\n", lce);
   }
 
   /* clean up */
@@ -665,7 +667,7 @@ double Temper::LambdaST(double *w, double *itemp, unsigned int wlen, unsigned in
   copy_p_vector(w, p, wi, len);
 
   /* print totals */
-  if(verb >= 1) myprintf(mystdout, "\nST sample size=%d\n", len);
+  if(verb >= 1) MYprintf(MYstdout, "\nST sample size=%d\n", len);
 
   /* return the overall effective sample size */
   return((double) len);
@@ -692,7 +694,7 @@ double Temper::LambdaNaive(double *w, unsigned int wlen, unsigned int verb)
   double ess = ((double)wlen)*calc_ess(w, wlen);
 
   /* print totals */
-  if(verb >= 1) myprintf(mystdout, "\nnaive IT ess=%g\n", ess);
+  if(verb >= 1) MYprintf(MYstdout, "\nnaive IT ess=%g\n", ess);
 
   /* return the overall effective sample size */
   return(ess);
@@ -866,16 +868,16 @@ double Temper::LambdaIT(double *w, double *itemp, unsigned int R, double *essd,
 void Temper::Print(FILE *outfile)
 {
   /* print the importance tempring information */
-  if(IS()) myprintf(outfile, "IS with inv-temp %g\n", itemps[0]);
+  if(IS()) MYprintf(outfile, "IS with inv-temp %g\n", itemps[0]);
   else if(IT_or_ST()) {
     switch(it_lambda) {
-    case OPT: myprintf(outfile, "IT: optimal"); break;
-    case NAIVE: myprintf(outfile, "IT: naive"); break;
-    case ST: myprintf(outfile, "IT: implementing ST"); break;
+    case OPT: MYprintf(outfile, "IT: optimal"); break;
+    case NAIVE: MYprintf(outfile, "IT: naive"); break;
+    case ST: MYprintf(outfile, "IT: implementing ST"); break;
     }
-    myprintf(outfile, " on %d-rung ladder\n", numit);
-    if(DoStochApprox()) myprintf(outfile, "    with stoch approx\n");
-    else myprintf(outfile, "\n");
+    MYprintf(outfile, " on %d-rung ladder\n", numit);
+    if(DoStochApprox()) MYprintf(outfile, "    with stoch approx\n");
+    else MYprintf(outfile, "\n");
   }
 }
 

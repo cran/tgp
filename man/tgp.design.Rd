@@ -69,7 +69,7 @@ Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
 \emph{Parameter space exploration with Gaussian process trees.} 
 ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{ 

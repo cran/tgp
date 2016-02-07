@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 #include <math.h>
 #include "rand_pdf.h"
 #include "linalg.h"
@@ -86,9 +87,9 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   /* posterior probability */
   p = 0.5*one + two;
 
-  /* myprintf(mystderr, "n=%d, one=%g, two=%g, ldVB=%g, Vb00=%g, ldK=%g, ldT=%g, T00=%g, col_ltau2=%g\n",
+  /* MYprintf(MYstderr, "n=%d, one=%g, two=%g, ldVB=%g, Vb00=%g, ldK=%g, ldT=%g, T00=%g, col_ltau2=%g\n",
 	     n, one, two, log_detVB, Vb[0][0], log_detK, log_detT, T[0][0], col*log(tau2));
-	     myflush(mystderr); */
+	     MYflush(MYstderr); */
   
   /* make sure we got a good p */
   if(ISNAN(p)) {
@@ -208,7 +209,7 @@ double gp_lhood(double *Z, unsigned int n, unsigned int col, double **F,
   /* MVN pdf calculation in log space */
   llik = front + eponent;
 
-  /* myprintf(mystderr, "llik=%g, n=%d, nMLN2PI=%g, front=%g, eponent=%g, log_det_K=%g, s2=%g\n", 
+  /* MYprintf(MYstderr, "llik=%g, n=%d, nMLN2PI=%g, front=%g, eponent=%g, log_det_K=%g, s2=%g\n", 
      llik, n, n*M_LN_SQRT_2PI, front, eponent, log_det_K, s2); */
 
   return(llik);

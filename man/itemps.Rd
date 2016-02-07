@@ -62,7 +62,7 @@ Gramacy, R.B., Samworth, R.J., and King, R. (2007)
 \emph{Importance Tempering.} ArXiv article 0707.4242
 \url{http://arxiv.org/abs/0707.4242}
 
-\url{http://www.ams.ucsc.edu/~rbgramacy/tgp.html}
+\url{http://bobby.gramacy.com/r_packages/tgp}
 }
 
 \author{

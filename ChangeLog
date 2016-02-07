@@ -1,3 +1,26 @@
+2.4-14 (06 Feb 2016)
+------
+
+forgot to do compact vignettes
+
+
+2.4-13 (06 Feb 2016)
+------
+
+removed Rinterface.h; not sure where it came from
+
+
+2.4-12 (05 Feb 2016)
+------
+
+new web page on bobby.gramacy.com, and title case
+
+moved R.h and Rmath.h outside of rhelp.h to be compatible
+with new C++ headers inside of newest R
+
+removed beta functionality comment from old vignette
+
+
 2.4-11 (28 November 2014)
 ------
 
