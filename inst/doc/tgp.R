@@ -8,7 +8,7 @@ options(width=65)
 
 
 ###################################################
-### code chunk number 2: tgp.Rnw:141-142
+### code chunk number 2: tgp.Rnw:185-186
 ###################################################
 bgp
 
@@ -26,21 +26,19 @@ legend(x=1.25, y=2.5, c("p(b) = 1", "p(b|d)"), lty=c(1,2))
 
 
 ###################################################
-### code chunk number 4: tgp.Rnw:624-625
+### code chunk number 4: tgp.Rnw:668-669
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 5: linear.iRnw:1-4
+### code chunk number 5: tgp.Rnw:967-968
 ###################################################
-library(tgp)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 6: linear.iRnw:20-24
+### code chunk number 6: tgp.Rnw:984-988
 ###################################################
 # 1-d linear data input and predictive data
 X <- seq(0,1,length=50)  # inputs
@@ -49,7 +47,7 @@ Z <- 1 + 2*X + rnorm(length(X),sd=0.25) # responses
 
 
 ###################################################
-### code chunk number 7: linear.iRnw:29-30
+### code chunk number 7: tgp.Rnw:993-994
 ###################################################
 lin.blm <- blm(X=X, XX=XX, Z=Z)
 
@@ -62,13 +60,13 @@ abline(1,2,lty=3,col='blue')
 
 
 ###################################################
-### code chunk number 9: linear.iRnw:38-39
+### code chunk number 9: tgp.Rnw:1002-1003
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 10: linear.iRnw:72-73
+### code chunk number 10: tgp.Rnw:1036-1037
 ###################################################
 lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
 
@@ -81,13 +79,13 @@ abline(1,2,lty=4,col='blue')
 
 
 ###################################################
-### code chunk number 12: linear.iRnw:81-82
+### code chunk number 12: tgp.Rnw:1045-1046
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 13: linear.iRnw:102-106
+### code chunk number 13: tgp.Rnw:1066-1070
 ###################################################
 lin.gpllm.tr <- bgpllm(X=X, XX=0.5, Z=Z, pred.n=FALSE, trace=TRUE,
                        verb=0)
@@ -96,21 +94,19 @@ mla
 
 
 ###################################################
-### code chunk number 14: linear.iRnw:112-113
+### code chunk number 14: tgp.Rnw:1076-1077
 ###################################################
 1-mean(lin.gpllm.tr$trace$XX[[1]]$b1)
 
 
 ###################################################
-### code chunk number 15: sin.iRnw:4-7
+### code chunk number 15: tgp.Rnw:1085-1086
 ###################################################
-library(tgp)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 16: sin.iRnw:25-31
+### code chunk number 16: tgp.Rnw:1104-1110
 ###################################################
 X <- seq(0,20,length=100)
 XX <- seq(0,20,length=99)
@@ -121,7 +117,7 @@ Z <- Ztrue + rnorm(length(Ztrue), sd=0.1)
 
 
 ###################################################
-### code chunk number 17: sin.iRnw:36-37
+### code chunk number 17: tgp.Rnw:1115-1116
 ###################################################
 sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
 
@@ -134,13 +130,13 @@ lines(X, Ztrue, col=4, lty=2, lwd=2)
 
 
 ###################################################
-### code chunk number 19: sin.iRnw:45-46
+### code chunk number 19: tgp.Rnw:1124-1125
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 20: sin.iRnw:62-63
+### code chunk number 20: tgp.Rnw:1141-1142
 ###################################################
 sin.btlm <- btlm(X=X, Z=Z, XX=XX)
 
@@ -153,7 +149,7 @@ lines(X, Ztrue, col=4, lty=2, lwd=2)
 
 
 ###################################################
-### code chunk number 22: sin.iRnw:76-77
+### code chunk number 22: tgp.Rnw:1155-1156
 ###################################################
 graphics.off()
 
@@ -165,13 +161,13 @@ tgp.trees(sin.btlm)
 
 
 ###################################################
-### code chunk number 24: sin.iRnw:84-85
+### code chunk number 24: tgp.Rnw:1163-1164
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 25: sin.iRnw:106-107
+### code chunk number 25: tgp.Rnw:1185-1186
 ###################################################
 sin.btgp <- btgp(X=X, Z=Z, XX=XX, verb=0)
 
@@ -184,22 +180,19 @@ lines(X, Ztrue, col=4, lty=2, lwd=2)
 
 
 ###################################################
-### code chunk number 27: sin.iRnw:115-116
+### code chunk number 27: tgp.Rnw:1194-1195
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 28: exp.iRnw:4-8
+### code chunk number 28: tgp.Rnw:1221-1222
 ###################################################
-library(tgp)
-library(maptree)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 29: exp.iRnw:26-29
+### code chunk number 29: tgp.Rnw:1240-1243
 ###################################################
 exp2d.data <- exp2d.rand()
 X <- exp2d.data$X; Z <- exp2d.data$Z
@@ -207,9 +200,9 @@ XX <- exp2d.data$XX
 
 
 ###################################################
-### code chunk number 30: exp.iRnw:39-40
+### code chunk number 30: tgp.Rnw:1253-1254
 ###################################################
-exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0) 	
+exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)   
 
 
 ###################################################
@@ -219,13 +212,13 @@ plot(exp.bgp, main='GP,')
 
 
 ###################################################
-### code chunk number 32: exp.iRnw:47-48
+### code chunk number 32: tgp.Rnw:1261-1262
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 33: exp.iRnw:71-72
+### code chunk number 33: tgp.Rnw:1285-1286
 ###################################################
 exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
 
@@ -237,7 +230,7 @@ plot(exp.btgp, main='treed GP,')
 
 
 ###################################################
-### code chunk number 35: exp.iRnw:79-80
+### code chunk number 35: tgp.Rnw:1293-1294
 ###################################################
 graphics.off()
 
@@ -249,15 +242,15 @@ tgp.trees(exp.btgp)
 
 
 ###################################################
-### code chunk number 37: exp.iRnw:87-88
+### code chunk number 37: tgp.Rnw:1301-1302
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 38: exp.iRnw:112-113
+### code chunk number 38: tgp.Rnw:1326-1327
 ###################################################
-exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2) 	
+exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2)  
 
 
 ###################################################
@@ -267,7 +260,7 @@ plot(exp.btgpllm, main='treed GP LLM,')
 
 
 ###################################################
-### code chunk number 40: exp.iRnw:120-121
+### code chunk number 40: tgp.Rnw:1334-1335
 ###################################################
 graphics.off()
 
@@ -279,7 +272,7 @@ plot(exp.btgpllm, main='treed GP LLM,', proj=c(1))
 
 
 ###################################################
-### code chunk number 42: exp.iRnw:143-144
+### code chunk number 42: tgp.Rnw:1357-1358
 ###################################################
 graphics.off()
 
@@ -291,21 +284,19 @@ plot(exp.btgpllm, main='treed GP LLM,', proj=c(2))
 
 
 ###################################################
-### code chunk number 44: exp.iRnw:150-151
+### code chunk number 44: tgp.Rnw:1364-1365
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 45: moto.iRnw:4-7
+### code chunk number 45: tgp.Rnw:1389-1390
 ###################################################
-library(tgp)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 46: moto.iRnw:30-33
+### code chunk number 46: tgp.Rnw:1413-1416
 ###################################################
 library(MASS)
 X <- data.frame(times=mcycle[,1])
@@ -313,7 +304,7 @@ Z <- data.frame(accel=mcycle[,2])
 
 
 ###################################################
-### code chunk number 47: moto.iRnw:39-40
+### code chunk number 47: tgp.Rnw:1422-1423
 ###################################################
 moto.bgp <- bgp(X=X, Z=Z, verb=0)
 
@@ -325,13 +316,13 @@ plot(moto.bgp, main='GP,', layout='surf')
 
 
 ###################################################
-### code chunk number 49: moto.iRnw:48-49
+### code chunk number 49: tgp.Rnw:1431-1432
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 50: moto.iRnw:62-63
+### code chunk number 50: tgp.Rnw:1445-1446
 ###################################################
 moto.btlm <- btlm(X=X, Z=Z, verb=0)
 
@@ -343,13 +334,13 @@ plot(moto.btlm, main='Bayesian CART,', layout='surf')
 
 
 ###################################################
-### code chunk number 52: moto.iRnw:72-73
+### code chunk number 52: tgp.Rnw:1455-1456
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 53: moto.iRnw:90-92
+### code chunk number 53: tgp.Rnw:1473-1475
 ###################################################
 moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", verb=0)
 moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
@@ -364,7 +355,7 @@ plot(moto.btgpllm.p, center='km', layout='surf')
 
 
 ###################################################
-### code chunk number 55: moto.iRnw:103-104
+### code chunk number 55: tgp.Rnw:1486-1487
 ###################################################
 graphics.off()
 
@@ -378,21 +369,19 @@ plot(moto.btgpllm.p, as='ks2', layout='as')
 
 
 ###################################################
-### code chunk number 57: moto.iRnw:114-115
+### code chunk number 57: tgp.Rnw:1497-1498
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 58: fried.iRnw:4-7
+### code chunk number 58: tgp.Rnw:1545-1546
 ###################################################
-library(tgp)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 59: fried.iRnw:38-42
+### code chunk number 59: tgp.Rnw:1577-1581
 ###################################################
 f <- friedman.1.data(200)
 ff <- friedman.1.data(1000)
@@ -401,7 +390,7 @@ XX <- ff[,1:10]
 
 
 ###################################################
-### code chunk number 60: fried.iRnw:49-52
+### code chunk number 60: tgp.Rnw:1588-1591
 ###################################################
 fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, verb=0)
 fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
@@ -409,7 +398,7 @@ fr.btlm.mse
 
 
 ###################################################
-### code chunk number 61: fried.iRnw:55-58
+### code chunk number 61: tgp.Rnw:1594-1597
 ###################################################
 fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, verb=0)
 fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
@@ -417,7 +406,7 @@ fr.bgpllm.mse
 
 
 ###################################################
-### code chunk number 62: fried.iRnw:67-70
+### code chunk number 62: tgp.Rnw:1606-1609
 ###################################################
 XX1 <- matrix(rep(0,10), nrow=1)
 fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, 
@@ -425,41 +414,38 @@ fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE,
 
 
 ###################################################
-### code chunk number 63: fried.iRnw:80-82
+### code chunk number 63: tgp.Rnw:1619-1621
 ###################################################
 trace <- fr.bgpllm.tr$trace$XX[[1]]
 apply(trace[,27:36], 2, mean)
 
 
 ###################################################
-### code chunk number 64: fried.iRnw:88-89
+### code chunk number 64: tgp.Rnw:1627-1628
 ###################################################
 mean(fr.bgpllm.tr$trace$linarea$ba)
 
 
 ###################################################
-### code chunk number 65: fried.iRnw:95-96
+### code chunk number 65: tgp.Rnw:1634-1635
 ###################################################
 summary(trace[,9:10])
 
 
 ###################################################
-### code chunk number 66: fried.iRnw:99-100
+### code chunk number 66: tgp.Rnw:1638-1639
 ###################################################
 apply(trace[,11:15], 2, mean)
 
 
 ###################################################
-### code chunk number 67: as.iRnw:4-8
+### code chunk number 67: tgp.Rnw:1645-1646
 ###################################################
-library(tgp)
-library(maptree)
-#options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 68: as.iRnw:14-18
+### code chunk number 68: tgp.Rnw:1652-1656
 ###################################################
 exp2d.data <- exp2d.rand(lh=0, dopt=10)
 X <- exp2d.data$X
@@ -468,7 +454,7 @@ Xcand <- lhs(1000, rbind(c(-2,6),c(-2,6)))
 
 
 ###################################################
-### code chunk number 69: as.iRnw:31-32
+### code chunk number 69: tgp.Rnw:1669-1670
 ###################################################
 exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", R=5, verb=0)
 
@@ -480,13 +466,13 @@ tgp.trees(exp1)
 
 
 ###################################################
-### code chunk number 71: as.iRnw:39-40
+### code chunk number 71: tgp.Rnw:1677-1678
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 72: as.iRnw:55-57
+### code chunk number 72: tgp.Rnw:1693-1695
 ###################################################
 XX <- tgp.design(200, Xcand, exp1)
 XX <- rbind(XX, c(-sqrt(1/2),0))
@@ -501,13 +487,13 @@ mapT(exp1, add=TRUE)
 
 
 ###################################################
-### code chunk number 74: as.iRnw:74-75
+### code chunk number 74: tgp.Rnw:1712-1713
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 75: as.iRnw:89-91
+### code chunk number 75: tgp.Rnw:1727-1729
 ###################################################
 exp.as <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", improv=TRUE, 
                         Ds2x=TRUE, R=5, verb=0)
@@ -523,21 +509,19 @@ plot(exp.as, main="tgpllm,", layout='as', as='improv')
 
 
 ###################################################
-### code chunk number 77: as.iRnw:109-110
+### code chunk number 77: tgp.Rnw:1747-1748
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 78: traces.iRnw:4-7
+### code chunk number 78: tgp.Rnw:1822-1823
 ###################################################
-library(tgp)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 79: traces.iRnw:43-47
+### code chunk number 79: tgp.Rnw:1859-1863
 ###################################################
 exp2d.data <- exp2d.rand(n2=150, lh=0, dopt=10)
 X <- exp2d.data$X
@@ -546,7 +530,7 @@ XX <- rbind(c(0,0),c(2,2),c(4,4))
 
 
 ###################################################
-### code chunk number 80: traces.iRnw:52-55
+### code chunk number 80: tgp.Rnw:1868-1871
 ###################################################
 out <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", bprior="b0", 
                pred.n=FALSE, Ds2x=TRUE, R=10, 
@@ -554,7 +538,7 @@ out <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", bprior="b0",
 
 
 ###################################################
-### code chunk number 81: traces.iRnw:59-60
+### code chunk number 81: tgp.Rnw:1875-1876
 ###################################################
 out$trace
 
@@ -576,13 +560,13 @@ legend("bottomleft", names, col=1:ltrXX, lty=1:ltrXX)
 
 
 ###################################################
-### code chunk number 83: traces.iRnw:92-93
+### code chunk number 83: tgp.Rnw:1908-1909
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 84: traces.iRnw:110-112
+### code chunk number 84: tgp.Rnw:1926-1928
 ###################################################
 linarea <- mean(out$trace$linarea$la)
 linarea
@@ -595,13 +579,13 @@ hist(out$trace$linarea$la)
 
 
 ###################################################
-### code chunk number 86: traces.iRnw:119-120
+### code chunk number 86: tgp.Rnw:1935-1936
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 87: traces.iRnw:135-141
+### code chunk number 87: tgp.Rnw:1951-1957
 ###################################################
 m <- matrix(0, nrow=length(trXX), ncol=3)#ncol=5)
 for(i in 1:length(trXX))
@@ -628,32 +612,29 @@ legend("bottomright", names, col=1:ltrXX, lty=1:ltrXX)
 
 
 ###################################################
-### code chunk number 89: traces.iRnw:162-163
+### code chunk number 89: tgp.Rnw:1978-1979
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 90: pred.iRnw:4-8
+### code chunk number 90: tgp.Rnw:2065-2066
 ###################################################
-library(tgp)
-library(maptree)
-##options(width=65)
 seed <- 0; set.seed(seed)
 
 
 ###################################################
-### code chunk number 91: pred.iRnw:18-23
+### code chunk number 91: tgp.Rnw:2076-2081
 ###################################################
 library(MASS)
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
-	       pred.n=FALSE, verb=0) 
+         pred.n=FALSE, verb=0) 
 save(out, file="out.Rsave")
 out <- NULL
 
 
 ###################################################
-### code chunk number 92: pred.iRnw:32-35
+### code chunk number 92: tgp.Rnw:2090-2093
 ###################################################
 load("out.Rsave")
 XX <- seq(2.4, 56.7, length=200)
@@ -661,13 +642,13 @@ out.kp <- predict(out, XX=XX, pred.n=FALSE)
 
 
 ###################################################
-### code chunk number 93: pred.iRnw:40-41
+### code chunk number 93: tgp.Rnw:2098-2099
 ###################################################
 out.p <- predict(out, XX=XX, pred.n=FALSE, BTE=c(0,1000,1))
 
 
 ###################################################
-### code chunk number 94: pred.iRnw:50-51
+### code chunk number 94: tgp.Rnw:2108-2109
 ###################################################
 out2 <- predict(out, XX, pred.n=FALSE, BTE=c(0,2000,2), MAP=FALSE)
 
@@ -679,7 +660,7 @@ plot(out.kp, center="km", as="ks2")
 
 
 ###################################################
-### code chunk number 96: pred.iRnw:62-63
+### code chunk number 96: tgp.Rnw:2120-2121
 ###################################################
 graphics.off()
 
@@ -691,7 +672,7 @@ plot(out.p)
 
 
 ###################################################
-### code chunk number 98: pred.iRnw:70-71
+### code chunk number 98: tgp.Rnw:2128-2129
 ###################################################
 graphics.off()
 
@@ -703,13 +684,13 @@ plot(out2)
 
 
 ###################################################
-### code chunk number 100: pred.iRnw:78-79
+### code chunk number 100: tgp.Rnw:2136-2137
 ###################################################
 graphics.off()
 
 
 ###################################################
-### code chunk number 101: pred.iRnw:102-103
+### code chunk number 101: tgp.Rnw:2160-2161
 ###################################################
 unlink("out.Rsave")
 

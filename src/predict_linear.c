@@ -419,7 +419,8 @@ double s2;
     if(Ds2xy) delta_sigma2_linear(Ds2xy[i], n, col, s2, Vbf, fVbf, F, Kdiag[i]);
     
     /* normal deviates with correct variance */
-    zs2[i] = s2 * (1.0 + fVbf);
+    if(Kdiag) zs2[i] = s2 * (Kdiag[i] + fVbf);
+    else zs2[i] = s2 * (1.0 + fVbf);
   }
  
   /* clean up */
@@ -455,9 +456,10 @@ void *state;
      none of these statements do anything for n or nn = 0 ?? */
  
   /* calculate the necessary means and vars for prediction */
-  double *zero = new_zero_vector(n);
-  predict_linear(n, col, zpm, zps2, F, bmu, s2, Vb, NULL, zero);
-  free(zero);
+  /* double *zero = new_zero_vector(n); */
+  /* predict_linear(n, col, zpm, zps2, F, bmu, s2, Vb, NULL, zero); */
+  predict_linear(n, col, zpm, zps2, F, bmu, s2, Vb, NULL, Kdiag); /* MODIFIED */
+  /* free(zero); */
 
   /* draw from the posterior predictive distribution */
   warn += predict_draw(n, zp, zpm, zps2, err, state);

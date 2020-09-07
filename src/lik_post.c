@@ -63,10 +63,10 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   log_detVB = log_determinant_dup(Vb, col);
   
   /* determine if design matrix is collinear */
-  if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
+  if(log_detVB == R_NegInf || lambda < 0 || log_detK == R_NegInf) {
     /* warning("degenerate design matrix in post_margin_rj"); */
     /* assert(0); */
-    return 0.0-1e300*1e300;
+    return R_NegInf;
   }
 
   /* determinant of T depends on Beta Prior Model */
@@ -93,7 +93,7 @@ double a0, g0, tau2, lambda, log_detK, itemp;
   
   /* make sure we got a good p */
   if(ISNAN(p)) {
-    p = 0.0-1e300*1e300;
+    p = R_NegInf;
     /* warning("post_margin_rj, p is NAN"); */
 #ifdef DEBUG
     assert(!ISNAN(p));
@@ -130,9 +130,9 @@ double a0, g0, lambda, log_detK, itemp;
   log_detVB = log_determinant_dup(Vb, col);
   
   /* determine if design matrix is collinear */
-  if(log_detVB == 0.0-1e300*1e300 || lambda < 0 || log_detK == 0.0-1e300*1e300) {
+  if(log_detVB == R_NegInf || lambda < 0 || log_detK == R_NegInf) {
     /* warning("degenerate design matrix in post_margin"); */
-    return 0.0-1e300*1e300;
+    return R_NegInf;
   }
 
   /* one = log(det(VB)) - log(det(K)) */
@@ -146,7 +146,7 @@ double a0, g0, lambda, log_detK, itemp;
   
   /* make sure we got a good p */
   if(ISNAN(p)) {
-    p = 0.0-1e300*1e300;
+    p = R_NegInf;
     /* warning("post_margin, p is NAN"); */
 #ifdef DEBUG
     assert(!ISNAN(p));

@@ -36,15 +36,21 @@ lhs(n, rect, shape=NULL, mode=NULL)
   a sample point.
 }
 
-\references{ McKay, M. D., W. J. Conover and R. J. Beckman. (1979).
+\references{ 
+  Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling,
+  Design and Optimization for the Applied Sciences}. Boca Raton,
+  Florida: Chapman Hall/CRC.  (See Chapter 4.)
+  \url{https://bobby.gramacy.com/surrogates/}
+
+  McKay, M. D., W. J. Conover and R. J. Beckman. (1979).
   \emph{A Comparison of Three Methods for Selecting Values of Input
   Variables in the Analysis of Output from a Computer Code},
   Technometrics 21: (pp. 239--245).
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{The domain bounds specified by the rows of \code{rect} can

@@ -89,10 +89,10 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \item{lambda}{ IT method, as specified by the input argument}
 }
 \references{
-  Gramacy, R.B., Samworth, R.J., and King, R. (2007)
+  Gramacy, R.B., Samworth, R.J., and King, R. (2010)
   \emph{Importance Tempering.} ArXiV article 0707.4242
-  \url{http://arxiv.org/abs/0707.4242}. To appear in
-  Statistics and Computing.
+  Statistics and Computing, 20(1), pp. 1-7;
+  \url{https://arxiv.org/abs/0707.4242}. 
 
   For stochastic approximation and simulated tempering (ST):
   
@@ -114,12 +114,12 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \emph{Monte Carlo Strategies in Scientific Computing.}
   New York: Springer.  Chapter 10 (pages 213 \& 233)
 
-  \url{http://bobby.gramacy.com/r_packages/tgp}
+  \url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \seealso{ \code{\link{btgp}} }

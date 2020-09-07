@@ -118,7 +118,7 @@ function(X, Z, XX=NULL, BTE=c(2000,7000,2), R=1, m0r1=FALSE, linburn=FALSE,
   ## check if X is of full rank
   if(params$meanfn == "linear" &&
      class(try(solve(t(X[,1:params$tree[5]]) %*% X[,1:params$tree[5]]),
-               silent=TRUE)) == "try-error") {
+               silent=TRUE))[1] == "try-error") {
     stop("X[,1:", params$tree[5], "]-matrix is not of full rank", sep="")
   }
   

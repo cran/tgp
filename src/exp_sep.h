@@ -65,6 +65,7 @@ class ExpSep : public Corr
   virtual void Init(double *dexpsep);
   virtual double* Jitter(unsigned int n1, double **X);
   virtual double* CorrDiag(unsigned int n1, double **X);
+  virtual void Invert(unsigned int n);
 
   void get_delta_d(ExpSep* c1, ExpSep* c2, void *state);
   void propose_new_d(ExpSep* c1, ExpSep* c2, void *state);

@@ -167,19 +167,19 @@ void Corr::allocate_new(unsigned int n)
  * as the work matrix
  */
 
-void Corr::Invert(unsigned int n)
-{
+// void Corr::Invert(unsigned int n)
+// {
 
-  if(! linear) {
-    assert(n == this->n);
-    inverse_chol(K, Ki, Kchol, n);
-    log_det_K = log_determinant_chol(Kchol, n);
-  }
-  else {
-    assert(n > 0);
-    log_det_K = n * log(1.0 + nug);
-  }
-}
+//   if(! linear) {
+//     assert(n == this->n);
+//     inverse_chol(K, Ki, Kchol, n);
+//     log_det_K = log_determinant_chol(Kchol, n);
+//   }
+//   else {
+//     assert(n > 0);
+//     log_det_K = n * log(1.0 + nug);
+//   }
+// }
 
 
 /*
@@ -628,7 +628,7 @@ double Corr_Prior::NugDraw(void *state)
 
 
 /*
- * DrawNug:
+ * DrawNugHeir:
  * 
  * draws for the hierarchical priors for the nugget
  * contained in the params module

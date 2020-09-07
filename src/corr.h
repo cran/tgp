@@ -105,6 +105,7 @@ class Corr
   virtual void Init(double *dcorr)=0;
   virtual double* Jitter(unsigned int n1, double **X)=0;
   virtual double* CorrDiag(unsigned int n1, double **X)=0;
+  virtual void Invert(unsigned int n)=0;
 
   unsigned int N();
   double** get_Ki(void);
@@ -121,7 +122,7 @@ class Corr
   void SplitNug(Corr *c1, Corr *c2, void *state);
   void swap_new(double **Vb, double **bmu, double *lambda);
   void allocate_new(unsigned int n);
-  void Invert(unsigned int n);
+  //void Invert(unsigned int n);
   void deallocate_new(void);
   double Nug(void);
   double log_NugPrior(void);

@@ -25,6 +25,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <R.h>
 #include <Rmath.h> 
 #include "rand_pdf.h"
 #include "matrix.h"
@@ -345,7 +346,7 @@ double **M;
     warning("bad chol decomp in log_determinant");
     /* assert(0); */
 #endif
-    return -1e300*1e300;
+    return R_NegInf;
   }  
 
   /* det = prod(diag(R)) .^ 2 */

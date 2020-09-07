@@ -31,7 +31,7 @@
 "tgp.plot.slice" <-
 function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
          layout="both", main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", gridlen=40, span=0.1,...)
+         pc="pc", gridlen=40, span=0.1, pXX=TRUE, ...)
 {
   ## choose center as median or mean (i.e., X & Z data)
   ## (this hasn't been tested since the addition of the tgp.choose.center() function
@@ -93,18 +93,18 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
                   gridlen=gridlen,span=span,...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
-      if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$X[ppn,d[2]], pch=21)
+      if(pXX && length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
     }
     if(layout == "both" || layout == "as") {
       slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
                       gridlen=gridlen,span=span,...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
-      if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
+      if(pXX && length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
       if(substr(as$name,1,1) == "I")
         text(out$XX[ppn,d[1]], out$XX[ppn,d[2]], labels=out$improv[ppn,2], ...)
     }
-  } else if(pc == "pc") {	# perspactive and image plot
+  } else if(pc == "pc") {	# perspective and image plot
     if(layout == "both" || layout == "surf")
       slice.persp(Xd.1,Xd.2,p,Z.mean,main=smain,xlab=xlab,ylab=ylab,zlab=zlab,
                   gridlen=gridlen,span=span,...)
@@ -112,7 +112,7 @@ function(out, pparts=TRUE, slice=NULL, map=NULL, as=NULL, center="mean",
       slice.image(XXd.1,XXd.2,pp,ZZ.q,main=emain,xlab=xlab,ylab=ylab,
                   gridlen=gridlen,span=span,...)
       if(length(pn) > 0) points(out$X[pn,d[1]], out$X[pn,d[2]], pch=20)
-      if(length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
+      if(pXX && length(ppn) > 0) points(out$XX[ppn,d[1]], out$XX[ppn,d[2]], pch=21)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, d, slice); }
       if(substr(as$name,1,1) == "I")
         text(out$XX[,proj[1]], out$XX[,proj[2]], labels=out$improv[ppn,2], ...)

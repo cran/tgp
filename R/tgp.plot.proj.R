@@ -25,7 +25,7 @@
 "tgp.plot.proj" <-
 function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
          layout=layout,	main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
-         pc="pc", gridlen=40, span=0.1, rankmax=20,...)
+         pc="pc", gridlen=40, span=0.1, pXX=TRUE, rankmax=20,...)
 {
   ## will call stop() if something is wrong with the proj
   
@@ -68,7 +68,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
     if(layout == "both" || layout == "surf") {
       plot(out$X[,proj], out$Z, xlab=xlab, ylab=zlab, main=smain, ...)
            
-      points(out$XX[,proj], out$ZZ.mean, pch=20, cex=0.5, ...)
+      if(pXX) points(out$XX[,proj], out$ZZ.mean, pch=20, cex=0.5, ...)
       Zb.q1 <- c(out$Zp.q1, out$ZZ.q1)
       Zb.q2 <- c(out$Zp.q2, out$ZZ.q2)
       r <- range(X)
@@ -89,7 +89,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
     if(layout == "both" || layout == "as") { # error/as plot
       slice.image(XX[,1],XX[,2],pp,ZZ.q,xlab=xlab,ylab=ylab,main=emain,
                   gridlen=gridlen,span=span,...)
-      if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
+      if(pXX && !is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
@@ -105,7 +105,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
                   gridlen=gridlen,span=span,...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
-      if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
+      if(pXX && !is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
     }
     if(layout == "both" || layout == "as") {
@@ -113,7 +113,7 @@ function(out, pparts=TRUE, proj=NULL, map=NULL, as=as, center="mean",
                   gridlen=gridlen,span=span,...)
       if(!is.null(map)) { lines(map, col="black", ...) }
       points(out$X[,proj],pch=20, ...)
-      if(!is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
+      if(pXX && !is.null(out$XX)) points(out$XX[,proj], pch=21, ...)
       if(pparts & !is.null(out$parts)) { tgp.plot.parts.2d(out$parts, dx=proj) }
       if(substr(as$name,1,1) == "I"){
         ranks <- out$improv[,2] <= rankmax

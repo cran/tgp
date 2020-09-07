@@ -137,12 +137,12 @@
 }
 
 \references{
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \seealso{ \code{\link{predict}}, \code{\link{blm}}, \code{\link{btlm}},
@@ -150,6 +150,7 @@ Matt Taddy, \email{taddy@chicagobooth.edu}
   \code{\link{btgpllm}}, \code{\link{plot.tgp}} }
 
 \examples{
+\donttest{
 ## revisit the Motorcycle data
 require(MASS)
 
@@ -189,6 +190,7 @@ plot(out2)
 
 ## (generally you would not want to remove the file)
 unlink("out.Rsave")
+}
 }
 
 \keyword{ nonparametric }

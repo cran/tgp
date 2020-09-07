@@ -43,7 +43,6 @@
 #define LINEAR(gamma, min, max, d) min + max / (1.0 + exp(0.0-gamma*(d-0.5)));
 
 /* minimum values for the nugget and s2_g0 */
-#define NUGMIN 1e-10
 #define S2G0MIN 1e-10
 
 
@@ -267,6 +266,8 @@ double tau2, itemp;
   
   /* Vb = inv(F'*KiF + Ti/tau2) */
   id(Vb, col);
+  // printMatrix(Vb, col, col, MYstdout);
+  // printMatrix(Vbi, col, col, MYstdout);
   if(col==1) Vb[0][0] = 1.0/Vbi[0][0];
   else /* info = */ linalg_dgesv(col, Vbi, Vb);
   delete_matrix(Vbi);
@@ -798,6 +799,7 @@ void *state;
 
 
 
+
 /*
  * mixture_priors_ratio:
  * 
@@ -1317,6 +1319,82 @@ void *state;
   pnug = log_nug_prior_pdf(nug, nug_alpha, nug_beta);
   pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
   pnuglast = log_nug_prior_pdf(nuglast, nug_alpha, nug_beta);
+  pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
+  
+  /* accept or reject */
+  alpha = exp(pnug - pnuglast)*(q_bak/q_fwd);
+  /* MYprintf(MYstderr, "nug_last=%g -> nug=%g : alpha=%g\n", nuglast, nug, alpha); */
+  if(runi(state) > alpha) { /* MYprintf(MYstderr, "  -- rejected\n");*/ return nuglast; }
+  else { /*MYprintf(MYstderr, "  -- accepted\n");*/ return nug; }
+}
+
+
+/*
+ * nug_draw_twovar:
+ * 
+ * draws for nug given the rest of the parameters
+ * except b and s2 marginalized out
+ *
+ * F[col][n], K[n][n], Kchol[n][n], K_new[n][n], Ti[col][col], T[col][col],
+ * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
+ */
+
+double nug_draw_twovar(n, col, nuglast, F, Z, K, log_det_K, lambda, Vb, 
+  K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
+  b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, 
+  state)
+unsigned int n, col;
+int linear;
+double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
+double *b0, *Z, *log_det_K_new; 
+double nug_alpha[2], nug_beta[2];
+double nuglast, a0, g0, lambda, tau2, log_det_K, itemp;
+double *lambda_new, *bmu_new;
+void *state;
+{
+  double q_fwd, q_bak, nug, pnug, pnuglast, alpha;
+  double *Kdiag;
+  unsigned int i;
+  unsigned int m = 0;
+  
+  /* do nothing if the prior says to fix the nug */
+  if(nug_alpha[0] == 0) return nuglast;
+
+  /* propose new d, and compute proposal probability */
+  /* nug = nug_draw(nuglast, &q_fwd, &q_bak, state); */ /* MODIFIED */
+  nug = unif_propose_pos(nuglast+1.0, &q_fwd, &q_bak, state) - 1.0;
+  
+  /* new covariace matrix based on new nug */
+  if(linear) { /* MODIFIED */
+    // *log_det_K_new = n * log(1.0 + nug);
+    *log_det_K_new = (n/2) * log(1.0) + (n/2) * log(1.0 + nug);
+    // Kdiag = ones(n, 1.0 + nug);
+    Kdiag = ones(n, 1.0);
+    for(i=n/2; i<n; i++) Kdiag[i] += nug;
+    *lambda_new = compute_lambda_noK(Vb_new, bmu_new, n, col, F, Z, Ti, 
+             tau2, b0, Kdiag, itemp);
+    free(Kdiag);
+  } else  { /* MODIFIED */
+    dup_matrix(K_new, K, n, n);
+    // for(i=0; i<n; i++) K_new[i][i] += (nug - nuglast);
+    for(i=n/2; i<n; i++) K_new[i][i] += (nug - nuglast);
+    // inverse_chol(K_new, Ki_new, Kchol_new, n);
+    id(Ki_new, n);
+    for(i=n/2; i<n; i++) Ki_new[i][i] = 1.0 / K_new[i][i];
+    // *log_det_K_new = log_determinant_chol(Kchol_new, n);
+    *log_det_K_new = (n/2) * log(1.0) + (n/2) * log(1.0 + nug);
+    *lambda_new = compute_lambda(Vb_new, bmu_new, n, col, F, Z, Ki_new, 
+         Ti, tau2, b0, itemp);
+  }
+  
+  if(T[0][0] == 0) m = col;
+  
+  /* posteriors */
+  /* pnug = log_nug_prior_pdf(nug, nug_alpha, nug_beta);  MODIFIED */
+  pnug = log_nug_prior_pdf(nug + 1.0 + NUGMIN, nug_alpha, nug_beta);
+  pnug += post_margin(n,col,*lambda_new,Vb_new,*log_det_K_new,a0-m,g0,itemp);
+  /* pnuglast = log_nug_prior_pdf(nuglast, nug_alpha, nug_beta);  MODIFIED */
+  pnuglast = log_nug_prior_pdf(nuglast + 1.0 + NUGMIN, nug_alpha, nug_beta);
   pnuglast += post_margin(n,col,lambda,Vb,log_det_K,a0-m,g0,itemp);
   
   /* accept or reject */

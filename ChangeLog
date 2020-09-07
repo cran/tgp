@@ -1,3 +1,22 @@
+2.4-16 (05 Sep 2020)
+------
+
+put all btgp and tgp.design examples in donttest
+
+
+2.4-15 (02 Sep 2020)
+------
+
+updated for modern R requirements
+
+implemented drop=FALSE in tgp.partition for Jan
+
+simplified BLAS and Lapack headers in linalg.c/.h
+for monomvn
+
+now using R_PosInf and R_NegInf
+
+
 2.4-14 (06 Feb 2016)
 ------
 

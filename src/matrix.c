@@ -1419,9 +1419,9 @@ double quick_select(double arr[], int n, int k)
     /* Re-set active partition */
     if (hh <= k)
         low = ll;
-        if (hh >= k)
+    if (hh >= k)
         high = hh - 1;
-    }
+  }
 }
 
 

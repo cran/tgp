@@ -9,7 +9,7 @@
 }
 \usage{
 tgp.default.params(d, meanfn = c("linear", "constant"),
-                   corr = c("expsep", "exp", "mrexpsep", "matern", "sim"),
+                   corr = c("expsep", "exp", "mrexpsep", "matern", "sim", "twovar"),
                    splitmin = 1, basemax = d, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -26,8 +26,9 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
   	power exponential family (\code{"exp"}) or the separable power exponential 
 	family (\code{"expsep"}, default); the current version also supports 
 	the isotropic Matern (\code{"matern"}) and single-index model
-	(\code{"sim"}) as \dQuote{beta}	functionality.  The option \code{"mrexpsep"} uses a
-	multi-resolution GP model, a depricated feature in the package
+	(\code{"sim"}) and \code{"twovar"} as \dQuote{beta}	functionality.  
+  The option \code{"mrexpsep"} uses a multi-resolution GP model, 
+  a depricated feature in the package
 	(docs removed)}
   \item{splitmin}{ Indicates which column of the inputs \code{X} should
     be the first to allow splits via treed partitioning.  This is useful
@@ -126,35 +127,35 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
 
 
 \references{
-  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
-    Bayesian Nonstationary, Semiparametric Nonlinear
-    Regression and Design by Treed Gaussian Process Models.}
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+Bayesian Nonstationary, Semiparametric Nonlinear
+Regression and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+\url{https://www.jstatsoft.org/v19/i09}
 
 Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
 Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
 Version 2, an \R Package for Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{33}(6), 1--48.
-\url{http://www.jstatsoft.org/v33/i06/}.
+\url{https://www.jstatsoft.org/v33/i06/}.
 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
+Gramacy, R. B., Lee, H. K. H. (2008).
+\emph{Bayesian treed Gaussian process models with an application
+  to computer modeling}. Journal of the American Statistical Association, 
+103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
+\url{https://arxiv.org/abs/0710.4536}
 
 Robert B. Gramacy, Heng Lian (2011).
 \emph{Gaussian process single-index models as emulators for computer
   experiments}.  Available as ArXiv article 1009.4241
-\url{http://arxiv.org/abs/1009.4241}
+\url{https://arxiv.org/abs/1009.4241}
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{Please refer to the examples for the functions in

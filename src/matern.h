@@ -71,6 +71,7 @@ class Matern : public Corr
   virtual void Init(double *dmat);
   virtual double* Jitter(unsigned int n1, double **X);
   virtual double* CorrDiag(unsigned int n1, double **X);
+  virtual void Invert(unsigned int n);
 
   void get_delta_d(Matern* c1, Matern* c2, void *state);
   void propose_new_d(Matern* c1, Matern* c2, void *state);

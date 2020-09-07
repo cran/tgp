@@ -3,8 +3,8 @@
 # to PKG_LIBS for your operating system)
 
 # comment out the (3) lines below in order to enable ATLAS (step 1)
-PKG_CFLAGS = -DRPRINT -DNDEBUG # -DUNDEBUG
-PKG_CXXFLAGS = -DRPRINT -DNDEBUG # -DUNDEBUG -DPARALLEL
+PKG_CFLAGS = -DRPRINT # -UNDEBUG
+PKG_CXXFLAGS = -DRPRINT # -UNDEBUG -DPARALLEL
 PKG_LIBS = ${LAPACK_LIBS} ${BLAS_LIBS} ${FLIBS} #-pthread
 LDFLAGS = -L/usr/lib -L/usr/lib/R/lib -L/usr/local/lib
 

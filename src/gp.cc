@@ -40,6 +40,7 @@ extern "C"
 #include "matern.h"
 #include "mr_exp_sep.h"
 #include "sim.h"
+#include "twovar.h"
 #include "tree.h"
 #include "model.h"
 #include "gp.h"
@@ -410,6 +411,7 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zpvm, double *
     /* under the limiting linear */
     double *Kdiag = corr->CorrDiag(n,X);
     double *KKdiag = corr->CorrDiag(nn,XX);
+    // MYprintf(MYstdout, "%g %g\n", KKdiag[0], KKdiag[nn/2]);
     predict_full_linear(n, zp, zpm, zpvm, zps2, Kdiag, nn, zz, zzm, zzvm, zzs2, KKdiag,
 			ds2xy, improv, Z, col, F, FF, bmu, s2, Vb, Zmin, err, state);
     if(Kdiag) free(Kdiag);
@@ -421,6 +423,7 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zpvm, double *
     double *KKdiag;
     if(!xxKxx) KKdiag = corr->CorrDiag(nn,XX);
     else KKdiag = NULL;
+    // printVector(KKdiag, nn, MYstdout, HUMAN);
     warn = predict_full(n, zp, zpm, zpvm, zps2, zpjitter, nn, zz, zzm, zzvm, zzs2, zzjitter,
 			ds2xy, improv, Z, col, F, corr->get_K(), corr->get_Ki(), 
 			((Gp_Prior*)prior)->get_T(), tau2, FF, xxKx, xxKxx, KKdiag,
@@ -1282,7 +1285,11 @@ void Gp_Prior::read_double(double * dparams)
     break;
   case 3: corr_prior = new MrExpSep_Prior(d-1);
       //MYprintf(MYstdout, "correlation: two-level seperable power mixture\n");
+    break;
   case 4: corr_prior = new Sim_Prior(d);
+      //MYprintf(MYstdout, "correlation: sim power exponential\n");
+    break;
+  case 5: corr_prior = new Twovar_Prior(d);
       //MYprintf(MYstdout, "correlation: sim power exponential\n");
     break;
   default: error("bad corr model %d", (int)dparams[0]);
@@ -1416,6 +1423,9 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   } else if(!strncmp(line, "sim", 3)) {
     corr_prior = new Sim_Prior(d);
     // MYprintf(MYstdout, "correlation: sim power exponential\n");
+  } else if(!strncmp(line, "twovar", 3)) {
+    corr_prior = new Twovar_Prior(d);
+    // MYprintf(MYstdout, "correlation: twovar linear\n");
   } else {
     error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }

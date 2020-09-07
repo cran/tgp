@@ -1,7 +1,7 @@
 /******************************************************************************** 
  *
  * Bayesian Regression and Adaptive Sampling with Gaussian Process Trees
- * Copyright (C) 2005, University of California
+ * Copyright (C) 2016, The University of Chicago
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * Questions? Contact Robert B. Gramacy (rbgramacy@ams.ucsc.edu)
+ * Questions? Contact Robert B. Gramacy (rbgramacy@chicagobooth.edu)
  *
  ********************************************************************************/
 
@@ -35,7 +35,7 @@ extern "C"
 #include "corr.h"
 #include "params.h"
 #include "model.h"
-#include "exp.h"
+#include "twovar.h"
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -48,12 +48,12 @@ using namespace std;
 #define PWR 2.0
 
 /*
- * Exp:
+ * Twovar:
  * 
  * constructor function
  */
 
-Exp::Exp(unsigned int dim, Base_Prior *base_prior)
+Twovar::Twovar(unsigned int dim, Base_Prior *base_prior)
   : Corr(dim, base_prior)
 {
   assert(base_prior->BaseModel() == GP);
@@ -65,7 +65,7 @@ Exp::Exp(unsigned int dim, Base_Prior *base_prior)
   if(!prior->Linear() && !prior->LLM()) linear = false;
 
   assert( ((Gp_Prior*) base_prior)->CorrPrior()->CorrModel() == EXP);
-  d = ((Exp_Prior*) prior)->D();
+  d = ((Twovar_Prior*) prior)->D();
   xDISTx = NULL;
   nd = 0;
   dreject = 0;
@@ -73,16 +73,16 @@ Exp::Exp(unsigned int dim, Base_Prior *base_prior)
 
 
 /*
- * Exp (assignment operator):
+ * Twovar (assignment operator):
  * 
  * used to assign the parameters of one correlation
  * function to anothers.  Both correlation functions
  * must already have been allocated.
  */
 
-Corr& Exp::operator=(const Corr &c)
+Corr& Twovar::operator=(const Corr &c)
 {
-  Exp *e = (Exp*) &c;
+  Twovar *e = (Twovar*) &c;
   
   log_det_K = e->log_det_K;
   linear = e->linear;
@@ -101,12 +101,12 @@ Corr& Exp::operator=(const Corr &c)
 
 
 /* 
- * ~Exp:
+ * ~Twovar:
  * 
  * destructor
  */
 
-Exp::~Exp(void)
+Twovar::~Twovar(void)
 {
   if(xDISTx) delete_matrix(xDISTx);
   xDISTx = NULL;
@@ -120,7 +120,7 @@ Exp::~Exp(void)
  * from R via the vector of doubles
  */
 
-void Exp::Init(double *dexp)
+void Twovar::Init(double *dexp)
 {
   d = dexp[1];
   NugInit(dexp[0], ! (bool) dexp[2]);
@@ -137,10 +137,12 @@ void Exp::Init(double *dexp)
  * 
  */
 
-double* Exp::Jitter(unsigned int n1, double **X)
+double* Twovar::Jitter(unsigned int n1, double **X)
 {
   double *jitter = new_vector(n1);
-  for(unsigned int i=0; i<n1; i++) jitter[i] = nug;
+  // for(unsigned int i=0; i<n1; i++) jitter[i] = nug;  /* MODIFIED */
+  for(unsigned int i=0; i<n1/2; i++) jitter[i] = 0.0;
+  for(unsigned int i=n1/2; i<n1; i++) jitter[i] = nug;
   return(jitter);
 }
 
@@ -151,10 +153,12 @@ double* Exp::Jitter(unsigned int n1, double **X)
  *
  */
 
-double* Exp::CorrDiag(unsigned int n1, double **X)
+double* Twovar::CorrDiag(unsigned int n1, double **X)
 {
   double *corrdiag = new_vector(n1);
-  for(unsigned int i=0; i<n1; i++) corrdiag[i] = 1.0 + nug;
+  // for(unsigned int i=0; i<n1; i++) corrdiag[i] = 1.0 + nug;  /* MODIFIED */
+  for(unsigned int i=0; i<n1/2; i++) corrdiag[i] = 1.0;
+  for(unsigned int i=n1/2; i<n1; i++) corrdiag[i] = 1.0 + nug;
   return(corrdiag);
 }
 
@@ -167,7 +171,7 @@ double* Exp::CorrDiag(unsigned int n1, double **X)
  * return true if the correlation matrix has changed; false otherwise
  */
 
-bool Exp::DrawNugs(unsigned int n, double **X, double **F,  double *Z, 
+bool Twovar::DrawNugs(unsigned int n, double **X, double **F,  double *Z, 
 		  double *lambda, double **bmu, double **Vb, double tau2, 
 		  double itemp, void *state)
 {
@@ -182,8 +186,8 @@ bool Exp::DrawNugs(unsigned int n, double **X, double **F,  double *Z,
   if(runi(state) > 0.5) return false;
   
   /* make the draw */
-  double nug_new = 
-    nug_draw_margin(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
+  double nug_new = /* MODIFIED */
+    nug_draw_twovar(n, col, nug, F, Z, K, log_det_K, *lambda, Vb, K_new, Ki_new, 
 		    Kchol_new, &log_det_K_new, &lambda_new, Vb_new, bmu_new, 
 		    gp_prior->get_b0(), gp_prior->get_Ti(), gp_prior->get_T(), 
 		    tau2, prior->NugAlpha(), prior->NugBeta(), gp_prior->s2Alpha(), 
@@ -201,17 +205,19 @@ bool Exp::DrawNugs(unsigned int n, double **X, double **F,  double *Z,
  * compute correlation matrix K
  */
 
-void Exp::Update(unsigned int n, double **X)
+void Twovar::Update(unsigned int n, double **X)
 {
   if(linear) return;
   assert(this->n == n);
-  if(!xDISTx || nd != n) {
+  /* if(!xDISTx || nd != n) {
     if(xDISTx) delete_matrix(xDISTx);
     xDISTx = new_matrix(n, n);
     nd = n;
   }
   dist_symm(xDISTx, dim, X, n, PWR);
-  dist_to_K_symm(K, xDISTx, d, nug, n);
+  dist_to_K_symm(K, xDISTx, d, nug, n); */
+  id(K, n);
+  for(unsigned int i=n/2; i<n; i++) K[i][i] += nug; /* MODIFIED */
   //delete_matrix(xDISTx);
 }
 
@@ -223,12 +229,14 @@ void Exp::Update(unsigned int n, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n, double **K, double **X)
+void Twovar::Update(unsigned int n, double **K, double **X)
 {
-  double ** xDISTx = new_matrix(n, n);
+  /* double ** xDISTx = new_matrix(n, n);
   dist_symm(xDISTx, dim, X, n, PWR);
   dist_to_K_symm(K, xDISTx, d, nug, n);
-  delete_matrix(xDISTx);
+  delete_matrix(xDISTx); */
+  id(K, n);
+  for(unsigned int i=n/2; i<n; i++) K[i][i] += nug; /* MODIFIED */
 }
 
 
@@ -239,14 +247,41 @@ void Exp::Update(unsigned int n, double **K, double **X)
  * returns a correlation matrix
  */
 
-void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
+void Twovar::Update(unsigned int n1, unsigned int n2, double **K, double **X, double **XX)
 {
-  double **xxDISTx = new_matrix(n2, n1);
+  /* double **xxDISTx = new_matrix(n2, n1);
   dist(xxDISTx, dim, XX, n1, X, n2, PWR);
   dist_to_K(K, xxDISTx, d, 0.0, n1, n2);
-  delete_matrix(xxDISTx);
+  delete_matrix(xxDISTx); */
+  zero(K, n2, n1);  /* MODIFIED */
 }
 
+
+
+/*
+ * invert:
+ *
+ * invert the covariance matrix K,
+ * put the inverse in Ki, and use Kchol
+ * as the work matrix
+ */
+
+void Twovar::Invert(unsigned int n)  /* MODIFIED */
+{
+  if(! linear) {
+    assert(n == this->n);
+    // inverse_chol(K, Ki, Kchol, n);
+    id(Ki, n);
+    for(unsigned i=n/2; i<n; i++) Ki[i][i] = 1.0 / K[i][i];
+    // log_det_K = log_determinant_chol(Kchol, n);
+    log_det_K = (n/2) * log(1.0) + (n/2) * log(1.0 + nug);
+  }
+  else {
+    assert(n > 0);
+    // log_det_K = n * log(1.0 + nug);
+    log_det_K = (n/2) * log(1.0) + (n/2) * log(1.0 + nug);
+  }
+}
 
 /*
  * Draw:
@@ -256,7 +291,7 @@ void Exp::Update(unsigned int n1, unsigned int n2, double **K, double **X, doubl
  * has changed; otherwise returns false
  */
 
-int Exp::Draw(unsigned int n, double **F, double **X, double *Z, 
+int Twovar::Draw(unsigned int n, double **F, double **X, double *Z, 
 	      double *lambda, double **bmu, double **Vb, double tau2, 
 	      double itemp, void *state)
 {
@@ -264,6 +299,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   bool lin_new;
   double q_fwd , q_bak, d_new;
 
+#ifdef MODIFIED
   /* sometimes skip this Draw for linear models for speed,
    and only draw the nugget */
   if(linear && runi(state) > 0.5) 
@@ -294,7 +330,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   /* d; rebuilding K, Ki, and marginal params, if necessary */
   if(prior->Linear()) { d_new = d; success = 1; }
   else {
-    Exp_Prior* ep = (Exp_Prior*) prior;
+    Twovar_Prior* ep = (Twovar_Prior*) prior;
     Gp_Prior *gp_prior = (Gp_Prior*) base_prior;
 
     success = 
@@ -315,7 +351,7 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
   
   /* abort if we have had too many rejections */
   if(dreject >= REJECTMAX) return -2;
-
+#endif
   /* draw nugget */
   bool changed = DrawNugs(n, X, F, Z, lambda, bmu, Vb, tau2, itemp, state);
   success = success || changed;
@@ -332,9 +368,9 @@ int Exp::Draw(unsigned int n, double **F, double **X, double *Z,
  * and choose one for "this" correlation function
  */
 
-void Exp::Combine(Corr *c1, Corr *c2, void *state)
+void Twovar::Combine(Corr *c1, Corr *c2, void *state)
 {
-  get_delta_d((Exp*)c1, (Exp*)c2, state);
+  get_delta_d((Twovar*)c1, (Twovar*)c2, state);
   CombineNug(c1, c2, state);
 }
 
@@ -347,9 +383,9 @@ void Exp::Combine(Corr *c1, Corr *c2, void *state)
  * for two (new) correlation functions
  */
 
-void Exp::Split(Corr *c1, Corr *c2, void *state)
+void Twovar::Split(Corr *c1, Corr *c2, void *state)
 {
-  propose_new_d((Exp*) c1, (Exp*) c2, state);
+  propose_new_d((Twovar*) c1, (Twovar*) c2, state);
   SplitNug(c1, c2, state);
 }
 
@@ -360,7 +396,7 @@ void Exp::Split(Corr *c1, Corr *c2, void *state)
  * compute d from two ds (used in prune)
  */
 
-void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
+void Twovar::get_delta_d(Twovar* c1, Twovar* c2, void *state)
 {
   double dch[2];
   int ii[2];
@@ -379,11 +415,11 @@ void Exp::get_delta_d(Exp* c1, Exp* c2, void *state)
  * new children partitions. 
  */
 
-void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
+void Twovar::propose_new_d(Twovar* c1, Twovar* c2, void *state)
 {
   int i[2];
   double dnew[2];
-  Exp_Prior *ep = (Exp_Prior*) prior;
+  Twovar_Prior *ep = (Twovar_Prior*) prior;
   propose_indices(i, 0.5, state);
   dnew[i[0]] = d;
   if(prior->Linear()) dnew[i[1]] = d;
@@ -402,7 +438,7 @@ void Exp::propose_new_d(Exp* c1, Exp* c2, void *state)
  * of the (parameters of) correlation function
  */
 
-char* Exp::State(unsigned int which)
+char* Twovar::State(unsigned int which)
 {
   char buffer[BUFFMAX];
 #ifdef PRINTNUG
@@ -433,7 +469,7 @@ char* Exp::State(unsigned int which)
  * return 1 if linear, 0 otherwise
  */
 
-unsigned int Exp::sum_b(void)
+unsigned int Twovar::sum_b(void)
 {
   if(linear) return 1;
   else return 0;
@@ -447,7 +483,7 @@ unsigned int Exp::sum_b(void)
  * make not linear
  */
 
-void Exp::ToggleLinear(void)
+void Twovar::ToggleLinear(void)
 {
   if(linear) {
     linear = false;
@@ -463,7 +499,7 @@ void Exp::ToggleLinear(void)
  * return the range parameter
  */
 
-double Exp::D(void)
+double Twovar::D(void)
 {
   return d;
 }
@@ -476,10 +512,11 @@ double Exp::D(void)
  * the correlation function (e.g. d and nug)
  */
 
-double Exp::log_Prior(void)
+double Twovar::log_Prior(void)
 {
-  double prob = ((Corr*)this)->log_NugPrior();
-  prob += ((Exp_Prior*) prior)->log_Prior(d, linear);
+  /* double prob = ((Corr*)this)->log_NugPrior();  MODIFIED */
+  double prob = ((Twovar_Prior*) prior)->log_NugPrior(nug);
+  prob += ((Twovar_Prior*) prior)->log_Prior(d, linear);
   return prob;
 }
 
@@ -488,10 +525,10 @@ double Exp::log_Prior(void)
 /* 
  * TraceNames:
  *
- * return the names of the parameters recorded in Exp::Trace()
+ * return the names of the parameters recorded in Twovar::Trace()
  */
 
-char** Exp::TraceNames(unsigned int* len)
+char** Twovar::TraceNames(unsigned int* len)
 {
   *len = 4;
   char **trace = (char**) malloc(sizeof(char*) * (*len));
@@ -513,7 +550,7 @@ char** Exp::TraceNames(unsigned int* len)
  * to this correlation function: nug, d, then linear
  */
 
-double* Exp::Trace(unsigned int* len)
+double* Twovar::Trace(unsigned int* len)
 {
   *len = 4;
   double *trace = new_vector(*len);
@@ -527,20 +564,6 @@ double* Exp::Trace(unsigned int* len)
   return trace;
 }
 
-void Exp::Invert(unsigned int n)
-{
-
-  if(! linear) {
-    assert(n == this->n);
-    inverse_chol(K, Ki, Kchol, n);
-    log_det_K = log_determinant_chol(Kchol, n);
-  }
-  else {
-    assert(n > 0);
-    log_det_K = n * log(1.0 + nug);
-  }
-}
-
 
 /*
  * newCorr:
@@ -549,20 +572,20 @@ void Exp::Invert(unsigned int n)
  * function with this module governing its prior parameterization
  */
 
-Corr* Exp_Prior::newCorr(void)
+Corr* Twovar_Prior::newCorr(void)
 {
-  return new Exp(dim, base_prior);
+  return new Twovar(dim, base_prior);
 }
 
 
 /*
- * Exp_Prior:
+ * Twovar_Prior:
  * 
  * constructor for the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(unsigned int dim) : Corr_Prior(dim)
+Twovar_Prior::Twovar_Prior(unsigned int dim) : Corr_Prior(dim)
 {
   corr_model = EXP;
 
@@ -580,7 +603,7 @@ Exp_Prior::Exp_Prior(unsigned int dim) : Corr_Prior(dim)
  *
  */
 
-void Exp_Prior::Init(double *dhier)
+void Twovar_Prior::Init(double *dhier)
 {
   d_alpha[0] = dhier[0];
   d_beta[0] = dhier[1];
@@ -597,22 +620,22 @@ void Exp_Prior::Init(double *dhier)
  * power family
  */
 
-Corr_Prior* Exp_Prior::Dup(void)
+Corr_Prior* Twovar_Prior::Dup(void)
 {
-  return new Exp_Prior(this);
+  return new Twovar_Prior(this);
 }
 
 
 /*
- * Exp_Prior (new duplicate)
+ * Twovar_Prior (new duplicate)
  *
  * duplicating constructor for the prior distribution for 
  * the exponential correlation function
  */
 
-Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
+Twovar_Prior::Twovar_Prior(Corr_Prior *c) : Corr_Prior(c)
 {
-  Exp_Prior *e = (Exp_Prior*) c;
+  Twovar_Prior *e = (Twovar_Prior*) c;
   assert(e->corr_model == EXP);
   corr_model = e->corr_model;
   dupv(gamlin, e->gamlin, 3);
@@ -625,13 +648,13 @@ Exp_Prior::Exp_Prior(Corr_Prior *c) : Corr_Prior(c)
 }
 
 /*
- * ~Exp_Prior:
+ * ~Twovar_Prior:
  *
  * destructor the the prior distribution for
  * the exponential correlation function
  */
 
-Exp_Prior::~Exp_Prior(void)
+Twovar_Prior::~Twovar_Prior(void)
 {
 }
 
@@ -643,7 +666,7 @@ Exp_Prior::~Exp_Prior(void)
  * passed in from R
  */
 
-void Exp_Prior::read_double(double *dparams)
+void Twovar_Prior::read_double(double *dparams)
 {
   /* read the parameters that have to do with the
    * nugget first */
@@ -678,7 +701,7 @@ void Exp_Prior::read_double(double *dparams)
  * read prior parameterization from a control file
  */
 
-void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
+void Twovar_Prior::read_ctrlfile(ifstream *ctrlfile)
 {
   char line[BUFFMAX], line_copy[BUFFMAX];
   
@@ -714,7 +737,7 @@ void Exp_Prior::read_ctrlfile(ifstream *ctrlfile)
  * to default values
  */
 
-void Exp_Prior::default_d_priors(void)
+void Twovar_Prior::default_d_priors(void)
 {
   d_alpha[0] = 1.0;
   d_beta[0] = 20.0;
@@ -730,7 +753,7 @@ void Exp_Prior::default_d_priors(void)
  * to default values
  */
 
-void Exp_Prior::default_d_lambdas(void)
+void Twovar_Prior::default_d_lambdas(void)
 {
   d_alpha_lambda[0] = 1.0;
   d_beta_lambda[0] = 10.0;
@@ -748,7 +771,7 @@ void Exp_Prior::default_d_lambdas(void)
  * for the exponential correllation function 
  */
 
-double Exp_Prior::D(void)
+double Twovar_Prior::D(void)
 {
   return d;
 }
@@ -761,7 +784,7 @@ double Exp_Prior::D(void)
  * distribution prior for the range parameter
  */
 
-double* Exp_Prior::DAlpha(void)
+double* Twovar_Prior::DAlpha(void)
 {
   return d_alpha;
 }
@@ -774,7 +797,7 @@ double* Exp_Prior::DAlpha(void)
  * distribution prior for the range parameter
  */
 
-double* Exp_Prior::DBeta(void)
+double* Twovar_Prior::DBeta(void)
 {
   return d_beta;
 }
@@ -783,16 +806,16 @@ double* Exp_Prior::DBeta(void)
 /*
  * Draw:
  * 
- * draws for the hierarchical priors for the Exp
+ * draws for the hierarchical priors for the Twovar
  * correlation function which are
  * contained in the params module
  */
 
-void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
+void Twovar_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
 {
   if(!fix_d) {
     double *d = new_vector(howmany);
-    for(unsigned int i=0; i<howmany; i++) d[i] = ((Exp*)(corr[i]))->D();
+    for(unsigned int i=0; i<howmany; i++) d[i] = ((Twovar*)(corr[i]))->D();
     mixture_priors_draw(d_alpha, d_beta, d, howmany, d_alpha_lambda, 
 			d_beta_lambda, state);
     free(d);
@@ -812,7 +835,7 @@ void Exp_Prior::Draw(Corr **corr, unsigned int howmany, void *state)
  * log_HierPrior, below
  */
 
-double Exp_Prior::log_Prior(double d, bool linear)
+double Twovar_Prior::log_Prior(double d, bool linear)
 {
   double prob = 0;
 
@@ -832,13 +855,28 @@ double Exp_Prior::log_Prior(double d, bool linear)
   return prob;
 }
 
+
+/*
+ * log_Prior:
+ * 
+ * compute the (log) prior for the parameters to
+ * the correlation function (nug) : does
+ * not include priors of hierarchical params.  See
+ * log_HierPrior, below
+ */
+
+double Twovar_Prior::log_NugPrior(double nug)
+{
+  return ((Corr_Prior*)this)->log_NugPrior(nug + 1.0 + NUGMIN);
+}
+
 /* 
  * BasePrior:
  *
  * return the prior for the Base (eg Gp) model
  */
 
-Base_Prior* Exp_Prior::BasePrior(void)
+Base_Prior* Twovar_Prior::BasePrior(void)
 {
   return base_prior;
 }
@@ -850,7 +888,7 @@ Base_Prior* Exp_Prior::BasePrior(void)
  * set the base_prior field
  */
 
-void Exp_Prior::SetBasePrior(Base_Prior *base_prior)
+void Twovar_Prior::SetBasePrior(Base_Prior *base_prior)
 {
   this->base_prior = base_prior;
 }
@@ -862,7 +900,7 @@ void Exp_Prior::SetBasePrior(Base_Prior *base_prior)
  * to a file 
  */
 
-void Exp_Prior::Print(FILE *outfile)
+void Twovar_Prior::Print(FILE *outfile)
 {
   MYprintf(MYstdout, "corr prior: isotropic power\n");
 
@@ -893,7 +931,7 @@ void Exp_Prior::Print(FILE *outfile)
  * to the correllation parameters (i.e., range and nugget)
  */
 
-double Exp_Prior::log_HierPrior(void)
+double Twovar_Prior::log_HierPrior(void)
 {
   double lpdf;
   lpdf = 0.0;
@@ -918,7 +956,7 @@ double Exp_Prior::log_HierPrior(void)
  * nug(alpha,beta), d(alpha,beta), then linear
  */
 
-double* Exp_Prior::Trace(unsigned int* len)
+double* Twovar_Prior::Trace(unsigned int* len)
 {
   /* first get the hierarchical nug parameters */
   unsigned int clen;
@@ -946,10 +984,10 @@ double* Exp_Prior::Trace(unsigned int* len)
 /* 
  * TraceNames:
  *
- * return the names of the traces recorded in Exp_Prior::Trace()
+ * return the names of the traces recorded in Twovar_Prior::Trace()
  */
 
-char** Exp_Prior::TraceNames(unsigned int* len)
+char** Twovar_Prior::TraceNames(unsigned int* len)
 {
   /* first get the hierarchical nug parameters */
   unsigned int clen;

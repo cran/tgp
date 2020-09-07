@@ -34,7 +34,8 @@
 
 "tgp.default.params" <-
 function(d, meanfn=c("linear", "constant") ,
-         corr=c("expsep", "exp", "mrexpsep", "matern", "sim"), splitmin=1, basemax=d, ...)
+         corr=c("expsep", "exp", "mrexpsep", "matern", "sim", "twovar"), 
+         splitmin=1, basemax=d, ...)
 {
   ## check the d argument, other check in tgp.check.params
   if(length(d) != 1)
@@ -248,6 +249,7 @@ function(params, d)
   else if(params$corr == "matern") { p <- c(p, 2); }
   else if(params$corr == "mrexpsep") { p <- c(p,3) }
   else if(params$corr == "sim") { p <- c(p,4) }
+  else if(params$corr == "twovar") { p <- c(p,5) }
   else { stop(paste("params$corr =", params$corr, "not valid\n")); }
  
   ## initial settings of variance parameters

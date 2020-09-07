@@ -337,40 +337,45 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
 }
 
 \references{
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling, 
+Design and Optimization for the Applied Sciences}. Boca Raton, 
+Florida: Chapman Hall/CRC.  (See Chapter 9.)
+\url{https://bobby.gramacy.com/surrogates/}
+
+Gramacy, R. B. (2008). \emph{\pkg{tgp}: An \R Package for
 Bayesian Nonstationary, Semiparametric Nonlinear Regression
 and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+\url{https://www.jstatsoft.org/v19/i09}
 
 Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
 Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
 Version 2, an \R Package for Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{33}(6), 1--48.
-\url{http://www.jstatsoft.org/v33/i06/}.
+\url{https://www.jstatsoft.org/v33/i06/}.
 
 Gramacy, R. B., Lee, H. K. H. (2007).
 \emph{Bayesian treed Gaussian process models with an application
-  to computer modeling}
-Journal of the American Statistical Association, to appear.
-Also available as ArXiv article 0710.4536 
-\url{http://arxiv.org/abs/0710.4536}
+  to computer modeling}. Journal of the American Statistical Association, 
+103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
+\url{https://arxiv.org/abs/0710.4536}
 
 Gramacy, R. B. and Lee, K.H. (2008). \emph{Gaussian Processes and
   Limiting Linear Models.}
 Computational Statistics and Data Analysis, 53, pp. 123-136.
 Also available as ArXiv article 0804.4685
-\url{http://arxiv.org/abs/0804.4685}
+\url{https://arxiv.org/abs/0804.4685}
 
 Gramacy, R. B., Lee, H. K. H. (2009).
 \emph{Adaptive design and analysis of supercomputer experiments.}
-Technometrics, to appear. Also avaliable on ArXiv article 0805.4359
-\url{http://arxiv.org/abs/0805.4359}
+Technometrics, 51(2), pp. 130-145. 
+Also avaliable on ArXiv article 0805.4359
+\url{https://arxiv.org/abs/0805.4359}
 
 Robert B. Gramacy, Heng Lian (2011).
 \emph{Gaussian process single-index models as emulators for computer
   experiments}.  Available as ArXiv article 1009.4241
-\url{http://arxiv.org/abs/1009.4241}
+\url{https://arxiv.org/abs/1009.4241}
 
 Chipman, H., George, E., \& McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
@@ -387,12 +392,12 @@ M. Schonlau and Jones, D.R. and Welch, W.J. (1998).
 In "New Developments and applications in experimental design", 
 IMS Lecture Notes - Monograph Series 34.  11--25.
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{ Inputs \code{X, XX, Z} containing \code{NaN, NA}, or \code{Inf} are
@@ -438,6 +443,7 @@ directory can clobber the trace files of other sessions
   \code{\link{predict.tgp}}, \code{\link{sens}}, \code{\link{default.itemps}}}
 
 \examples{
+\donttest{
 ##
 ## Many of the examples below illustrate the above 
 ## function(s) on random data.  Thus it can be fun
@@ -496,7 +502,6 @@ out <- btgpllm(X=X, Z=Z, XX=XX, corr="exp")
 plot(out) 			# plot the surface
 tgp.trees(out) 		 	# plot the MAP trees
 
-
 #
 # Motorcycle Accident Data
 #
@@ -515,6 +520,7 @@ plot(out)			# plot the surface
 out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0")
 plot(out)			# plot the surface
 tgp.trees(out)		 	# plot the MAP trees
+}
 }
 \keyword{ nonparametric }
 \keyword{ nonlinear }

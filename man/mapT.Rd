@@ -49,12 +49,12 @@ mapT(out, proj = NULL, slice = NULL, add = FALSE, lwd = 2, ...)
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \references{
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \note{

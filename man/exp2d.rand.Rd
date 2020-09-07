@@ -70,22 +70,24 @@
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \references{
-Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.}
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian 
+Nonstationary, Semiparametric Nonlinear Regression and Design by 
+Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+\url{https://www.jstatsoft.org/v19/i09}
 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
+Gramacy, R. B., Lee, H. K. H. (2008).
+\emph{Bayesian treed Gaussian process models with an application
+  to computer modeling}. Journal of the American Statistical Association, 
+103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
+\url{https://arxiv.org/abs/0710.4536}
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \seealso{\code{\link{lhs}}, \code{\link{exp2d}}, \code{\link{exp2d.Z}},

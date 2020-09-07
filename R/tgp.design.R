@@ -82,9 +82,9 @@ function(X, tree, i)
   r <- (1:nrow(tree))[tree$rows == 2*tree$rows[i]+1]
   
   ## recurse on left and right subtrees
-  if(length(leq) > 0) Xl <- tgp.partition(as.matrix(X[leq,]), tree, l)
+  if(length(leq) > 0) Xl <- tgp.partition(as.matrix(X[leq,,drop=FALSE]), tree, l)
   else Xl <- NULL
-  if(length(gt) > 0) Xr <- tgp.partition(as.matrix(X[gt,]), tree, r)
+  if(length(gt) > 0) Xr <- tgp.partition(as.matrix(X[gt,,drop=FALSE]), tree, r)
   else Xr <- NULL
 
   return(c(Xl,Xr))

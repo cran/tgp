@@ -26,6 +26,7 @@
 #define __ALL_DRAWS_H__ 
 
 #define ALPHAMIN 0.1
+#define NUGMIN 1e-10
 
 unsigned int beta_draw_margin(double *b, unsigned int col, double **Vb, double *bmu, 
 			      double s2, void *state);
@@ -97,6 +98,13 @@ int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlas
 			 double a0, double g0, int lin, double itemp,
 			 void *state);
 double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, double **F, 
+		       double *Z, double **K, double log_det_K, double lambda, 
+		       double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
+		       double *log_det_K_new, double *lambda_new, double **VB_new, 
+		       double *bmu_new, double *b0, double **Ti, double **T, double tau2, 
+		       double *nug_alpha, double *nug_beta, double a0, double g0, 
+		       int linear, double itemp, void *state);
+double nug_draw_twovar(unsigned int n, unsigned int col, double nuglast, double **F, 
 		       double *Z, double **K, double log_det_K, double lambda, 
 		       double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
 		       double *log_det_K_new, double *lambda_new, double **VB_new, 

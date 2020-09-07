@@ -8,13 +8,13 @@ citEntry(entry = "Article",
   volume       = "19",
   number       = "9",
   pages        = "1--46",
-  url          = "http://www.jstatsoft.org/v19/i09/",
+  url          = "https://www.jstatsoft.org/v19/i09/",
 
   textVersion  =
   paste("Robert B. Gramacy (2007).",
         "tgp: An R Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models.",
         "Journal of Statistical Software, 19(9), 1-46.",
-        "URL http://www.jstatsoft.org/v19/i09/.")
+        "URL https://www.jstatsoft.org/v19/i09/.")
 )
 
 citEntry(entry = "Article",
@@ -26,11 +26,11 @@ citEntry(entry = "Article",
   volume       = "33",
   number       = "6",
   pages        = "1--48",
-  url          = "http://www.jstatsoft.org/v33/i06/",
+  url          = "https://www.jstatsoft.org/v33/i06/",
 
   textVersion  =
   paste("Robert B. Gramacy, Matthew Taddy (2010).",
         "Categorical Inputs, Sensitivity Analysis, Optimization and Importance Tempering with tgp Version 2, an R Package for Treed Gaussian Process Models.",
         "Journal of Statistical Software, 33(6), 1-48.",
-        "URL http://www.jstatsoft.org/v33/i06/.")
+        "URL https://www.jstatsoft.org/v33/i06/.")
 )

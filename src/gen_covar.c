@@ -74,8 +74,8 @@ double pwr;
 
       /* add in the same for the rest of the dimensions */
       for(k=1; k<m; k++) {
-	diff  = X[i][k] - X[j][k];
-	DIST[j][i] += diff * diff;
+	      diff  = X[i][k] - X[j][k];
+	      DIST[j][i] += diff * diff;
       }
       
       /* make pwr 1 if pwr is not 2 */
@@ -121,8 +121,8 @@ double pwr;
       
       /* add in the same for the rest of the dimensions */
       for(k=1; k<m; k++) {
-	diff = X1[i][k] - X2[j][k];
-	DIST[j][i] += diff * diff;
+	      diff = X1[i][k] - X2[j][k];
+	      DIST[j][i] += diff * diff;
       }    
 
       /* make pwr 1 if pwr is not 2 */
@@ -168,17 +168,17 @@ double pwr, nug;
       /* d=0 contributes zero, not infinity */
       if(d[0] == 0.0) K[j][i] = 0.0;
       else {
-	diff = X[i][0] - X[j][0];
+	      diff = X[i][0] - X[j][0];
 	
-	/* automatically use squared distance */
-	K[j][i] = diff*diff/d[0];
+	      /* automatically use squared distance */
+	      K[j][i] = diff*diff/d[0];
       }
 
       /* do the same for the rest of the dimensions */
       for(k=1; k<m; k++) {
-	if(d[k] == 0.0) continue;
-	diff = X[i][k] - X[j][k];
-	K[j][i] += diff*diff/d[k];
+	      if(d[k] == 0.0) continue;
+	      diff = X[i][k] - X[j][k];
+	      K[j][i] += diff*diff/d[k];
       }
 
       /* go from log space to regular space */

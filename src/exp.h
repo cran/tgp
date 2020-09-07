@@ -69,6 +69,7 @@ class Exp : public Corr
   virtual void Init(double *dexp);
   virtual double* Jitter(unsigned int n1, double **X);
   virtual double* CorrDiag(unsigned int n1, double **X);
+  virtual void Invert(unsigned int n);
 
   void get_delta_d(Exp* c1, Exp* c2, void *state);
   void propose_new_d(Exp* c1, Exp* c2, void *state);

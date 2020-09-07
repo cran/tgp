@@ -54,14 +54,19 @@ dopt.gp(nn, X=NULL, Xcand, iter=5000, verb=0)
 }
 
 \references{
+  Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling, 
+  Design and Optimization for the Applied Sciences}. Boca Raton, 
+  Florida: Chapman Hall/CRC.  (See Chapter 6.)
+  \url{https://bobby.gramacy.com/surrogates/}
+
   Chaloner, K. and Verdinelli, I. (1995).
   \emph{Bayesian experimental design: A review.}
   Statist. Sci., 10, (pp. 273--304).
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{

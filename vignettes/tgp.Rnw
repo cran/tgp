@@ -14,7 +14,7 @@
 
 %\VignetteIndexEntry{a guide to the tgp package}
 %\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree}
+%\VignetteDepends{tgp,maptree,MASS}
 %\VignettePackage{tgp}
 
 \begin{document}
@@ -32,9 +32,9 @@ options(width=65)
   nonstationary,\\ semiparametric nonlinear regression and design
   by treed Gaussian process models}
 \author{Robert B. Gramacy\\
-  Booth School of Business\\
-  The University of Chicago\\
-  rbgramacy@chicagobooth.edu}
+  Department of Statistics\\
+  Virginia Tech\\  
+  rbg@vt.edu}
 \maketitle
 
 \begin{abstract}
@@ -85,7 +85,51 @@ support for {\tt Pthreads} parallelization, the gathering of parameter
 traces, the verbosity of screen output, and some miscellaneous details
 of implementation.
 
-\input{motivate}
+\subsection*{Motivation}
+
+Consider as motivation the Motorcycle Accident Dataset
+\cite{silv:1985}.  It is a classic data set used in recent literature
+\cite{rasm:ghah:nips:2002} to demonstrate the success of nonstationary
+regression models.  The data consists of measurements of the
+acceleration of the head of a motorcycle rider as a function of time
+in the first moments after an impact.  Many authors have commented on
+the existence of two---perhaps three---regimes in the data over time
+where the characteristics of the mean process and noise level change
+(i.e., a nonstationarity and heteroskedasticity, respectively).  It
+can be interesting to see how various candidate models handle this
+nuance.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[trim=0 25 0 0]{motovate_bgp}
+\includegraphics[trim=0 25 0 0]{motovate_btgp}
+\caption{Fit of the Motorcycle Accident Dataset using a GP ({\em top})
+  and treed GP model ({\em bottom}).  The $x$-axis is time in
+  milliseconds after an impact; the $y$--axis is acceleration of the
+  helmet of a motorcycle rider measured in ``$g$'s'' in a simulated
+  impact.}
+\label{f:motivate}
+\end{figure}
+
+Figure \ref{f:motivate} shows a fit of this data using a standard
+(stationary) Gaussian process (GP; {\em left}), and the treed GP model
+({\em right}).\footnote{Note that these plots are {\em static}, i.e.,
+  they were not generated in--line with {\tt R} code.  See Section
+  \ref{sec:moto} for {\em dynamic} versions.}  Notice how stationary
+GP model is unable to capture the smoothness in the linear section(s),
+nor the decreased noise level.  We say that the standard GP model is
+stationary because it has a single fixed parameterization throughout
+the input space.  An additive model would be inappropriate for similar
+reasons.  In contrast, the treed GP model is able to model the first
+linear part, the noisy ``whiplash'' middle section, and the smooth
+(possibly linear) final part with higher noise level, thus exhibiting
+nonstationary modeling behavior and demonstrating an ability to cope
+with heteroskedasticity.
+
+The remainder of this paper describes the treed GP model in detail,
+and provides illustrations though example.  There are many special
+cases of the treed GP model, e.g., the linear model (LM), treed LM,
+stationary GP, etc.. These are outlined and demonstrated as well.
 
 \section{What is implemented?}
 \label{sec:implement}
@@ -919,12 +963,809 @@ applications to the Boston housing data \cite{harrison:78,
 launch vehicle \cite{glm:04,gra:lee:2009} called the Langely
 glide-back booster (LGBB).
 
-\SweaveInput{linear.iRnw}
-\SweaveInput{sin.iRnw}
-\SweaveInput{exp.iRnw}
-\SweaveInput{moto.iRnw}
-\SweaveInput{fried.iRnw}
-\SweaveInput{as.iRnw}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+\subsection{1-d Linear data}
+\label{sec:ex:1dlinear}
+
+Consider data sampled from a linear model.
+\begin{equation} 
+z_i = 1 + 2x_i + \epsilon_, \;\;\;\;\; \mbox{where} \;\;\;
+\epsilon_i \stackrel{\mbox{\tiny iid}}{\sim} N(0,0.25^2) 
+\label{eq:linear:sim}
+\end{equation} 
+
+The following {\sf R} code takes a sample $\{\mb{X}, \mb{Z}\}$ of size
+$N=50$ from (\ref{eq:linear:sim}).  It also chooses $N'=99$ evenly spaced
+predictive locations $\tilde{\mb{X}} = \mbox{\tt XX}$.
+<<>>=
+# 1-d linear data input and predictive data
+X <- seq(0,1,length=50)  # inputs
+XX <- seq(0,1,length=99) # predictive locations
+Z <- 1 + 2*X + rnorm(length(X),sd=0.25) # responses
+@ 
+
+Using {\tt tgp} on this data with a Bayesian
+hierarchical linear model goes as follows:
+<<>>=
+lin.blm <- blm(X=X, XX=XX, Z=Z)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=linear-blm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
+plot(lin.blm, main='Linear Model,', layout='surf')
+abline(1,2,lty=3,col='blue')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-linear-blm}
+%\vspace{-0.5cm}
+\caption{Posterior predictive distribution using {\tt blm} on
+  synthetic linear data: mean and 90\% credible interval.  The actual
+  generating lines are shown as blue-dotted.}
+\label{f:lin:blm}
+\end{figure}
+
+MCMC progress indicators are echoed every 1,000 rounds.  The linear
+model is indicated by {\tt d=[0]}.  For {\tt btlm} the MCMC progress
+indicators are boring, but we will see more interesting ones later.
+In terminal versions, e.g. {\tt Unix}, the progress indicators can
+give a sense of when the code will finish.  GUI versions of {\tt
+  R}---{\tt Windows} or {\tt MacOS X}---can buffer {\tt stdout},
+rendering this feature essentially useless as a real--time indicator of
+progress.  Progress indicators can be turned off by providing the
+argument {\tt verb=0}.  Further explanation on the verbosity of screen
+output and interpretations is provided in Appendix \ref{sec:progress}.
+
+The generic {\tt plot} method can be used to visualize the fitted
+posterior predictive surface (with option {\tt layout = 'surf'}) 
+in terms of means and credible intervals.
+Figure \ref{f:lin:blm} shows how to do it, and what you get.  
+The default option {\tt layout = 'both'} shows both a predictive
+surface and error (or uncertainty) plot, side by side.
+The error plot can be obtained alone via {\tt layout = 'as'}.
+Examples of these layouts appear later.
+
+If, say, you were unsure about the dubious ``linearness'' of this
+data, you might try a GP LLM (using {\tt bgpllm}) and let a more
+flexible model speak as to the linearity of the process.
+<<>>=
+lin.gpllm <- bgpllm(X=X, XX=XX, Z=Z)
+@
+\begin{figure}[ht!]
+\centering
+<<label=linear-gplm,fig=TRUE,echo=TRUE,width=7,height=4.5,include=FALSE>>=
+plot(lin.gpllm, main='GP LLM,', layout='surf')
+abline(1,2,lty=4,col='blue')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-linear-gplm}
+%\vspace{-0.5cm}
+\caption{Posterior predictive distribution using {\tt
+    bgpllm} on synthetic linear data: mean and 90\% credible interval.
+  The actual generating lines are shown as blue-dotted.}
+\label{f:lin:gpllm}
+\end{figure}
+Whenever the progress indicators show {\tt d=[0]} the process is
+under the LLM in that round, and the GP otherwise.  A plot of the
+resulting surface is shown in Figure \ref{f:lin:gpllm} for comparison.
+Since the data is linear, the resulting predictive surfaces should
+look strikingly similar to one another.  On occasion, the GP LLM may
+find some ``bendyness'' in the surface.  This happens rarely with samples
+as large as $N=50$, but is quite a bit more common for $N<20$.
+
+To see the proportion of time the Markov chain spent in the LLM
+requires the gathering of traces (Appendix \ref{sec:traces}).  For
+example
+<<>>=
+lin.gpllm.tr <- bgpllm(X=X, XX=0.5, Z=Z, pred.n=FALSE, trace=TRUE,
+                       verb=0)
+mla <- mean(lin.gpllm.tr$trace$linarea$la)
+mla
+@ 
+shows that the average area under the LLM is \Sexpr{signif(mla,3)}.
+Progress indicators are suppressed with \verb!verb=0!.  Alternatively,
+the probability that input location {\tt xx} =
+\Sexpr{lin.gpllm.tr$XX[1,]} is under the LLM is given by
+<<>>=
+1-mean(lin.gpllm.tr$trace$XX[[1]]$b1)
+@ 
+This is the same value as the area under the LLM since the process
+is stationary (i.e., there is no treed partitioning).
+
+\subsection{1-d Synthetic Sine Data}
+\label{sec:sin}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+Consider 1-dimensional simulated data which is partly a mixture of
+sines and cosines, and partly linear.
+\begin{equation}
+    z(x) = \left\{ \begin{array}{cl}
+    \sin\left(\frac{\pi x}{5}\right)
+        + \frac{1}{5}\cos\left(\frac{4\pi x}{5}\right) & x < 9.6 \\
+  x/10-1 & \mbox{otherwise}
+   \end{array} \right. 
+   \label{e:sindata}
+\end{equation}
+
+The {\sf R} code below obtains $N=100$ evenly spaced samples from this
+data in the domain $[0,20]$, with noise added to keep things
+interesting.  Some evenly spaced predictive locations {\tt XX} are
+also created.
+<<>>=
+X <- seq(0,20,length=100)
+XX <- seq(0,20,length=99)
+Ztrue <- (sin(pi*X/5) + 0.2*cos(4*pi*X/5)) * (X <= 9.6)
+lin <- X>9.6; 
+Ztrue[lin] <- -1 + X[lin]/10
+Z <- Ztrue + rnorm(length(Ztrue), sd=0.1)
+@ 
+
+By design, the data is clearly nonstationary in its mean.  Perhaps not
+knowing this, a good first model choice for this data might be a GP.
+<<>>=
+sin.bgp <- bgp(X=X, Z=Z, XX=XX, verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=sin-bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(sin.bgp, main='GP,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-sin-bgp}
+%\vspace{-0.25cm}
+\caption{Posterior predictive distribution using {\tt
+    bgp} on synthetic sinusoidal data: mean and 90\% pointwise credible
+  interval.  The true mean is overlayed with a dashed line.}
+\label{f:sin:bgp}
+\end{figure}
+Figure \ref{f:sin:bgp} shows the resulting posterior predictive
+surface under the GP.  Notice how the (stationary) GP gets the
+wiggliness of the sinusoidal region, but fails to capture the
+smoothness of the linear region.  The true mean (\ref{e:sindata}) is
+overlayed with a dashed line.
+
+So one might consider a Bayesian treed linear model (LM) instead.
+<<>>=
+sin.btlm <- btlm(X=X, Z=Z, XX=XX)
+@
+MCMC progress indicators show successful {\em grow} and {\em prune}
+operations as they happen, and region sizes $n$ every 1,000 rounds.
+Specifying {\tt verb=3}, or higher will show echo more successful tree
+operations, i.e., {\em change}, {\em swap}, and {\em rotate}.
+ 
+\begin{figure}[ht!]
+\centering
+<<label=sin-btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(sin.btlm, main='treed LM,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-sin-btlm}
+%\vspace{-0.25cm}
+<<label=sin-btlmtrees,fig=TRUE,echo=TRUE,width=12,height=10>>=
+tgp.trees(sin.btlm)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\vspace{-1cm}
+\caption{{\em Top:} Posterior predictive distribution
+  using {\tt btlm} on synthetic sinusoidal data: mean and 90\%
+  pointwise credible interval, and MAP partition ($\hat{\mathcal{T}}$).
+  The true mean is overlayed with a dashed line. {\em
+    Bottom:} MAP trees for each height encountered in the Markov
+  chain showing $\hat{\sigma}^2$ and the number of observation $n$,
+  at each leaf.}
+\label{f:sin:btlm}
+\end{figure}
+Figure \ref{f:sin:btlm} shows the resulting posterior predictive
+surface ({\em top}) and trees ({\em bottom}).  The MAP partition
+($\hat{\mathcal{T}}$) is also drawn onto the surface plot ({\em top})
+in the form of vertical lines.  The treed LM captures the smoothness
+of the linear region just fine, but comes up short in the sinusoidal
+region---doing the best it can with piecewise linear models.
+
+The ideal model for this data is the Bayesian treed GP because it can
+be both smooth and wiggly.
+<<>>=
+sin.btgp <- btgp(X=X, Z=Z, XX=XX, verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=sin-btgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(sin.btgp, main='treed GP,', layout='surf')
+lines(X, Ztrue, col=4, lty=2, lwd=2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-sin-btgp}
+%\vspace{-1cm}
+\caption{Posterior predictive distribution
+  using {\tt btgp} on synthetic sinusoidal data: mean and 90\%
+  pointwise credible interval, and MAP partition ($\hat{\mathcal{T}}$)
+  \label{f:sin:btgp}.  The true mean is overlayed with a dashed line.}
+\end{figure}
+Figure \ref{f:sin:btgp} shows the resulting posterior predictive
+surface ({\em top}) and MAP $\hat{\mathcal{T}}$ with height=2.
+
+Finally, speedups can be obtained if the GP is allowed to jump to the
+LLM \cite{gra:lee:2008}, since half of the response surface is {\em
+  very} smooth, or linear.  This is not shown here since the results
+are very similar to those above, replacing {\tt btgp} with {\tt
+  btgpllm}.  Each of the models fit in this section is a special case
+of the treed GP LLM, so a model comparison is facilitated by fitting
+this more general model.  The example in the next subsection offers
+such a comparison for 2-d data.  A followup in Appendix
+\ref{sec:traces} shows how to use parameter traces to extract the
+posterior probability of linearity in regions of the input space.
+
+\subsection{Synthetic 2-d Exponential Data}
+\label{sec:exp}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+The next example involves a two-dimensional input space in $[-2,6]
+\times [-2,6]$.  The true response is given by
+\begin{equation} 
+z(\mb{x}) =  x_1
+\exp(-x_1^2 - x_2^2). \label{e:2dtoy} 
+\end{equation} 
+A small amount of Gaussian noise (with sd $=0.001$) is added.  Besides
+its dimensionality, a key difference between this data set and the
+last one is that it is not defined using step functions; this smooth
+function does not have any artificial breaks between regions.  The
+{\tt tgp} package provides a function for data subsampled from a grid
+of inputs and outputs described by (\ref{e:2dtoy}) which concentrates
+inputs ({\tt X}) more heavily in the first quadrant where the response
+is more interesting.  Predictive locations ({\tt XX}) are the remaining
+grid locations.
+<<>>=
+exp2d.data <- exp2d.rand()
+X <- exp2d.data$X; Z <- exp2d.data$Z
+XX <- exp2d.data$XX
+@ 
+
+The treed LM is clearly just as inappropriate for this data as it was
+for the sinusoidal data in the previous section.  However, a
+stationary GP fits this data just fine.  After all, the process is
+quite well behaved.  In two dimensions one has a choice between the
+isotropic and separable correlation functions.  Separable is the
+default in the {\tt tgp} package.  For illustrative purposes here, I
+shall use the isotropic power family.
+<<echo=TRUE,results=hide>>=
+exp.bgp <- bgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)   
+@
+\begin{figure}[ht!]
+\centering
+<<label=exp-bgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.bgp, main='GP,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-bgp}
+%\vspace{-0.5cm}
+\caption{{\em Left:} posterior predictive mean using
+  {\tt bgp} on synthetic exponential data; {\em right} image plot of
+  posterior predictive variance with data locations {\tt X} (dots) and
+  predictive locations {\tt XX} (circles).}
+\label{f:exp:bgp}
+\end{figure}
+Progress indicators are suppressed. Figure \ref{f:exp:bgp} shows the
+resulting posterior predictive surface under the GP in terms of means
+({\em left}) and variances ({\em right}) in the default
+layout.  The sampled locations ({\tt
+  X}) are shown as dots on the {\em right} image plot.  Predictive
+locations ({\tt XX}) are circles.  Predictive uncertainty for the
+stationary GP model is highest where sampling is lowest, despite that
+the process is very uninteresting there.  
+
+A treed GP seems more appropriate for this data. It can separate out
+the large uninteresting part of the input space from the interesting part.
+The result is speedier inference and region-specific estimates of
+predictive uncertainty.  
+<<echo=TRUE,results=hide>>=
+exp.btgp <- btgp(X=X, Z=Z, XX=XX, corr="exp", verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=exp-btgp,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgp, main='treed GP,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgp}
+%\vspace{-0.25cm}
+<<label=exp-btgptrees,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
+tgp.trees(exp.btgp)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=50 65 50 10]{tgp-exp-btgptrees}
+\vspace{-0.5cm}
+\caption{{\em Top-Left:} posterior predictive mean using
+  {\tt btgp} on synthetic exponential data; {\em top-right} image plot
+  of posterior predictive variance with data locations {\tt X} (dots)
+  and predictive locations {\tt XX} (circles).  {\tt Bottom:} MAP
+  trees of each height encountered in the Markov chain with
+  $\hat{\sigma}^2$ and the number of observations $n$ at the leaves.}
+\label{f:exp:btgp}
+\end{figure}
+Figure \ref{f:exp:btgp} shows the resulting posterior predictive
+surface ({\em top}) and trees ({\em bottom}).  Typical runs of the
+treed GP on this data find two, and if lucky three, partitions.  As
+might be expected, jumping to the LLM for the uninteresting,
+zero-response, part of the input space can yield even further speedups
+\cite{gra:lee:2008}. Also, Chipman et al.~recommend restarting 
+the Markov chain a few times in order to better explore the marginal
+posterior for $\mathcal{T}$ \cite{chip:geor:mccu:2002}.  This can be 
+important for higher dimensional inputs requiring deeper trees.
+The {\tt tgp} default is {\tt R = 1}, i.e., one chain with no
+restarts.  Here two chains---one restart---are obtained using {\tt
+  R = 2}.
+<<>>=
+exp.btgpllm <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", R=2)  
+@
+\begin{figure}[ht!]
+\centering
+<<label=exp-btgpllm,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-exp-btgpllm}
+%\vspace{-0.5cm}
+\caption{{\em Left:} posterior predictive mean using
+  {\tt btgpllm} on synthetic exponential data; {\em right} image plot
+  of posterior predictive variance with data locations {\tt X} (dots)
+  and predictive locations {\tt XX} (circles).}
+\label{f:exp:btgpllm}
+\end{figure}
+Progress indicators show where the LLM ({\tt corr=0($d$)}) or the GP
+is active.  Figure \ref{f:exp:btgpllm} shows how similar the resulting
+posterior predictive surfaces are compared to the treed GP (without
+LLM).  Appendix \ref{sec:traces} shows how parameter traces can be used
+to calculate the posterior probabilities of regional and
+location--specific linearity in this example.
+
+\begin{figure}[ht!]
+\centering
+<<label=exp-1dbtgpllm1,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(1))
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\vspace{-0.65cm}
+<<label=exp-1dbtgpllm2,fig=TRUE,echo=TRUE,width=12.5,height=7.5,include=FALSE>>=
+plot(exp.btgpllm, main='treed GP LLM,', proj=c(2))
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 10 0 25]{tgp-exp-1dbtgpllm1}
+\includegraphics[trim=0 25 0 10]{tgp-exp-1dbtgpllm2}
+%\vspace{-0.5cm}
+\caption{1-d projections of the posterior predictive surface ({\em left})
+and normed predictive intervals ({\em right}) of the 1-d tree GP LLM
+analysis of the synthetic exponential data.  The {\em top} plots show
+projection onto the first input, and the {\em bottom} ones show the
+second.}
+\label{f:exp:1dbtgpllm}
+\end{figure}
+
+Finally, viewing 1-d projections of {\tt tgp}-class output is possible
+by supplying a scalar {\tt proj} argument to the {\tt plot.tgp}.
+Figure \ref{f:exp:1dbtgpllm} shows the two projections for {\tt
+  exp.btgpllm}.  In the {\em left} surface plots the open circles
+indicate the mean of posterior predictive distribution.  Red lines
+show the 90\% intervals, the norm of which are shown on the {\em
+  right}.
+
+\subsection{Motorcycle Accident Data}
+\label{sec:moto}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+%\iffalse
+The Motorcycle Accident Dataset \cite{silv:1985} is a classic
+nonstationary data set used in recent literature
+\cite{rasm:ghah:nips:2002} to demonstrate the success of nonstationary
+models.  The data consists of measurements of the acceleration of the
+head of a motorcycle rider as a function of time in the first moments
+after an impact.  In addition to being nonstationary, the data has
+input--dependent noise (heteroskedasticity) which makes it useful for
+illustrating how the treed GP model handles this nuance.  There are at
+least two---perhaps three---three regions where the response exhibits
+different behavior both in terms of the correlation structure and
+noise level.
+
+The data is
+%\else 
+%In this section we return to the motivating Motorcycle Accident
+%Dataset~\cite{silv:1985}, which is  
+%\fi 
+included as part of the {\tt MASS} library in
+{\sf R}.
+<<>>= 
+library(MASS)
+X <- data.frame(times=mcycle[,1])
+Z <- data.frame(accel=mcycle[,2])
+@ 
+Figure \ref{f:moto:bgp} shows how a stationary GP is able to capture
+the nonlinearity in the response but fails to capture the input
+dependent noise and increased smoothness (perhaps linearity) in
+parts of the input space.
+<<echo=TRUE,results=hide>>=
+moto.bgp <- bgp(X=X, Z=Z, verb=0)
+@ 
+Progress indicators are suppressed.
+\begin{figure}[ht!]
+\centering
+<<label=moto-bgp,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(moto.bgp, main='GP,', layout='surf')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-moto-bgp}
+%\vspace{-0.5cm}
+\caption{Posterior predictive distribution using {\tt
+    bgp} on the motorcycle accident data: mean and 90\% credible
+  interval}
+\label{f:moto:bgp}
+\end{figure}
+
+A Bayesian Linear CART model is able to capture the input dependent
+noise but fails to capture the waviness of the
+``whiplash''---center--- segment of the response.
+<<echo=TRUE,results=hide>>=
+moto.btlm <- btlm(X=X, Z=Z, verb=0)
+@ 
+Figure \ref{f:moto:btlm} shows the resulting piecewise linear
+predictive surface and MAP partition ($\hat{\mathcal{T}}$).
+\begin{figure}[ht!]
+\centering
+<<label=moto-btlm,fig=TRUE,echo=TRUE,width=7,height=5,include=FALSE>>=
+plot(moto.btlm, main='Bayesian CART,', layout='surf')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 25 0 25]{tgp-moto-btlm}
+%\vspace{-0.5cm}
+\caption{Posterior predictive distribution using {\tt
+    btlm} on the motorcycle accident data: mean and 90\% credible
+  interval}
+\label{f:moto:btlm}
+\end{figure}
+
+A treed GP model seems appropriate because it can model input
+dependent smoothness {\em and} noise.  A treed GP LLM is probably
+most appropriate since the left-hand part of the input space is likely
+linear.  One might further hypothesize that the right--hand region is
+also linear, perhaps with the same mean as the left--hand region, only
+with higher noise.  The {\tt b*} functions can force
+an i.i.d.~hierarchical linear model by setting \verb!bprior="b0"!.
+<<echo=TRUE,results=hide>>=
+moto.btgpllm <- btgpllm(X=X, Z=Z, bprior="b0", verb=0)
+moto.btgpllm.p <- predict(moto.btgpllm) ## using MAP
+@ 
+The {\tt predict.tgp} function obtains posterior predictive estimates
+from the MAP parameterization (a.k.a., {\em kriging}).
+\begin{figure}[ht!]
+\centering
+<<label=moto-btgp,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='surf')
+plot(moto.btgpllm.p, center='km', layout='surf')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+
+\includegraphics[trim=50 25 50 20]{tgp-moto-btgp}
+
+<<label=moto-btgpq,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>=
+par(mfrow=c(1,2))
+plot(moto.btgpllm, main='treed GP LLM,', layout='as')
+plot(moto.btgpllm.p, as='ks2', layout='as')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+
+\includegraphics[trim=50 25 50 20]{tgp-moto-btgpq}
+
+%\vspace{-0.5cm}
+\caption{{\em Top}: Posterior predictive distribution
+  using treed GP LLM on the motorcycle accident data. The {\em
+    left}--hand panes how mean and 90\% credible interval; {\em
+    bottom}: Quantile-norm (90\%-5\%) showing input-dependent noise.
+    The {\em right}--hand panes show similar {\em kriging} surfaces
+  for the MAP parameterization.}
+\label{f:moto:tgp}
+\end{figure}
+The resulting posterior predictive surface is shown in the {\em
+  top--left} of Figure \ref{f:moto:tgp}.  The {\em bottom--left} of
+the figure shows the norm (difference) in predictive quantiles,
+clearly illustrating the treed GP's ability to capture input-specific
+noise in the posterior predictive distribution.  The {\em right}--hand
+side of the figure shows the MAP surfaces obtained from the output of
+the {\tt predict.tgp} function.
+
+The {\tt tgp}--default \verb!bprior="bflat"! implies an improper prior
+on the regression coefficients $\bm{\beta}$.  It essentially forces
+$\mb{W}=\mb{\infty}$, thus eliminating the need to specify priors on
+$\bm{\beta}_0$ and $\mb{W}^{-1}$ in (\ref{eq:model}).  This was chosen
+as the default because it works well in many examples, and leads to a
+simpler overall model and a faster implementation.  However, the
+Motorcycle data is an exception. Moreover, when the response data is
+very noisy (i.e., low signal--to--noise ratio), {\tt tgp} can be
+expected to partition heavily under the \verb!bprior="bflat"! prior.
+In such cases, one of the other proper priors like the full
+hierarchical \verb!bprior="b0"!  or \verb!bprior="bmzt"! might be preferred.
+
+An anonymous reviewer pointed out a shortcoming of the treed GP model
+on this data.  The sharp spike in predictive variance near the first
+regime shift suggests that the symmetric Gaussian noise model may be
+inappropriate.  A log Gaussian process might offer an improvement, at
+least locally.  Running the treed GP MCMC for longer will eventually
+result in the finding of a partition near time=17, just after the
+first regime change.  The variance is still poorly modeled in this
+region.  Since it is isolated by the tree it could potentially be fit
+with a different noise model.
+
+\subsection{Friedman data}
+\label{sec:fried}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+This Friedman data set is the first one of a suite that was used to
+illustrate MARS (Multivariate Adaptive Regression Splines)
+\cite{freid:1991}.  There are 10 covariates in the data ($\mb{x} =
+\{x_1,x_2,\dots,x_{10}\}$).  The function that describes the
+responses ($Z$), observed with standard Normal noise, has mean
+\begin{equation}
+E(Z|\mb{x}) = \mu = 10 \sin(\pi x_1 x_2) + 20(x_3 - 0.5)^2 + 10x_4 + 5 x_5,
+\label{eq:f1}
+\end{equation}
+but depends only on $\{x_1,\dots,x_5\}$, thus combining nonlinear, linear,
+and irrelevant effects.  Comparisons are made on this data to results
+provided for several other models in recent literature.  Chipman et
+al.~\cite{chip:geor:mccu:2002} used this data to compare
+their treed LM algorithm to four other methods of varying
+parameterization: linear regression, greedy tree, MARS, and neural
+networks.  The statistic they use for comparison is root mean-square
+error (RMSE)
+\begin{align*}
+\mbox{MSE} &= \textstyle \sum_{i=1}^n (\mu_i - \hat{z}_i)^2/n 
+& \mbox{RMSE} &= \sqrt{\mbox{MSE}}
+\end{align*}
+where $\hat{z}_i$ is the model--predicted response for input
+$\mb{x}_i$.  The $\mb{x}$'s are randomly distributed on the unit
+interval.
+
+Input data, responses, and predictive locations of size $N=200$ and
+$N'=1000$, respectively, can be obtained by a function included in the
+{\tt tgp} package.
+<<>>=
+f <- friedman.1.data(200)
+ff <- friedman.1.data(1000)
+X <- f[,1:10]; Z <- f$Y
+XX <- ff[,1:10]
+@ 
+This example compares Bayesian treed LMs with Bayesian GP LLM (not
+treed), following the RMSE experiments of Chipman et al.  It
+helps to scale the responses so that they have a mean of zero and a
+range of one.  First, fit the Bayesian treed LM, and obtain
+the RMSE.
+<<>>=
+fr.btlm <- btlm(X=X, Z=Z, XX=XX, tree=c(0.95,2), pred.n=FALSE, verb=0)
+fr.btlm.mse <- sqrt(mean((fr.btlm$ZZ.mean - ff$Ytrue)^2))
+fr.btlm.mse
+@ 
+Next, fit the GP LLM, and obtain its RMSE.
+<<>>=
+fr.bgpllm <- bgpllm(X=X, Z=Z, XX=XX, pred.n=FALSE, verb=0)
+fr.bgpllm.mse <- sqrt(mean((fr.bgpllm$ZZ.mean - ff$Ytrue)^2))
+fr.bgpllm.mse
+@ 
+So, the GP LLM is \Sexpr{signif(fr.btlm.mse/fr.bgpllm.mse,4)} times
+better than Bayesian treed LM on this data, in terms of RMSE (in
+terms of MSE the GP LLM is
+\Sexpr{signif(sqrt(fr.btlm.mse)/sqrt(fr.bgpllm.mse),4)} times better).
+
+Parameter traces need to be gathered in order to judge the ability
+of the GP LLM model to identify linear and irrelevant effects.
+<<>>=
+XX1 <- matrix(rep(0,10), nrow=1)
+fr.bgpllm.tr <- bgpllm(X=X, Z=Z, XX=XX1, pred.n=FALSE, trace=TRUE, 
+                       m0r1=FALSE, verb=0)
+@ 
+Here, \verb!m0r1 = FALSE! has been specified instead so that the
+$\bm{\beta}$ estimates provided below will be on the original 
+scale.\footnote{The default setting of {\tt m0r1 = TRUE} causes the 
+{\tt Z}--values to undergo pre-processing so that they have a mean of 
+zero and a range of one.  The default prior specification has been
+tuned so as to work well this range.} 
+A summary of the parameter traces show that the
+Markov chain had the following (average) configuration for the booleans.
+<<>>=
+trace <- fr.bgpllm.tr$trace$XX[[1]]
+apply(trace[,27:36], 2, mean)
+@ 
+Therefore the GP LLM model correctly identified that only the first three
+input variables interact only linearly with
+the response.  This agrees with dimension--wise estimate of the total
+area of the input domain under the LLM (out of a total of 10 input variables).
+<<>>=
+mean(fr.bgpllm.tr$trace$linarea$ba)
+@ 
+A similar summary of the parameter traces for $\bm{\beta}$ shows
+that the GP LLM correctly identified the linear regression
+coefficients associated with the fourth and fifth input covariates
+(from (\ref{eq:f1}))
+<<>>=
+summary(trace[,9:10])
+@ 
+and that the rest are much closer to zero.
+<<>>=
+apply(trace[,11:15], 2, mean)
+@ 
+
+\subsection{Adaptive Sampling}
+\label{sec:as}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+In this section, sequential design of experiments, a.k.a.~{\em
+  adaptive sampling}, is demonstrated on the exponential data of
+Section \ref{sec:exp}.  Gathering, again, the data:
+<<>>=
+exp2d.data <- exp2d.rand(lh=0, dopt=10)
+X <- exp2d.data$X
+Z <- exp2d.data$Z
+Xcand <- lhs(1000, rbind(c(-2,6),c(-2,6)))
+@ 
+In contrast with the data from Section \ref{sec:exp}, which was
+based on a grid, the above code generates a randomly subsampled
+$D$--optimal design $\mb{X}$ from LH candidates, and random responses
+$\mb{Z}$.  As before, design configurations are more densely packed in the
+interesting region.  Candidates $\tilde{\mb{X}}$ are from a large
+LH--sample.
+
+Given some data $\{\mb{X},\mb{Z}\}$, the first step in sequential
+design using {\tt tgp} is to fit a treed GP LLM model to the data,
+without prediction, in order to infer the MAP tree
+$\hat{\mathcal{T}}$.
+<<echo=TRUE,results=hide>>=
+exp1 <- btgpllm(X=X, Z=Z, pred.n=FALSE, corr="exp", R=5, verb=0)
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=as-mapt,fig=TRUE,echo=TRUE,width=6.5,height=5,include=FALSE>>=
+tgp.trees(exp1)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=50 50 50 20]{tgp-as-mapt}
+\vspace{-1cm}
+\caption{MAP trees of each height encountered in the
+  Markov chain for the exponential data, showing $\hat{\sigma}^2$ and
+  the number of observations $n$ at the leaves.  $\hat{\mathcal{T}}$
+  is the one with the maximum $\log(p)$ above.}
+\label{f:mapt}
+\end{figure} 
+The trees are shown in Figure \ref{f:mapt}.
+Then, use the {\tt tgp.design} function to create $D$--optimal candidate
+designs in each region of $\hat{\mathcal{T}}$.  For the purposes of
+illustrating the {\tt improv} statistic, I have manually added the
+known (from calculus) global minimum to {\tt XX}.
+<<>>=
+XX <- tgp.design(200, Xcand, exp1)
+XX <- rbind(XX, c(-sqrt(1/2),0))
+@ 
+Figure \ref{f:cands} shows the sampled {\tt XX} locations (circles)
+amongst the input locations {\tt X} (dots) and MAP partition
+$(\hat{\mathcal{T}})$.  Notice how the candidates {\tt XX} are spaced
+out relative to themselves, and relative to the inputs {\tt X}, unless
+they are near partition boundaries.  The placing of configurations
+near region boundaries is a symptom particular to $D$--optimal designs.
+This is desirable for experiments with {\tt tgp} models, as model
+uncertainty is usually high there \cite{chaloner:1995}.
+\begin{figure}[ht!]
+\centering
+<<label=as-cands,fig=TRUE,echo=TRUE,width=5,height=5,include=FALSE>>=
+plot(exp1$X, pch=19, cex=0.5)
+points(XX)
+mapT(exp1, add=TRUE)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 0 0 45]{tgp-as-cands}
+\vspace{-0.5cm}
+\caption{Treed $D$--optimal candidate locations {\tt XX}
+  (circles), input locations {\tt X} (dots), and MAP tree
+  $\hat{\mathcal{T}}$}
+\label{f:cands}
+\end{figure} 
+
+Now, the idea is to fit the treed GP LLM model, again, in order to
+assess uncertainty in the predictive surface at those new candidate
+design points.  The following code gathers all three adaptive sampling
+statistics: ALM, ALC, \& EI.
+<<echo=TRUE>>=
+exp.as <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", improv=TRUE, 
+                        Ds2x=TRUE, R=5, verb=0)
+@ 
+
+Figure \ref{f:as} shows the posterior predictive estimates of the
+adaptive sampling statistics.  The error surface, on the {\em left},
+summarizes posterior predictive uncertainty by a norm of quantiles.
+%%Since the combined data and predictive locations are not densely
+%%packed in the input space, the {\tt loess} smoother may have trouble
+%%with the interpolation.  One option is increase the {\tt tgp}-default
+%%kernel span supplied to {\tt loess}, e.g., {\tt span = 0.5}.
+\begin{figure}[ht!]
+\centering
+<<label=as-expas,fig=TRUE,echo=TRUE,width=12,height=4,include=FALSE>>=
+par(mfrow=c(1,3), bty="n")
+plot(exp.as, main="tgpllm,", layout="as", as="alm")
+plot(exp.as, main="tgpllm,", layout='as', as='alc')
+plot(exp.as, main="tgpllm,", layout='as', as='improv')
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+% do the including over here instead
+\includegraphics[trim=75 0 75 20]{tgp-as-expas}
+\vspace{-0.5cm}
+\caption{{\em Left}: Image plots of adaptive sampling
+  statistics and MAP trees $\hat{\mathcal{T}}$; {\em Left}; ALM
+  adaptive sampling image for (only) candidate locations {\tt XX} (circles);
+  {\em center}: ALC; and {\em right:} EI.}
+\label{f:as}
+\end{figure} 
+
+In accordance with the ALM algorithm, candidate locations {\tt XX}
+with largest predictive error would be sampled (added into the design)
+next.  These are most likely to be in the interesting region, i.e.,
+the first quadrant. However, these results depend heavily on the
+clumping of the original design in the un-interesting areas, and on
+the estimate of $\hat{\mathcal{T}}$.  Adaptive sampling via the ALC,
+or EI (or both) algorithms proceeds similarly, following the surfaces
+shown in {\em center} and {\em right} panels of Figure \ref{f:as}.
+
 
 \subsection*{Acknowledgments}
 This work was partially supported by research subaward
@@ -975,7 +1816,184 @@ the {\tt tgp} package such as the gathering and summarizing of MCMC
 parameter traces, the progress meter, and an example of how to use the
 {\tt predict.tgp} function in a collaborative setting.
 
-\SweaveInput{traces.iRnw}
+\subsection{Parameter traces}
+\label{sec:traces}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+Traces of (almost) all parameters to the {\tt tgp} model can be
+collected by supplying {\tt trace=TRUE} to the {\tt b*} functions.
+In the current version, traces for the linear prior correlation matrix
+($\mb{W}$) are not provided.  I shall illustrate the gathering and
+analyzing of traces through example.  But first, a few notes and
+cautions.
+
+Models which involve treed partitioning may have more than one base
+model (GP or LM).  The process governing a particular input
+$\mb{x}$ depends on the coordinates of $\mb{x}$.  As such, {\tt tgp}
+records region--specific traces of parameters to GP (and linear)
+models at the locations enumerated in the {\tt XX} argument.  Even
+traces of single--parameter Markov chains can require hefty amounts of
+storage, so recording traces at each of the {\tt XX} locations can be
+an enormous memory hog.  A related warning will be given if the
+product of $|${\tt XX}$|$, \verb!(BTE[2]-BTE[1])/BTE[3]! and {\sf R}
+is beyond a threshold.  The easiest way to keep the storage
+requirements for traces down is to control the size of {\tt XX} and
+the thinning level {\tt BTE[3]}.  Finally, traces for most of the
+parameters are stored in output files.  The contents of the trace
+files are read into {\sf R} and stored as {\tt data.frame} objects,
+and the files are removed. The existence of partially written trace
+files in the current working directory (CWD)---while the {\tt C} code
+is executing---means that not more than one {\tt tgp} run (with
+\verb!trace = TRUE!) should be active in the CWD at one time.
+
+Consider again the exponential data.  For illustrative purposes I
+chose {\tt XX} locations (where traces are gathered) to be (1) in the
+interior of the interesting region, (2) on/near the plausible
+intersection of partition boundaries, and (3) in the interior of the
+flat region.  The hierarchical prior \verb!bprior = "b0"! is used to
+leverage a (prior) belief the most of the input domain is
+uninteresting.
+<<>>=
+exp2d.data <- exp2d.rand(n2=150, lh=0, dopt=10)
+X <- exp2d.data$X
+Z <- exp2d.data$Z
+XX <- rbind(c(0,0),c(2,2),c(4,4))
+@ 
+We now fit a treed GP LLM and gather traces, and also gather
+EI and ALC statistics for the purposes of illustration.  Prediction
+at the input locations {\tt X} is turned off to be thrifty.
+<<>>=
+out <- btgpllm(X=X, Z=Z, XX=XX, corr="exp", bprior="b0", 
+               pred.n=FALSE, Ds2x=TRUE, R=10, 
+               trace=TRUE, verb=0)
+@ 
+\begin{figure}[hp]
+\centering
+<<>>=
+out$trace
+@
+\caption{Listing the contents of {\tt "tgptraces"}--class objects.}
+\label{f:tgptraces}
+\end{figure} 
+Figure \ref{f:tgptraces} shows a dump of \verb!out$trace! which is a
+\verb!"tgptraces"!--class object.  It depicts the full set of parameter
+traces broken down into the elements of a \verb!list!: \verb!$XX!
+with GP/LLM parameter traces for each {\tt XX} location (the
+parameters are listed); \verb!$hier! with traces for
+(non--input--dependent) hierarchical parameters (listed);
+\verb!$linarea!  recording proportions of the input space under the
+LLM; \verb!$parts!  with the boundaries of all partitions visited;
+\verb!$post! containing (log) posterior probabilities; \verb!preds!
+containing traces of samples from the posterior predictive
+distribution and adaptive sampling statistics.
+
+\begin{figure}[ht!]
+\centering
+<<label=traces-XXd,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=5>>=
+trXX <- out$trace$XX; ltrXX <- length(trXX)
+y <- trXX[[1]]$d
+for(i in 2:ltrXX) y <- c(y, trXX[[i]]$d)
+plot(log(trXX[[1]]$d), type="l", ylim=range(log(y)), ylab="log(d)",
+     main="range (d) parameter traces")
+names <- "XX[1,]"
+for(i in 2:ltrXX) {
+  lines(log(trXX[[i]]$d), col=i, lty=i)
+  names <- c(names, paste("XX[", i, ",]", sep=""))
+}
+legend("bottomleft", names, col=1:ltrXX, lty=1:ltrXX)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=55 25 65 20]{tgp-traces-XXd}
+\caption{Traces of the (log of the) first range
+  parameter for each of the three {\tt XX} locations}
+\label{f:XXd}
+\end{figure} 
+
+Plots of traces are useful for assessing the mixing of the Markov
+chain.  For example, Figure \ref{f:XXd} plots traces of the range
+parameter ($d$) %in the first input dimension ($d_1$)
+for each of the
+\Sexpr{length(out$trace$XX)} predictive locations {\tt XX}.  It is
+easy to see which of the locations is in the same partition with
+others, and which have smaller range parameters than others.
+
+The mean area under the LLM can be calculated as
+<<>>=
+linarea <- mean(out$trace$linarea$la)
+linarea
+@ 
+\begin{figure}[ht!]
+\centering
+<<label=traces-la,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=6>>=
+hist(out$trace$linarea$la)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=0 0 0 20]{tgp-traces-la}
+\vspace{-0.5cm}
+\caption{Histogram of proportions of the area of the input 
+  domain under the LLM}
+\label{f:la}
+\end{figure} 
+This means that the expected proportion of the input domain under the
+full LLM is \Sexpr{signif(linarea[1], 3)}.  Figure \ref{f:la} shows a
+histogram of areas under the LLM.  The clumps near 0, 0.25, 0.5, and
+0.75 can be thought of as representing quadrants (none, one, two, and
+tree) under the LLM.  Similarly, we can calculate the probability that
+each of the {\tt XX} locations is governed by the
+LLM. % (in total, and by dimension)
+<<>>=
+m <- matrix(0, nrow=length(trXX), ncol=3)#ncol=5)
+for(i in 1:length(trXX))
+  m[i,] <- as.double(c(out$XX[i,], mean(trXX[[i]]$b)))
+m <- data.frame(cbind(m, 1-m[,3]))
+names(m)=c("XX1","XX2","b","pllm")
+m
+@ 
+The final column above represents the probability that the
+corresponding {\tt XX} location is under the LLM (which is equal to
+{\tt 1-b}).
+
+\begin{figure}[ht!]
+\centering
+<<label=traces-alc,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=5>>=
+trALC <- out$trace$preds$Ds2x
+y <- trALC[,1]
+for(i in 2:ncol(trALC)) y <- c(y, trALC[,i])
+plot(log(trALC[,1]), type="l", ylim=range(log(y)), ylab="Ds2x",
+     main="ALC: samples from Ds2x")
+names <- "XX[1,]"
+for(i in 2:ncol(trALC)) {
+  lines(log(trALC[,i]), col=i, lty=i)
+  names <- c(names, paste("XX[", i, ",]", sep=""))
+}
+legend("bottomright", names, col=1:ltrXX, lty=1:ltrXX)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=55 25 65 20]{tgp-traces-alc}
+\caption{Traces of the (log of the) samples
+         for the ALC statistic  $\Delta \sigma^2(\tilde{\mb{x}})$
+         at for each of the three {\tt XX} locations}
+\label{f:preds}
+\end{figure} 
+Traces of posterior predictive and adaptive sampling statistics are
+contained in the \verb!$preds! field.  For example, Figure
+\ref{f:preds} shows samples of the ALC statistic $\Delta
+\sigma^2(\tilde{\mb{x}})$.  We can see from the trace that statistic
+is generally lowest for {\tt XX[3,]} which is in the uninteresting
+region, and that there is some competition between {\tt XX[2,]} which
+lies on the boundary between the regions, and {\tt XX[1,]} which is in
+the interior of the interesting region.  Similar plots can be made for
+the other adaptive sampling statistics (i.e., ALM \& EI).
+
 
 \subsection{Explaining the progress meter}
 \label{sec:progress}
@@ -1041,7 +2059,120 @@ partition.  These prints will look slightly different if the isotropic
 instead of separable correlation is used, since there are not as many
 range parameters.
 
-\SweaveInput{pred.iRnw}
+\subsection{Collaboration with {\tt predict.tgp}}
+\label{sec:apred}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+In this section I revisit the motorcycle accident data in order to
+demonstrate how the {\tt predict.tgp} function can be helpful in
+collaborative uses of {\tt tgp}. Consider a fit of the motorcycle
+data, and suppose that infer the model parameters only (obtaining no
+samples from the posterior predictive distribution).  The
+\verb!"tgp"!-class output object can be saved to a file using the {\tt
+  R}--internal {\tt save} function.
+<<>>=
+library(MASS)
+out <- btgpllm(X=mcycle[,1], Z=mcycle[,2], bprior="b0", 
+         pred.n=FALSE, verb=0) 
+save(out, file="out.Rsave")
+out <- NULL
+@
+Note that there is nothing to plot here because there is no predictive
+data.  (\verb!out <- NULL! is set for illustrative purposes.)
+
+Now imagine e--mailing the ``out.Rsave'' file to a collaborator who
+wishes to use your fitted {\tt tgp} model.  S/he could first load in
+the \verb!"tgp"!--class object we just saved, design a new set of predictive
+locations {\tt XX} and obtain kriging estimates from the MAP model.
+<<>>=
+load("out.Rsave")
+XX <- seq(2.4, 56.7, length=200)
+out.kp <- predict(out, XX=XX, pred.n=FALSE)
+@ 
+
+Another option would be to sample from the posterior
+predictive distribution of the MAP model.
+<<>>=
+out.p <- predict(out, XX=XX, pred.n=FALSE, BTE=c(0,1000,1))
+@ 
+This holds the parameterization of the {\tt tgp} model {\em fixed}
+at the MAP, and samples from the GP or LM posterior predictive
+distributions at the leaves of the tree.
+
+Finally, the MAP parameterization can be used as a jumping-off point
+for more sampling from the joint posterior and posterior predictive
+distribution.
+<<>>=
+out2 <- predict(out, XX, pred.n=FALSE, BTE=c(0,2000,2), MAP=FALSE)
+@ 
+Since the return--value of a {\tt predict.tgp} call is also a
+\verb!"tgp"!--class object the process can be applied iteratively.
+That is, {\tt out2} can also be passed to {\tt predict.tgp}.
+
+\begin{figure}[hp]
+\centering
+<<label=pred-kp,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+plot(out.kp, center="km", as="ks2")
+@ 
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\vspace{-0.1cm}
+\includegraphics[trim=50 30 50 25]{tgp-pred-kp}
+<<label=pred-p,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+plot(out.p)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\vspace{-0.1cm}
+\includegraphics[trim=50 30 50 25]{tgp-pred-p}
+<<label=pred-2,fig=TRUE,echo=TRUE,include=FALSE,width=8,height=4>>=
+plot(out2)
+@ 
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=50 30 50 25]{tgp-pred-2}
+\caption{Predictive surfaces ({\em left}) and
+  error/variance plots ({\em right}) resulting
+  from three different uses of the {\tt predict.tgp} function:
+  MAP kriging ({\em top}), sampling from the MAP ({\em middle}),
+  sampling from the joint posterior and posterior predictive starting
+  from the MAP ({\em bottom}).}
+\label{f:pred}
+\end{figure} 
+Figure \ref{f:pred} plots the posterior predictive surfaces for each
+of the three calls to {\tt predict.tgp} above.  The kriging surfaces
+are smooth within regions of the partition, but the process is
+discontinuous across partition boundaries.  The middle surface is
+simply a Monte Carlo--sample summarization of the kriging one above
+it.  The final surface summarizes samples from the posterior
+predictive distribution when obtained jointly with samples from
+$\mathcal{T}|\bm{\theta}$ and $\bm{\theta}|\mathcal{T}$.  Though these
+summaries are still ``noisy'' they depict a process with smoother
+transitions across partition boundaries than ones conditioned only on
+the MAP parameterization.
+
+<<echo=FALSE,results=hide>>=
+unlink("out.Rsave")
+@ 
+
+Finally, the {\tt predict.tgp} function can also sample from the ALC
+statistic and calculate expected improvements (EI) at the {\tt XX}
+locations.  While the function was designed with prediction in mind,
+it is actually far more general.  It allows a continuation of MCMC
+sampling where the {\tt b*} function left off (when {\tt MAP=FALSE})
+with a possibly new set of predictive locations {\tt XX}.  The
+intended use of this function is to obtain quick kriging--style
+predictions for a previously-fit MAP estimate (contained in a
+\verb!"tgp"!-class object) on a new set of predictive locations {\tt
+XX}.  However, it can also be used simply to extend the search for an
+MAP model when {\tt MAP=FALSE}, {\tt pred.n=FALSE}, and {\tt XX=NULL}.
+
 
 \section{Configuration and performance optimization}
 

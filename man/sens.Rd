@@ -121,6 +121,11 @@ sens(X, Z, nn.lhs, model = btgp, ngrid = 100, span = 0.3,
 }
 
 \references{ 
+Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling,
+Design and Optimization for the Applied Sciences}. Boca Raton,
+Florida: Chapman Hall/CRC.  (See Chapter 8.)
+\url{https://bobby.gramacy.com/surrogates/}
+
 R.D. Morris, A. Kottas, M. Taddy, R. Furfaro, and B. Ganapol. (2009)
 \emph{A statistical framework for the sensitivity analysis of radiative
   transfer models.} IEEE Transactions on Geoscience and Remote Sensing,
@@ -132,8 +137,8 @@ Computer Physics Communications, 145, 280-297.
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{
@@ -160,6 +165,7 @@ Z <- airquality$Ozone
 # Uncertainty distribution is the default: uniform over range(X)
 # There is missing data, which is removed automatically by tgp
 # range(X).
+\donttest{
 s <- suppressWarnings(sens(X=X, Z=Z, nn.lhs=300, model=btgp,
           ngrid=100, span=0.3, BTE=c(5000,10000,10)))
 
@@ -171,6 +177,7 @@ plot(s, layout="sens", ylab="Ozone", maineff=FALSE)
 
 # plot only the main effects, side by side
 plot(s, layout="sens", ylab="Ozone", main="", maineff=t(1:3))
+}
 
 # build a 'sens.p' parameter vector for a data-dependent
 # informative uncertainty distribution.  For each variable,
@@ -186,14 +193,16 @@ par(mfrow=c(1,3))
 for(i in 1:3) hist(Udraw[,i], breaks=15,xlab=names(X)[i]) 
 
 # build sens.p with the 'sens' function.
-sens.p <- suppressWarnings(sens(X=X,Z=Z,nn.lhs=300, model=NULL,
+sens.p <- suppressWarnings(sens(X=X, Z=Z, nn.lhs=300, model=NULL,
                ngrid=100, rect=rect, shape=shape, mode=mode))
 
 # Use predict.tgp to quickly analyze with respect to this new
 # uncertainty distribution without re-running the MCMC, then
 # plot the results.
+\donttest{
 s.new <- predict(s, BTE=c(1,1000,1), sens.p=sens.p, verb=1) 
 plot(s.new, layout="sens", ylab="Ozone", main="main effects")
+}
 }
 \keyword{ htest }
 \keyword{ multivariate }

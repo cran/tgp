@@ -21,8 +21,8 @@
 
 
 %\VignetteIndexEntry{new features in tgp version 2.x}
-%\VignetteKeywords{tgp}
-%\VignetteDepends{tgp,maptree}
+%\VignetteKeywords{tgp2}
+%\VignetteDepends{tgp,maptree,MASS}
 %\VignettePackage{tgp}
 
 \begin{document}
@@ -41,13 +41,12 @@ options(width=65)
   treed Gaussian process models}
 \author{
    Robert B. Gramacy\\
-  Booth School of Business\\
-  The University of Chicago\\
-  rbgramacy@chicagobooth.edu  \and
-  Matthew Taddy\\
-  Booth School of Business\\
-  The University of Chicago\\
-  taddy@chicagobooth.edu 
+   Department of Statistics\\
+   Virginia Tech\\
+   rbg@vt.edu  \and
+   Matt Taddy\\
+   Amazon\\
+   mataddy@amazon.com
 }
 \maketitle
 
@@ -142,10 +141,2181 @@ examples with different seeds and see what happens.  Usually the
 results will be similar, but sometimes (especially when the data ({\tt
   X},{\tt Z}) is generated randomly) they may be quite different.
 
-\SweaveInput{cat.iRnw}
-\SweaveInput{sens.iRnw}
-\SweaveInput{optim.iRnw}
-\SweaveInput{it.iRnw}
+
+\section{Non--real--valued, categorical and other inputs}
+\label{sec:cat}
+
+<<echo=false,results=hide>>=
+seed <- 1; set.seed(seed)  ## seed zero problematic with null btlm map tree below
+@ 
+
+Early versions of {\tt tgp} worked best with real--valued inputs
+$\mb{X}$.  While it was possible to specify ordinal, integer--valued,
+or even binary inputs, {\tt tgp} would treat them the same as any
+other real--valued input.  Two new arguments to {\tt
+  tgp.default.params}, and thus the ellipses ({\tt ...}) argument to
+the {\tt b*} functions, provide a more natural way to model with
+non--real valued inputs.  In this section we shall introduce these
+extensions, and thereby illustrate how the current version of the
+package can more gracefully handle categorical inputs.  We argue that
+the careful application of this new feature can lead to reductions in
+computational demands, improved exploration of the posterior,
+increased predictive accuracy, and more transparent interpretation of
+the effects of categorical inputs.
+
+Classical treed methods, such as CART \cite{brei:1984}, can cope quite
+naturally with categorical, binary, and ordinal, inputs.  Categorical
+inputs can be encoded in binary, and splits can be proposed with rules
+such as $x_i < 1$.  Once a split is made on a binary input, no further
+process is needed, marginally, in that dimension.  Ordinal inputs can
+also be coded in binary, and thus treated as categorical, or treated
+as real--valued and handled in a default way.  GP regression, however,
+handles such non--real--valued inputs less naturally, unless (perhaps)
+a custom and non--standard form of the covariance function is used
+\cite{qian:wu:wu:2009}.  When inputs are scaled to lie in $[0,1]$,
+binary--valued inputs $x_i$ are always a constant distance apart---at
+the largest possible distance in the range.  A separable correlation
+function width parameter $d_i$ will tend to infinity (in the
+posterior) if the output does not vary with $x_i$, and will tend to
+zero if it does.  Clearly, this functionality is more parsimoniously
+achieved by partitioning, e.g., using a tree.  However, trees with
+fancy regression models at the leaves pose other problems, as
+discussed below.
+
+Consider as motivation, the following modification of the Friedman
+data \cite{freid:1991} (see also Section 3.5 of \cite{gramacy:2007}).
+Augment 10 real--valued covariates in the data ($\mb{x} =
+\{x_1,x_2,\dots,x_{10}\}$) with one categorical indicator
+$I\in\{1,2,3,4\}$ that can be encoded in binary as
+\begin{align*}
+1& \equiv (0,0,0) & 2 &\equiv (0,0,1) & 3 &\equiv (0,1,0) & 4 &\equiv (1,0,0).
+\end{align*}
+Now let the function that describes the responses ($Z$), observed with
+standard Normal noise, have a mean
+\begin{equation}
+E(Z|\mb{x}, I) = \left\{ \begin{array}{cl}
+    10 \sin(\pi x_1 x_2) & \mbox{if } I = 1 \\
+    20(x_3 - 0.5)^2 &\mbox{if } I = 2 \\
+    10x_4 + 5 x_5 &\mbox{if } I = 3 \\
+    5 x_1 + 10 x_2 +  20(x_3 - 0.5)^2 + 10 \sin(\pi x_4 x_5) &\mbox{if } I = 4
+\label{eq:f1b}
+\end{array} \right.
+\end{equation}
+that depends on the indicator $I$.  Notice that when $I=4$ the
+original Friedman data is recovered, but with the first five inputs in
+reverse order.  Irrespective of $I$, the response depends only on
+$\{x_1,\dots,x_5\}$, thus combining nonlinear, linear, and irrelevant
+effects.  When $I=3$ the response is linear $\mb{x}$.
+
+A new function has been included in the {\tt tgp} package which
+facilitates generating random realizations from (\ref{eq:f1b}).  Below
+we obtain 500 such random realizations for training purposes, and a
+further 1000 for testing.
+<<>>=
+fb.train <- fried.bool(500)
+X <- fb.train[,1:13]; Z <- fb.train$Y
+fb.test <- fried.bool(1000)
+XX <- fb.test[,1:13]; ZZ <- fb.test$Ytrue
+@ 
+A separation into training and testing sets will be useful for later
+comparisons by RMSE.  The names of the data frame show that the first
+ten columns encode $\mb{x}$ and columns 11--13 encode the boolean
+representation of $I$.
+<<>>=
+names(X)
+@ 
+One, na\"ive approach to fitting this data would be to fit a treed
+GP LLM model ignoring the categorical inputs.  But this model can only
+account for the noise, giving high RMSE, and so is not illustrated
+here.  Clearly, the indicators must be included.  One simple way to
+do so would be to posit a Bayesian CART model.  
+<<>>=
+fit1 <- bcart(X=X, Z=Z, XX=XX, verb=0)
+rmse1 <- sqrt(mean((fit1$ZZ.mean - ZZ)^2))
+rmse1
+@ 
+In this case the indicators are treated appropriately (as
+indicators), but in some sense so are the real--valued inputs as only
+constant models are fit at the leaves of the tree.  
+\begin{figure}[ht!]
+<<label=cat-fbcart-mapt,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
+tgp.trees(fit1, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 100 0 25]{tgp2-cat-fbcart-mapt}
+\caption{Diagrammatic depiction of the maximum {\em a' posteriori}
+  (MAP) tree for the boolean indicator version of the Friedman data in
+  Eq.~(\ref{eq:f1b}) using Bayesian CART.}
+  \label{f:fb:cart}
+\end{figure}
+Figure \ref{f:fb:cart} shows that the tree does indeed partition on
+the indicators, and the other inputs, as expected.
+
+One might expect a much better fit from a treed linear model to this data,
+since the response is linear in some of its inputs.
+<<>>=
+fit2 <- btlm(X=X, Z=Z, XX=XX, verb=0)
+rmse2 <- sqrt(mean((fit2$ZZ.mean - ZZ)^2))
+rmse2
+@ 
+Unfortunately, this is not the case---the RMSE obtained is similar
+to the one for the CART model.
+\begin{figure}[ht!]
+<<label=cat-fbtlm-mapt,fig=TRUE,echo=TRUE,width=8,height=7,include=FALSE>>=
+tgp.trees(fit2, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 100 0 25]{tgp2-cat-fbtlm-mapt}
+\caption{Diagrammatic depiction of the maximum {\em a' posteriori}
+  (MAP) tree for the boolean indicator version of the Friedman data in
+  Eq.~(\ref{eq:f1b}) using a Bayesian treed linear model.}
+  \label{f:fb:btlm:trees}
+\end{figure}
+Figure \ref{f:fb:btlm:trees} shows that the tree does indeed
+partition, but not on the indicator variables.  When a linear model is
+used at the leaves of the tree the boolean indicators cannot be
+partitioned upon because doing so would cause the design matrix to
+become rank--deficient at the leaves of the tree (there would be a
+column of all zeros or all ones).  A treed GP would have the same
+problem.
+
+A new feature in {\tt tgp} makes dealing with indicators such as these
+more natural, by including them as candidates for treed partitioning,
+but ignoring them when it comes to fitting the models at the leaves of
+the tree.  The argument {\tt basemax} to {\tt tgp.default.params}, and
+thus the ellipses ({\tt ...}) argument to the {\tt b*} functions,
+allows for the specification of the last columns of {\tt X} to be
+considered under the base (LM or GP) model.  In the context of our
+example, specifying {\tt basemax = 10} ensures that only the first 10
+inputs, i.e., $\mb{X}$ only (excluding $I$), are used to predict the
+response under the GPs at the leaves.  Both the columns of $\mb{X}$
+and the columns of the boolean representation of the (categorical)
+indicators $I$ are (still) candidates for partitioning.  This way,
+whenever the boolean indicators are partitioned upon, the design
+matrix (for the GP or LM) will not contain the corresponding column of
+zeros or ones, and therefore will be of full rank.
+
+Let us revisit the treed LM model with {\tt basemax = 10}.
+<<>>=
+fit3 <- btlm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
+rmse3 <- sqrt(mean((fit3$ZZ.mean - ZZ)^2))
+rmse3
+@ 
+\begin{figure}[ht!]
+<<label=cat-fbtlm-mapt,fig=TRUE,echo=TRUE,width=8,height=7,include=FALSE>>=
+tgp.trees(fit3, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 90 0 25,scale=0.75]{tgp2-cat-fbtlm-mapt}
+\caption{Diagrammatic depiction of the maximum {\em a' posteriori}
+  (MAP) tree for the boolean indicator version of the
+  Friedman data in Eq.~(\ref{eq:f1b}) using a Bayesian treed linear
+  model with the setting {\tt basemax = 10}.}
+  \label{f:fb:btlm:mapt}
+\end{figure}
+Figure \ref{f:fb:btlm:mapt} shows that the MAP tree does indeed
+partition on the indicators in an appropriate way---as well as on some
+other real--valued inputs---and the result is the lower RMSE we would
+expect.
+
+A more high--powered approach would clearly be to treat all inputs
+as real--valued by fitting a GP at the leaves of the tree.  Binary
+partitions are allowed on all inputs, $\mb{X}$ and $I$, but treating
+the boolean indicators as real--valued in the GP is clearly
+inappropriate since it is known that the process does not vary
+smoothly over the $0$ and $1$ settings of the three boolean indicators
+representing the categorical input $I$.
+<<>>=
+fit4 <- btgpllm(X=X, Z=Z, XX=XX, verb=0)
+rmse4 <- sqrt(mean((fit4$ZZ.mean - ZZ)^2))
+rmse4
+@ 
+Since the design matrices would become rank--deficient if the boolean
+indicators are partitioned upon, there was no partitioning in this
+example.  
+<<>>=
+fit4$gpcs
+@ 
+Since there are large covariance matrices to invert, the MCMC
+inference is {\em very} slow.  Still, the resulting fit (obtained with
+much patience) is better that the Bayesian CART and treed LM
+(with {\tt basemax = 10}) ones, as indicated by the RMSE.
+
+We would expect to get the best of both worlds if the setting {\tt
+  basemax = 10} were used when fitting the treed GP model, thus 
+allowing partitioning on the indicators by guarding against rank deficient
+design matrices.
+<<>>=
+fit5 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, verb=0)
+rmse5 <- sqrt(mean((fit5$ZZ.mean - ZZ)^2))
+rmse5 
+@ 
+And indeed this is the case.
+
+The benefits go beyond producing full rank design matrices at the
+leaves of the tree. Loosely speaking, removing the boolean indicators
+from the GP part of the treed GP gives a more parsimonious model,
+without sacrificing any flexibility.  The tree is able to capture all
+of the dependence in the response as a function of the indicator
+input, and the GP is the appropriate non--linear model for accounting
+for the remaining relationship between the real--valued inputs and
+outputs.
+\begin{figure}[ht!]
+<<label=cat-fb-mapt,fig=TRUE,echo=TRUE,width=8,height=7,include=FALSE>>=
+h <- fit1$post$height[which.max(fit1$posts$lpost)]
+tgp.trees(fit5, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 100 0 25]{tgp2-cat-fb-mapt}
+\caption{Diagrammatic depiction of the maximum {\em a' posteriori}
+  (MAP) tree for the boolean indicator version of the Friedman data in
+  Eq.~(\ref{eq:f1b}) using {\tt basemax=10}.}
+  \label{f:fb:mapt}
+\end{figure}
+We can look at the maximum {\em a' posteriori} (MAP) tree, to see that
+only (and all of) the indicators were partitioned upon in Figure
+\ref{f:fb:mapt}.  Further advantages to this approach include speed (a
+partitioned model gives smaller covariance matrices to invert) and
+improved mixing in the Markov chain when a separable covariance
+function is used.  Note that using a non--separable covariance
+function in the presence of indicators would result in a poor fit.
+Good range ($d$) settings for the indicators would not necessarily
+coincide with good range settings for the real--valued inputs.
+
+A complimentary setting, {\tt splitmin}, allows the user to specify
+the first column of the inputs {\tt X} upon which treed partitioning
+is allowed.  From Section 3.5 of the first {\tt tgp} vignette
+\cite{gramacy:2007}, it was concluded that the original formulation of
+Friedman data was stationary, and thus treed partitioning is not
+required to obtain a good fit.  The same would be true of the response
+in (\ref{eq:f1b}) after conditioning on the indicators.  Therefore,
+the most parsimonious model would use {\tt splitmin = 11}, in addition
+to {\tt basemax = 10}, so that only $\mb{X}$ are under the GP, and
+only $I$ under the tree.  Fewer viable candidate inputs for treed
+partitioning should yield improved mixing in the Markov chain, and
+thus lower RMSE.
+<<>>=
+fit6 <-  btgpllm(X=X, Z=Z, XX=XX, basemax=10, splitmin=11, verb=0)
+rmse6 <- sqrt(mean((fit6$ZZ.mean - ZZ)^2))
+rmse6
+@
+
+Needless to say, it is important that the input {\tt X} have columns
+which are ordered appropriately before the {\tt basemax} and {\tt
+  splitmin} arguments can be properly applied.  Future versions of
+{\tt tgp} will have a formula--based interface to handle categorical
+({\tt factors}) and other inputs more like other {\sf R} regression
+routines, e.g., {\tt lm} and {\tt glm}.
+
+The tree and binary encodings represent a particularly thrifty way to
+handle categorical inputs in a GP regression framework, however it is
+by no means the only or best approach to doing so.  A disadvantage to
+the binary coding is that it causes the introduction of several new
+variables for each categorical input.  Although they only enter the
+tree part of the model, and not the GP (where the introduction of many
+new variables could cause serious problems), this may still be
+prohibitive if the number of categories is large.  Another approach
+that may be worth considering in this case involves designing a GP
+correlation function which can explicitly handle a mixture of
+qualitative (categorical) and quantitative (real-valued) factors
+\cite{qian:wu:wu:2009}.  An advantage of our treed approach is that it
+is straightforward to inspect the effect of the categorical inputs by,
+e.g., counting the number of trees (in the posterior) which contain a
+particular binary encoding.  It is also easy to see how the
+categorical inputs interact with the real-valued ones by inspecting
+the (posterior) parameterizations of the correlation parameters in
+each partition on a binary encoding.  Both of these are naturally
+facilitated by gathering traces ({\tt trace = TRUE}), as described in
+the 1.x vignette \cite{gramacy:2007}.  In Section \ref{sec:sens} we
+discuss a third way of determining the sensitivity of the response to
+categorical and other inputs.
+
+\section{Analysis of sensitivity to inputs}
+\label{sec:sens}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+Methods for understanding how inputs, or explanatory variables,
+contribute to the outputs, or response, of simple statistical models
+are by now classic in the literature and frequently used in
+practical application.  For example, in linear regression one can
+perform $F$--tests to ascertain the relevance of a predictor, or inspect
+the leverage of a particular input setting, or use Cooks' distance, to
+name a few.  Unfortunately, such convenient statistics/methods are not
+available for more complicated models, such as those in the {\tt tgp}
+family of nonparametric models.  A more advanced tool is needed.
+
+Sensitivity Analysis (SA) is a resolving of the sources of output
+variability by apportioning elements of this variation to different
+sets of input variables.  It is applicable in wide generality.  The
+edited volume by Saltelli et al.~\cite{SaltChanScot2000} provides an
+overview of the field.  Valuable recent work on smoothing methods is
+found in \cite{StorHelt2008,VeigWahlGamb2009}, and Storlie, et
+al.~\cite{StorSwilHeltSall2009}, provide a nice overview of
+nonparametric regression methods for inference about sensitivity. The
+analysis of response variability is useful in a variety of different
+settings.  For example, when there is a large number of input
+variables over which an objective function is to be optimized,
+typically only a small subset will be influential within the confines
+of their uncertainty distribution.  SA can be used to reduce the input
+space of such optimizations \cite{TaddLeeGrayGrif2009}.  Other authors
+have used SA to assess the risk associated with dynamic factors
+affecting the storage of nuclear waste \cite{HommSalt1996}, and to
+investigate the uncertainty characteristics of a remote sensing model
+for the reflection of light by surface vegetation
+\cite{MorrKottTaddFurfGana2008}.  The {\tt sens} function adds to {\tt
+  tgp} a suite of tools for global sensitivity analysis, and enables
+``out-of-the-box'' estimation of valuable sensitivity indices for any
+regression relationship that may be modeled by a member of the {\tt
+  tgp} family.
+
+The type of sensitivity analysis provided by {\tt tgp} falls within
+the paradigm of global sensitivity analysis, wherein the variability
+of the response is investigated with respect to a probability
+distribution over the entire input space.  The recent book by Saltelli
+et al. \cite{SaltEtAl2008} serves as a primer on this field.  Global
+SA is inherently a problem of statistical inference, as evidenced by
+the interpolation and estimation required in a study of the full range
+of inputs.  This is in contrast with the analytical nature of local
+SA, which involves derivative--based investigation of the stability of
+the response over a small region of inputs.  We will ignore local SA
+for the remainder of this document.
+
+The sensitivity of a response $z$ to a changing input $\mb{x}$ is
+always considered in relation to a specified {\it uncertainty
+  distribution}, defined by the density $u(\mb{x})$, and the
+appropriate marginal densities $u_i(x_i)$.  What is represented by the
+uncertainty distribution changes depending upon the context.  The
+canonical setup has that $z$ is the response from a complicated
+physics or engineering simulation model, with tuning parameters
+$\mb{x}$, that is used to predict physical phenomena. In this
+situation, $u(\mb{x})$ represents the experimentalist's uncertainty
+about real--world values of $\mb{x}$.  In optimization problems, the
+uncertainty distribution can be used to express prior information from
+experimentalists or modelers on where to look for solutions.  Finally,
+in the case of observational systems (such as air-quality or smog
+levels), $u(\mb{x})$ may be an estimate of the density governing the
+natural occurrence of the $\mb{x}$ factors (e.g., air-pressure,
+temperature, wind, and cloud cover).  In this setup, SA attempts to
+resolve the natural variability of $z$.
+
+The most common notion of sensitivity is tied to the relationship
+between conditional and marginal variance for $z$.  Specifically,
+variance--based methods decompose the variance of the objective
+function, with respect to the uncertainty distribution on the inputs,
+into variances of conditional expectations.  These are a natural
+measure of the output association with specific sets of variables and
+provide a basis upon which the importance of individual inputs may be
+judged.  The other common component of global SA is an accounting of
+the main effects for each input variable, $\mathbb{E}_{u_j}[z|x_j]$,
+which can be obtained as a by-product of the variance analysis.  
+
+Our variance--based approach to SA is a version of the method of
+Sobol', wherein a deterministic objective function is decomposed into
+summands of functions on lower dimensional subsets of the input
+space. Consider the function decomposition $ f(x_1, \ldots ,x_d) = f_0
++ \sum_{j=1}^df_j(x_j) +\sum_{1 \leq i < j \leq d} f_{ij}(x_j,x_i) +
+\ldots + f_{1,\ldots,d}(x_1, \ldots ,x_d).  $ When the response $f$ is
+modeled as a stochastic process $z$ conditional on inputs $\mb{x}$, we
+can develop a similar decomposition into the response distributions
+which arise when $z$ has been marginalized over one subset of
+covariates and the complement of this subset is allowed to vary
+according to a marginalized uncertainty distribution.  In particular,
+we can obtain the marginal conditional expectation
+$\mbb{E}[z|\mb{x}_J=\{x_j:j\in J\}]$ $=$ $\int_{\mathbb{R}^{d-d_J}}
+\mbb{E}[z|\mb{x}]u(\mb{x}) d\mb{x}_{-J}$, where $J=\{j_1, \ldots,
+j_{d_J}\}$ indicates a subset of input variables, $\mb{x}_{-j}
+=\{x_j:j\notin J\}$, and the marginal uncertainty density is given by
+$u_J(\mb{x}_J) = \int_{\mathbb{R}^{d-d_J}} u(\mb{x}) d\{x_i:i \notin J
+\}$.  SA concerns the variability of $\mbb{E}[z|\mb{x}_J]$ with
+respect to changes in $\mb{x}_J$ according to $u_J(\mb{x}_J)$ and, if
+$u$ is such that the inputs are uncorrelated, the variance
+decomposition is available as
+\begin{equation} \label{eqn:var_decomp}
+  \mr{var}(\mbb{E}[z|\mb{x}]) = \sum_{j=1}^dV_j
++ \sum_{1 \leq i < j \leq d} V_{ij} + \ldots + V_{1,\ldots,d},
+\end{equation}
+where $V_j = \mr{var}(\mbb{E}[z|x_j])$,
+$V_{ij}=\mr{var}(\mbb{E}[z|x_i, x_j]) - V_i - V_j$, and so on.   Clearly, when the
+inputs are correlated this identity no longer holds (although a
+``less-than-or-equal-to'' inequality is always true).  But it is
+useful to retain an intuitive interpretation of the $V_J$'s as a
+portion of the overall marginal variance.
+
+Our global SA will focus on the related sensitivity indices $S_J =
+V_J/\mr{var}(z)$ which, as can be seen in the above equation, will
+sum to one over all possible $J$ and are bounded to $[0,1]$.  These
+$S_J$'s provide a natural measure of the {\it importance} of a set $J$
+of inputs and serve as the basis for an elegant analysis of
+sensitivity.  The {\tt sens} function allows for easy calculation of
+two very important sensitivity indices associated with each input:
+the 1$^{\rm st}$ order for the $j$th input variable,
+\begin{equation}
+S_j = \frac{\mr{var}\left(\mbb{E}\left[z|x_j\right]\right)}{\mr{var}(z)},
+\label{eq:S}
+\end{equation}
+and the total sensitivity for input $j$, 
+\begin{equation}
+T_j = \label{eq:T} \frac{\mbb{E}\left[\mr{var}\left(z|\mb{x}_{-j}\right)\right]}{\mr{var}(z)}.
+\end{equation}
+The 1$^{\rm st}$ order indices measure the portion of variability that is due
+to variation in the main effects for each input variable, while the
+total effect indices measure the portion of variability that is due to
+total variation in each input.  From the identity
+$\mbb{E}\left[\mr{var}\left(z|\mb{x}_{-j}\right)\right] = \mr{var}(z)
+- \mr{var}\left(\mbb{E}\left[z|\mb{x}_{-j}\right]\right)$, it can be
+seen that $T_j$ measures the {\it residual} variability remaining
+after variability in all other inputs has been apportioned and that,
+for a deterministic response and uncorrelated input variables, $T_j =
+\sum_{J:j \in J} S_J$.  This implies that the difference between $T_j$
+and $S_j$ provides a measure of the variability in $z$ due to
+interaction between input $j$ and the other input variables.  A large
+difference may lead the investigator to consider other sensitivity
+indices to determine where this interaction is most influential, and
+this is often a key aspect of the dimension--reduction that SA provides
+for optimization problems.
+
+\subsection{Monte Carlo integration for sensitivity indices}
+
+Due to the many integrals involved, estimation of the sensitivity
+indices is not straightforward.  The influential paper by Oakley \&
+O'Hagan \cite{OaklOhag2004} describes an empirical Bayes estimation
+procedure for the sensitivity indices, however some variability in the
+indices is lost due to plug-in estimation of GP model parameters and,
+more worryingly, the variance ratios are only possible in the form of
+a ratio of expected values.  Marrel, et
+al.~\cite{MarrIoosLaurRous2009}, provide a more complete analysis of
+the GP approach to this problem, but their methods remain restricted
+to estimation of the first order Sobol indices. Likelihood based
+approaches have also been proposed
+\cite{WelcBuckSackWynnMitcMorr1992,MorrKottTaddFurfGana2008}.  The
+technique implemented in {\tt tgp} is, in contrast, fully Bayesian and
+provides a complete accounting of the uncertainty involved.  Briefly,
+at each iteration of an MCMC chain sampling from the treed GP
+posterior, output is predicted over a large (carefully chosen) set of
+input locations.  Conditional on this predicted output, the
+sensitivity indices can be calculated via Monte Carlo integration.  By
+conditioning on the predicted response (and working as though it were
+the observed response), we obtain a posterior sample of the indices,
+incorporating variability from both the integral estimation and
+uncertainty about the function output.  In particular, the {\tt sens}
+function includes a {\tt model} argument which allows for SA based on
+any of the prediction models (the {\tt b*} functions) in {\tt tgp}.
+
+Our Monte Carlo integration is based upon Saltelli's \cite{Salt2002}
+efficient Latin hypercube sampling (LHS) scheme for estimation of both
+1$^{\rm st}$ order and total effect indices. We note that the estimation is
+only valid for uncorrelated inputs, such that $u(\mb{x}) =
+\prod_{j=1}^d u_j(x_j)$.  The {\tt sens} function only allows for
+uncertainty distributions of this type (in fact, the marginal
+distributions also need to be bounded), but this is a feature of nearly
+every ``out-of-the-box'' approach to SA.  Studies which concern
+correlated inputs will inevitably require modeling for this
+correlation, whereas most regression models (including those in {\tt
+  tgp}) condition on the inputs and ignore the joint density for
+$\mb{x}$.  Refer to the work of Saltelli \& Tarantola
+\cite{SaltTara2002} for an example of SA with correlated inputs.
+
+
+We now briefly describe the integration scheme.  The 2nd moment is a
+useful intermediate quantity in variance estimation, and we define
+\[
+D_J = \mbb{E}\left[\mbb{E}^2\left[z|\mb{x}_{J}\right]\right] =
+\int_{\mbb{R}^{d_J}} \mbb{E}^2\left[z|
+  {\mb{x}_J}\right]u_J(\mb{x}_J)d(\mb{x}_J).
+\]
+Making use of an auxiliary variable,
+\begin{eqnarray*}
+  D_J &=&  \int_{\mbb{R}^{d_J}} \left[\int_{\mbb{R}^{d_{-J}}} 
+    \!\!\!\mbb{E}\left[ z | \mb{x}_J, \mb{x}_{-J} \right]u_{-J}(\mb{x}_{-J})d\mb{x}_{-J}
+    \int_{\mbb{R}^{d_{-J}}} \!\!\!\mbb{E}\left[ z | \mb{x}_J, \mb{x}'_{-J} \right]
+    u_{-J}(\mb{x}'_{-J})d\mb{x}'_{-J}\right]u_J(\mb{x}_J)\mb{x}_{J}\\
+  &=& \int_{\mbb{R}^{d + d_{-J}}} 
+  \!\!\mbb{E}\left[ z | \mb{x}_J, \mb{x}_{-J} \right]\mbb{E}\left[ z | \mb{x}_J, \mb{x}'_{-J} \right] 
+  u_{-J}(\mb{x}_{-J})u_{-J}(\mb{x}'_{-J})u_{J}(\mb{x}_{J})d\mb{x}d\mb{x}'_{J}. 
+\end{eqnarray*}
+Thus, in the case of independent inputs, 
+\[ 
+D_J =
+\int_{\mbb{R}^{d+d_{-J}}} \mbb{E}\left[ z |\mb{x} \right]\mbb{E}\left[
+  z | \mb{x}_J, \mb{x}'_{-J} \right] u_{-J}(\mb{x}'_{-J})u({\bf
+x})d\mb{x}'_{-J}d\mb{x}.
+\]  
+Note that at this point, if the inputs had
+been correlated, the integral would have been instead with respect to
+the joint density $u(\mb{x})u(\mb{x}_{-J}' | \mb{x}_J)$, leading to a more
+difficult integral estimation problem.
+
+Recognizing that $S_j = (D_j-\mbb{E}^2[z])/\mr{var}(z)$ and $T_j = 1-
+\left( \left(D_{-j} - \mbb{E}^2[z]\right)\right)/\mr{var}(z)$, we need
+estimates of $\mr{var}(z)$, $\mbb{E}^2[z]$, and $\{ (D_j, D_{-j}) :
+j=1,\ldots,d \}$ to calculate the sensitivity indices.  Given a LHS
+$M$ proportional to $u(\mb{x})$,
+\begin{equation*}
+M = \left[ 
+\begin{array}{c}
+s_{1_1} ~ \cdots ~ s_{1_d}\\ 
+\vdots  \\
+s_{m_1} ~ \cdots ~ s_{m_d}\\
+\end{array}
+\right],
+\end{equation*}
+it is possible to estimate $\widehat{\mbb{E}[z]} = \frac{1}{m}
+\sum_{k=1}^m\mbb{E}[z|{\bf s}_k]$ and $\widehat{\mr{var}[z]} =
+\frac{1}{m} \mbb{E}^T[z|M]\mbb{E}[z|M] - \widehat{\mbb{E}[z]}\widehat{\mbb{E}[z]}$,
+where the convenient notation $\mbb{E}[z|M]$ is taken to mean
+$\left[\mbb{E}[z|\mb{s}_1] \cdots \mbb{E}[z|\mb{s}_m]\right]^T$.  All
+that remains is to estimate the $D$'s.  Define a second LHS $M'$
+proportional to $u$ of the same size as $M$ and say that $N_J$ is $M'$
+with the $J$ columns replaced by the corresponding columns of $M$.
+Hence,
+\begin{equation*}
+N_j = \left[ 
+\begin{array}{c}
+s'_{1_1} \cdots s_{1_j} \cdots s'_{1_d}\\ 
+\vdots  \\
+s'_{m_1} \cdots s_{m_j} \cdots s'_{m_d}
+\end{array}\right]~~~\mr{and}~~~
+N_{-j} = \left[ 
+\begin{array}{c}
+s_{1_1} \cdots s'_{1_j} \cdots s_{1_d}\\ 
+\vdots  \\
+s_{m_1} \cdots s'_{m_j} \cdots s_{m_d} 
+\end{array}\right].
+\end{equation*}
+The estimates are then $\hat D_j =
+\mbb{E}^T[z|M]\mbb{E}[z|N_{j}]/(m-1)$ and $\hat D_{-j}$ $=$
+$\mbb{E}^T[z|M']\mbb{E}[z|N_{j}]/(m-1)$ $\approx$ $
+\mbb{E}^T[z|M]\mbb{E}[z|N_{-j}]/(m-1)$. Along with the variance and
+expectation estimates, these can be plugged into equations for $S_j$
+and $T_j$ in (\ref{eq:S}--\ref{eq:T}) to obtain $\hat S_j$ and $\hat
+T_j$.  Note that Saltelli recommends the use of the alternative
+estimate $\widehat{\mbb{E}^2[z]} =
+\frac{1}{n-1}\mbb{E}^T[z|M]\mbb{E}[z|M']$ in calculating 1$^{\rm st}$
+order indices, as this brings the index closer to zero for
+non-influential variables. However, it has been our experience that
+these biased estimates can be unstable, and so {\tt tgp} uses the
+standard $\widehat{\mbb{E}^2[z]} =
+\widehat{\mbb{E}[z]}\widehat{\mbb{E}[z]}$ throughout.  As a final
+point, we note that identical MCMC sampling-based integration schemes
+can be used to estimate other Sobol indices (e.g., second order, etc)
+for particular combinations of inputs, but that this would require
+customization of the {\tt tgp} software.
+
+The set of input locations which need to be evaluated for each
+calculation of the indices is $\{ M, M', N_1,\ldots,N_d \}$, and if
+$m$ is the sample size for the Monte Carlo estimate this scheme
+requires $m(d+2)$ function evaluations. Hence, at each MCMC
+iteration of the model fitting, the $m(d+2)$ locations are drawn
+randomly according the LHS scheme, creating a random prediction
+matrix, {\tt XX}.  By allowing random draws of the
+input locations, the Monte Carlo error of the integral estimates will
+be included in the posterior variability of the indices and the
+posterior moments will not be dependent upon any single estimation
+input set.  Using predicted output over this input set, a single
+realization of the sensitivity indices is calculated through
+Saltelli's scheme.  At the conclusion of the MCMC, we have a
+representative sample from the posterior for ${\bf S}$ and ${\bf T}$.
+The averages for these samples are unbiased estimates of the
+posterior mean, and the variability of the sample is representative of
+the complete uncertainty about model sensitivity.
+
+Since a subset of the predictive locations ($M$ and $M'$) are actually
+a LHS proportional to the uncertainty distribution, we can also
+estimate the main effects at little extra computational cost. At each
+MCMC iteration, a one--dimensional nonparametric regression is fit
+through the scatterplot of $[s_{1_j}, \ldots, s_{m_j},s'_{1_j},
+\ldots, s'_{m_j}]$ vs. $[\mbb{E}[z|M],\mbb{E}[z|M']]$ for each of the
+$j=1,\ldots,d$ input variables.  The resultant regression estimate
+provides a realization of $\mbb{E}[z|x_j]$ over a grid of $x_j$
+values, and therefore a posterior draw of the main effect curve.
+Thus, at the end of the MCMC, we have not only unbiased estimates of
+the main effects through posterior expectation, but also a full
+accounting of our uncertainty about the main effect curve.  This
+technique is not very sensitive to the method of non-parametric
+regression, since $2m$ will typically represent a very large sample in
+one--dimension.  The estimation in {\tt tgp} uses a moving average
+with squared distance weights and a window containing the {\tt
+  span}$*2m$ nearest points (the {\tt span} argument defaults to 0.3).
+
+
+\subsection{Examples}
+
+We illustrate the capabilities of the {\tt sens} function by looking
+at the Friedman function considered earlier in this vignette. 
+ The function that describes the
+responses ($Z$), observed with standard Normal noise, has mean
+\begin{equation}
+E(Z|\mb{x}) =  10 \sin(\pi x_1 x_2) + 20(x_3 - 0.5)^2 + 10x_4 + 5 x_5.
+\label{eq:f1}
+\end{equation}
+A sensitivity analysis can be based upon any of the available
+regression models (e.g., {\tt btlm}, {\tt bgp}, or {\tt btgp}); we
+choose to specify {\tt model=btgpllm} for this example.  
+The size of each LHS used in the integration scheme is specified
+through {\tt nn.lhs}, such that this is equivalent to $m$ in the above
+algorithm description.  Thus the number of locations used for
+prediction---the size of the random {\tt XX} prediction matrix---is
+{\tt nn.lhs*(ncol(X)+2)}.  In addition, the window for moving average
+estimation of the main effects is {\tt span*2*nn.lhs} (independent of
+this, an {\tt ngrid} argument with a default setting of 
+{\tt ngrid=100} dictates the number of grid points in each input
+dimension upon which main effects will be estimated).
+<<>>=
+f <- friedman.1.data(250) 
+@ 
+This function actually generates 10 covariates, the last five of
+which are completely un-influential.  We'll include one of these
+($x_6$) to show what the sensitivity analysis looks like for unrelated
+variables.
+<<>>=
+Xf <- f[, 1:6] 
+Zf <- f$Y 
+sf <- sens(X=Xf, Z=Zf, nn.lhs=600, model=bgpllm, verb=0)
+@ 
+
+The progress indicators printed to the screen (for {\tt verb > 0}) are
+the same as would be obtained under the specified regression {\tt
+  model}---{\tt bgpllm} in this case---so we suppress them here.  All
+of the same options (e.g., {\tt BTE}, {\tt R}, etc.) apply, although
+if using the {\tt trace} capabilities one should be aware that the
+{\tt XX} matrix is changing throughout the MCMC.  The {\tt sens}
+function returns a \verb!"tgp"!-class object, and all of the SA related
+material is included in the {\tt sens} list within this object.
+<<>>=
+names(sf$sens)
+@ 
+The object provides the SA parameters ({\tt par}), the grid of
+locations for main effect prediction ({\tt Xgrid}), the mean and
+interval estimates for these main effects ({\tt ZZ.mean}, {\tt ZZ.q1},
+and {\tt ZZ.q2}), and full posterior via samples of the sensitivity
+indices ({\tt S} and {\tt T}).
+
+The plot function for \verb!"tgp"!-class objects now provides a
+variety of ways to visualize the results of a sensitivity analysis.
+This capability is accessed by specifying {\tt layout="sens"} in the
+standard {\tt plot} command.  By default, the mean posterior main
+effects are plotted next to boxplot summaries of the posterior sample
+for each $S_j$ and $T_j$ index, as in Figure \ref{full}.
+\begin{figure}[ht!]
+<<label=sens-full,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
+plot(sf, layout="sens", legendloc="topleft")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[width=6.5in,trim=0 10 0 10]{tgp2-sens-full}
+\caption{Full sensitivity analysis results for the Friedman function.}
+\label{full}
+\end{figure}
+
+ 
+A further note on the role played by {\tt nn.lhs}: As always, the
+quality of the regression model estimate depends on the length of the
+MCMC.  But now, the quality of sensitivity analysis is directly
+influenced by the size of the LHS used for integral approximation; as
+with any Monte Carlo integration scheme, the sample size (i.e., {\tt
+  nn.lhs}) must increase with the dimensionality of the problem.  In
+particular, it can be seen in the estimation procedure described above
+that the total sensitivity indices (the $T_j$'s) are not forced to be
+non-negative. If negative values occur it is necessary to increase
+{\tt nn.lhs}.  In any case, the {\tt plot.tgp} function 
+changes any of the negative values to zero for purposes of illustration.
+
+The {\tt maineff} argument can be used to plot either selected main effects
+(Figure \ref{mains}),
+\begin{figure}[ht!]
+<<label=sens-mains,fig=TRUE,echo=TRUE,width=10,height=4,include=FALSE>>= 
+par(mar=c(4,2,4,2), mfrow=c(2,3))
+plot(sf, layout="sens", maineff=t(1:6))
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6.6in]{tgp2-sens-mains}
+\caption{Friedman function main effects, with posterior 90\% intervals.}
+  \label{mains}
+\end{figure}
+or just the sensitivity indices (Figure \ref{indices}).
+\begin{figure}[ht!]
+<<label=sens-indices,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
+plot(sf, layout="sens", maineff=FALSE)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6.5in,trim=0 15 0 15]{tgp2-sens-indices}
+\caption{Sensitivity indices for the Friedman function.}
+  \label{indices}
+\end{figure}
+Note that the posterior intervals shown in these plots represent
+uncertainty about both the function response and the integration
+estimates; this full quantification of uncertainty is not presently
+available in any alternative SA procedures.  These plots may be
+compared to what we know about the Friedman function (refer to
+Eq.~(\ref{eq:f1})) to evaluate the analysis.  The main effects
+correspond to what we would expect: sine waves for $x_1$ and $x_2$, a
+parabola for $x_3$, and linear effects for $x_4$ and $x_5$.  The
+sensitivity indices show $x_1$ and $x_2$ contributing roughly
+equivalent amounts of variation, while $x_4$ is relatively more
+influential than $x_5$.  Full effect sensitivity indices for $x_3$,
+$x_4$, and $x_5$ are roughly the same as the first order indices, but
+(due to the interaction in the Friedman function) the sensitivity
+indices for the total effect of $x_1$ and $x_2$ are significantly
+larger than the corresponding first order indices.  Finally, our SA is
+able to determine that $x_6$ is unrelated to the response.
+
+This analysis assumes the default uncertainty
+distribution, which is uniform over the range of  input data.  In
+other scenarios, it is useful to specify an informative $u(\mb{x})$.
+In the {\tt sens} function, properties of $u$ are defined through the
+{\tt rect}, {\tt shape}, and {\tt mode} arguments.  To guarantee
+integrability of our indices, we have restricted ourselves to bounded
+uncertainty distributions.  Hence, {\tt rect} defines these bounds. In
+particular, this defines the domain from which the LHSs are to be
+taken. We then use independent scaled beta distributions,
+parameterized by the {\tt shape} parameter and distribution {\tt
+  mode}, to define an informative uncertainty distribution over this
+domain.
+
+As an example of sensitivity analysis under an informative uncertainty
+distribution, consider the {\tt airquality} data available with the
+base distribution of {\sf R}.  This data set contains daily readings
+of mean ozone in parts per billion ({\it Ozone}), solar radiation
+({\it Solar.R}), wind speed ({\it Wind}), and maximum temperature
+({\it Temp}) for New York City, between May 1 and September 30, 1973.
+Suppose that we are interested in the sensitivity of air quality to
+natural changes in {\it Solar.R},{\it Wind}, and {\it Temp}.  For
+convenience, we will build our uncertainty distribution while assuming
+independence between these inputs.  Hence, for each
+variable, the input uncertainty distribution will be a scaled beta
+with {\tt shape=2},
+and {\tt mode} equal to the data mean.
+<<>>=
+X <- airquality[,2:4]
+Z <- airquality$Ozone
+rect <- t(apply(X, 2, range, na.rm=TRUE))
+mode <- apply(X , 2, mean, na.rm=TRUE)
+shape <- rep(2,3)
+@ 
+LHS samples from the uncertainty distribution are shown in Figure
+(\ref{udraw})
+\begin{figure}[ht!]
+<<label=sens-udraw,fig=TRUE,echo=TRUE,width=8,height=4,include=FALSE>>= 
+Udraw <- lhs(300, rect=rect, mode=mode, shape=shape)
+par(mfrow=c(1,3), mar=c(4,2,4,2))
+for(i in 1:3){
+  hist(Udraw[,i], breaks=10,xlab=names(X)[i], 
+       main="",ylab="", border=grey(.9), col=8) 
+}  
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6in,trim=0 0 0 30]{tgp2-sens-udraw}
+\caption{A sample from the marginal uncertainty distribution for the
+  airquality data.}
+\label{udraw}
+\end{figure}
+
+Due to missing data (discarded in the current version of {\tt tgp}),
+we suppress warnings for the sensitivity analysis.  We shall use
+the default {\tt model=btgp}.
+<<>>=
+s.air <- suppressWarnings(sens(X=X, Z=Z, nn.lhs=300, rect=rect, 
+                               shape=shape, mode=mode, verb=0))
+@ 
+Figure (\ref{air1}) shows the results from this analysis.
+\begin{figure}[ht!]
+<<label=sens-air1,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
+plot(s.air, layout="sens")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6.5in,trim=0 15 0 15]{tgp2-sens-air1}
+\caption{Sensitivity of NYC airquality to natural variation in wind,
+  sun, and temperature.}
+\label{air1}
+\end{figure}
+
+
+Through use of {\tt predict.tgp}, it is possible to quickly
+re-analyze with respect to a new uncertainty distribution without
+running new MCMC.  We can, for example, look at sensitivity for air
+quality on only low--wind days.  We thus alter the uncertainty
+distribution (assuming that things remain the same for the other
+variables)
+<<>>=
+rect[2,] <- c(0,5)
+mode[2] <- 2
+shape[2] <- 2
+@ 
+and build a set of parameters {\tt sens.p} with the {\tt sens}
+function by setting {\tt model=NULL}.  
+<<>>=
+sens.p <- suppressWarnings(sens(X=X,Z=Z,nn.lhs=300, model=NULL, rect=rect, shape=shape, mode=mode))
+@ 
+\begin{figure}[ht!]
+<<label=sens-air2,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
+s.air2 <- predict(s.air, BTE=c(1,1000,1), sens.p=sens.p, verb=0) 
+plot(s.air2, layout="sens")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[width=6.5in,trim=0 15 0 15]{tgp2-sens-air2}
+\caption{Air quality sensitivity on low-wind days.}
+\label{air2}
+\end{figure}
+Figures (\ref{air1}) and (\ref{air2}) both show total effect indices
+which are much larger than the respective first order sensitivities.
+As one would expect, the effect on airquality is manifest largely
+through an interaction between variables.
+
+Finally, it is also possible to perform SA with binary covariates,
+included in the regression model as described in Section 1.  In this
+case, the uncertainty distribution is naturally characterized by a
+Bernoulli density. Setting {\tt shape[i]=0} informs {\tt sens} that
+the relevant variable is binary (perhaps encoding a categorical input
+as in Section \ref{sec:cat}), and that the Bernoulli uncertainty
+distribution should be used.  In this case, the {\tt mode[i]}
+parameter dictates the probability parameter for the Bernoulli, and we
+must have {\tt rect[i,] = c(0,1)}.  As an example, we re-analyze the
+original air quality data with temperature included as an indicator
+variable (set to one if temperature > 79, the median, and zero
+otherwise).
+<<>>=
+X$Temp[X$Temp >70] <- 1
+X$Temp[X$Temp >1] <- 0
+rect <- t(apply(X, 2, range, na.rm=TRUE))
+mode <- apply(X , 2, mean, na.rm=TRUE)
+shape <- c(2,2,0)
+s.air <- suppressWarnings(sens(X=X, Z=Z, nn.lhs=300, rect=rect, 
+                               shape=shape, mode=mode, verb=0, basemax=2))
+@ 
+\begin{figure}[ht!]
+<<label=sens-air3,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>= 
+plot(s.air, layout="sens")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6.5in,trim=0 15 0 15]{tgp2-sens-air3}
+\caption{Sensitivity of NYC airquality to natural variation in wind,
+  sun, and a binary temperature variable (for a threshold of 79 degrees).}
+\label{air3}
+\end{figure}
+Figure (\ref{air3}) shows the results from this analysis.
+
+\section{Statistical search for optimization}
+\label{sec:optim}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+There has been considerable recent interest in the use of
+statistically generated search patterns (i.e., locations of relatively
+likely optima) for optimization.  A popular approach is to estimate a
+statistical (surrogate) model, and use it to design a set of
+well-chosen candidates for further evaluation by a direct optimization
+routine.  Such statistically designed search patterns can be used
+either to direct the optimization completely (e.g.,
+\cite{JoneSchoWelc1998} or \cite{RommShoe2007}) or to work in hybrid
+with local pattern search optimization (as in
+\cite{TaddLeeGrayGrif2009}).  An bonus feature of the statistical
+surrogate approach is that it may be used to tackle problems of
+optimization under uncertainty, wherein the function being optimized
+is observed with noise.  In this case the search is for input
+configurations which optimize the response with high probability.
+Direct-search methods would not apply in this scenario without
+modification. However, a sensible hybrid could involve inverting the
+relationship between the two approaches so that direct-search is used
+on deterministic predictive surfaces from the statistical surrogate
+model.  This search can be used to find promising candidates to
+compliment space-filling ones at which some statistical
+improvement criterion is evaluated.
+
+Towards situating {\tt tgp} as a promising statistical surrogate model
+for optimization (in both contexts) the approach developed by Taddy,
+et al.~\cite{TaddLeeGrayGrif2009}, has been implemented to produce a
+list of input locations that is ordered by a measure of the potential
+for new optima.  The procedure uses samples from the posterior
+predictive distribution of treed GP regression models to estimate
+improvement statistics and build an ordered list of search locations
+which maximize expected improvement.  The single location improvement
+is defined $I(\mb{x}) = \mathrm{max}\{f_{min}-f(\mb{x}),0\}$, where
+$f_{min}$ is the minimum evaluated response in the search (refer to
+\cite{SchoWelcJone1998} for extensive discussion on general
+improvement statistics and initial vignette~\cite{gramacy:2007} for
+details of a base implementation in {\tt tgp}).  Thus, a high
+improvement corresponds to an input location that is expected to be
+much lower than the current minimum.  The criterion is easily changed
+to a search for maximum values through negation of the response.  The
+improvement is always non-negative, as points which do not turn out to
+be new minimum points still provide valuable information about the
+output surface.  Thus, in the expectation, candidate locations will be
+rewarded for high response uncertainty (indicating a poorly explored
+region of the input space), as well as for low mean predicted
+response.  Our {\tt tgp} generated search pattern will consist of $m$
+locations that recursively maximize (over a discrete candidate set) a
+sequential version of the expected multi-location improvement
+developed by Schonlau, et al.~\cite{SchoWelcJone1998}, defined as
+$\mbb{E}\left[I^g(\mb{x}_1, \ldots, \mb{x}_m)\right]$ where
+\begin{equation} 
+\label{eqn:imult} I^g(\mb{x}_1,
+\ldots, \mb{x}_m) = \left(\mathrm{max}\{(f_{min}-f(\mb{x}_1)), \ldots,
+(f_{min}-f(\mb{x}_m)), 0 \}\right)^g.  
+\end{equation}
+Increasing $g \in \{0,1,2,3,\ldots\}$ increases the global scope of
+the criteria by rewarding in the expectation extra variability at
+$\mb{x}$.  For example, $g=0$ leads to $\mbb{E}[I^0(\mb{x})] =
+\Pr(I(\mb{x})>0)$ (assuming the convention $0^0=0$), $g=1$ yields the
+standard statistic, and $g=2$ explicitly rewards the improvement
+variance since $\mbb{E}[I^2(\mb{x})] = \mr{var}[I(\mb{x})] +
+\mbb{E}[I(\mb{x})]^2$.  For further discussion on the role of $g$, see
+\cite{SchoWelcJone1998} .
+
+Finding the maximum expectation of (\ref{eqn:imult}) is practically
+impossible for the full posterior distribution of $I^g(\mb{x}_1,
+\ldots, \mb{x}_m)$, and would require conditioning on a single fit for
+the model parameters (for example, static imputation of predictive GP
+means can be used to recursively build the improvement set
+\cite{GinsLe-RCarr2009}).  However, {\tt tgp} just seeks to maximize
+over a discrete list of predictive locations.  In fact, the default is
+to return an ordering for the entire {\tt XX} matrix, thus defining a
+ranking of predictive locations by order of decreasing expected
+improvement.  There is no restriction on the form for {\tt
+  XX}.\footnote{A full optimization routine would require that the
+  search pattern is placed within an algorithm iterating towards
+  convergence, as in \cite{TaddLeeGrayGrif2009}.  However, we
+  concentrate here on the statistical problem of choosing the next
+  samples optimally.  We shall touch on issues of convergence in
+  Section \ref{sec:optimskel} where we describe a skeleton scheme for
+  optimization extending {\sf R}'s internal {\tt optim}
+  functionality.}  The structure of this scheme will dictate the form
+for {\tt XX}.  If it is the case that we seek simply to explore the
+input space and map a list of potential locations for improvement,
+using LHS to choose {\tt XX} will suffice.
+
+The discretization of decision space allows for a fast iterative
+solution to the optimization of $\mbb{E}\left[I^g(\mb{x}_1, \ldots,
+  \mb{x}_m)\right]$.  This begins with evaluation of the simple
+improvement $I^g(\tilde{\mb{x}}_i)$ over $\tilde{\mb{x}}_i \in {\bf
+  \tilde X}$ at each of $T=$ {\tt BTE[2]-BTE[1]} MCMC iterations (each
+corresponding to a single posterior realization of {\tt tgp}
+parameters and predicted response after burn-in) to obtain the
+posterior sample
+\begin{equation*}
+ \mathcal{I} = \left\{ 
+\begin{array}{rcl} I^g(
+\tilde{\mb{x}}_1)_1& \ldots& I^g(\tilde{\mb{x}}_m)_1\\ 
+&\vdots& \\ 
+I^g( \tilde{\mb{x}}_1)_T& \ldots& I^g(\tilde{\mb{x}}_m)_T
+ \end{array}\right\}.  
+\end{equation*} 
+Recall that in {\tt tgp} parlance, and as input to the {\tt b*}
+functions: $\tilde{\mb{X}}\equiv $ {\tt XX}.
+
+We then proceed iteratively to build an {\it ordered} collection of
+$m$ locations according to an iteratively refined improvement:
+Designate $\mb{x}_1 = \mathrm{argmax}_{\tilde{\mb{x}} \in {\bf \tilde
+    X}} \mbb{E}\left[I^g( \tilde{\mb{x}})\right]$, and for
+$j=2,\ldots,m$, given that $\mb{x}_1, \ldots, \mb{x}_{j-1}$ are
+already included in the collection, the next member is
+\begin{eqnarray*}
+ \mb{x}_j &=& \mathrm{argmax}_{\tilde{\mb{x}} \in {\bf \tilde X}} \mbb{E}\left[
+\mathrm{max}\{I^g( \mb{x}_1, \ldots, \mb{x}_{j-1}), I^g(\tilde{\mb{x}}) \} \right]\\ 
+&=& \mathrm{argmax}_{\tilde{\mb{x}} \in {\bf \tilde X}}
+\mbb{E}[\left(\mathrm{max}\{(f_{min}-f(\mb{x}_1)), \ldots,
+(f_{min}-f(\mb{x}_{j-1})), (f_{min}-f(\tilde{\mb{x}})), 0\}\right)^g ] \\
+&=& \mathrm{argmax}_{\tilde{\mb{x}} \in {\bf \tilde X}} \mbb{E}\left[I^g(\mb{x}_1,
+\ldots, \mb{x}_{j-1},\tilde{\mb{x}})\right].
+\end{eqnarray*} 
+Thus, after each $j^{\rm th}$ additional point is added to the set, we have
+the maximum expected $j$--location improvement conditional on the first
+$j-1$ locations.  This is not necessarily the unconditionally maximal
+expected $j$--location improvement; instead, point $\mb{x}_j$ is the
+location which will cause the greatest increase in expected
+improvement over the given $(j-1)$--location expected improvement.
+
+The posterior sample $\mathcal{I}$ acts as a discrete approximation to
+the true posterior distribution for improvement at locations within
+the candidate set {\tt XX}.  Based upon this approximation, iterative
+selection of the point set is possible without any re-fitting of the
+{\tt tgp} model.  Conditional on the inclusion of
+$\tilde{\mb{x}}_{i_1},\ldots,\tilde{\mb{x}}_{i_{l-1}}$ in the
+collection, a posterior sample of the $l$--location improvement
+statistics is calculated as
+\begin{equation*}
+\mathcal{I}_l = \left\{
+\begin{array}{rcl}
+I^g( \tilde{\mb{x}}_{i_1},\ldots,\tilde{\mb{x}}_{i_{l-1}}, \tilde{\mb{x}}_1)_1 
+& \ldots& 
+I^g(  \tilde{\mb{x}}_{i_1},\ldots,\tilde{\mb{x}}_{i_{l-1}}, \tilde{\mb{x}}_m)_1\\
+&\vdots& \\
+I^g(\tilde{\mb{x}}_{i_1},\ldots,\tilde{\mb{x}}_{i_{l-1}}, {\tilde x}_1)_T& 
+\ldots& I^g(\tilde{\mb{x}}_{i_1},\ldots,\tilde{\mb{x}}_{i_{l-1}},\tilde{\mb{x}}_m)_T
+\end{array}\right\},
+\end{equation*}
+where the element in the $t^{\rm th}$ row and $j^{\rm th}$ column of
+this matrix is calculated as max$\{I^g(\tilde{\mb{x}}_{i_1}$, $\ldots,$
+$\tilde{\mb{x}}_{i_{l-1}})_t$, $I^g(\tilde{\mb{x}}_j)_t\}$ and the
+$l^{\rm th}$ location included in the collection corresponds to the
+column of this matrix with maximum average.  Since the multi-location
+improvement is always at least as high as the improvement at any
+subset of those locations, the same points will not be chosen twice
+for inclusion.  In practice, very few iterations (about 10\% of the
+total candidate size under the default inference and regression
+model(s)) through this ordering process can be performed before the
+iteratively updated improvement statistics become essentially zero.
+Increasing the number of MCMC iterations ({\tt BTE[2]-BTE[1]}) can
+mitigate this to a large extent.\footnote{Once a zero (maximal)
+  iterative improvement is attained the rest of the ranking is
+  essentially arbitrary, at which point {\tt tgp} cuts off the process
+  prematurely.}  We refer the reader to \cite{TaddLeeGrayGrif2009} for
+further details on this approach to multi-location improvement search.
+
+
+
+\subsection{A simple example}
+
+We shall use the Rosenbrock function to illustrate the production of
+an ordered collection of (possible) adaptive samples to maximize the
+expected improvement within {\tt tgp}.  Specifically, the two
+dimensional Rosenbrock function is defined as
+<<>>=
+rosenbrock <- function(x){ 
+  x <- matrix(x, ncol=2)
+  100*(x[,1]^2 - x[,2])^2 + (x[,1] - 1)^2 
+}
+@ 
+and we shall bound the search space for adaptive samples to the
+rectangle: $-1\le x_i \le 5$ for $i=1,2$.  The single global minimum
+of the Rosenbrock function is at $(1,1)$.
+<<>>=
+rosenbrock(c(1,1))
+@ 
+This function involves a long steep valley with a gradually sloping
+floor, and is considered to be a difficult problem for local
+optimization routines.
+
+We begin by drawing an LHS of 40 input locations within the 
+bounding rectangle, and evaluating the function at these locations.
+<<>>=
+rect <- cbind(c(-1,-1),c(5,5))
+X <- lhs(40, rect)
+Z <- rosenbrock(X)
+@ 
+
+We will fit a {\tt bgp} model to this data to predict the Rosenbrock
+response at unobserved (candidate) input locations in {\tt XX}.  The
+{\tt improv} argument may be used to obtain an ordered list of places
+where we should be looking for new minima.  In particular, specifying
+{\tt improv=c(1,10)} will return the 10 locations which maximize the
+iterative multi-location expected improvement function, with $g=1$
+(i.e., Eq.~(\ref{eqn:imult})).  Note that {\tt improv=TRUE} is also
+possible, in which case {\tt g} defaults to one and the entire list of
+locations is ranked.  Our candidate set is just a space filling LHS
+design.  In other situations, it may be useful to build an informative
+LHS design (i.e., to specify {\tt shape} and {\tt mode} arguments for
+the {\tt lhs} function) to reflect what is already known about the
+location of optima.
+<<>>=
+XX <- lhs(200, rect)
+rfit <- bgp(X,Z,XX,improv=c(1,10), verb=0)
+@ 
+Upon return, the \verb!"tgp"!-class object {\tt rfit} includes the matrix
+{\tt improv}, which is a list of the expected single location
+improvement for the 200 {\tt XX} locations, and the top 10 ranks.
+Note that the {\tt rank}s for those points which are not included in
+the top 10 are set to {\tt nrow(XX)=}\Sexpr{nrow(XX)}.  Here are the
+top 10:
+<<>>=
+cbind(rfit$improv,XX)[rfit$improv$rank <= 10,]
+@ 
+This iterative algorithm may produce ranks that
+differ significantly from a straightforward ordering of expected
+improvement.  This leads to a list that better explores the input
+space, since the expected improvement is naturally balanced against a
+desire to search the domain.
+
+We plot the results with the usual function, by setting {\tt
+  as="improv"}, in Figure \ref{optim-fit1}.
+\begin{figure}[htb!]
+<<label=optim-fit1,fig=TRUE,echo=TRUE,width=10,height=6,include=FALSE>>= 
+plot(rfit, as="improv")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=6.5in,trim=0 25 0 25]{tgp2-optim-fit1}
+\caption{The {\em left} panel shows the mean predicted Rosenbrock function
+  response, and on the {\em right} we have expected single location
+  improvement with the top 10 points (labelled by rank) plotted on
+  top.}
+\label{optim-fit1}
+\end{figure}
+The banana--shaped region of higher expected improvement corresponds to
+the true valley floor for the Rosenbrock function, indicating the that
+{\tt bgp} model is doing a good job of prediction.  Also, we note that
+the ordered input points are well dispersed throughout the valley---a
+very desirable property for adaptive sampling candidates.
+
+It is straightforward, with {\tt predict.tgp}, to obtain a new ordering
+for the more global {\tt g=5} (or any new {\tt g}).
+Figure \ref{optim-fit2} shows a more diffuse expected improvement
+surface and a substantially different point ordering.  In practice, we
+have found that {\tt g=2} provides a good compromise between local and
+global search. 
+
+\begin{figure}[htb!]
+<<label=optim-fit2,fig=TRUE,echo=TRUE,width=5,height=6,include=FALSE>>= 
+rfit2 <- predict(rfit, XX=XX, BTE=c(1,1000,1), improv=c(5,20), verb=0) 
+plot(rfit2, layout="as", as="improv")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[width=3.25in,trim=0 25 0 25]{tgp2-optim-fit2}
+\caption{The expected improvement surface and top 20 ordered locations,
+for {\tt g=5}.}
+\label{optim-fit2}
+\end{figure}
+
+
+\subsection{A skeleton optimization scheme}
+\label{sec:optimskel}
+
+%% The nature of global optimization demands that a fine balance be
+%% struck between global and local search.  Therefore, designing a
+%% one--size--fits--all approach would be a daunting task.  For one
+%% thing, assessing convergence in any formal sense would be quite
+%% difficult, although in practice it would be straightforward to
+%% ``force'' convergence by (eventually) focusing the method on finding a
+%% local solution.  In the case where the function evaluations are
+%% deterministic, final convergence to a the local solution is always
+%% possible through the use of {\tt R}'s {\tt optim} function, for
+%% example.  A method using {\tt tgp} based on a similar, but more
+%% formalized approach, using a direct/pattern search (in place of {\tt
+%%   optim}) has been recently demonstrated in the context of
+%% sequentially designing computer experiments to solve an optimization
+%% problem \cite{TaddLeeGrayGrif2009}. Generally speaking, the result is
+%% a sensible compromise between local and global search.  When the
+%% function evaluations are noisy one can always create a deterministic
+%% approximation, i.e., via the MAP predictive distribution (i.e., a
+%% kriging surrogate), for use with {\tt optim} in order to obtain
+%% convergence to a local optima.
+%% 
+%% It may be possible to base assessments of convergence on the
+%% improvement statistic, which would naturally tend to zero as more
+%% points are added into the design. But any such assessments would hinge
+%% upon being able to drive the (Monte Carlo) method used to infer the
+%% model parameters---on which the improvement statistic is based---to a
+%% fixed point.  In the context of MCMC this is only guaranteed as the
+%% number of samples gathered tends to infinity.  Even if obtaining
+%% asymptotic convergence in this way is clearly a pipe dream, the
+%% practical application of this idea, and those based on local
+%% optimization mentioned above, can still bear fruit.  Insight into
+%% convergence in practice is still a very tangible concept.  Moreover,
+%% for many applications the considerations of convergence may even take
+%% a back seat to other budgetary constraints where the efficient
+%% allocation of an available resource (say computer cycles) is more
+%% important than a bottom--line based upon convergence which may only be
+%% achieved at all costs in the best of scenarios.
+
+The capabilities outlined above are useful in their own right, as a
+search list or candidate set ranked by expected improvement gain
+provides concrete information about potential optima.  However, a full
+optimization framework requires that the production of these sets of
+search locations are nested within an iterative search scheme.  The
+approach taken by Taddy, et al.~\cite{TaddLeeGrayGrif2009}, achieves
+this by taking the {\tt tgp} generated sets of locations and using
+them to augment a local optimization search algorithm.  In this way,
+the authors are able to achieve robust solutions which balance the
+convergence properties of the local methods with the global scope
+provided by {\tt tgp}.  Indeed, any optimization routine capable of
+evaluating points provided by an outside source could benefit from a
+{\tt tgp} generated list of search locations.
+
+In the absence of this sort of formal hybrid search algorithm, it is
+still possible to devise robust optimization algorithms based around
+{\tt tgp}.  A basic algorithm is as follows: first, use a LHS to
+explore the input space (see the {\tt lhs} function included in {\tt
+  tgp}).  Repeatedly fit one of the {\tt b*} models with {\tt
+  improv!=FALSE} to the evaluated iterates to produce a search set,
+then evaluate the objective function over this search set, as
+described earlier.  Then evaluate the objective function over the
+highest ranked locations in the search set.  Continue until you are
+confident that the search has narrowed to a neighborhood around the
+true optimum (a good indicator of this is when all of the top-ranked
+points are in the same area).  At this point, the optimization may be
+completed by {\tt optim}, {\sf R}'s general purpose local optimization
+algorithm in order to guarentee convergence.  The {\tt optim} routine
+may be initialized to the best input location (i.e. corresponding the
+most optimal function evaluation) found thus far by {\tt tgp}.
+
+Note that this approach is actually an extreme version of a template
+proposed by Taddy, et al.~\cite{TaddLeeGrayGrif2009}, where the
+influence of global (i.e. {\tt tgp}) search is downweighted over time
+rather than cut off.  In either case, a drawback to such approaches
+is that they do not apply when the function being optimized is
+deterministic.  An alternative scheme is to employ both {\tt tgp}
+search and a local optimization at each iteration.  The idea is that a
+mix of local and global information is provided throughout the entire
+optimization, but with an added twist.  Rather than apply {\tt optim}
+on the stochastic function directly, which would not converge due to
+the noise, it can be applied on a deterministic (MAP) kriging surface
+provided by {\tt tgp}.  The local optima obtained can be used to
+augment the candidate set of locations where the improvement statistic
+is gathered---which would otherwise be simple LHS.  That way the search
+pattern produced on output is likely to have a candidate with high
+improvement.  
+
+To fix ideas, and for the sake of demonstration, the {\tt tgp} package
+includes a skeleton function for performing a single iteration in the
+derivative--free optimization of noisy black--box functions.  The
+function is called {\tt optim.step.tgp}, and the name is intended to
+emphasize that it performs a single step in an optimization by trading
+off local {\tt optim}--based search of {\tt tgp} predictive (kriging
+surrogate) surfaces, with the expected posterior improvement.  In
+other words, it is loosely based on some the techniques alluded to
+above, but is designed to be augmented/adjusted as needed.  Given $N$
+pairs of inputs and responses $(\mb{X}, \mb{Z})$, {\tt optim.step.tgp}
+suggests new points at which the function being optimized should be
+evaluated.  It also returns information that can be used to assess
+convergence.  An outline follows.
+
+The {\tt optim.step.tgp} function begins by constructing a set of
+candidate locations, either as a space filling LHS over the input
+space (the default) or from a treed $D$--optimal design, based on a
+previously obtained \verb!"tgp"!-class model.  {\sf R}'s {\tt optim}
+command is used on the MAP predictive surface contained within the
+object to obtain an estimate of the current best guess $\mb{x}$-location of
+the optimal solution.  A standalone subroutine called {\tt
+  optim.ptgpf} is provided for this specific task, to be used within
+{\tt optim.step.tgp} or otherwise.  Within {\tt optim.step.tgp}, {\tt
+  optim.ptgpf} is initialized with the data location currently
+predicted to be the best guess of the minimum.  The optimal
+$x$-location found is then added into the set of candidates as it is
+likely that the expected improvement would be high there.
+
+Then, a new \verb!"tgp"!-class object is obtained by applying a {\tt
+  b*} function to $(\mb{X}, \mb{Z})$ whilst sampling from the
+posterior distribution of the improvement statistic.  The best one,
+two, or several locations with highest improvement ranks are suggested
+for addition into the design.  The values of the maximum improvement
+statistic are also returned in order to track progress in future
+iterations.  The \verb!"tgp"!-class object returned is used to
+construct candidates and initialize the {\tt optim.ptgpf} function in
+future rounds.
+
+To illustrate, consider the 2-d exponential data from the
+initial vignette \cite{gramacy:2007} as our noisy
+function $f$.
+<<>>=
+f <- function(x) { exp2d.Z(x)$Z }
+@ 
+Recall that this data is characterized by a mean value of
+\[
+f(\mb{x}) =  x_1 \exp(-x_1^2 - x_2^2)
+\]
+which is observed with a small amount of Gaussian noise (with sd
+$=0.001$).  Elementary calculus gives that the minimum of $f$ is
+obtained at $\mb{x} = (-\sqrt{1/2},0)$.
+
+The {\tt optim.step.tgp} function requires that the search domain be
+defined by a bounding rectangle, and we require an initial design to
+start things off.  Here we shall use $[-2,6]^2$ with an LHS design
+therein.
+<<>>=
+rect <- rbind(c(-2,6), c(-2,6))
+X <- lhs(20, rect)
+Z <- f(X)
+@ 
+The following code proceeds with several rounds of sequential 
+design towards finding the minimum of {\tt f}.
+<<keep.source=TRUE>>=
+out <- progress <- NULL
+for(i in 1:20) {
+  
+  ## get recommendations for the next point to sample
+  out <- optim.step.tgp(f, X=X, Z=Z, rect=rect, prev=out, verb=0)
+
+  ## add in the inputs, and newly sampled outputs
+  X <- rbind(X, out$X)
+  Z <- c(Z, f(out$X))
+  
+  ## keep track of progress and best optimum
+  progress <- rbind(progress, out$progress)
+}
+@ 
+The {\tt progress} can be tracked through the rows of a {\tt
+  data.frame}, as constructed above, containing a listing of the input
+location of the current best guess of the minimum for each round,
+together with the value of the objective at that point, as well as the
+maximum of the improvement statistic.
+\begin{figure}[ht!]
+\centering
+<<label=optim-progress,fig=TRUE,echo=TRUE,width=14,height=7.5,include=FALSE>>=
+par(mfrow=c(1,2))
+matplot(progress[,1:2], main="x progress",
+        xlab="rounds", ylab="x[,1:2]", type="l", lwd=2)
+legend("topright", c("x1", "x2"), lwd=2, col=1:2, lty=1:2)
+plot(log(progress$improv), type="l", main="max log improv",
+     xlab="rounds", ylab="max log(improv)")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\includegraphics[trim=40 20 0 0]{tgp2-optim-progress}
+%\vspace{-0.5cm}
+\caption{Progress in iterations of {\tt optim.step.tgp} shown by tracking
+  the $\mb{x}$--locations of the best guess of the minimum ({\em left})
+  and the logarithm of the maximum of the improvement statistics at
+  the candidate locations ({\em right})}
+\label{f:optim:progress}
+\end{figure}
+In addition to printing this data to the screen, plots such as the
+ones in Figure \ref{f:optim:progress} can be valuable for assessing
+convergence.  As can be seen in the figure, the final iteration
+gives an $\mb{x}$-value that is very close to the correct result,
+and is (in some loose sense) close to convergence.
+<<>>=
+out$progress[1:2]
+@ 
+
+As mentioned above, if it is known that the function evaluations are
+deterministic then, at any time, {\sf R}'s {\tt optim} routine can be
+invoked---perhaps initialized by the $\bm{x}$-location in
+\verb!out$progress!---and convergence to a local optimum thus
+guaranteed.  Otherwise, the quantities in \verb!out$progress! will
+converge, in some sense, as long as the number of MCMC rounds used in
+each round, above, ($T=$ {\tt BTE[2]-BTE[1]}) tends to infinity.  Such
+arguments to the {\tt b*} functions can be set via the ellipses ({\tt
+  ...})  arguments to {\tt optim.step.tgp}.\footnote{This runs
+  contrary to how the ellipses are used by {\tt optim} in order to
+  specify static arguments to {\tt f}.  If setting static arguments to
+  {\tt f} is required within {\tt optim.step.tgp}, then they must be
+  set in advance by adjusting the default arguments via {\tt
+    formals}.}  A heuristic stopping criterion can be based on the
+maximum improvement statistic obtained in each round as long as the
+candidate locations become dense in the region as $T\rightarrow
+\infty$.  This can be adjusted by increasing the {\tt NN} argument to
+{\tt optim.step.tgp}.
+
+The internal use of {\tt optim} within {\tt optim.step.tgp} on the
+posterior predictive (kriging surrogate) surface via {\tt optim.ptgpf}
+may proceed with any of the usual method arguments.  I.e.,
+<<>>=
+formals(optim)$method
+@ 
+however the default ordering is switched in {\tt optim.ptgpf}
+and includes one extra method.
+<<>>=
+formals(optim.ptgpf)$method
+@ 
+Placing \verb!"L-BFGS-B"! in the default position is sensible since
+this method enforces a rectangle of constraints as specified by {\tt
+  rect}.  This guarentees that the additional candidate found by {\tt
+  optim.ptfpf} will be valid.  However, the other {\tt optim} methods
+generally work well despite that they do not enforce this constraint.
+The final method, \verb!"optimize"!, applies only when the inputs to
+{\tt f} are 1-d.  In this case, the documentation for {\tt optim}
+suggests using the {\tt optimize} function instead.
+
+\section{Importance tempering}
+\label{sec:it}
+
+<<echo=false,results=hide>>=
+seed <- 0; set.seed(seed)
+@ 
+
+It is well--known that MCMC inference in Bayesian treed methods
+suffers from poor mixing.  For example, Chipman et
+al.~\cite{chip:geor:mccu:1998,chip:geor:mccu:2002} recommend
+periodically restarting the MCMC to avoid chains becoming stuck in
+local modes of the posterior distribution (particularly in tree
+space).  The treed GP models are or no exception, although it is worth
+remarking that using flexible GP models at the leaves of the tree
+typically results in shallower trees, and thus less pathalogical
+mixing in tree space.  Version 1.x provided some crude tools to help
+mitigate the effects of poor mixing in tree space.  For example, the
+{\tt R} argument to the {\tt b*} functions facilitates the restarts
+suggested by Chipman et al.
+
+A modern Monte Carlo technique for dealing with poor mixing in Markov
+chain methods is to employ {\em tempering} to flatten the
+peaks and raise the troughs in the posterior distribution so that
+movements between modes is more fluid.  One such method, called {\em
+  simulated tempering} (ST) \cite{geyer:1995}, is essentially the MCMC
+analogue of the popular simulated annealing algorithm for
+optimization.  The ST algorithm helps obtain samples from a multimodal
+density $\pi(\theta)$ where standard methods, such as
+Metropolis--Hastings (MH) \cite{met:1953,hast:1970} and Gibbs Sampling
+(GS) \cite{geman:1984}, fail.
+
+As will be shown in our examples, ST can guard against becoming stuck
+in local modes of the {\tt tgp} posterior by encouraging better mixing
+{\em between modes} via in increase in the acceptance rate of tree
+modification proposals, particularly {\em prunes}.  However, as we
+will see, ST suffers from inefficiency because it discards the lions
+share of the samples it collects.  The discarded samples can be
+recycled if they are given appropriate importance sampling (IS)
+\cite{liu:2001} weights.  These weights, if combined carefully, can be
+used to construct meta-estimators of expectations under the {\tt tgp}
+posterior that have much lower variance compared to ST alone.  This
+combined application of ST and IT is dubbed {\em importance tempering}
+\cite{gra:samw:king:2009}.
+
+\subsection{Simulated Tempering and related methods}
+\label{sec:st}
+
+ST is an application of the MH algorithm on the product space of
+parameters and inverse temperatures $k\in [0,1]$.  That is, ST uses
+MH to sample from the joint chain $\pi(\theta,k) \propto \pi(\theta)^k
+p(k)$.  The inverse temperature is allowed to take on a discrete set
+of values $k \in \{k_1,\dots,k_m: k_1 = 1, \; k_i > k_{i+1} \geq 0\}$,
+called the {\em temperature ladder}.  Typically, ST calls for sampling
+$(\theta,k)^{(t+1)}$ by first updating $\theta^{(t+1)}$ conditional on
+$k^{(t)}$ and (possibly) on $\theta^{(t)}$, using MH or GS.  Then, for
+a proposed $k' \sim q(k^{(t)} \rightarrow k')$, usually giving equal
+probability to the nearest inverse temperatures greater and less than
+$k^{(t)}$, an acceptance ratio is calculated:
+\[
+A^{(t+1)} = \frac{\pi(\theta^{(t+1)})^{k'} p(k') q(k' \rightarrow
+  k^{(t)})}{\pi(\theta^{(t+1)})^{k^{(t)}} p(k^{(t)})
+  q(k^{(t)}\rightarrow k')}.
+\]
+Finally, $k^{(t+1)}$ is determined according to the MH accept/reject
+rule: set $k^{(t+1)} = k'$ with probability $\alpha^{(t+1)} =
+\min\{1,A^{(t+1)}\}$, or $k^{(t+1)} = k^{(t)}$ otherwise.  Standard
+theory for MH and GS gives that samples from the marginals
+$\pi_{k_i}$ can be obtained by collecting samples
+$\theta^{(t)}$ where $k^{(t)} = k_i$.  Samples from $\pi(\theta)$ are
+obtained when $k^{(t)} = 1$.
+
+The success of ST depends crucially on the ability of the Markov chain
+frequently to: (a) visit high temperatures (low $k$) where the
+probability of escaping local modes is increased; (b) visit $k=1$ to
+obtain samples from $\pi$.  The algorithm can be tuned by:
+(i.)~adjusting the number and location of the rungs of the temperature
+ladder; or (ii.)~setting the pseudo-prior $p(k)$ for the inverse
+temperature.
+
+Geyer \& Thompson \cite{geyer:1995} give ways
+of adjusting the spacing of the rungs of the ladder so that the ST
+algorithm achieves between--temperature acceptance rates of 20--40\%.
+More recently, authors have preferred to rely on defaults, e.g.,
+\begin{equation}
+ \;\;\;\;\;
+k_i = \left\{ \begin{array}{cl}
+(1+\Delta_k)^{1-i} & \mbox{geometric spacing}\\
+\{1+\Delta_k (i-1)\}^{-1} & \mbox{harmonic spacing}
+\end{array} \right. \;\;\;\;\ i=1,\dots,m.
+\label{eq:ladder}
+\end{equation}
+Motivation for such default spacings is outlined by Liu
+\cite{liu:2001}.  Geometric spacing, or uniform spacing of
+$\log(k_i)$, is also advocated by Neal \cite{neal:1996,neal:2001} to
+encourage the Markov chain to rapidly traverse the breadth of the
+temperature ladder.  Harmonic spacing is more often used by a related
+method called Metropolis coupled Markov chain Monte Carlo (MC$^3$)
+\cite{geyer:1991}.  Both defaults are implemented in the {\tt tgp}
+package, through the provided {\tt default.itemps} function.  A new
+``sigmoidal'' option is also implemented, as discussed below.  The
+rate parameter $\Delta_k>0$ can be problem specific.  Rather than work
+with $\Delta_k$ the {\tt default.itemps} function allows the ladder to
+be specified via $m$ and the hottest temperature $k_m$, thus fixing
+$\Delta_k$ implicitly.  I.e., for the geometric ladder $\Delta_k =
+(k_m)^{1/(1-m)}-1$, and for the harmonic ladder $\Delta_k =
+\frac{(k_m)^{-1}-1}{m-1}$.
+
+A sigmoidal ladder can provide a higher concentration of temperatures
+near $k=1$ without sacrificing the other nice properties of the
+geometric and harmonic ladders.  It is specified by first situating
+$m$ indices $j_i\in \mathbb{R}$ so that $k_1 = k(j_1) = 1$ and $k_m =
+k(j_m) = k_{\mbox{\tiny m}}$ under
+\[
+k(j_i) = 1.01 - \frac{1}{1+e^{j_i}}.
+\]
+The remaining $j_i, i=2,\dots,(m-1)$ are spaced evenly between $j_1$
+and $j_m$ to fill out the ladder $k_i = k(j_i), i=1,\dots,(m-1)$.
+
+By way of comparison, consider generating the three different types of
+ladder with identical minimum inverse temperature $k_{\mbox{\tiny m}}
+= 0.1$, the default setting in {\tt tgp}.
+<<>>=
+geo <- default.itemps(type="geometric")
+har <- default.itemps(type="harmonic")
+sig <- default.itemps(type="sigmoidal")
+@ 
+The plots in Figure \ref{f:itemps} show the resulting 
+inverse temperature ladders, and their logarithms.
+\begin{figure}[ht!]
+<<label=it-itemps,fig=TRUE,echo=TRUE,width=6,height=9,include=FALSE>>=
+par(mfrow=c(2,1))
+all <- cbind(geo$k, har$k, sig$k)
+matplot(all, pch=21:23,
+        main="inv-temp ladders", xlab="indx", ylab="itemp")
+legend("topright", pch=21:23, 
+       c("geometric","harmonic","sigmoidal"), col=1:3)
+matplot(log(all), pch=21:23,
+        main="log(inv-temp) ladders", xlab="indx", ylab="itemp")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[height=5.9in,width=4.5in,trim=0 20 0 20]{tgp2-it-itemps}
+\caption{Three different inverse temperature ladders, each with
+$m=40$ temperatures starting at $k_1=1$ and ending at $k_m=0.1$}
+\label{f:itemps}
+\end{figure}
+Observe how, relative to the geometric ladder, the harmonic ladder has a
+higher concentration of inverse temperatures near zero, whereas the
+sigmoidal ladder has a higher concentration near one.  
+
+Once a suitable ladder has been chosen, the {\tt tgp} package
+implementation of ST follows the suggestions of Geyer \& Thompson
+\cite{geyer:1995} in setting the pseudo--prior, starting from a
+uniform $p_0$.  First, $p_0$ is adjusted by {\em stochastic
+  approximation}: add $c_0/[m(t+n_0)]$ to $\log p_0(k)$ for each $k_i
+\ne k^{(t)}$ and subtract $c_0/(t+n_0)$ from $\log p_0(k^{(t)})$ over
+$t=1,\dots,B$ {\em burn--in} MCMC rounds sampling from the joint
+posterior of $(\theta, k)$.  Then, $p_0$ is normalized to obtain
+$p_1$.  Before subsequent runs, specified via an {\tt R >= 2}
+argument, {\em occupation numbers} $o(k_i) = \sum_{t=1}^B 1_{\{k^{(t)}
+  = k_i\}}$, are used update $p(k_i) \propto p_1(k_i)/o(k_i)$.  Note
+that, in this setting, the {\tt R} argument is used to update the
+pseudo--prior only, not to restart the Markov chain.  
+
+\subsection{Importance sampling from tempered distributions}
+\label{sec:temp}
+
+ST provides us with $\{(\theta^{(t)},k^{(t)}): t = 1,\ldots,T\}$,
+where $\theta^{(t)}$ is an observation from $\pi_{k^{(t)}}$.  It is
+convenient to write $\mathcal{T}_i = \{t: k^{(t)} = k_i\}$ for the
+index set of observations at the $i^{\mbox{\tiny th}}$ temperature,
+and let $T_i = |\mathcal{T}_i|$.  Let the vector of observations at
+the $i^{\mbox{\tiny th}}$ temperature collect in $\bm{\theta}_i =
+(\theta_{i1},\dots,\theta_{iT_i})$, so that
+$\{\theta_{ij}\}_{j=1}^{T_i}\sim \pi_{k_i}$.  Each vector
+$\bm{\theta}_i$ can be used to construct an IS estimator of
+$E_{\pi}\{h(\theta)\}$ by setting
+\[
+\hat{h}_i = \frac{\sum_{j=1}^{T_i} w_i(\theta_{ij}) h(\theta_{ij})}
+{\sum_{j=1}^{T_i} w_i(\theta_{ij})} 
+\equiv \frac{\sum_{j=1}^{T_i} w_{ij}h(\theta_{ij})}{W_i},
+\]
+say.  That is, rather than obtain one estimator from ST (at the cold
+temperature), we can obtain $m$ estimators (one at each temperature)
+via IS. The efficiency of each estimator, $i=1,\dots,m$ can be measured
+through its variance, but unfortunately this can be difficult to
+calculate in general.  As a result, the notion of {\em effective
+  sample size} \cite{liu:2001} (ESS) plays an important role in the study of
+IS estimators.  Denote the vector of IS weights at the $i^{\mbox{\tiny
+    th}}$ temperature as $\mathbf{w}_i = \mathbf{w}_i(\bm{\theta}_i) =
+(w_i(\theta_{i1}),\ldots,w_i(\theta_{iT_i}))$, where $w_i(\theta) =
+\pi(\theta)/\pi_{k_i}(\theta)$.  The ESS of $\hat{h}_i$ is defined by
+\begin{equation}
+\mathrm{ESS}(\mb{w}_i) = \frac{T}{1 +
+  \mathrm{cv^2}(\mathbf{w}_i)}, \label{eq:essw}
+\end{equation}
+where $\mathrm{cv}(\mathbf{w}_i)$ is the \emph{coefficient of variation}
+of the weights (in the $i^{\mbox{\tiny th}}$ temperature), given by
+\begin{align*}
+\mathrm{cv^2}(\mathbf{w}_i) &= \frac{\sum_{t=1}^T(w(\theta^{(t)}) -
+  \bar{w})^2}{(T-1) \bar{w}^2}, &\mbox{where} &&
+\bar{w} &= T^{-1} \sum_{t=1}^T w(\theta^{(t)}).  
+\end{align*}
+In {\sf R}:
+<<>>=
+ESS <- function(w)
+{
+  mw <- mean(w)
+  cv2 <- sum((w-mw)^2)/((length(w)-1)*mw^2)
+  ess <- length(w)/(1+cv2)
+  return(ess)
+}
+@ 
+This should not be confused with the concept of \emph{effective
+  sample size due to autocorrelation} \cite{kass:1998} (due to
+serially correlated samples coming from a Markov chain as in MCMC) as
+implemented by the {\tt effectiveSize} function in the {\tt coda}
+package \cite{coda:R} for {\sf R}.
+
+Before attempting to combine $m$ IS estimators it is fruitful
+backtrack briefly to obtain some perspective on the topic of applying
+IS with a {\em single} tempered proposal distribution.  Jennison
+\cite{jennison:1993} put this idea forward more than a decade ago,
+although the question of how to choose the best temperature was neither
+posed or resolved.  It is clear that larger $k$ leads to lower
+variance estimators (and larger ESS), but at the expense of poorer
+mixing in the Markov chain. It can be shown that the optimal inverse
+temperature $k^*$ for IS, in the sense of constructing a minimum
+variance estimator, may be significantly lower than one
+\cite{gra:samw:king:2009}.  However, the variance of such an estimator
+will indeed become unbounded as $k\rightarrow 0$, just as
+ESS~$\rightarrow 0$.  Needless to say, the choice of how to best pick
+the best temperatures (for ST or IS) is still an open problem.  But in
+the context of the family of tempered distributions used by ST for
+mixing considerations, this means that the discarded samples obtained
+when $k^{(t)} < 1$ may actually lead to more efficient estimators than
+the ones saved from the cold distribution.  So ST is wastefull indeed.
+
+However, when combining IS estimators from the multiple temperatures
+used in ST, the deleterious effect of the high variance ones obtained
+at high temperature must be mitigated.  The possible strategies
+involved in developing such a meta-estimator comprise the {\em
+  importance tempering} (IT) family of methods.  The idea is that
+small ESS will indicate high variance IS estimators which should be
+relegated to having only a small influence on the overall estimator.
+
+\subsection{An optimal way to combine IS estimators}
+\label{sec:lambdas}
+
+It is natural to consider an overall meta-estimator of
+$E_{\pi}\{h(\theta)\}$ defined by a convex combination:
+\begin{align}
+\label{eq:hhatlambda}
+\hat{h}_{\lambda} &= \sum_{i=1}^m \lambda_i \hat{h}_i,&
+\mbox{where} && 0 \leq \lambda_i \leq \sum_{i=1}^m \lambda_i = 1.
+\end{align}
+Unfortunately, if $\lambda_1,\dots,\lambda_m$ are not chosen
+carefully, $\mbox{Var}(\hat{h}_\lambda)$, can be nearly as large as
+the largest $\mbox{Var}(\hat{h}_i)$ \cite{owen:2000}, due to the
+considerations alluded to in Section \ref{sec:temp}.  Notice that ST
+is recovered as a special case when $\lambda_1=1$ and
+$\lambda_2,\dots,\lambda_m = 0$.  It may be tempting to choose
+$\lambda_i = W_i/W$, where $W = \sum_{i=1}^m W_i$.  The resulting
+estimator is equivalent to
+\begin{align}
+\label{Eq:hath}
+\hat{h} &= W^{-1} \sum_{t=1}^T w(\theta^{(t)},k^{(t)})h(\theta^{(t)}), 
+& \mbox{where} &&
+W = \sum_{t=1}^T w(\theta^{(t)},k^{(t)}),
+\end{align}
+and $w(\theta,k) = \pi(\theta)/\pi(\theta)^k = \pi(\theta)^{1-k}$.  It
+can lead to a very poor estimator, even compared to ST, as will be
+demonstrated empirically in the examples to follow shortly.
+
+Observe that we can equivalently write
+\begin{align}
+\hat{h}_{\lambda} &= \sum_{i=1}^m \sum_{j=1}^{T_i}
+w_{ij}^{\lambda}h(\theta_{ij}), 
+&& \mbox{where} & w_{ij}^{\lambda} &= \lambda_iw_{ij}/W_i.  
+\label{eq:wlambda}
+\end{align}
+Let $\mathbf{w}^{\lambda} =
+(w_{11}^\lambda,\ldots,w_{1T_1}^\lambda,w_{21}^\lambda,\ldots,w_{2T_2}^\lambda,
+\ldots,w_{m1}^\lambda,\ldots,w_{mT_m}^\lambda)$.  Attempting to choose
+$\lambda_1,\dots,\lambda_m$ to minimize $\mbox{Var}(\hat{h}_\lambda)$
+directly can be difficult.  Moreover, for the applications that we
+have in mind, it is important that our estimator can be constructed
+without knowledge of the normalizing constants of
+$\pi_{k_1},\ldots,\pi_{k_m}$, and without evaluating the MH transition
+kernels $\mathcal{K}_{\pi_{k_i}}(\cdot,\cdot)$.  It is for this reason
+that methods like the \emph{balance heuristic} \cite{veach:1995}, MCV
+\cite{owen:2000}, or population Monte Carlo (PMC)
+\cite{douc:etal:2007} cannot be applied.  Instead, we seek maximize
+the effective sample size of $\hat{h}_\lambda$ in
+(\ref{eq:hhatlambda}), and look for an $O(T)$ operation to determine
+the optimal $\lambda^*$.
+
+%\begin{thm}
+%\label{thm:lambdastar}
+Among estimators of the form~(\ref{eq:hhatlambda}), it can be shown
+\cite{gra:samw:king:2009} that $\mathrm{ESS}(\mathbf{w}^{\lambda})$ is
+maximized by $\lambda = \lambda^*$, where, for $i=1,\ldots,m$,
+\begin{align*}
+\lambda_i^* &= \frac{\ell_i}{\sum_{i=1}^m \ell_i}, & \mbox{and} && \ell_i &=
+  \frac{W_i^2}{\sum_{j=1}^{T_i} w_{ij}^2}.
+\end{align*}
+The efficiency of each IS estimator $\hat{h}_i$ can be measured
+through $\mathrm{ESS}(\mathbf{w}_i)$.  Intuitively, we hope that with
+a good choice of $\lambda$, the ESS (\ref{eq:essw}) of
+$\hat{h}_{\lambda}$, would be close to the sum over $i$ of the
+effective sample sizes each of $\hat{h}_i$.  This is indeed the case
+for $\hat{h}_{\lambda^*}$, because it can be shown
+\cite{gra:samw:king:2009} that
+\[
+\mathrm{ESS}(\mathbf{w}^{\lambda^*}) \geq \sum_{i=1}^m \mathrm{ESS}(\mathbf{w}_i) 
+- \frac{1}{4} - \frac{1}{T}.
+\]
+In practice we have found that this bound is conservative and that in
+fact $\mathrm{ESS}(\mathbf{w}^{\lambda^*}) \geq \sum_{i=1}^m
+\mathrm{ESS}(\mathbf{w}_i)$, as will be shown empirically in the
+examples that follow.  Thus our optimally--combined IS estimator has a
+highly desirable and intuitive property in terms of its effective
+sample size: that the whole is greater than the sum of its parts.
+
+$\mathrm{ESS}(\mathbf{w}^{\lambda^*})$ depends on
+$\mathrm{ESS}(\mathbf{w}_i)$ which in turn depend on the $k_i$.
+Smaller $k_i$ will lead to better mixing in the Markov chain, but
+lower $\mathrm{ESS}(\mathbf{w}_i)$.  Therefore, we can expect that the
+geometric and sigmoidal ladders will fare better than the harmonic
+ones, so long as the desired improvements in mixing are achieved.  In
+the examples to follow, we shall see that the sigmoidal ladder does
+indeed leader to higher $\mathrm{ESS}(\mathbf{w}^{\lambda^*})$.
+
+
+\subsection{Examples}
+\label{sec:examples}
+
+Here the IT method is shown in action for {\tt tgp} models.  IT is
+controlled in {\tt b*} functions via the {\tt itemps} argument: a {\tt
+  data.frame} coinciding with the output of the {\tt default.itemps}
+function.  The {\tt lambda} argument to {\tt default.itemps} can be
+used to base posterior predictive inference the other IT heuristics:
+ST and the na\"ive approach (\ref{Eq:hath}).  Whenever the argument
+{\tt m = 1} is used with {\tt k.min != 1} the resulting estimator is
+constructed via tempered importance sampling at the single inverse
+temperature {\tt k.min}, in the style of Jennison~\cite{jennison:1993}
+as outlined in Section \ref{sec:temp}.  The parameters $c_0$ and $n_0$
+for stochastic approximation of the pseudo--prior can be specified as
+a 2--vector {\tt c0n0} argument to {\tt default.itemps}.  In the
+examples which follow we simply use the default configuration of the
+IT method, adjusting only the minimum inverse temperature via the {\tt
+  k.min} argument.
+
+Before delving into more involved examples, we illustrate the stages
+involved in a small run of importance tempering (IT) on the
+exponential data from Section 3.3 of \cite{gramacy:2007}.  The data
+can be obtained as:
+<<>>=
+exp2d.data<-exp2d.rand() 
+X<-exp2d.data$X 
+Z<-exp2d.data$Z 
+@ 
+Now, consider applying IT to the Bayesian treed LM with a small
+geometric ladder.  A warning will be given if the default setting of
+\verb!bprior="bflat"! is used, as this (numerically) improper prior
+can lead to improper posterior inference at high temperatures.
+<<>>=
+its <- default.itemps(m=10)
+exp.btlm <- btlm(X=X,Z=Z, bprior="b0", R=2, itemps=its, pred.n=FALSE,
+                 BTE=c(1000,3000,2)) 
+@ 
+Notice how the MCMC inference procedure starts with
+$B+T=\Sexpr{exp.btlm$BTE[1] + exp.btlm$BTE[2]}$ rounds of stochastic
+approximation (initial adjustment of the pseudo--prior) in place of
+typical (default) the $B=\Sexpr{exp.btlm$BTE[1]}$ burn--in
+rounds. Then, the first round of sampling from the posterior
+commences, over $T=\Sexpr{exp.btlm$BTE[2]-exp.btlm$BTE[1]}$ 
+rounds, during which the
+observation counts in each temperature are tallied.  The progress
+meter shows the current temperature the chain is in, say {\tt
+  k=0.629961}, after each of 1000 sampling rounds.  The first repeat
+starts with a pseudo--prior that has been adjusted by the observation
+counts, which continue to be accumulated throughout the entire
+procedure (i.e., they are never reset).  
+Any subsequent repeats begin after a similar (re-)adjustment.
+
+Before finishing, the routine summarizes the sample size and effective
+sample sizes in each rung of the temperature ladder.  The number of
+samples is given by {\tt len}, and the ESS by {\tt ess}.  These
+quantities can also be recovered via {\tt traces}, as shown later. The
+ESS of the optimal combined IT sample is the last quantity printed.
+This, along with the ESS and total numbers of samples in each
+temperature, can also be obtained via the {\tt tgp}-class output
+object.
+<<>>=
+exp.btlm$ess
+@ 
+
+
+\subsubsection{Motorcycle accident data}
+\label{sec:moto}
+
+Recall the motorcycle accident data of Section 3.4 of the first {\tt
+  tgp} vignette \cite{gramacy:2007}.  Consider using IT to sample from
+the posterior distribution of the treed GP LLM model using the
+geometric temperature ladder.
+<<>>=
+library(MASS)
+moto.it <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        bprior="b0", R=3, itemps=geo, trace=TRUE, pred.n=FALSE, verb=0)
+@ 
+Out of a total of $\Sexpr{moto.it$R*moto.it$BTE[2]/moto.it$BTE[3]}$
+samples from the joint chain, the resulting (optimally combined) ESS was:
+<<>>=
+moto.it$ess$combined
+@ 
+Alternatively, $\mb{w}^{\lambda^*}$ can be extracted from the
+traces, and used to make the ESS calculation directly.
+<<>>=
+p <- moto.it$trace$post
+ESS(p$wlambda)
+@ 
+The unadjusted weights $\mb{w}$ are also available from {\tt
+  trace}.  We can see that the na\"{i}ve choice of $\lambda_i =
+W_i/W$, leading to the estimator in (\ref{Eq:hath}), has a clearly
+inferior effective sample size.
+<<>>=
+ESS(p$w)
+@ 
+To see the benefit of IT over ST we can simply count the number of
+samples obtained when $k^{(t)} = 1$.  This can be accomplished in
+several ways: either via the traces or through the output object.
+<<>>=
+as.numeric(c(sum(p$itemp == 1), moto.it$ess$each[1,2:3]))
+@ 
+That is, (optimal) IT gives effectively
+$\Sexpr{signif(moto.it$ess$combined/sum(p$itemp==1), 3)}$ times more samples.
+The na\"{i}ve combination, leading to the estimator in (\ref{Eq:hath}),
+yields an estimator with an effective sample size that is
+$\Sexpr{round(100*ESS(p$w)/sum(p$itemp==1))}$\% of the number of
+samples obtained under ST.
+
+Now, we should like to compare to the MCMC samples obtained
+under the same model, without IT.
+<<>>=
+moto.reg <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+        R=3, bprior="b0", trace=TRUE, pred.n=FALSE, verb=0)
+@ 
+The easiest comparison to make is to look at the heights explored
+under the three chains: the regular one, the chain of heights visited
+at all temperatures (combined), and those obtained after applying IT
+via re-weighting under the optimal combination $\lambda^*$.
+<<>>=
+L <- length(p$height)
+hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
+b <- hist2bar(cbind(moto.reg$trace$post$height, p$height, hw))
+@
+\begin{figure}[ht!]
+<<label=it-moto-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
+barplot(b, beside=TRUE, col=1:3, xlab="tree height", ylab="counts", 
+         main="tree heights encountered")
+legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-height}
+\caption{Barplots indicating the counts of the number of times the 
+  Markov chains (for regular MCMC, combining all temperatures in the
+  inverse temperature ladder, and those re-weighted via IT) were in
+  trees of various heights for the motorcycle data.}
+\label{f:moto:it:heights}
+\end{figure}
+Figure \ref{f:moto:it:heights} shows barplots indicating the count of
+the number of times the Markov chains were in trees of various heights
+after burn--in.  Notice how the tempered chain (denoted ``All Temps''
+in the figure) frequently visits trees of height one, whereas the
+non--tempered chain (denoted ``reg MCMC'') never does.  The result is
+that the non--tempered chain underestimates the probability of height
+two trees and produces a corresponding overestimate of height four
+trees---which are clearly not supported by the data---even visiting
+trees of height five.  The IT estimator appropriately down--weights
+height one trees and provides correspondingly more realistic estimates
+of the probability of height two and four trees.
+
+Whenever introducing another parameter into the model, like the
+inverse temperature $k$, it is important to check that the marginal
+posterior chain for that parameter is mixing well.  For ST it is
+crucial that the chain makes rapid excursions between the cold
+temperature, the hottest temperatures, and visits each temperature
+roughly the same number of times.
+\begin{figure}[ht!]
+<<label=it-moto-ktrace,fig=TRUE,echo=TRUE,width=11,height=6,include=FALSE>>=
+plot(log(moto.it$trace$post$itemp), type="l", ylab="log(k)", xlab="samples",
+     main="trace of log(k)")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-ktrace}
+\caption{A trace of the MCMC samples from the marginal posterior
+  distribution of the inverse temperature parameter, $k$, in 
+  the motorcycle experiment}
+  \label{f:ktrace}
+\end{figure}
+
+Figure \ref{f:ktrace} shows a trace of the posterior samples for $k$
+in the motorcycle experiment.  Arguably, the mixing in $k$--space
+leaves something to be desired.  Since it can be very difficult to
+tune the pseudo--prior and MH proposal mechanism to get good mixing in
+$k$--space, it is fortunate that the IT methodology does not rely on
+the same mixing properties as ST does.  Since samples can be obtained
+from the posterior distribution of the parameters of interest by
+re-weighting samples obtained when $k < 1$ it is only important that
+the chain frequently visit low temperatures to obtain good sampling,
+and high temperatures to obtain good mixing.  The actual time spent in
+specific temperatures, i.e., $k=1$ is less important.
+%%ylim <- c(0, 1.25*max(c(b[,1], moto.it$itemps$counts)))
+%, ylim=ylim)
+\begin{figure}[ht!]
+<<label=it-moto-khist,fig=TRUE,echo=TRUE,width=10,height=6,include=FALSE>>=
+b <- itemps.barplot(moto.it, plot.it=FALSE)
+barplot(t(cbind(moto.it$itemps$counts, b)), col=1:2,
+        beside=TRUE, ylab="counts", xlab="itemps", 
+        main="inv-temp observation counts")
+legend("topleft", c("observation counts", "posterior samples"), fill=1:2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-khist}
+  \caption{Comparing (thinned) samples from the posterior distribution for
+  the inverse temperature parameter, $k$, (posterior samples), to
+  the observation counts used to update the pseudo--prior, in the
+  motorcycle experiment}
+  \label{f:khist}
+\end{figure}
+Figure \ref{f:khist} shows the histogram of the inverse temperatures
+visited in the Markov chain for the motorcycle experiment.  Also
+plotted is a histogram of the {\em observation counts} in each
+temperature.  The two histograms should have similar shape but
+different totals.  Observation counts are tallied during every MCMC
+sample after burn--in, whereas the posterior samples of $k$ are
+thinned (at a rate specified in {\tt BTE[3]}).  When the default {\tt
+  trace=FALSE} argument is used only the observation counts will be
+available in the {\tt tgp}--class object, and these can be used as a
+surrogate for a trace of $k$.
+
+The compromise IT approach obtained using the sigmoidal ladder can
+yield an increase in ESS.
+<<>>=
+moto.it.sig <- btgpllm(X=mcycle[,1], Z=mcycle[,2], BTE=c(2000,52000,10),
+                      R=3, bprior="b0", krige=FALSE, itemps=sig, verb=0)
+@ 
+Compare the resulting ESS to the one given for the geometric
+ladder above.
+<<>>=
+moto.it.sig$ess$combined
+@ 
+\begin{figure}[ht!]
+<<label=it-moto-pred,fig=TRUE,echo=TRUE,width=10,height=5,include=FALSE>>=
+plot(moto.it.sig)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-moto-pred}
+\caption{Posterior predictive surface for the motorcycle data, with
+  90\% quantile errorbars, obtained under IT with the sigmoidal ladder.}
+  \label{f:moto:pred}
+\end{figure}
+Plots of the resulting predictive surface is shown in Figure
+\ref{f:moto:pred} for comparison with those in Section 1.1 of the
+first {\tt tgp} vignette \cite{gramacy:2007}.  In particular, observe
+that the transition from the middle region to the right one is much
+less stark in this tempered version than than in the original---which
+very likely spent a disproportionate amount of time stuck in a 
+posterior mode with trees of depth three or greater.
+
+\subsubsection{Synthetic 2--d Exponential Data}
+\label{sec:exp}
+
+Recall the synthetic 2--d exponential data of Section 3.4 of the tgp
+vignette \cite{gramacy:2007}, where the true response is given by
+\[
+z(\mb{x}) = x_1 \exp(-x_1^2 - x_2^2).
+\]
+Here, we will take $\mb{x} \in [-6,6]\times [-6,6]$ with a
+$D$--optimal design
+<<>>=
+Xcand <- lhs(10000, rbind(c(-6,6),c(-6,6)))
+X <- dopt.gp(400, X=NULL, Xcand)$XX
+Z <- exp2d.Z(X)$Z
+@ 
+
+Consider a treed GP LLM model fit to this data using the standard
+MCMC.
+<<>>=
+exp.reg <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
+                   trace=TRUE, krige=FALSE, R=10, verb=0)
+@ 
+\begin{figure}[ht!]
+<<label=it-exp-pred,fig=TRUE,echo=TRUE,width=12.5,height=7,include=FALSE>>=
+plot(exp.reg)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-pred}
+\caption{Posterior predictive surface for the 2--d exponential data:
+  mean surface {\em (left)} and 90\% quantile difference {\em (right)}}
+  \label{f:exp:pred}
+\end{figure}
+Figure \ref{f:exp:pred} shows the resulting posterior predictive
+surface. The maximum {\em a' posteriori} (MAP) tree is drawn over the
+error surface in the {\em right--hand} plot.  The height of this tree
+can be obtained from the {\tt tgp}-class object.
+<<>>=
+h <- exp.reg$post$height[which.max(exp.reg$posts$lpost)]
+h
+@ 
+It is easy to see that many fewer partitions are actually necessary
+to separate the interesting, central, region from the surrounding flat
+region.
+\begin{figure}[ht!]
+<<label=it-exp-mapt,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
+tgp.trees(exp.reg, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 100 0 25]{tgp2-it-exp-mapt}
+\caption{Diagrammatic depiction of the maximum {\em a' posteriori} (MAP)
+  tree for the 2--d exponential data under standard MCMC sampling }
+  \label{f:exp:mapt}
+\end{figure}
+Figure \ref{f:exp:mapt} shows a diagrammatic representation of the MAP
+tree.  Given the apparent over--partitioning in this height \Sexpr{h}
+tree it would be surprising to find much posterior support for trees
+of greater height.  One might indeed suspect that there are trees with
+fewer partitions which would have higher posterior probability, and
+thus guess that the Markov chain for the trees plotted in these
+figures possibly became stuck in a local mode of tree space while on
+an excursion into deeper trees.
+
+Now consider using IT.  It will be important in this case to have a
+$k_{\mbox{\tiny m}}$ small enough to ensure that the tree occasionally
+prunes back to the root.  We shall therefore use a smaller
+$k_{\mbox{\tiny m}}$.  % with an extra 10 rungs.
+Generally speaking, some pilot tuning may be necessary to choose an
+appropriate $k_{\mbox{\tiny m}}$ and number of rungs $m$, although the
+defaults should give adequate performance in most cases.
+<<>>=
+its <- default.itemps(k.min=0.02)
+exp.it <- btgpllm(X=X, Z=Z, BTE=c(2000,52000,10), bprior="b0", 
+               trace=TRUE, krige=FALSE, itemps=its, R=10, verb=0)
+@ 
+As expected, the tempered chain moves more rapidly throughout tree
+space by accepting more tree proposals.  The acceptance rates of tree
+operations can be accessed from the {\tt tgp}--class object.
+<<>>=
+exp.it$gpcs
+exp.reg$gpcs
+@ 
+The increased rate of {\em prune} operations explains how the
+tempered distributions helped the chain escape the local modes of deep
+trees.
+
+We can quickly compare the effective sample sizes of the three possible
+estimators: ST, na\"{i}ve IT, and optimal IT.
+<<>>=
+p <- exp.it$trace$post
+data.frame(ST=sum(p$itemp == 1), nIT=ESS(p$w), oIT=exp.it$ess$combined)
+@ 
+Due to the thinning in the Markov chain ({\tt BTE[3] = 10}) and the
+traversal between $m=10$ temperatures in the ladder, we can be
+reasonably certain that the \Sexpr{round(exp.it$ess$combined)} samples obtained
+via IT from the total of
+\Sexpr{round(exp.it$R*(exp.it$BTE[2]-exp.it$BTE[1])/exp.it$BTE[3])} 
+samples obtained from the posterior are far less correlated than the 
+ones obtained via standard MCMC.
+
+As with the motorcycle data, we can compare the tree heights visited
+by the two chains.
+<<>>=
+L <- length(p$height)
+hw <- suppressWarnings(sample(p$height, L, prob=p$wlambda, replace=TRUE))
+b <- hist2bar(cbind(exp.reg$trace$post$height, p$height, hw))
+@
+\begin{figure}[ht!]
+<<label=it-exp-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
+barplot(b, beside=TRUE, col=1:3, xlab="tree height", ylab="counts", 
+         main="tree heights encountered")
+legend("topright", c("reg MCMC", "All Temps", "IT"), fill=1:3)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-height}
+\caption{Barplots indicating the counts of the number of times the 
+  Markov chains (for regular MCMC, combining all temperatures in the
+  inverse temperature ladder, and those re-weighted via IT) were in
+  trees of various heights for the 2--d exponential data.}
+\label{f:exp:it:heights}
+\end{figure}
+Figure \ref{f:exp:it:heights} shows a barplot of {\tt b}, which
+illustrates that the tempered chain frequently visited shallow trees.
+IT with the optimal weights shows that the standard MCMC chain
+missed many trees of height three and four with considerable posterior
+support.
+
+\begin{figure}[ht!]
+<<label=it-exp-trace-height,fig=TRUE,echo=TRUE,width=11,height=7,include=FALSE>>=
+ylim <- range(p$height, exp.reg$trace$post$height)
+plot(p$height, type="l", main="trace of tree heights", 
+     xlab="t", ylab="height", ylim=ylim)
+lines(exp.reg$trace$post$height, col=2)
+legend("topright", c("tempered", "reg MCMC"), lty=c(1,1), col=1:2)
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 25 0 25]{tgp2-it-exp-trace-height}
+\caption{Traces of the tree heights obtained under the two Markov
+  chains (for regular MCMC, combining all temperatures in the inverse
+  temperature ladder) on the 2--d exponential data.}
+\label{f:exp:trace:height}
+\end{figure}
+To more directly compare the mixing in tree space between the ST and
+tempered chains, consider the trace plots of the heights of the trees
+explored by the chains shown in Figure \ref{f:exp:trace:height}.
+Despite being restarted \Sexpr{exp.reg$R} times, the regular MCMC
+chain (almost) never visits trees of height less than five after burn--in and
+instead makes rather lengthy excursions into deeper trees, exploring
+a local mode in the posterior.  In contrast, the tempered chain
+frequently prunes back to the tree root, and consequently discovers
+posterior modes in tree heights three and four.
+
+\begin{figure}[ht!]
+<<label=it-expit-pred,fig=TRUE,echo=TRUE,width=14,height=8,include=FALSE>>=
+plot(exp.it)
+@
+\vspace{-0.7cm}
+<<label=it-expit-trees,fig=TRUE,echo=TRUE,width=12,height=8,include=FALSE>>=
+tgp.trees(exp.it, "map")
+@
+<<echo=false,results=hide>>=
+graphics.off()
+@
+\centering
+\includegraphics[trim=0 15 0 0]{tgp2-it-expit-pred}
+\includegraphics[trim=0 100 0 0]{tgp2-it-expit-trees}
+\caption{2--d exponential data fit with IT. {\em Top:} Posterior
+  predictive mean surface for the 2d--exponential, with the MAP tree
+  overlayed.  {\em Bottom:} diagrammatic representation of the MAP tree. }
+  \label{f:exp-it:pred}
+\end{figure}
+To conclude,  a plot of the posterior predictive surface is given in
+Figure \ref{f:exp-it:pred}, where the MAP tree is shown both graphically and
+diagrammatically.
 
 %\iffalse
 \subsection*{Acknowledgments}

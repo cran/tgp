@@ -29,33 +29,38 @@ vignettes, please use \code{help(package="tgp")}.
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \references{
-  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
-    Bayesian Nonstationary, Semiparametric Nonlinear Regression
-    and Design by Treed Gaussian Process Models.}
+Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling,
+Design and Optimization for the Applied Sciences}. Boca Raton,
+Florida: Chapman Hall/CRC.  (See Chapter 9.)
+\url{https://bobby.gramacy.com/surrogates/}
+
+Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for
+Bayesian Nonstationary, Semiparametric Nonlinear Regression
+and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+\url{https://www.jstatsoft.org/v19/i09}
 
 Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
 Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
 Version 2, an \R Package for Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{33}(6), 1--48.
-\url{http://www.jstatsoft.org/v33/i06/}.
+\url{https://www.jstatsoft.org/v33/i06/}.
 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
+Gramacy, R. B., Lee, H. K. H. (2008).
+\emph{Bayesian treed Gaussian process models with an application
+  to computer modeling}. Journal of the American Statistical Association, 
+103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
+\url{https://arxiv.org/abs/0710.4536}
 
 Robert B. Gramacy, Heng Lian (2011).
 \emph{Gaussian process single-index models as emulators for computer
   experiments}.  Available as ArXiv article 1009.4241
-\url{http://arxiv.org/abs/1009.4241}
+\url{https://arxiv.org/abs/1009.4241}
 
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design of supercomputer experiments.}
@@ -63,13 +68,13 @@ Available as UCSC Technical Report ams2006-02.
 
 Gramacy, R.B., Samworth, R.J., and King, R. (2007)
 \emph{Importance Tempering.} ArXiV article 0707.4242
-\url{http://arxiv.org/abs/0707.4242}
+\url{https://arxiv.org/abs/0707.4242}
 
 Gray, G.A., Martinez-Canales, M., Taddy, M.A., Lee, H.K.H., and
 Gramacy, R.B. (2007) \emph{Enhancing Parallel Pattern Search Optimization with
 a Gaussian Process Oracle}, SAND2006-7946C, Proceedings of the NECDC
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 

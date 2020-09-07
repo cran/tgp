@@ -59,34 +59,34 @@ fried.bool(n = 100)
     Bayesian Nonstationary, Semiparametric Nonlinear Regression
     and Design by Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+\url{https://www.jstatsoft.org/v19/i09}
 
 Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
 Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
 Version 2, an \R Package for Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{33}(6), 1--48.
-\url{http://www.jstatsoft.org/v33/i06/}.
+\url{https://www.jstatsoft.org/v33/i06/}.
 
 Friedman, J. H. (1991).
 \emph{Multivariate adaptive regression splines.}
 \dQuote{Annals of Statistics}, \bold{19}, No. 1, 1--67.
 
-Gramacy, R. B., Lee, H. K. H. (2007).
-\emph{Bayesian treed Gaussian process models with an application to computer modeling}
-Journal of the American Statistical Association, \bold{to appear}.
-Also available as ArXiv article 0710.4536
-\url{http://arxiv.org/abs/0710.4536}
+Gramacy, R. B., Lee, H. K. H. (2008).
+\emph{Bayesian treed Gaussian process models with an application
+  to computer modeling}. Journal of the American Statistical Association, 
+103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
+\url{https://arxiv.org/abs/0710.4536}
 
 Chipman, H., George, E., \& McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{An example using the original version of the data

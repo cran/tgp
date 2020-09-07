@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R.h>
 extern "C" {
 #include "rand_draws.h"
 #include "matrix.h"
@@ -249,7 +250,7 @@ Posteriors* new_posteriors(void)
   posteriors->maxd = 1;
   posteriors->posts = (double *) malloc(sizeof(double) * posteriors->maxd);
   posteriors->trees = (Tree **) malloc(sizeof(Tree*) * posteriors->maxd);
-  posteriors->posts[0] = -1e300*1e300;
+  posteriors->posts[0] = R_NegInf; 
   posteriors->trees[0] = NULL;
   return posteriors;
 }
@@ -292,7 +293,7 @@ void register_posterior(Posteriors* posteriors, Tree* t, double post)
     posteriors->posts = (double*) realloc(posteriors->posts, sizeof(double) * height);
     posteriors->trees = (Tree**) realloc(posteriors->trees, sizeof(Tree*) * height);
     for(unsigned int i=posteriors->maxd; i<height; i++) {
-      posteriors->posts[i] = -1e300*1e300;
+      posteriors->posts[i] = R_NegInf;
       posteriors->trees[i] = NULL;
     }
     posteriors->maxd = height;

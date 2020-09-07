@@ -412,7 +412,7 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zpvm, double *Zps2, double *
   if(zp) {
     bool inp = false;
     for(unsigned int i=0; i<n && p[i]<=(int)wZmin; i++) if(p[i] == (int)wZmin) inp = true;
-    if(inp) Zmin = 1e300*1e300;
+    if(inp) Zmin = R_PosInf;
   }
  
   /* predict */
@@ -1115,8 +1115,8 @@ double Tree::propose_val(void *state)
   double min, max;
   unsigned int N;
   double **locs = model->get_Xsplit(&N);
-  min = 1e300*1e300;
-  max = -1e300*1e300;
+  min = R_PosInf;
+  max = R_NegInf;
   for(unsigned int i=0; i<N; i++) {
     double Xivar = locs[i][var];
     if(Xivar > val && Xivar < min) min = Xivar;

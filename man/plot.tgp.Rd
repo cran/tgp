@@ -13,7 +13,7 @@
 \method{plot}{tgp}(x, pparts = TRUE, proj = NULL, slice = NULL,
          map = NULL, as = NULL, center = "mean", layout = "both",
          main = NULL, xlab = NULL, ylab = NULL, zlab = NULL, pc = "pc",
-         gridlen = c(40,40), span = 0.1,
+         gridlen = c(40,40), span = 0.1, pXX = TRUE,
          legendloc = "topright", maineff = TRUE,  mrlayout="both",
          rankmax = 20, ...)
 }
@@ -85,6 +85,8 @@
     Smaller spans can lead to warnings from \code{\link[stats]{loess}}
     when the data or predictive locations are sparse and ugly plots may
     result.  In this case, try increasing the span}
+  \item{pXX}{ scalar logical indicating if \code{XX} locations should be
+    plotted }
   \item{legendloc}{ Location of the \code{\link{legend}} included in the
     plots of sensitivity analyses produced with \code{layout = "sens"},
     or 1-d plots of multi-resolution models (with \code{corr = "mrexpsep"})
@@ -125,12 +127,12 @@
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \references{
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \note{ 	This plotting function is provided with the intention that it 

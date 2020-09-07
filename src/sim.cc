@@ -633,6 +633,21 @@ unsigned int Sim::sum_b(void)
 }
 
 
+void Sim::Invert(unsigned int n)
+{
+
+  if(! linear) {
+    assert(n == this->n);
+    inverse_chol(K, Ki, Kchol, n);
+    log_det_K = log_determinant_chol(Kchol, n);
+  }
+  else {
+    assert(n > 0);
+    log_det_K = n * log(1.0 + nug);
+  }
+}
+
+
 /*
  * Sim_Prior:
  *

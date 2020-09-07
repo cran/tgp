@@ -33,7 +33,7 @@ function(out, heights=NULL, main=NULL, ...)
 {
   ## get the full set of heights if none specified, and length
   if(is.null(heights)) heights <- out$posts$height
-  else if(heights == "map") { ## only plot the MAP
+  else if(heights[1] == "map") { ## only plot the MAP
     heights <- out$post$height[which.max(out$posts$lpost)]
   }
   howmany <- length(heights)

@@ -23,6 +23,7 @@
 
 
 #include <Rmath.h>
+#include <R.h>
 extern "C"
 {
 #include "lh.h"
@@ -1220,10 +1221,11 @@ Tree** Model::CopyPartitions(unsigned int *numLeaves)
 void Model::MAPreplace(void)
 {
   Tree* maxt = maxPosteriors();
-  assert(maxt);
-  if(t) delete t;
-  t = new Tree(maxt, true);
-  
+  if(maxt) {
+    if(t) delete t;
+    t = new Tree(maxt, true);
+  } else maxt = t;
+
   /* get leaves ready for use */
   unsigned int len;
   Tree** leaves = t->leavesList(&len);
@@ -1566,7 +1568,7 @@ void Model::PrintPosteriors(void)
 Tree* Model::maxPosteriors(void)
 {
   Tree *maxt = NULL;
-  double maxp = -1e300*1e300;
+  double maxp = R_NegInf;
 
   for(unsigned int i=0; i<posteriors->maxd; i++) {
     if(posteriors->trees[i] == NULL) continue;

@@ -41,51 +41,22 @@
 #define FORTBLAS
 
 #ifdef FORTPACK
-#define dpotrf dpotrf_
-extern void dpotrf(char*, size_t*, double*, size_t*, long*);
-#define dtrsv dtrsv_
-extern void dtrsv(char*, char*, char*, int*, double*, int*, double*, int*); 
-#define dposv dposv_
-/* extern void dposv(char *, int *, int *, double*, int *, double*, int *, int *); */
-extern void dposv(char *, size_t *, size_t *, double*, size_t*, double*, size_t*, long*);
-#define dgesv dgesv_
-extern void dgesv(int *,int *,double *,int*,int*,double*,int*,int*);
-#else
-#include <clapack.h>
+  #include <R_ext/Lapack.h>
+  #define dpotrf dpotrf_
+  #define dtrsv dtrsv_
+  #define dposv dposv_
+  #define dgesv dgesv_
 #endif
-
 #ifdef FORTBLAS
-#define dgemm dgemm_
-/* extern void dgemm(char*, char*,  int*, int*, int*, double*,
-   double*, int*, double*, int*, double*, double*, int*); */
-extern void dgemm(char*, char*,  size_t*, size_t*, size_t*, double*,
-		  double*, size_t*, double*, size_t*, double*, double*, size_t*);
-#define dsymm dsymm_
-/* extern void dsymm(char*, char*, int*, int*, double*,
-   double*, int*, double*, int*, double*, double*, int*); */
-extern void dsymm(char*, char*, size_t*, size_t*, double*,
-		  double*, size_t*, double*, size_t*, double*, double*, size_t*);
-#define dgemv dgemv_
-/* extern void dgemv(char*, int*, int*, double*, double*, int*, 
-   double*, int*, double*, double*, int*); */
-extern void dgemv(char*, size_t*, size_t*, double*, double*, size_t*, 
-                  double*, size_t*, double*, double*, size_t*);
-#define dsymv dsymv_
-/*extern void dsymv(char*, int*, double*, double*, int*, 
-  double*, int*, double*, double*, int*); */
-extern void dsymv(char*, size_t*, double*, double*, size_t*, 
-                  double*, size_t*, double*, double*, size_t*);
-#define ddot ddot_
-extern double ddot(size_t*, double*, size_t*, double*, size_t*);
-#define daxpy daxpy_
-/* extern void daxpy(int*, double*, double*, int*, double*, int*); */
-extern void daxpy(size_t*, double*, double*, size_t*, double*, size_t*);
-#define dtrsv dtrsv_
-extern void dtrsv(char*, char*, char*, int*, double*, int*, double*, int*);
-#else
-#include <cblas.h>
+  #include <R_ext/BLAS.h>
+  #define dgemm dgemm_
+  #define dsymm dsymm_
+  #define dgemv dgemv_
+  #define dsymv dsymv_
+  #define ddot ddot_
+  #define daxpy daxpy_
+  #define dtrsv dtrsv_
 #endif
-
 
 void linalg_dtrsv(const enum CBLAS_TRANSPOSE TA, int n, double **A, int lda, 
 		  double *Y, int ldy);

@@ -103,16 +103,21 @@ optim.ptgpf(start, rect, tgp.obj,
   \code{model} function }
 }
 \references{
+Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling,
+Design and Optimization for the Applied Sciences}. Boca Raton,
+Florida: Chapman Hall/CRC.  (See Chapter 7.)
+\url{https://bobby.gramacy.com/surrogates/}
+
 Matthew Taddy, Herbert K.H. Lee, Genetha A. Gray, and Joshua
 D. Griffin. (2009) \emph{Bayesian guided pattern search for
-  robust local optimization.}  Technometrics, to appear.
+  robust local optimization.}  Technometrics, 51(4), pp. 389-401
   
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{
@@ -129,6 +134,7 @@ Matt Taddy, \email{taddy@chicagobooth.edu}
   \code{\link{predict.tgp}}, \code{\link{dopt.gp}}
   }
 \examples{
+\donttest{
 ## optimize the simple exponential function 
 f <- function(x) { exp2d.Z(x)$Z }
 
@@ -162,6 +168,7 @@ matplot(progress[,1:nrow(rect)], main="optim results",
         xlab="rounds", ylab="x[,1:2]", type="l", lwd=2)
 plot(log(progress$improv), type="l", main="max log improv",
      xlab="rounds", ylab="max log(improv)")
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

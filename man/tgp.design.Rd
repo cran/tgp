@@ -49,32 +49,37 @@ tgp.design(howmany, Xcand, out, iter = 5000, verb = 0)
 }
 
 \references{
-  Gramacy, R. B. (2007). \emph{\pkg{tgp}: An \R Package for Bayesian
-    Nonstationary, Semiparametric Nonlinear Regression and Design by
-    Treed Gaussian Process Models.} Journal of Statistical Software, \bold{19}(9).
-\url{http://www.jstatsoft.org/v19/i09}
+Gramacy, R. B. (2020) \emph{Surrogates: Gaussian Process Modeling,
+Design and Optimization for the Applied Sciences}. Boca Raton,
+Florida: Chapman Hall/CRC.  (See Chapter 9.)
+\url{https://bobby.gramacy.com/surrogates/}
+
+Gramacy, R. B. (2008). \emph{\pkg{tgp}: An \R Package for Bayesian
+Nonstationary, Semiparametric Nonlinear Regression and Design by
+Treed Gaussian Process Models.} Journal of Statistical Software, \bold{19}(9).
+\url{https://www.jstatsoft.org/v19/i09}
 
 Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
 Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
 Version 2, an \R Package for Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{33}(6), 1--48.
-\url{http://www.jstatsoft.org/v33/i06/}.
+\url{https://www.jstatsoft.org/v33/i06/}.
 
 Gramacy, R. B., Lee, H. K. H. (2006).
 \emph{Adaptive design and analysis of supercomputer experiments.}
-Technometrics, to appear.  Also avaliable on ArXiv article 0805.4359
-\url{http://arxiv.org/abs/0805.4359}
+Technometrics, 51(2), pp. 130-145.  Also avaliable on ArXiv article 0805.4359
+\url{https://arxiv.org/abs/0805.4359}
 
 Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
 \emph{Parameter space exploration with Gaussian process trees.} 
 ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
 
-\url{http://bobby.gramacy.com/r_packages/tgp}
+\url{https://bobby.gramacy.com/r_packages/tgp/}
 }
 
 \author{ 
-Robert B. Gramacy, \email{rbgramacy@chicagobooth.edu}, and
-Matt Taddy, \email{taddy@chicagobooth.edu}
+Robert B. Gramacy, \email{rbg@vt.edu}, and
+Matt Taddy, \email{mataddy@amazon.com}
 }
 
 \note{
@@ -99,6 +104,7 @@ optimization using the \code{\link{optim.step.tgp}}
 	\code{\link{partition}}, \code{\link{optim.step.tgp}}}
 
 \examples{
+\donttest{
 #
 # 2-d Exponential data
 # (This example is based on random data.  
@@ -125,6 +131,7 @@ XX <- tgp.design(10, Xcand, out)
 # the predictive surface at those new design points
 dout <- btgpllm(X=X, Z=Z, XX=XX, corr="exp")
 plot(dout)
+}
 }
 \keyword{ design }
 \keyword{ optimize }
