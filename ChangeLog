@@ -1,3 +1,10 @@
+2.4-17 (11 Sep 2020)
+------
+
+Fixed clang-11 issue with linalg.h and CXX headers
+pointed out by Brian
+
+
 2.4-16 (05 Sep 2020)
 ------
 

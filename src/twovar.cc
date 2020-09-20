@@ -296,10 +296,10 @@ int Twovar::Draw(unsigned int n, double **F, double **X, double *Z,
 	      double itemp, void *state)
 {
   int success = 0;
-  bool lin_new;
-  double q_fwd , q_bak, d_new;
+  /* double q_fwd , q_bak, d_new; */
 
 #ifdef MODIFIED
+  bool lin_new;
   /* sometimes skip this Draw for linear models for speed,
    and only draw the nugget */
   if(linear && runi(state) > 0.5) 

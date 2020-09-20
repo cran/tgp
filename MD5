@@ -1,5 +1,5 @@
-1b86c99fa5220cff1cd35046c070ef87 *ChangeLog
-5575f15c9a15375b5ad9ce298b21fa93 *DESCRIPTION
+8caf20bf27d4ad494fe21092d7b99b13 *ChangeLog
+2290e2fd751052601ee76d9dcfac0827 *DESCRIPTION
 b84738697ab332f3042e16de92e9420e *INDEX
 cbc0f15c9caed6bf5b0a4b51e4d17205 *NAMESPACE
 2b25f8615fc58fa288ef0d0b3d7ef3e0 *R/btgp.R
@@ -45,10 +45,10 @@ d780d05ff7012a3c105429b4894a8d98 *demo/optim.R
 0bdf92bf6a67f0babdca467e54642182 *inst/CITATION
 c4cf139ecaca1796f659b603a0c13de9 *inst/doc/tgp.R
 c9473233763575d3294e38d8a45e46c2 *inst/doc/tgp.Rnw
-12ecae4bcdb85e286dd1da21ac49ddb2 *inst/doc/tgp.pdf
+624833f899b9991281ac21133da6c046 *inst/doc/tgp.pdf
 d1c7333ca11c53dde551cf55ac4a969a *inst/doc/tgp2.R
 faad6232951c6a2bb7f42251d9a7932d *inst/doc/tgp2.Rnw
-5d4ffaf56285796be1328b5f683b6c3c *inst/doc/tgp2.pdf
+825a627d15d1000b89426bdb3c895f1f *inst/doc/tgp2.pdf
 f9638ccde7862936c7ffa6aa0ce9e8c0 *man/btgp.Rd
 55a317189a867b61edc14eeb8619a7aa *man/default.itemps.Rd
 aa2db8aeaeaf556366bc06ad578a1f23 *man/dopt.gp.Rd
@@ -70,7 +70,7 @@ e3c9a396b9ee91ff826a62ad4b88d7f3 *man/sens.Rd
 d607a0c734bb169a1cf3d4071c479683 *man/tgp.default.params.Rd
 c9d78c5f5fb8d1b8ee8a70481748781e *man/tgp.design.Rd
 229df6d44e2fd539b16aa2ae5459bde6 *man/tgp.trees.Rd
-efb554846989838afb1b661c0a680d98 *src/Makevars
+55e16471d67d6d7cedde23deac58aa3d *src/Makevars
 15f6be4b619a3f7b0882f25f2874e2a2 *src/all_draws.c
 391f87ba3c7cf48b56013e480a301d89 *src/all_draws.h
 2dbc17df3bee7497fea459cf17fff094 *src/base.cc
@@ -87,7 +87,7 @@ abb6a54aeabd0ac61871f05ba3d68e5e *src/gen_covar.c
 d356cc0e8ba88a9c14aa5b5157540c24 *src/gen_covar.h
 a3b890437ebc1d793e8baee7f96da205 *src/gp.cc
 09748aa3b85a52f1ca85b60a82db86c9 *src/gp.h
-a504d96016795c88b92405cb8a8dd514 *src/init.c
+86efbebf06e4b05aa0df594a0e6608d1 *src/init.c
 09761c34492b873de30d1f4b8bc6e656 *src/lh.c
 86119f93629c41d4767c8ef289d2690b *src/lh.h
 035cf1ee2fa5a29d41bf3bab880efb51 *src/lik_post.c
@@ -120,7 +120,7 @@ fee24fd60fe088cc52686f8760d5e2fc *src/rand_pdf.h
 59896798fb57e6b2bf4e8c8251e8d55a *src/randomkit.h
 566af35ef5275604911cef5092623510 *src/rhelp.c
 7133a0f471c7db934e6a9bab77270269 *src/rhelp.h
-c6851094262cc92e9ba212077b9cf564 *src/sim.cc
+35c87e3e6ef2e3992c87f635cbf2723c *src/sim.cc
 ed84e3cf4bebc7703dbb7e8b7657124a *src/sim.h
 528d66b4d1efc709e05ba156457e9e8c *src/temper.cc
 9cab37ec7a79da5d9f0ca1c59b133203 *src/temper.h
@@ -128,7 +128,7 @@ ed84e3cf4bebc7703dbb7e8b7657124a *src/sim.h
 119fc3370516cb64b80acda8b9d5873b *src/tgp.h
 3f2a729127503cc642c4d06dab0b00f7 *src/tree.cc
 ada0f53f3fba837987d48f61ae6a85d0 *src/tree.h
-b4658b524d0d37f5b3ec0b6a9b1b91f4 *src/twovar.cc
+e8d3942cb915e14b29b1f3293399a4c3 *src/twovar.cc
 30824f73ccaf02d3c9df1c86f51bf7d8 *src/twovar.h
 96f319b5ffbbe69cac4bce9874609584 *vignettes/motovate_bgp.pdf
 4a5a106a111ed23c4c01b7f39e16aadc *vignettes/motovate_btgp.pdf

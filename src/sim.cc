@@ -24,14 +24,17 @@
 
 extern "C"
 {
+#include "rhelp.h"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"
-#include "linalg.h"
+// this fixes a problem with clang-11 conflict with string.h
+int linalg_dpotrf(int n, double **var);
+// #include "linalg.h"  
+// Alternatively, use -DDO_NOT_USE_CXX_HEADERS in CXXFLAGS
 #include "rand_pdf.h"
 #include "all_draws.h"
 #include "gen_covar.h"
-#include "rhelp.h"
 }
 #include "corr.h"
 #include "params.h"
