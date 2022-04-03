@@ -80,6 +80,14 @@ Nonstationary, Semiparametric Nonlinear Regression and Design by
 Treed Gaussian Process Models.}
 Journal of Statistical Software, \bold{19}(9).
 \url{https://www.jstatsoft.org/v19/i09}
+\doi{10.18637/jss.v019.i09}
+
+Robert B. Gramacy, Matthew Taddy (2010). \emph{Categorical Inputs,
+Sensitivity Analysis, Optimization and Importance Tempering with \pkg{tgp}
+Version 2, an \R Package for Treed Gaussian Process Models.}
+Journal of Statistical Software, \bold{33}(6), 1--48.
+\url{https://www.jstatsoft.org/v33/i06/}
+\doi{10.18637/jss.v033.i06}
 
 Gramacy, R. B., Lee, H. K. H. (2008).
 \emph{Bayesian treed Gaussian process models with an application

@@ -381,11 +381,11 @@ double* Temper::UpdatePrior(void)
   assert(min != 0);
 
   /* now adjust the probabilities */
-  double sum = 0.0;
+  // double sum = 0.0;
   for(unsigned int i=0; i<numit; i++) {
     if(tcounts[i] == 0) tcounts[i] = min;
     tprobs[i] /= tcounts[i];
-    sum += tprobs[i];
+    // sum += tprobs[i];
   }
 
   /* now normalize the probabilities */
@@ -474,7 +474,7 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
   unsigned int len;
   unsigned int tlen = 0;
   double tess = 0.0;
-  double eisum = 0.0;
+  // double eisum = 0.0;
   
   /* allocate space for the lambdas, etc */
   double *lambda = new_zero_vector(numit);
@@ -515,12 +515,12 @@ double Temper::LambdaOpt(double *w, double *itemp, unsigned int wlen,
       /* check for numerical problems and (if none) calculate the
          within temperature ESS */
       if(!R_FINITE(lambda[i])) {
-	lambda[i] = 0;
-	ei = 0;
+	      lambda[i] = 0;
+	      ei = 0;
       } else ei = calc_ess(wi, len);
 
       /* sum up the within temperature ESS's */
-      eisum += ei*len;
+      // eisum += ei*len;
 
     } else { W[i] = 1; } /* doesn't matter since ei=0 */
 

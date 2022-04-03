@@ -25,6 +25,8 @@
 #ifndef __LINALG_H__
 #define __LINALG_H__ 
 
+#define USE_FC_LEN_T
+
 #include "matrix.h"
 #include "rhelp.h"
 
@@ -40,23 +42,6 @@
 #define FORTPACK
 #define FORTBLAS
 
-#ifdef FORTPACK
-  #include <R_ext/Lapack.h>
-  #define dpotrf dpotrf_
-  #define dtrsv dtrsv_
-  #define dposv dposv_
-  #define dgesv dgesv_
-#endif
-#ifdef FORTBLAS
-  #include <R_ext/BLAS.h>
-  #define dgemm dgemm_
-  #define dsymm dsymm_
-  #define dgemv dgemv_
-  #define dsymv dsymv_
-  #define ddot ddot_
-  #define daxpy daxpy_
-  #define dtrsv dtrsv_
-#endif
 
 void linalg_dtrsv(const enum CBLAS_TRANSPOSE TA, int n, double **A, int lda, 
 		  double *Y, int ldy);

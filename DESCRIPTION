@@ -1,8 +1,8 @@
 Package: tgp
 Title: Bayesian Treed Gaussian Process Models
-Version: 2.4-17
-Date: 2020-09-11
-Author: Robert B. Gramacy <rbg@vt.edu> and Matt A. Taddy <mataddy@amazon.com>
+Version: 2.4-18
+Date: 2022-04-02
+Author: Robert B. Gramacy <rbg@vt.edu> and Matt A. Taddy
 Depends: R (>= 2.14.0)
 Imports: maptree
 Suggests: MASS
@@ -16,11 +16,13 @@ Description: Bayesian nonstationary, semiparametric nonlinear regression
  multi-resolution models are supported. Sequential experimental 
  design and adaptive sampling functions are also provided, including ALM, 
  ALC, and expected improvement.  The latter supports derivative-free
- optimization of noisy black-box functions.
+ optimization of noisy black-box functions.  For details and tutorials, 
+ see Gramacy (2007) <doi:10.18637/jss.v019.i09> and Gramacy & Taddy (2010) 
+ <doi:10.18637/jss.v033.i06>.  
 Maintainer: Robert B. Gramacy  <rbg@vt.edu>
 License: LGPL
 URL: https://bobby.gramacy.com/r_packages/tgp/
 NeedsCompilation: yes
-Packaged: 2020-09-11 12:43:32 UTC; bobby
+Packaged: 2022-04-02 22:05:50 UTC; bobby
 Repository: CRAN
-Date/Publication: 2020-09-20 16:10:02 UTC
+Date/Publication: 2022-04-03 19:50:02 UTC

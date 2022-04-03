@@ -9,6 +9,7 @@ citEntry(entry = "Article",
   number       = "9",
   pages        = "1--46",
   url          = "https://www.jstatsoft.org/v19/i09/",
+  doi          = "10.18637/jss.v019.i09",
 
   textVersion  =
   paste("Robert B. Gramacy (2007).",
@@ -27,6 +28,7 @@ citEntry(entry = "Article",
   number       = "6",
   pages        = "1--48",
   url          = "https://www.jstatsoft.org/v33/i06/",
+  doi          = "10.18637/jss.v033.i06",
 
   textVersion  =
   paste("Robert B. Gramacy, Matthew Taddy (2010).",
