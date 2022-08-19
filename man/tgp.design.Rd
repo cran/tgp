@@ -72,9 +72,9 @@ Gramacy, R. B., Lee, H. K. H. (2006).
 Technometrics, 51(2), pp. 130-145.  Also avaliable on ArXiv article 0805.4359
 \url{https://arxiv.org/abs/0805.4359}
 
-Gramacy, R. B., Lee, H. K. H., \& Macready, W. (2004).
+Gramacy, R. B., Lee, H. K. H., & Macready, W. (2004).
 \emph{Parameter space exploration with Gaussian process trees.} 
-ICML (pp. 353--360).  Omnipress \& ACM Digital Library.
+ICML (pp. 353--360).  Omnipress & ACM Digital Library.
 
 \url{https://bobby.gramacy.com/r_packages/tgp/}
 }

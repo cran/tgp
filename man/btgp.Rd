@@ -1,5 +1,5 @@
 \name{btgp}
-\title{Bayesian Nonparametric \& Nonstationary Regression Models}
+\title{Bayesian Nonparametric & Nonstationary Regression Models}
 \alias{blm}
 \alias{btlm}
 \alias{bcart}
@@ -63,7 +63,7 @@ btgpllm(X, Z, XX = NULL, meanfn = "linear", bprior = "bflat",
 	\code{ncol(XX) == ncol(X)}}
   \item{meanfn}{ A choice of mean function for the process.  When
     \code{meanfn = "linear"} (default), then we have the process
-    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \beta + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
   where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
   part of the model (if present).  Otherwise, when
   \code{meanfn = "constant"}, then \deqn{Z = \beta_0 + W(\mathbf{X})}{Z = beta0 + W(X).}}
@@ -379,12 +379,12 @@ Robert B. Gramacy, Heng Lian (2011).
   experiments}.  Available as ArXiv article 1009.4241
 \url{https://arxiv.org/abs/1009.4241}
 
-Chipman, H., George, E., \& McCulloch, R. (1998).
+Chipman, H., George, E., & McCulloch, R. (1998).
 \emph{Bayesian CART model search (with discussion).}
 Journal of the American Statistical Association, \bold{93},
 935--960.
 
-Chipman, H., George, E., \& McCulloch, R. (2002).
+Chipman, H., George, E., & McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 

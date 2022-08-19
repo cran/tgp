@@ -31,7 +31,7 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   \item{c0n0}{ Stochastic approximation parameters used to tune
     the simulated tempering pseudo-prior (\code{$pk}) to get
     a uniform posterior over the inverse temperatures; must be
-    a 2-vector of positive integers \code{c(c0, n0)}; see the Geyer \&
+    a 2-vector of positive integers \code{c(c0, n0)}; see the Geyer &
     Thompson reference below }
   \item{lambda}{ Method for combining the importance samplers at each
     temperature.  Optimal combination (\code{"opt"}) is the default,
@@ -112,7 +112,7 @@ default.itemps(m = 40, type = c("geometric", "harmonic","sigmoidal"),
   
   Liu, J.S.~(1002)
   \emph{Monte Carlo Strategies in Scientific Computing.}
-  New York: Springer.  Chapter 10 (pages 213 \& 233)
+  New York: Springer.  Chapter 10 (pages 213 & 233)
 
   \url{https://bobby.gramacy.com/r_packages/tgp/}
 }

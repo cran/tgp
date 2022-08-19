@@ -17,7 +17,7 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
   \item{d}{ number of input dimensions \code{ncol(X)}}
   \item{meanfn}{ A choice of mean function for the process.  When
     \code{meanfn = "linear"} (default), then we have the process
-    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \mbox{\boldmath $\beta$} + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
+    \deqn{Z = (\mathbf{1}  \;\; \mathbf{X}) \beta + W(\mathbf{X})}{Z = cbind(rep(1,nrow(X), X)) \%*\% beta + W(X),}
   where \eqn{W(\mathbf{X})}{W(X)} represents the Gaussian process
   part of the model (if present).  Otherwise, when
   \code{meanfn = "constant"}, then\deqn{Z = \beta_0 + W(\mathbf{X})}{
@@ -48,8 +48,8 @@ tgp.default.params(d, meanfn = c("linear", "constant"),
 \value{
    The output is the following list of \code{params}...
 
-   \item{col}{dimension of regression coefficients \eqn{\mbox{\boldmath
-	 $\beta$}}{beta}: 1 for input \code{meanfn = "constant"}, or
+   \item{col}{dimension of regression coefficients \eqn{
+	 \beta}{beta}: 1 for input \code{meanfn = "constant"}, or
      \code{ncol(X)+1} for \code{meanfn = "linear"}}
    \item{meanfn}{ copied from the inputs }
    \item{corr}{ copied from the inputs }

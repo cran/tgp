@@ -79,7 +79,7 @@ Gramacy, R. B., Lee, H. K. H. (2008).
 103(483), pp. 1119-1130.  Also available as ArXiv article 0710.4536 
 \url{https://arxiv.org/abs/0710.4536}
 
-Chipman, H., George, E., \& McCulloch, R. (2002).
+Chipman, H., George, E., & McCulloch, R. (2002).
 \emph{Bayesian treed models.}
 Machine Learning, \bold{48}, 303--324.
 
