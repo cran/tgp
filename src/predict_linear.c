@@ -43,10 +43,8 @@
  * FFrow[col], b[col]
  */
 
-double predictive_mean_noK(n1, col, FFrow, i, b)
-unsigned int n1, col;
-int i;
-double *FFrow, *b;
+double predictive_mean_noK(unsigned int n1, unsigned int col, double *FFrow, 
+  int i, double *b)
 {
   double zm;
   
@@ -68,11 +66,8 @@ double *FFrow, *b;
  * b[col], z[n1], FFrow[n1][col];
  */
 
-void predict_data_noK(zpm,zps2,n1,col,FFrow,b,ss2,Kdiag)
-unsigned int n1, col;
-double *b, *zpm, *zps2, *Kdiag;
-double **FFrow;
-double ss2;
+void predict_data_noK(double *zpm, double *zps2, unsigned int n1, unsigned int col,
+  double **FFrow, double *b, double ss2, double *Kdiag)
 {
   int i;
   
@@ -92,12 +87,10 @@ double ss2;
  * Ds2xy[n2], fW[col], IDpFWFiQx[n1], FW[col][n1], FFrow[n2][col], 
  */
 
-void delta_sigma2_noK(Ds2xy, n1, n2, col, ss2, denom, FW, tau2, fW, 
-		IDpFWFiQx, FFrow, which_i, corr_diag)
-unsigned int n1, n2, col, which_i;
-double ss2, denom, tau2, corr_diag;
-double *Ds2xy, *fW, *IDpFWFiQx;
-double **FW, **FFrow;
+void delta_sigma2_noK(double *Ds2xy, unsigned int n1, unsigned int n2, 
+  unsigned int col, double ss2, double denom, double **FW, double tau2, 
+  double *fW, double *IDpFWFiQx, double **FFrow, unsigned int which_i, 
+  double corr_diag)
 {
   unsigned int i;
   double last, fxWfy, diff, kappa;
@@ -159,11 +152,9 @@ double **FW, **FFrow;
  * IDpFWFi[n1][n1], W[col][col];
  */
 
-double predictive_var_noK(n1, col, Q, rhs, Wf, s2cor, ss2, f, FW, W, tau2, IDpFWFi, corr_diag)
-unsigned int n1, col;
-double *Q, *rhs, *Wf, *f, *s2cor;
-double **FW, **IDpFWFi, **W;
-double corr_diag, ss2, tau2;
+double predictive_var_noK(unsigned int n1, unsigned int col, double *Q, 
+  double *rhs, double *Wf, double *s2cor, double ss2, double *f, double **FW, 
+  double **W, double tau2, double **IDpFWFi, double corr_diag)
 {
   double s2, kappa, fWf, last;
   
@@ -218,11 +209,9 @@ double corr_diag, ss2, tau2;
  * FW[col][n1], W[col][col], Ds2xy[n2][n2];
  */
 
-void predict_delta_noK(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,KKdiag)
-unsigned int n1, n2, col;
-double *b, *zzm, *zzs2, *KKdiag;
-double **FFrow, **IDpFWFi, **FW, **W, **Ds2xy;
-double ss2, tau2;
+void predict_delta_noK(double *zzm, double *zzs2, double **Ds2xy, unsigned int n1,
+  unsigned int n2, unsigned int col, double **FFrow, double **FW, double **W,
+  double tau2, double **IDpFWFi, double *b, double ss2, double *KKdiag)
 {
   int i;
   double s2cor;
@@ -266,11 +255,9 @@ double ss2, tau2;
  * IDpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta_noK(zzm,zzs2,n1,n2,col,FFrow,FW,W,tau2,IDpFWFi,b,ss2,KKdiag)
-unsigned int n1, n2, col;
-double *b, *zzm, *zzs2, *KKdiag;
-double **FFrow, **IDpFWFi, **FW, **W;
-double ss2,  tau2;
+void predict_no_delta_noK(double *zzm, double *zzs2, unsigned int n1,
+  unsigned int n2, unsigned int col, double **FFrow, double **FW, double **W,
+  double tau2, double **IDpFWFi, double *b, double ss2, double *KKdiag)
 {
   int i;
   double s2cor;
@@ -308,11 +295,8 @@ double ss2,  tau2;
  * IDpFWFi[n1][n1], b[col];
  */
 
-void predict_help_noK(n1,col,b,F,W,tau2,FW,IDpFWFi,Kdiag)
-unsigned int n1, col;
-double **F, **W, **FW, **IDpFWFi; 
-double *b,  *Kdiag;
-double tau2;
+void predict_help_noK(unsigned int n1, unsigned int col, double *b, double **F,
+  double **W, double tau2, double **FW, double **IDpFWFi, double *Kdiag)
 {
   /*double IDpFWF[n1][n1];
     int p[n1]; */
@@ -343,11 +327,8 @@ double tau2;
  * compute a Ds2xy row under the (limiting) linear model
  */ 
 
-void delta_sigma2_linear(ds2xy, n, col, s2, Vbf, fVbf, F, corr_diag)
-unsigned int n, col;
-double s2, corr_diag, fVbf;
-double *ds2xy, *Vbf;
-double **F;
+void delta_sigma2_linear(double *ds2xy, unsigned int n, unsigned int col, double s2, 
+  double *Vbf, double fVbf, double **F, double corr_diag)
 {
   unsigned int i, j;
   double *fy;
@@ -381,11 +362,8 @@ double **F;
  * predict using only the linear part of the GP model
  */
 
-void predict_linear(n, col, zm, zs2, F, b, s2, Vb, Ds2xy, Kdiag)
-unsigned int n, col;
-double *b, *zm, *zs2, *Kdiag;
-double **Vb, **F, **Ds2xy;
-double s2;
+void predict_linear(unsigned int n, unsigned int col, double *zm, double *zs2, 
+  double **F, double *b, double s2, double **Vb, double **Ds2xy, double *Kdiag)
 {
   unsigned int i, j;
   double *f, *Vbf;
@@ -435,16 +413,11 @@ double s2;
  * and do delta_sigma_linear on them too, if applicable
  */
 
-int predict_full_linear(n, zp, zpm, zpvm, zps2, Kdiag,
-			nn, zz, zzm, zzvm, zzs2, KKdiag,
-			Ds2xy, improv,
-			Z, col, F, FF, bmu, s2, Vb, Zmin, err, state)
-unsigned int n, nn, col;
-double *zp, *zpm, *zpvm, *zps2, *zz, *zzm, *zzvm, *zzs2, *Z, *bmu, *improv, *Kdiag, *KKdiag;
-double **F, **FF, **Vb, **Ds2xy;
-double s2, Zmin;
-int err;
-void *state;
+int predict_full_linear(unsigned int n, double *zp, double *zpm, double *zpvm, 
+  double *zps2, double *Kdiag, unsigned int nn, double *zz, double *zzm, 
+  double *zzvm, double *zzs2, double *KKdiag, double **Ds2xy, double *improv,
+	double *Z, unsigned int col, double **F, double **FF, double *bmu, double s2, 
+  double **Vb, double Zmin, int err, void *state)
 {
   double *ezvar;
   int i, warn = 0;
@@ -506,14 +479,10 @@ void *state;
  * returns the number of warnings
  */
 
-int predict_full_noK(n1, zp, zpm, zps2, Kdiag, n2, zz, zzm, zzs2, KKdiag, Ds2xy, 
-		     col, F, W, tau2, FF, b, ss2, err, state)
-unsigned int n1, n2, col;
-int err;
-double *zp, *zpm, *zps2, *zz, *zzm, *zzs2, *b, *Kdiag, *KKdiag; 
-double **F, **W, **FF, **Ds2xy;
-double ss2, tau2;
-void *state;
+int predict_full_noK(unsigned int n1, double *zp, double *zpm, double *zps2, 
+  double *Kdiag, unsigned int n2, double *zz, double *zzm, double *zzs2, 
+  double *KKdiag, double **Ds2xy, unsigned int col, double **F, double **W, 
+  double tau2, double **FF, double *b, double ss2, int err, void *state)
 {
   /*double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], Frow[n1][col];*/
   double **FW, **IDpFWFi, **FFrow, **Frow;

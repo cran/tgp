@@ -46,9 +46,8 @@
  * FFrow[col], KKrow[n1], KiZmFb[n1], b[col]
  */
 
-double predictive_mean(n1, col, FFrow, KKrow, b, KiZmFb)
-unsigned int n1, col;
-double *FFrow, *KKrow, *KiZmFb, *b;
+double predictive_mean(unsigned int n1, unsigned int col, double *FFrow, 
+  double *KKrow, double *b, double *KiZmFb)
 {
   double zzm;
 	
@@ -79,11 +78,9 @@ double *FFrow, *KKrow, *KiZmFb, *b;
  * b[col], KiZmFb[n1], z[n1], FFrow[n1][col], K[n1][n1];
  */
 
-void predict_data(zpm,zps2,n1,col,FFrow,K,b,ss2,zpjitter,KiZmFb)
-unsigned int n1, col;
-double *b, *KiZmFb, *zpm,  *zps2, *zpjitter;
-double **FFrow, **K;
-double ss2;
+void predict_data(double *zpm, double *zps2, unsigned int n1, unsigned int col,
+  double **FFrow, double ** K, double *b, double ss2, double *zpjitter,
+  double *KiZmFb)
 {
   int i;
 
@@ -110,12 +107,9 @@ double ss2;
  * KKrow[n2][n1], xxKxx[n2][n2]
  */
 
-void delta_sigma2(Ds2xy, n1, n2, col, ss2, denom, FW, tau2, fW, KpFWFiQx, 
-		FFrow, KKrow, xxKxx, which_i)
-unsigned int n1, n2, col, which_i;
-double ss2, denom, tau2;
-double *Ds2xy, *fW, *KpFWFiQx;
-double **FW, **FFrow, **KKrow, **xxKxx;
+void delta_sigma2(double *Ds2xy, unsigned int n1, unsigned int n2, unsigned int col, 
+  double ss2, double denom, double **FW, double tau2, double *fW, double *KpFWFiQx, 
+	double **FFrow, double **KKrow, double **xxKxx, unsigned int which_i)
 {
   unsigned int i;
   double last, fxWfy, diff, kappa;
@@ -175,11 +169,9 @@ double **FW, **FFrow, **KKrow, **xxKxx;
  * KpFWFi[n1][n1], W[col][col];
  */
 
-double predictive_var(n1, col, Q, rhs, Wf, s2cor, ss2, k, f, FW, W, tau2, KpFWFi, corr_diag)
-     unsigned int n1, col;
-double *Q, *rhs, *Wf, *k, *f, *s2cor;
-double **FW, **KpFWFi, **W;
-double ss2, corr_diag, tau2;
+double predictive_var(unsigned int n1, unsigned int col, double *Q, double *rhs, 
+  double *Wf, double *s2cor, double ss2, double *k, double *f, double **FW, 
+  double **W, double tau2, double **KpFWFi, double corr_diag)
 {
   double s2, kappa, fWf, last;
 
@@ -237,12 +229,10 @@ double ss2, corr_diag, tau2;
  * Ds2xy[n2][n2];
  */
 
-void predict_delta(zzm,zzs2,Ds2xy,n1,n2,col,FFrow,FW,W,tau2,KKrow,xxKxx,KpFWFi,b,
-		ss2, zzjitter,KiZmFb)
-unsigned int n1, n2, col;
-double *b, *KiZmFb, *zzm, *zzs2, *zzjitter;
-double **FFrow, **KKrow, **xxKxx, **KpFWFi, **FW, **W, **Ds2xy;
-double ss2, tau2;
+void predict_delta(double *zzm, double *zzs2, double **Ds2xy, unsigned int n1,
+  unsigned int n2, unsigned int col, double **FFrow, double **FW, double **W,
+  double tau2, double **KKrow, double **xxKxx, double **KpFWFi, double *b,
+	double ss2, double *zzjitter, double *KiZmFb)
 {
   int i;
   double s2cor;
@@ -285,13 +275,10 @@ double ss2, tau2;
  * KpFWFi[n1][n1], FW[col][n1], W[col][col];
  */
 
-void predict_no_delta(zzm,zzs2,  
-		      n1,n2,col,FFrow,FW,W,tau2,KKrow,KpFWFi,b,ss2,
-		      KKdiag,KiZmFb)
-unsigned int n1, n2, col;
-double *b, *KiZmFb, *zzm, *zzs2, *KKdiag;
-double **FFrow, **KKrow, **KpFWFi, **FW, **W;
-double ss2, tau2;
+void predict_no_delta(double *zzm, double *zzs2, unsigned int n1, unsigned int n2,
+  unsigned int col, double **FFrow, double **FW, double **W, double tau2,
+  double **KKrow, double **KpFWFi, double *b, double ss2, double *KKdiag, 
+  double *KiZmFb)
 {
   int i;
   double s2cor;
@@ -328,11 +315,9 @@ double ss2, tau2;
  * KpFWFi[n1][n1], KiZmFb[n1], Z[n1], b[col];
  */
 
-void predict_help(n1,col,b,F,Z,W,tau2,K,Ki,FW,KpFWFi,KiZmFb)
-unsigned int n1, col;
-double **F, **W, **K, **Ki, **FW, **KpFWFi; 
-double *KiZmFb, *Z, *b;
-double tau2;
+void predict_help(unsigned int n1, unsigned int col, double *b, double **F, 
+  double *Z, double **W, double tau2, double **K, double **Ki, double **FW,
+  double **KpFWFi, double *KiZmFb)
 {
   /*double ZmFb[n1]; double KpFWF[n1][n1]; int p[n1]; */
   double *ZmFb;
@@ -375,11 +360,8 @@ double tau2;
  * return the number of infs and nans
  */
 
-int predict_draw(n, z, mean, s2, err, state)
-unsigned int n;
-double *z, *mean, *s2;
-void *state;
-int err;
+int predict_draw(unsigned int n, double *z, double *mean, double *s2, int err, 
+  void *state)
 {
   unsigned int fnan, finf, i;  
 
@@ -419,15 +401,12 @@ int err;
  * returns the number of warnings
  */
 
-int predict_full(n1, zp, zpm, zpvm, zps2, zpjitter, n2, zz, zzm, zzvm, zzs2, zzjitter, 
-		 Ds2xy, improv, Z, col, F, K, Ki, W, tau2, FF, 
-		 xxKx, xxKxx, KKdiag,  b, ss2, Zmin, err, state)
-unsigned int n1, n2, col;
-int err;
-double *zp, *zpm, *zpvm, *zps2, *zpjitter, *zz, *zzm, *zzvm, *zzs2, *zzjitter, *Z, *b, *improv, *KKdiag;
-double **F, **K, **Ki, **W, **FF, **xxKx, **xxKxx, **Ds2xy;
-double ss2, tau2, Zmin;
-void *state;
+int predict_full(unsigned int n1, double *zp, double *zpm, double *zpvm, 
+  double *zps2, double *zpjitter, unsigned int n2, double *zz, double *zzm, 
+  double *zzvm, double *zzs2, double *zzjitter, double **Ds2xy, double *improv, 
+  double *Z, unsigned int col, double **F, double **K, double **Ki, double **W, 
+  double tau2, double **FF, double **xxKx, double **xxKxx, double *KKdiag, double *b, 
+  double ss2, double Zmin, int err, void *state)
 {
   /*double KiZmFb[n1]; 
     double FW[col][n1], KpFWFi[n1][n1], KKrow[n2][n1], FFrow[n2][col], 
@@ -536,10 +515,8 @@ void *state;
  *
  */
 
-void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
-     unsigned int n, nn;
-     double *improv, *zzm, *zzs2;
-     double Zmin;
+void expected_improv(unsigned int n, unsigned int nn, double *improv, double Zmin, 
+  double *zzm, double *zzs2)
 {
   unsigned int /* which */ i;
   double fmin, diff, stand, p, d, zzs;
@@ -595,10 +572,8 @@ void expected_improv(n, nn, improv, Zmin, zzm, zzs2)
  * Note that there is no predictive-variance argument.
  */
 
-void predicted_improv(n, nn, improv, Zmin, zp, zz)
-     unsigned int n, nn;
-     double *improv, *zp, *zz;
-     double Zmin;
+void predicted_improv(unsigned int n, unsigned int nn, double *improv, double Zmin, 
+  double *zp, double *zz)
 {
   unsigned int which, i;
   double fmin, diff;
@@ -682,7 +657,7 @@ unsigned int* GetImprovRank(int R, int nn, double **Imat_in, int g,
        chosen to reduce improv */
     for (j=0; j<nn; j++)
       for (i=0; i<R; i++)
-	Imat[i][j] = MYfmax(maxcol[i], Imat[i][j]);
+        Imat[i][j] = MYfmax(maxcol[i], Imat[i][j]);
   
     /* compute the mean of each row */
     wmean_of_columns(colmean, Imat, R, nn, w);

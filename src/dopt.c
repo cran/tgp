@@ -47,11 +47,9 @@ double DOPT_NUG(void) { return 0.01; }
  * to from the candidates to be Xcand[fi,:]
  */
 
-void dopt_gp(state_in, nn_in, X_in, n_in, m_in, Xcand_in, ncand_in, iter_in, verb_in, fi_out)
-int *state_in;
-unsigned int *nn_in, *n_in, *m_in, *ncand_in, *iter_in, *verb_in;
-double *X_in, *Xcand_in;
-int *fi_out;
+void dopt_gp(int *state_in, unsigned int *nn_in, double *X_in, unsigned int *n_in, 
+  unsigned int *m_in, double *Xcand_in, unsigned int *ncand_in, 
+  unsigned int *iter_in, unsigned int *verb_in, int *fi_out)
 {
   unsigned int nn, n, m, ncand, iter, verb;
   double **Xall, **X, **Xcand, **fixed, **rect;
@@ -108,13 +106,9 @@ int *fi_out;
  * the last n1 rows of X
  */
 
-void dopt(X, fi, fixed, Xcand, m, n1, n2, n, d, nug, iter, verb, state)
-unsigned int m,n1,n2,n,iter,verb;
-/*double fixed[n1][m], Xcand[n2][m], X[n+n1][m], fi[n];*/
-double **fixed, **Xcand, **X;
-int *fi;	
-double d, nug;
-void *state;
+void dopt(double **X, int *fi, double **fixed, double **Xcand, unsigned int m, 
+  unsigned int n1, unsigned int n2, unsigned int n, double d, double nug, 
+  unsigned int iter, unsigned int verb, void *state)
 /* remember, column major! */
 {
   unsigned int i,j, ai, fii, changes;

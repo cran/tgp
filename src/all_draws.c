@@ -54,10 +54,8 @@
  * model
  */
 
-void mle_beta(mle, n, col, F, Z)
-unsigned int n, col;
-double *Z, *mle;
-double **F;
+void mle_beta(double *mle, unsigned int n, unsigned int col, 
+  double **F, double *Z)
 {
   double **aux1, **Vb;
   double *by;
@@ -101,11 +99,9 @@ double **F;
  * Ti[col][col], Vb[col][col];
  */
 
-void compute_b_and_Vb_noK(Vb, b, by, TiB0, n, col, F, Z, Ti, tau2, b0, Kdiag, itemp)
-     unsigned int n, col;
-double *Z, *b0, *b, *TiB0, *by, *Kdiag;
-double **F, **Ti, **Vb;
-double tau2, itemp;
+void compute_b_and_Vb_noK(double **Vb, double *b, double *by, double *TiB0, 
+  unsigned int n, unsigned int col, double **F, double *Z, double **Ti, 
+  double tau2, double *b0, double *Kdiag, double itemp)
 {
   double **Vbi, **Fgi;
   /* int info; */
@@ -171,11 +167,9 @@ double tau2, itemp;
  * Z[n], b0[col], b[col], F[col][n], Ki[n][n], Ti[col][col], Vb[col][col];
  */
 
-double compute_lambda_noK(Vb, b, n, col, F, Z, Ti, tau2, b0, Kdiag, itemp)
-     unsigned int n, col;
-double *Z, *b0, *b, *Kdiag;
-double **F, **Ti, **Vb;
-double tau2, itemp;
+double compute_lambda_noK(double **Vb, double *b, unsigned int n, 
+  unsigned int col, double **F, double *Z, double **Ti, double tau2, 
+  double *b0, double *Kdiag, double itemp)
 {
   /*double TiB0[col], KiZ[n], by[col];*/
   double *TiB0, *by, *Zgi;
@@ -243,11 +237,9 @@ double tau2, itemp;
  * Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-void compute_b_and_Vb(Vb, b, by, TiB0, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
-unsigned int n, col;
-double *Z, *b0, *b, *TiB0, *by;
-double **F, **Ki, **Ti, **Vb;
-double tau2, itemp;
+void compute_b_and_Vb(double **Vb, double *b, double *by, double *TiB0, 
+  unsigned int n, unsigned int col, double **F, double *Z, double **Ki, 
+  double **Ti, double tau2, double *b0, double itemp)
 {
   double **KiF, **Vbi;
   /* int info; */
@@ -299,11 +291,9 @@ double tau2, itemp;
  * Z[n], b0[col], b[col]; F[col][n], Ki[n][n], Ti[col][col], Vb[col][col]
  */
 
-double compute_lambda(Vb, b, n, col, F, Z, Ki, Ti, tau2, b0, itemp)
-unsigned int n, col;
-double *Z, *b0, *b;
-double **F, **Ki, **Ti, **Vb;
-double tau2, itemp;
+double compute_lambda(double **Vb, double *b, unsigned int n, 
+  unsigned int col, double **F, double *Z, double **Ki, double **Ti, 
+  double tau2, double* b0, double itemp)
 {
   /*double TiB0[col], KiZ[n], by[col];*/
   double *TiB0, *KiZ, *by;
@@ -361,12 +351,8 @@ double tau2, itemp;
  * b[col], bmu[col], Vb[col][col]
  */
 
-unsigned int beta_draw_margin(b, col, Vb, bmu, s2, state)
-unsigned int col;
-double *b, *bmu; 
-double **Vb;
-double s2;
-void *state;
+unsigned int beta_draw_margin(double *b, unsigned int col, double **Vb, 
+  double *bmu, double s2, void *state)
 {
   unsigned int i,j;
   /*double V[col][col];*/
@@ -406,10 +392,8 @@ void *state;
  * draw sigma^2 without dependence on beta
  */
 
-double sigma2_draw_no_b_margin(n, col, lambda, alpha0, beta0, state)
-unsigned int n, col;
-double alpha0, beta0, lambda;
-void *state;
+double sigma2_draw_no_b_margin(unsigned int n, unsigned int col, double lambda, 
+  double alpha0, double beta0, void *state)
 {
   double alpha, g, x;
   
@@ -441,12 +425,8 @@ void *state;
  * b0[col], b[col], Ti[col][col];
  */
 
-double tau2_draw(col, Ti, s2, b, b0, alpha0, beta0, state)
-unsigned int col;
-double *b, *b0;
-double **Ti;
-double alpha0, beta0, s2;
-void *state;
+double tau2_draw(unsigned int col, double **Ti, double s2, double *b, 
+  double *b0, double alpha0, double beta0, void *state)
 {
   /*double bmb0[col], Tibmb0[col];*/
   double *bmb0, *Tibmb0;
@@ -483,9 +463,7 @@ void *state;
  * works in log space -- returns the log density value
  */
 
-double gamma_mixture_pdf(d, alpha, beta)
-double d;
-double alpha[2], beta[2];
+double gamma_mixture_pdf(double d, double *alpha, double *beta)
 {
   double p1, p2, lp;
 
@@ -504,9 +482,7 @@ double alpha[2], beta[2];
  * returns the log pdf
  */
 
-double log_d_prior_pdf(d, alpha, beta)
-double d;
-double alpha[2], beta[2];
+double log_d_prior_pdf(double d, double *alpha, double *beta)
 {
   return(gamma_mixture_pdf(d, alpha, beta));
 }
@@ -518,9 +494,7 @@ double alpha[2], beta[2];
  * rand draws from mixture prior for d
  */
 
-double d_prior_rand(alpha, beta, state)
-double alpha[2], beta[2];
-void *state;
+double d_prior_rand(double *alpha, double *beta, void *state)
 {
   return(gamma_mixture_rand(alpha, beta, state));
 }
@@ -532,10 +506,7 @@ void *state;
  * rand draws for the linearization boolean for d
  */
 
-int linear_rand(d, n, gamlin, state)
-unsigned int n;
-double *d, *gamlin;
-void *state;
+int linear_rand(double *d, unsigned int n, double *gamlin, void *state)
 {
   double p;
   if(gamlin[0] == 0) return 0;
@@ -555,11 +526,8 @@ void *state;
  * (e.g. b[i]=0 -> linear d[i], b[i]=1 -> GP)
  */
 
-int linear_rand_sep(b, pb, d, n, gamlin, state)
-unsigned int n;
-double *d, *gamlin, *pb;
-int *b;
-void *state;
+int linear_rand_sep(int *b, double *pb, double *d, unsigned int n, 
+  double *gamlin, void *state)
 {
   int bb;
   unsigned int i;
@@ -659,11 +627,8 @@ double linear_pdf_sep(double *pb, double *d, unsigned int n, double *gamlin)
  * account possible ZERO proposals
  */
 
-void d_proposal(n, p, d, dold, q_fwd, q_bak, state)
-unsigned int n;
-int *p;
-double *d, *dold, *q_fwd, *q_bak;
-void *state;
+void d_proposal(unsigned int n, int *p, double *d, double *dold, 
+  double *q_fwd, double *q_bak, void *state)
 {
   unsigned int i;
   double qf, qb;
@@ -683,9 +648,7 @@ void *state;
  * returns the log pdf value
  */
 
-double log_nug_prior_pdf(nug, alpha, beta)
-double nug;
-double alpha[2], beta[2];
+double log_nug_prior_pdf(double nug, double *alpha, double *beta)
 {
   if(alpha[0] <= 0) return 0;
   return(gamma_mixture_pdf(nug-NUGMIN, alpha, beta));
@@ -699,9 +662,7 @@ double alpha[2], beta[2];
  * hook to always return the same value
  */
 
-double nug_prior_rand(alpha, beta, state)
-double alpha[2], beta[2];
-void *state;
+double nug_prior_rand(double *alpha, double *beta, void *state)
 {
   if(alpha[0] <= 0) return beta[0];
   else return gamma_mixture_rand(alpha, beta, state) + NUGMIN;
@@ -715,9 +676,7 @@ void *state;
  * rand draws from mixture prior for d and nug
  */
 
-double gamma_mixture_rand(alpha, beta, state)
-double alpha[2], beta[2];
-void *state;
+double gamma_mixture_rand(double *alpha, double* beta, void * state)
 {
   double draw;
   if(runi(state)<0.5) {
@@ -749,10 +708,7 @@ void *state;
 #define PNUM 3.0
 #define PDENOM 4.0
 
-double unif_propose_pos(last, q_fwd, q_bak, state)
-double last;
-double *q_fwd, *q_bak;
-void *state;
+double unif_propose_pos(double last, double *q_fwd, double *q_bak, void *state)
 {
   double left, right, ret;
 
@@ -789,10 +745,7 @@ void *state;
  */
 
 
-double nug_draw(last, q_fwd, q_bak, state)
-double last;
-double *q_fwd, *q_bak;
-void *state;
+double nug_draw(double last, double *q_fwd, double *q_bak, void *state)
 {
   return unif_propose_pos(last-NUGMIN, q_fwd, q_bak, state) + NUGMIN;
 }
@@ -902,12 +855,8 @@ double hier_prior_log(double alpha, double beta, double beta_lambda,
  * the sigma^2 parameter
  */
 
-void sigma2_prior_draw(a0, g0, s2, nl, a0_lambda, g0_lambda, n, state)
-unsigned int nl;
-double a0_lambda, g0_lambda;
-double *a0, *g0, *s2;
-unsigned int* n;
-void *state;
+void sigma2_prior_draw(double* a0, double* g0, double *s2, unsigned int nl, 
+  double a0_lambda, double g0_lambda, unsigned int *n, void* state)
 {
   double q_fwd, q_bak, alpha, log_p, lp;
   double a0_new, g0_new;
@@ -958,11 +907,8 @@ void *state;
  * d[n]
  */
 
-void mixture_priors_draw(alpha, beta, d, n, alpha_lambda, beta_lambda, state)
-unsigned int n;
-double alpha[2], beta[2], alpha_lambda[2], beta_lambda[2]; 
-double *d;
-void *state;
+void mixture_priors_draw(double *alpha, double *beta, double *d, unsigned int n, 
+  double *alpha_lambda, double *beta_lambda, void *state)
 {
   double q_fwd, q_bak, a;
   double alpha_new[2], beta_new[2];
@@ -1015,18 +961,13 @@ void *state;
  *  return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
-int d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, 
-		  K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
-		  bmu_new,  b0, Ti, T, tau2, nug, qRatio, d_alpha, d_beta, a0, 
-		  g0, lin, itemp, state)
-unsigned int n, col;
-int lin;
-double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z;
-double d_alpha[2], d_beta[2];
-double d, dlast, nug, a0, g0, lambda, tau2, log_det_K, qRatio, itemp;
-double *lambda_new, *bmu_new, *log_det_K_new;
-void *state;
+int d_draw_margin(unsigned int n, unsigned int col, double d, double dlast, 
+  double **F, double *Z, double **DIST, double log_det_K, double lambda, 
+  double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
+  double *log_det_K_new, double *lambda_new, double **Vb_new, double *bmu_new, 
+  double *b0, double **Ti, double **T, double tau2, double nug, double qRatio, 
+  double *d_alpha, double *d_beta, double a0,	double g0, int lin, double itemp, 
+  void *state)
 {
   double pd, pdlast, alpha;
   double *Kdiag;
@@ -1086,16 +1027,12 @@ void *state;
  * return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
-int d_sim_draw_margin(d, n, dim, col, F, X, Z, log_det_K, lambda, Vb, 
-		      K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
-		      bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 
-		      itemp, state)
-     unsigned int n, dim, col;
-double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z, *d, *log_det_K_new;
-double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log, itemp;
-double *lambda_new, *bmu_new;
-void *state;
+int d_sim_draw_margin(double *d, unsigned int n, unsigned int dim, unsigned int col, 
+  double **F, double **X, double *Z, double log_det_K, double lambda, double **Vb, 
+  double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
+  double *lambda_new, double **Vb_new, double *bmu_new, double *b0, double **Ti, 
+  double **T, double tau2, double nug, double qRatio, double pRatio_log, double a0, 
+  double g0, double itemp, void *state)
 {
   double pd, pdlast, alpha;
   unsigned int m = 0;
@@ -1145,17 +1082,12 @@ void *state;
  * return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
-int d_sep_draw_margin(d, n, dim, col, F, X, Z, log_det_K, lambda, Vb, 
-	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
-	bmu_new, b0, Ti, T, tau2, nug, qRatio, pRatio_log, a0, g0, 
-	lin, itemp, state)
-     unsigned int n, dim, col;
-int lin;
-double **F, **X, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z, *d, *log_det_K_new;
-double nug, a0, g0, lambda, tau2, log_det_K, qRatio, pRatio_log, itemp;
-double *lambda_new, *bmu_new;
-void *state;
+int d_sep_draw_margin(double *d, unsigned int n, unsigned int dim, unsigned int col, 
+  double **F, double **X, double *Z, double log_det_K, double lambda, double **Vb, 
+	double **K_new, double **Ki_new, double **Kchol_new, double *log_det_K_new, 
+  double *lambda_new, double **Vb_new, double *bmu_new, double *b0, double **Ti, 
+  double **T, double tau2, double nug, double qRatio, double pRatio_log, double a0, 
+  double g0, int lin, double itemp, void *state)
 {
   double pd, pdlast, alpha;
   double *Kdiag;
@@ -1210,18 +1142,13 @@ void *state;
  *  return 1 if draw accepted, 0 if rejected, -1 if error
  */
 
-int matern_d_draw_margin(n, col, d, dlast, F, Z, DIST, log_det_K, lambda, Vb, K_new,
-			 Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-			 b0, Ti, T, tau2, nug, nu, bk, qRatio, d_alpha, d_beta, a0, 
-			 g0, lin, itemp, state)
-unsigned int n, col;
-int lin;
-double **F, **DIST, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z, *bk;
-double d_alpha[2], d_beta[2];
-double d, dlast, nug, nu, a0, g0, lambda, tau2, log_det_K, qRatio, itemp;
-double *lambda_new, *bmu_new, *log_det_K_new;
-void *state;
+int matern_d_draw_margin(unsigned int n, unsigned int col, double d, double dlast, 
+  double **F, double* Z, double **DIST, double log_det_K, double lambda, 
+  double **Vb, double **K_new, double **Ki_new, double ** Kchol_new, 
+  double *log_det_K_new, double *lambda_new, double **Vb_new, double *bmu_new, 
+	double *b0, double **Ti, double **T, double tau2, double nug, double nu, 
+  double *bk, double qRatio, double *d_alpha, double *d_beta, double a0, 
+	double g0, int lin, double itemp, void *state)
 {
   double pd, pdlast, alpha;
   double *Kdiag;
@@ -1273,18 +1200,13 @@ void *state;
  * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
  */
 
-double nug_draw_margin(n, col, nuglast, F, Z, K, log_det_K, lambda, Vb, 
-	K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-	b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, 
-	state)
-unsigned int n, col;
-int linear;
-double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z, *log_det_K_new; 
-double nug_alpha[2], nug_beta[2];
-double nuglast, a0, g0, lambda, tau2, log_det_K, itemp;
-double *lambda_new, *bmu_new;
-void *state;
+double nug_draw_margin(unsigned int n, unsigned int col, double nuglast, 
+  double **F, double *Z, double **K, double log_det_K, double lambda, 
+  double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
+  double *log_det_K_new, double *lambda_new, double **Vb_new, 
+  double *bmu_new, double *b0, double **Ti, double **T, double tau2, 
+  double *nug_alpha, double *nug_beta, double a0, double g0, int linear, 
+  double itemp, void *state)
 {
   double q_fwd, q_bak, nug, pnug, pnuglast, alpha;
   double *Kdiag;
@@ -1339,18 +1261,13 @@ void *state;
  * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
  */
 
-double nug_draw_twovar(n, col, nuglast, F, Z, K, log_det_K, lambda, Vb, 
-  K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, bmu_new, 
-  b0, Ti, T, tau2, nug_alpha, nug_beta, a0, g0, linear, itemp, 
-  state)
-unsigned int n, col;
-int linear;
-double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new;
-double *b0, *Z, *log_det_K_new; 
-double nug_alpha[2], nug_beta[2];
-double nuglast, a0, g0, lambda, tau2, log_det_K, itemp;
-double *lambda_new, *bmu_new;
-void *state;
+double nug_draw_twovar(unsigned int n, unsigned int col, double nuglast, 
+  double **F, double *Z, double **K, double log_det_K, double lambda, 
+  double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
+  double *log_det_K_new, double *lambda_new, double **Vb_new, double *bmu_new, 
+  double *b0, double **Ti, double **T, double tau2, double *nug_alpha, 
+  double *nug_beta, double a0, double g0, int linear, double itemp, 
+  void *state)
 {
   double q_fwd, q_bak, nug, pnug, pnuglast, alpha;
   double *Kdiag;
@@ -1415,18 +1332,13 @@ void *state;
  * Vb[col][col], Vb_new[col][col], Ki_new[n][n], Kchol_new[n][n] b0[col], Z[n]
  */
 
-double* mr_nug_draw_margin(n, col, nug, nugfine, X, F, Z, K, log_det_K, lambda, Vb, 
-			   K_new, Ki_new, Kchol_new, log_det_K_new, lambda_new, Vb_new, 
-			   bmu_new, b0, Ti, T, tau2, nug_alpha, nug_beta, nugf_alpha, 
-			   nugf_beta, delta, a0, g0, linear, itemp, state)
-unsigned int n, col;
-int linear;
-double **F, **K, **K_new, **Ti, **T, **Vb, **Vb_new, **Ki_new, **Kchol_new, **X;
-double *b0, *Z, *log_det_K_new; 
-double nug_alpha[2], nug_beta[2], nugf_alpha[2], nugf_beta[2];
-double nug, nugfine, a0, g0, lambda, tau2, log_det_K, delta, itemp;
-double *lambda_new, *bmu_new;
-void *state;
+double* mr_nug_draw_margin(unsigned int n, unsigned int col, double nug, 
+  double nugfine, double **X, double **F, double *Z, double **K, double log_det_K, 
+  double lambda, double **Vb, double **K_new, double **Ki_new, double **Kchol_new, 
+  double *log_det_K_new, double *lambda_new, double **Vb_new, double *bmu_new, 
+  double *b0, double **Ti, double **T, double tau2, double *nug_alpha, 
+  double *nug_beta, double *nugf_alpha, double *nugf_beta, double delta, double a0, 
+  double g0, int linear, double itemp, void *state)
 {
   double q_fwd, q_bak, q_fwdf, q_bakf, pnug, pnuglast, alpha;
   unsigned int i;
@@ -1498,11 +1410,9 @@ void *state;
  * b0[col], s2[ch] b[ch][col], V[col][col], Ti[col][col]
  */
 
-void Ti_draw(Ti, col, ch, b, bmle, b0, rho, V, s2, tau2, state)
-unsigned int col, ch, rho;
-double *b0, *s2, *tau2;
-double **b, **V, **Ti, **bmle;
-void *state;
+void Ti_draw(double **Ti, unsigned int col, unsigned int ch, double **b, 
+  double **bmle, double *b0, unsigned int rho, double **V, double *s2, 
+  double *tau2, void *state)
 {
   double **sbb0, **S;
   double *bmb0;
@@ -1549,11 +1459,8 @@ void *state;
  * b0[col], s2[ch], mu[col], b[ch][col], Ti[col][col], Ci[col][col]
  */
 
-void b0_draw(b0, col, ch, b, s2, Ti, tau2, mu, Ci, state)
-unsigned int col, ch;
-double *b0, *s2, *mu, *tau2;
-double **b, **Ti, **Ci;
-void *state;
+void b0_draw(double *b0, unsigned int col, unsigned int ch, double **b, 
+  double *s2, double **Ti, double *tau2, double *mu, double **Ci, void *state)
 {
   int i /* , info*/;
   double s2i_sum, s2i;
@@ -1619,9 +1526,7 @@ void *state;
  * rand draws from inv-gamma prior for tau2
  */
 
-double tau2_prior_rand(alpha, beta, state)
-double alpha, beta;
-void *state;
+double tau2_prior_rand(double alpha, double beta, void *state)
 {
   double tau2;
   inv_gamma_mult_gelman(&tau2, alpha, beta, 1, state);
@@ -1636,9 +1541,7 @@ void *state;
  * returns the log pdf
  */
 
-double log_tau2_prior_pdf(tau2, alpha, beta)
-double tau2;
-double alpha, beta;
+double log_tau2_prior_pdf(double tau2, double alpha, double beta)
 {
   double lp;
   invgampdf_log_gelman(&lp, &tau2, alpha, beta, 1);

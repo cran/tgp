@@ -48,8 +48,7 @@ int getrngstate = 1;
  * from jenise 
  */
 
-void* newRNGstate(s)
-unsigned long s;
+void* newRNGstate(unsigned long s)
 {
  switch (RNG) {
  case CRAN: 
@@ -87,8 +86,7 @@ unsigned long s;
  * current state
  */
 
-void* newRNGstate_rand(s)
-void *s;
+void* newRNGstate_rand(void *s)
 {
   unsigned long lstate;
   int state[3];
@@ -232,9 +230,7 @@ void runif_mult(double* r, double a, double b, unsigned int n, void *state)
  * modified from jenise's code
  */
 
-void rnor(x, state)
-double *x;
-void *state;
+void rnor(double *x, void *state)
 {
 	double e,v1,v2,w;
 
@@ -256,10 +252,7 @@ void *state;
  * multiple draws from the standard normal
  */
 
-void rnorm_mult(x, n, state)
-unsigned int n;
-double *x;
-void *state;
+void rnorm_mult(double *x, unsigned int n, void *state)
 {
 	unsigned int j;
 	double aux[2];
@@ -284,11 +277,8 @@ void *state;
  * for a zero mean; code from Herbie
  */
 
-void mvnrnd(x, mu, cov, n, state)
-unsigned int n;
-double *x, *mu;
-double **cov;
-void *state;
+void mvnrnd(double *x, double *mu, double **cov, unsigned int n, 
+  void *state)
 {
 	int i,j;
 	double *rn = new_vector(n);
@@ -313,33 +303,29 @@ void *state;
  * calls the above mvnrnd routines cases times).
  */
 
-void mvnrnd_mult(x, mu, cov, n, cases, state)
-unsigned int n, cases;
-double *x, *mu; 
-/*double cov[][n];*/
-double **cov;
-void *state;
+void mvnrnd_mult(double *x, double *mu, double **cov, unsigned int n, 
+  unsigned int cases, void *state)
 {
-    /*double x_temp[n];*/
-    double *x_temp;
-    int i, j /*, info*/;
+  /*double x_temp[n];*/
+  double *x_temp;
+  int i, j /*, info*/;
 
-    /* get the choleski decomposition */
-    /* info =*/ linalg_dpotrf(n, cov);
+  /* get the choleski decomposition */
+  /* info =*/ linalg_dpotrf(n, cov);
 
-    /* get CASES draws from a multivariate normal */
-    x_temp = (double*) malloc(sizeof(double) * n);
-    for(i=0; i< cases; i++) {
+  /* get CASES draws from a multivariate normal */
+  x_temp = (double*) malloc(sizeof(double) * n);
+  for(i=0; i< cases; i++) {
 
-	/* put single draw into x_temp */
-    	mvnrnd(x_temp,mu,cov,n,state);
+	 /* put single draw into x_temp */
+    mvnrnd(x_temp,mu,cov,n,state);
 
-	/* copy x_temp into into the i-th column of x*/
-	for(j=0; j<n; j++) x[j*cases + i] = x_temp[j];
-    }
-    free(x_temp);
+	 /* copy x_temp into into the i-th column of x*/
+	 for(j=0; j<n; j++) x[j*cases + i] = x_temp[j];
+  }
+  free(x_temp);
 
-    return;
+  return;
 }
 
 
@@ -352,10 +338,10 @@ double rexpo(double lambda, void *state)
  * Generates from an exponential distribution
  */
 {
-    double random, uniform;
-    uniform = runi(state);
-    random = 0.0 - (1/lambda) * log(uniform);
-    return random;
+  double random, uniform;
+  uniform = runi(state);
+  random = 0.0 - (1/lambda) * log(uniform);
+  return random;
 }
 
 
@@ -483,20 +469,16 @@ double rgamma_wb(double alpha, double beta, void *state)
  * x must be an alloc'd cases-array
  */
 
-void inv_gamma_mult_gelman(x, alpha, beta, cases, state)
-unsigned int cases;
-double *x;
-double alpha, beta;
-void *state;
+void inv_gamma_mult_gelman(double *x, double alpha, double beta, 
+  unsigned int cases, void *state)
 {
-   int i;
+  int i;
 
-   /* sanity checks */
-   assert(alpha>0 && beta >0);
+  /* sanity checks */
+  assert(alpha>0 && beta >0);
 	
-   /* get CASES draws from a gamma */
-   for(i=0; i< cases; i++) x[i] = 1.0 / rgamma_wb(alpha, beta, state);
-   return;
+  /* get CASES draws from a gamma */
+  for(i=0; i< cases; i++) x[i] = 1.0 / rgamma_wb(alpha, beta, state);
 }
 
 
@@ -509,17 +491,13 @@ void *state;
  * x must be an alloc'd cases-array
  */
 
-void gamma_mult_gelman(x, alpha, beta, cases, state)
-unsigned int cases;
-double *x; 
-double alpha, beta;
-void *state;
+void gamma_mult_gelman(double *x, double alpha, double beta, 
+  unsigned int cases, void *state)
 {
-   int i;
+  int i;
 	
-   /* get CASES draws from a gamma */
-   for(i=0; i< cases; i++) x[i] = rgamma_wb(alpha, beta, state);
-   return;
+  /* get CASES draws from a gamma */
+  for(i=0; i< cases; i++) x[i] = rgamma_wb(alpha, beta, state);
 }
 
 
@@ -530,15 +508,13 @@ void *state;
  * with parameters alpha and beta.
  */
 
-double rbet(alpha, beta, state)
-double alpha, beta;
-void *state;
+double rbet(double alpha, double beta, void *state)
 {
-   double g1,g2;
-   g1 = rgamma_wb(alpha, 1.0, state);
-   g2 = rgamma_wb(beta, 1.0, state);
+  double g1,g2;
+  g1 = rgamma_wb(alpha, 1.0, state);
+  g2 = rgamma_wb(beta, 1.0, state);
 
-   return g1/(g1+g2);
+  return g1/(g1+g2);
 }
 
 
@@ -550,19 +526,16 @@ void *state;
  * x must be an alloc'd cases-array
  */
 
-void beta_mult(x, alpha, beta, cases, state)
-unsigned int cases;
-double *x; 
-double alpha, beta;
-void *state;
+void beta_mult(double *x, double alpha, double beta, unsigned int cases, 
+  void *state)
 {
-   int i;
+  int i;
 	
-   /* get CASES draws from a beta */
-   for(i=0; i< cases; i++) {
+  /* get CASES draws from a beta */
+  for(i=0; i< cases; i++) {
    	x[i] = rbet(alpha,beta,state);
-   }
-   return;
+  }
+  return;
 }
 
 
@@ -576,10 +549,8 @@ void *state;
  * x[n][n], S[n][n];
  */
 
-void wishrnd(x, S, n, nu, state)
-unsigned int n, nu;
-double **x, **S;
-void *state;
+void wishrnd(double **x, double **S, unsigned int n, unsigned int nu, 
+  void *state)
 {
   /*double alphaT[n][nu], alpha[nu][n], cov[n][n];
     double mu[n];*/
@@ -627,11 +598,8 @@ void *state;
  * sample by a discrete probability distribution; returns doubles
  */
 
-void dsample(x_out, x_indx, n, num_probs, X, probs, state)
-unsigned int n, num_probs;
-double *x_out, *X, *probs;
-unsigned int* x_indx;
-void *state;
+void dsample(double *x_out, unsigned int *x_indx, unsigned int n, 
+  unsigned int num_probs, double *X, double *probs, void *state)
 {
   double pick;
   int i, counter;
@@ -666,12 +634,8 @@ void *state;
  * same as dsample, but samples integers 
  */
 
-void isample(x_out, x_indx, n, num_probs, X, probs, state)
-unsigned int n, num_probs;
-int *x_out, *X;
-double *probs;
-unsigned int *x_indx;
-void *state;
+void isample(int *x_out, unsigned int *x_indx, unsigned int n, 
+  unsigned int num_probs, int *X, double *probs, void *state)
 {
   double pick;
   int i, counter;
@@ -707,12 +671,8 @@ void *state;
  * sampling WITHOUT replacement
  */
 
-void isample_norep(x_out, x_indx, n, num_probs, X, probs, state)
-unsigned int n, num_probs;
-int *x_out, *X;
-double *probs;
-unsigned int *x_indx;
-void *state;
+void isample_norep(int *x_out, unsigned int *x_indx, unsigned int n, 
+  unsigned int num_probs, int *X, double *probs, void *state)
 {
   double *p, *p_old;
   int *x, *x_old;

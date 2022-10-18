@@ -46,10 +46,8 @@
  * T[col][col], Vb[col][col]
  */
 
-double post_margin_rj(n, col, lambda, Vb, log_detK, T, tau2, a0, g0, itemp)
-unsigned int n,col;
-double **T, **Vb;
-double a0, g0, tau2, lambda, log_detK, itemp;
+double post_margin_rj(unsigned int n, unsigned int col, double lambda, double **Vb, 
+  double log_detK, double **T, double tau2, double a0, double g0, double itemp)
 {
   double log_detVB, log_detT, one, two, p;
   unsigned int m = 0;
@@ -114,10 +112,8 @@ double a0, g0, tau2, lambda, log_detK, itemp;
  * Vb[col][col]
  */
 
-double post_margin(n, col, lambda, Vb, log_detK, a0, g0, itemp)
-unsigned int n, col;
-double **Vb;
-double a0, g0, lambda, log_detK, itemp;
+double post_margin(unsigned int n, unsigned int col, double lambda, double **Vb, 
+  double log_detK, double a0, double g0, double itemp)
 {
   double log_detVB,  one, two, p;
  

@@ -43,11 +43,8 @@
  * decomposition) routines which modify their argument
  */
 
-void copyCovUpper(cov, Sigma, n, scale)
-unsigned int n;
-/*double cov[][n], Sigma[][n];*/
-double **cov, **Sigma;
-double scale;
+void copyCovUpper(double **cov, double **Sigma, unsigned int n, 
+  double scale)
 {
   int i,j;
   for(i=0; i<n; i++) {
@@ -68,11 +65,8 @@ double scale;
  * decomposition) routines which modify their argument
  */
 
-void copyCovLower(cov, Sigma, n, scale)
-unsigned int n;
-/*double cov[][n], Sigma[][n];*/
-double **cov, **Sigma;
-double scale;
+void copyCovLower(double **cov, double **Sigma, unsigned int n, 
+  double scale)
 {
   int i,j;
   for(i=0; i<n; i++) {
@@ -92,11 +86,7 @@ double scale;
  * distributed with mean mu and variance cov
  */
 
-double mvnpdf_log_dup(x, mu, cov, n)
-unsigned int n;
-double *x, *mu; 
-/*double cov[][n];*/
-double **cov;
+double mvnpdf_log_dup(double *x, double *mu, double **cov, unsigned int n)
 {
   double lpdf;
   double **dupcov;
@@ -124,11 +114,7 @@ double **cov;
  * (written over)
  */
 
-double mvnpdf_log(x, mu, cov, n)
-unsigned int n;
-double *x, *mu; 
-/*double cov[][n];*/
-double **cov;
+double mvnpdf_log(double *x, double *mu, double **cov, unsigned int n)
 {
   double log_det_sigma, discrim;
   /*double xx[n];*/
@@ -168,9 +154,8 @@ double **cov;
  * p must be pre-alloc'd n-array
  */
 
-void gampdf_log_gelman(p, x, a, b, n)
-unsigned int n;
-double *p, *x, a, b;
+void gampdf_log_gelman(double *p, double *x, double a, double b, 
+  unsigned int n)
 {
   int i;
   
@@ -194,9 +179,8 @@ double *p, *x, a, b;
  * p must be pre-alloc'd n-array
  */
 
-void invgampdf_log_gelman(p, x, a, b, n)
-unsigned int n;
-double *p, *x, a, b;
+void invgampdf_log_gelman(double *p, double *x, double a, double b, 
+  unsigned int n)
 {
   int i;
 
@@ -219,9 +203,7 @@ double *p, *x, a, b;
  * p must be pre-alloc'd n-array; not using Gelman parameterization
  */
 
-void gampdf_log(p, x, a, b, n)
-unsigned int n;
-double *p, *x, a, b;
+void gampdf_log(double *p, double *x, double a, double b, unsigned int n)
 {
   int i;
 
@@ -243,9 +225,7 @@ double *p, *x, a, b;
  * p must be pre-alloc'd n-array
  */
 
-void betapdf_log(p, x, a, b, n)
-unsigned int n;
-double *p, *x, a, b;
+void betapdf_log(double *p, double *x, double a, double b, unsigned int n)
 {
   int i;
   for(i=0; i<n; i++) {
@@ -263,9 +243,8 @@ double *p, *x, a, b;
  * p must be pre-alloc'd n-array
  */
 
-void normpdf_log(p, x, mu, s2, n)
-unsigned int n;
-double *p, *x, mu, s2;
+void normpdf_log(double *p, double *x, double mu, double s2, 
+  unsigned int n)
 {
   int i;
   double diff;
@@ -283,10 +262,7 @@ double *p, *x, mu, s2;
  * choleski decomposition of a matrix M
  */
 
-double log_determinant_chol(M, n)
-unsigned int n;
-/*double M[n][n];*/
-double **M;
+double log_determinant_chol(double **M, unsigned int n)
 {
   double log_det;
   int i;
@@ -307,10 +283,7 @@ double **M;
  * after removing the duplicate matrix
  */
 
-double log_determinant_dup(M, n)
-unsigned int n;
-/*double M[n][n];*/
-double **M;
+double log_determinant_dup(double **M, unsigned int n)
 {
   double ** Mdup;
   double log_det;
@@ -331,10 +304,7 @@ double **M;
  * replacing it with its choleski decomposition
  */
 
-double log_determinant(M, n)
-unsigned int n;
-/*double M[n][n];*/
-double **M;
+double log_determinant(double **M, unsigned int n)
 {
   double log_det;
   int i, info;
@@ -371,9 +341,7 @@ double **M;
  * x[n][n], S[n][n];
  */
 
-double wishpdf_log(x, S, n, nu)
-unsigned int n, nu;
-double **x, **S;
+double wishpdf_log(double **x, double **S, unsigned int n, unsigned int nu)
 {
   /* double hold[n][n], Sdup[n][n] */
   double **hold, **Sdup;

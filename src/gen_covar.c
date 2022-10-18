@@ -45,12 +45,9 @@
  * X[n][m], DIST[n][n]
  */
 
-void dist_symm(DIST, m, X, n, pwr)
-unsigned int m,n;
-double **X, **DIST;
-double pwr;
+void dist_symm(double **DIST, unsigned int m, double **X, unsigned int n, 
+  double pwr)
 {
-
   int i,j,k;
   double diff;
 
@@ -97,12 +94,9 @@ double pwr;
  * X1[n1][m], X2[n2][m], DIST[n2][n1]
  */
 
-void dist(DIST, m, X1, n1, X2, n2, pwr)
-unsigned int m,n1,n2;
-double **X1, **X2, **DIST;
-double pwr;
+void dist(double **DIST, unsigned int m, double **X1, unsigned int n1, 
+  double **X2, unsigned int n2, double pwr)
 {       
-
   int i,j,k;
   double diff;
   
@@ -142,11 +136,8 @@ double pwr;
  * X[n][m], K[n][n]
  */
 
-void exp_corr_sep_symm(K, m, X, n, d, nug, pwr)
-unsigned int m,n;
-double **X, **K;
-double *d;
-double pwr, nug;
+void exp_corr_sep_symm(double **K, unsigned int m, double **X, unsigned int n, 
+  double *d, double nug, double pwr)
 {
   int i,j,k;
   double diff;
@@ -200,11 +191,8 @@ double pwr, nug;
  * X1[n1][m], X2[n2][m], K[n2][n1], d[m]
  */
 
-void exp_corr_sep(K, m, X1, n1, X2, n2, d, pwr)
-unsigned int m,n1,n2;
-double **X1, **X2, **K;
-double *d;
-double pwr;
+void exp_corr_sep(double **K, unsigned int m, double **X1, unsigned int n1, 
+  double **X2, unsigned int n2, double *d, double pwr)
 {
   int i,j,k;
   double diff;
@@ -250,11 +238,8 @@ double pwr;
  * X[n][m], K[n][n]
  */
 
-void sim_corr_symm(K, m, X, n, d, nug, pwr)
-unsigned int m,n;
-double **X, **K;
-double *d;
-double pwr, nug;
+void sim_corr_symm(double **K, unsigned int m, double **X, unsigned int n, 
+  double *d, double nug, double epwr)
 {
   int i,j,k;
   
@@ -273,7 +258,7 @@ double pwr, nug;
       K[j][i] = 0.0;
       /* do the same for the rest of the dimensions */
       for(k=0; k<m; k++) 
-	K[j][i] += d[k] * (X[i][k] - X[j][k]);
+        K[j][i] += d[k] * (X[i][k] - X[j][k]);
 
       /* go from log space to regular space */
       K[j][i] = exp(0.0- sq(K[j][i]));
@@ -294,11 +279,8 @@ double pwr, nug;
  * X1[n1][m], X2[n2][m], K[n2][n1], d[m]
  */
 
-void sim_corr(K, m, X1, n1, X2, n2, d, pwr)
-unsigned int m,n1,n2;
-double **X1, **X2, **K;
-double *d;
-double pwr;
+void sim_corr(double **K, unsigned int m, double **X1, unsigned int n1, 
+  double **X2, unsigned int n2, double *d, double pwr)
 {
   int i,j,k;
   
@@ -311,7 +293,7 @@ double pwr;
 
       K[j][i] = 0.0;
       for(k=0; k<m; k++)
-	K[j][i] += d[k] * (X1[i][k] - X2[j][k]);
+	       K[j][i] += d[k] * (X1[i][k] - X2[j][k]);
 
       /* go from log space to regular space */
       K[j][i] = exp(0.0-sq(K[j][i]));
@@ -329,10 +311,8 @@ double pwr;
  * K[n][m], DIST[n][m]
  */
 
-void dist_to_K(K, DIST, d, nug, m, n)
-unsigned int m,n;
-double **K, **DIST;
-double d, nug;
+void dist_to_K(double **K, double **DIST, double d, double nug, 
+  unsigned int m, unsigned int n)
 {
   int i,j;
 
@@ -346,7 +326,7 @@ double d, nug;
     /* complete the K calcluation as a function of DIST */
     for(i=0; i<n; i++) 
       for(j=0; j<m; j++) 
-	K[i][j] = exp(0.0-DIST[i][j]/d);
+        K[i][j] = exp(0.0-DIST[i][j]/d);
   }	
 
   /* add nugget to diagonal when m==n */
@@ -363,10 +343,8 @@ double d, nug;
  * K[n][n], DIST[n][n]
  */
 
-void dist_to_K_symm(K, DIST, d, nug, n)
-unsigned int n;
-double **K, **DIST;
-double d, nug;
+void dist_to_K_symm(double **K, double **DIST, double d, double nug, 
+  unsigned int n)
 {
   int i,j;
 
@@ -402,9 +380,7 @@ double d, nug;
  * M[n][n], Mi[n][n], Mutil[n][n]
  */
 
-void inverse_chol(M, Mi, Mutil, n)
-unsigned int n;
-double **M, **Mi, **Mutil;
+void inverse_chol(double **M, double **Mi, double **Mutil, unsigned int n)
 {
   unsigned int i,j;
   /* int info; */
@@ -433,9 +409,7 @@ double **M, **Mi, **Mutil;
  * by any tgp routine (31/08/2006)
  */
 
-void inverse_lu(M, Mi, Mutil, n)
-unsigned int n;
-double **M, **Mi, **Mutil;
+void inverse_lu(double **M, double **Mi, double **Mutil, unsigned int n)
 {
   /* int info; */
   
@@ -461,10 +435,7 @@ double **M, **Mi, **Mutil;
  * by any tgp routine (31/08/2006)
  */
 
-void solve_chol(x, A, b, n)
-unsigned int n;
-double **A;
-double *b, *x;
+void solve_chol(double *x, double **A, double *b, unsigned int n)
 {
   int i;
   double **Ai, **Achol;
@@ -487,10 +458,8 @@ double *b, *x;
  * K[n][m], DIST[n][m]
  */
 
-void matern_dist_to_K(K, DIST, d, nu, bk, nug, m, n)
-unsigned int m,n;
-double **K, **DIST, *bk;
-double d, nug, nu;
+void matern_dist_to_K(double **K, double **DIST, double d, double nu, double *bk, 
+  double nug, unsigned int m, unsigned int n)
 {
   int i,j;
   double c;
@@ -508,8 +477,8 @@ double d, nug, nu;
     else zero(K, n, m);
   } else {
 
-    for(i=0; i<n; i++) {
-	for(j=0; j<m; j++) {
+  for(i=0; i<n; i++) {
+	 for(j=0; j<m; j++) {
 
 	  /* since we will late log(DIST), below, we need to make
 	     sure the distances are positive */
@@ -529,8 +498,8 @@ double d, nug, nu;
 	       in the bessel calculation */
 	    if(ISNAN(K[i][j]) ) K[i][j] = 1.0;
 	  }
-        }
-      }
+    }
+   }
   }
   
   /* add in nugget on diagonal if this is a square matrix */
@@ -548,10 +517,8 @@ double d, nug, nu;
  * K[n][n], DIST[n][n]
  */
 
-void matern_dist_to_K_symm(K, DIST, d, nu, bk, nug, n)
-unsigned int n;
-double **K, **DIST, *bk;
-double d, nug, nu;
+void matern_dist_to_K_symm(double **K, double **DIST, double d, double nu, double *bk, 
+  double nug, unsigned int n)
 {
   int i,j;
   double c;
@@ -589,7 +556,7 @@ double d, nug, nu;
       K[i][j] = exp(K[i][j]-c);
 
       /* default to K=1.0 when there is numerical instability
-	 in the bessel calculation */
+	       in the bessel calculation */
       if(ISNAN(K[i][j])) K[i][j] = 1.0;
 
       /* fill in the lower triangle */
