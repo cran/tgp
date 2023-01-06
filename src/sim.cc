@@ -493,7 +493,7 @@ char* Sim::State(unsigned int which)
      to get printed also */
 #ifdef PRINTNUG
   string s = "(d";
-  sprintf(buffer, "%d=[", which);
+  snprintf(buffer, BUFFMAX, "%d=[", which);
   s.append(buffer);
 #else
   string s = "";
@@ -502,18 +502,18 @@ char* Sim::State(unsigned int which)
 #endif
 
   for(unsigned int i=0; i<dim-1; i++) {
-    sprintf(buffer, "%g ", d[i]);
+    snprintf(buffer, BUFFMAX, "%g ", d[i]);
     s.append(buffer);
   }
   
   /* do the same for the last d, and then close it off */
-  sprintf(buffer, "%g]", d[dim-1]);
+  snprintf(buffer, BUFFMAX, "%g]", d[dim-1]);
 
   s.append(buffer);
 
 #ifdef PRINTNUG
   /* print the nugget */
-  sprintf(buffer, ", g=%g)", nug);
+  snprintf(buffer, BUFFMAX, ", g=%g)", nug);
   s.append(buffer);
 #endif
   
@@ -603,7 +603,7 @@ char** Sim::TraceNames(unsigned int* len)
   /* copy the d-vector of range parameters */
   for(unsigned int i=0; i<dim; i++) {
     trace[1+i] = (char*) malloc(sizeof(char) * (3 + (dim)/10 + 1));
-    sprintf(trace[1+i], "d%d", i+1);
+    snprintf(trace[1+i], (3 + (dim)/10 + 1), "d%d", i+1);
   }
 
   /* determinant of K */
@@ -1174,13 +1174,13 @@ char** Sim_Prior::TraceNames(unsigned int* len)
 
   for(unsigned int i=0,j=0; i<dim; i++, j+=4) {
     trace[j] = (char*) malloc(sizeof(char) * (5+(dim)/10 + 1));
-    sprintf(trace[j], "d%d.a0", i);
+    snprintf(trace[j], (5+(dim)/10 + 1), "d%d.a0", i);
     trace[j+1] = (char*) malloc(sizeof(char) * (5+(dim)/10 + 1));
-    sprintf(trace[j+1], "d%d.g0", i);
+    snprintf(trace[j+1], (5+(dim)/10 + 1), "d%d.g0", i);
     trace[j+2] = (char*) malloc(sizeof(char) * (5+(dim)/10 + 1));
-    sprintf(trace[j+2], "d%d.a1", i);
+    snprintf(trace[j+2], (5+(dim)/10 + 1), "d%d.a1", i);
     trace[j+3] = (char*) malloc(sizeof(char) * (5+(dim)/10 + 1));
-    sprintf(trace[j+3], "d%d.g1", i);
+    snprintf(trace[j+3], (5+(dim)/10 + 1), "d%d.g1", i);
   }
 
   /* then copy in the nug trace */

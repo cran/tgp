@@ -914,7 +914,7 @@ char** Gp::TraceNames(unsigned int* len, bool full)
   /* then copy beta */
   for(unsigned int i=0; i<col; i++) {
     trace[3+i] = (char*) malloc(sizeof(char) * (5+col/10+1));
-    sprintf(trace[3+i], "beta%d", i);
+    snprintf(trace[3+i], (5+col/10+1), "beta%d", i);
   }
 
   /* add in bmu and Vb when full=TRUE */
@@ -923,14 +923,14 @@ char** Gp::TraceNames(unsigned int* len, bool full)
     /* bmu */
     for(unsigned int i=0; i<col; i++) {
       trace[3+col+i] = (char*) malloc(sizeof(char) * (4+col/10+1));
-      sprintf(trace[3+col+i], "bmu%d", i);
+      snprintf(trace[3+col+i], (4+col/10+1), "bmu%d", i);
     }
 
     /* Vb */
     for(unsigned int i=0; i<col; i++) {
       for(unsigned int j=0; j<col; j++) {
-	trace[3+2*col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
-	sprintf(trace[3+2*col+ col*i +j], "Vb%d.%d", i, j);
+	      trace[3+2*col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
+	      snprintf(trace[3+2*col+ col*i +j], (4+2*(col/10+1)), "Vb%d.%d", i, j);
       }
     }
   }
@@ -2048,15 +2048,15 @@ char** Gp_Prior::TraceNames(unsigned int* len, bool full)
   /* then copy beta */
   for(unsigned int i=0; i<col; i++) {
     trace[4+i] = (char*) malloc(sizeof(char) * (5+col/10 + 1));
-    sprintf(trace[4+i], "beta%d", i);
+    snprintf(trace[4+i], (5+col/10 + 1), "beta%d", i);
   }
 
   /* if full=TRUE, then add in Ti */  
   if(full) {
     for(unsigned int i=0; i<col; i++) {
       for(unsigned int j=0; j<col; j++) {
-	trace[4+col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
-	sprintf(trace[4+col+ col*i +j], "Ti%d.%d", i, j);
+	      trace[4+col+ col*i +j] = (char*) malloc(sizeof(char) * (4+2*(col/10+1)));
+	      snprintf(trace[4+col+ col*i +j], (4+2*(col/10+1)), "Ti%d.%d", i, j);
       }
     }
   }

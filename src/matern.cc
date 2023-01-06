@@ -446,11 +446,11 @@ char* Matern::State(unsigned int which)
 #else
   string s = "";
 #endif
-  if(linear) sprintf(buffer, "0(%g)", d);
-  else sprintf(buffer, "%g", d);
+  if(linear) snprintf(buffer, BUFFMAX, "0(%g)", d);
+  else snprintf(buffer, BUFFMAX, "%g", d);
   s.append(buffer);
 #ifdef PRINTNUG
-  sprintf(buffer, ", g=%g)", nug);
+  snprintf(buffer, BUFFMAX, ", g=%g)", nug);
   s.append(buffer);
 #endif
   

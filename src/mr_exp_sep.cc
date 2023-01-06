@@ -904,31 +904,31 @@ char* MrExpSep::State(unsigned int which)
 
   /* if linear, then just put a zero and be done;
      otherwise, print the col d-values */  
-  if(linear) sprintf(buffer, "0]");
+  if(linear) snprintf(buffer, BUFFMAX, "0]");
   else {
     for(unsigned int i=0; i<(2*dim-1); i++) {
 
       /* if this dimension is under the LLM, then show 
 	 d_eff (which should be zero) / d */
-      if(b[i] == 0.0) sprintf(buffer, "%g/%g ", d_eff[i], d[i]);
-      else sprintf(buffer, "%g ", d[i]);
+      if(b[i] == 0.0) snprintf(buffer, BUFFMAX, "%g/%g ", d_eff[i], d[i]);
+      else snprintf(buffer, BUFFMAX, "%g ", d[i]);
       s.append(buffer);
     }
 
     /* do the same for the last d, and then close it off */
-    if(b[dim*2-1] == 0.0) sprintf(buffer, "%g/%g],", d_eff[dim*2-1], d[dim*2-1]);
-    else sprintf(buffer, "%g],", d[dim*2-1]);
+    if(b[dim*2-1] == 0.0) snprintf(buffer, BUFFMAX, "%g/%g],", d_eff[dim*2-1], d[dim*2-1]);
+    else snprintf(buffer, BUFFMAX, "%g],", d[dim*2-1]);
   }
   s.append(buffer);
 
   /* print the nugget coarse and fine */
-  sprintf(buffer, " g=[%g", nug);
+  snprintf(buffer, BUFFMAX, " g=[%g", nug);
   s.append(buffer);
-  sprintf(buffer, " %g]", nugaux);
+  snprintf(buffer, BUFFMAX, " %g]", nugaux);
   s.append(buffer);
   
   /* print the delta parameter */
-  sprintf(buffer, ", delta=%g)", delta);
+  snprintf(buffer, BUFFMAX, ", delta=%g)", delta);
   s.append(buffer); 
   
   /* copy the string to an allocaated char* */
@@ -1059,13 +1059,13 @@ char** MrExpSep::TraceNames(unsigned int* len)
   /* copy the d-vector of range parameters */
   for(unsigned int i=0; i<2*dim; i++) {
     trace[3+i] = (char*) malloc(sizeof(char) * (3 + (dim)/10 + 1));
-    sprintf(trace[3+i], "d%d", i+1);
+    snprintf(trace[3+i], (3 + (dim)/10 + 1), "d%d", i+1);
   }
 
   /* copy the booleans */
   for(unsigned int i=0; i<dim; i++) {
     trace[3+2*dim+i] = (char*) malloc(sizeof(char) * (3 + (dim) + 1));
-    sprintf(trace[3+2*dim+i], "b%d", i+1);
+    snprintf(trace[3+2*dim+i], (3 + (dim) + 1), "b%d", i+1);
   }
 
   /* determinant of K */
@@ -1791,13 +1791,13 @@ char** MrExpSep_Prior::TraceNames(unsigned int* len)
 
   for(unsigned int i=0,j=0; i<2*dim; i++, j+=4) {
     trace[j] = (char*) malloc(sizeof(char) * (5+dim));
-    sprintf(trace[j], "d%d.a0", i);
+    snprintf(trace[j], (5+dim), "d%d.a0", i);
     trace[j+1] = (char*) malloc(sizeof(char) * (5+dim));
-    sprintf(trace[j+1], "d%d.g0", i);
+    snprintf(trace[j+1], (5+dim), "d%d.g0", i);
     trace[j+2] = (char*) malloc(sizeof(char) * (5+dim));
-    sprintf(trace[j+2], "d%d.a1", i);
+    snprintf(trace[j+2], (5+dim), "d%d.a1", i);
     trace[j+3] = (char*) malloc(sizeof(char) * (5+dim));
-    sprintf(trace[j+3], "d%d.g1", i);
+    snprintf(trace[j+3], (5+dim), "d%d.g1", i);
   }
 
   /* then copy in the nug trace */

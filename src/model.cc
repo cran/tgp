@@ -1147,6 +1147,7 @@ void Model::consumer_start(void)
   int success;
   for(unsigned int i=0; i<NUMTHREADS; i++) {
     success = pthread_create(consumer[i], NULL, predict_consumer_c, (void*) this);
+    if(!success) error("could not create pthread");
     assert(success == 0);
   }
 #else
@@ -1367,7 +1368,7 @@ double Model::Partitions(void)
 FILE* Model::OpenFile(const char *prefix, const char *type)
 {
   char outfile_str[BUFFMAX];
-  sprintf(outfile_str, "%s_%s_%d.out", prefix, type, Id+1);
+  snprintf(outfile_str, BUFFMAX, "%s_%s_%d.out", prefix, type, Id+1);
   FILE* OFILE = fopen(outfile_str, "w");
   assert(OFILE);
   return OFILE;
@@ -1515,7 +1516,7 @@ void Model::PrintPosteriors(void)
   char filestr[MEDBUFF];
 
   /* open a file to write the posterior information to */
-  sprintf(filestr, "tree_m%d_posts.out", Id);
+  snprintf(filestr, BUFFMAX, "tree_m%d_posts.out", Id);
   FILE *postsfile = fopen(filestr, "w");
   MYprintf(postsfile, "height lpost ");
   PriorTraceNames(postsfile, true);
@@ -1528,7 +1529,7 @@ void Model::PrintPosteriors(void)
     if(posteriors->trees[i] == NULL) continue;
 
     /* open a file to write the tree to */
-    sprintf(filestr, "tree_m%d_%d.out", Id, i+1);
+    snprintf(filestr, BUFFMAX, "tree_m%d_%d.out", Id, i+1);
     FILE *treefile = fopen(filestr, "w");
 
     /* add maptree-relevant headers */

@@ -447,11 +447,11 @@ char* Twovar::State(unsigned int which)
   string s = "";
   if(which == 0) s.append("d=");
 #endif
-  if(linear) sprintf(buffer, "0(%g)", d);
-  else sprintf(buffer, "%g", d);
+  if(linear) snprintf(buffer, BUFFMAX, "0(%g)", d);
+  else snprintf(buffer, BUFFMAX, "%g", d);
   s.append(buffer);
 #ifdef PRINTNUG
-  sprintf(buffer, ", g=%g)", nug);
+  snprintf(buffer, BUFFMAX, ", g=%g)", nug);
   s.append(buffer);
 #endif
   
