@@ -1,3 +1,10 @@
+2.4-22 (27 Nov 2023)
+------
+
+fixed double from int in printf for Kurt, and updated
+citation format
+
+
 2.4-21 (06 Jan 2023)
 ------
 

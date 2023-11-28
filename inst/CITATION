@@ -1,8 +1,6 @@
-citHeader("To cite tgp in publications use:")
-
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
   title        = "{tgp}: An {R} Package for Bayesian Nonstationary, Semiparametric Nonlinear Regression and Design by Treed Gaussian Process Models",
-  author       = personList(as.person("Robert B. Gramacy")),
+  author       = c(person(given="Robert B.", family="Gramacy")),
   journal      = "Journal of Statistical Software",
   year         = "2007",
   volume       = "19",
@@ -18,10 +16,10 @@ citEntry(entry = "Article",
         "URL https://www.jstatsoft.org/v19/i09/.")
 )
 
-citEntry(entry = "Article",
+bibentry(bibtype = "Article",
   title        = "Categorical Inputs, Sensitivity Analysis, Optimization and Importance Tempering with {tgp} Version 2, an {R} Package for Treed Gaussian Process Models",
-  author       = personList(as.person("Robert B. Gramacy"),
-                   as.person("Matthew Taddy")),
+  author       = c(person(given="Robert B.", family="Gramacy"),
+                   person(given="Matthew", family="Taddy")),
   journal      = "Journal of Statistical Software",
   year         = "2010",
   volume       = "33",

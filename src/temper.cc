@@ -638,7 +638,7 @@ void Temper::EachESS(double *w, double *itemp, unsigned int wlen, double *essd)
 double Temper::LambdaST(double *w, double *itemp, unsigned int wlen, unsigned int verb)
 {
   /* ST not doable */
-  if(itemps[0] != 1.0) warning("itemps[0]=%d != 1.0", itemps[0]);
+  if(itemps[0] != 1.0) warning("itemps[0]=%g != 1.0", itemps[0]);
 
   /* get the weights at the i-th temperature */
   unsigned int len;
