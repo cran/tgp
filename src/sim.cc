@@ -21,10 +21,10 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 extern "C"
 {
-#include "rhelp.h"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"

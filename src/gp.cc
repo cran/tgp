@@ -21,11 +21,11 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 extern "C" 
 {
 #include "matrix.h"
-#include "rhelp.h"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "predict.h"
@@ -352,7 +352,7 @@ bool Gp::Draw(void *state)
     if(success != -1) break;
   }
 
-  /* handle possible errors in corr->Draw() */
+  /* handle possible Rf_errors in corr->Draw() */
   if(success == -1) MYprintf(MYstderr, "NOTICE: max tree warnings (%d), ", i);
   else if(success == -2)  MYprintf(MYstderr, "NOTICE: mixing problem, ");
   if(success < 0) { MYprintf(MYstderr, "backup to model\n"); return false; }
@@ -435,7 +435,7 @@ void Gp::Predict(unsigned int n, double *zp, double *zpm, double *zpvm, double *
 
   
   /* print warnings if there were any */
-  if(warn) warning("(%d) from predict_full: n=%d, nn=%d", warn, n, nn);
+  if(warn) Rf_warning("(%d) from predict_full: n=%d, nn=%d", warn, n, nn);
 }
 
 
@@ -565,8 +565,8 @@ double Gp::MarginalLikelihood(double itemp)
 			       p->get_T(), tau2, p->s2Alpha(), p->s2Beta(), itemp);
   
 #ifdef DEBUG
-  if(ISNAN(post)) warning("nan in posterior");
-  if(!R_FINITE(post)) warning("inf in posterior");
+  if(ISNAN(post)) Rf_warning("nan in posterior");
+  if(!R_FINITE(post)) Rf_warning("inf in posterior");
 #endif
   return post;
 }
@@ -604,8 +604,8 @@ double Gp::Likelihood(double itemp)
   if(Kdiag) free(Kdiag);
 
 #ifdef DEBUG
-  if(ISNAN(llik)) warning("nan in likelihood");
-  if(!R_FINITE(llik)) warning("inf in likelihood");
+  if(ISNAN(llik)) Rf_warning("nan in likelihood");
+  if(!R_FINITE(llik)) Rf_warning("inf in likelihood");
 #endif
   return llik;
 }
@@ -825,7 +825,7 @@ void Gp::X_to_F(unsigned int n, double **X, double **F)
   case CONSTANT:
     for(i=0; i<n; i++) F[0][i] = 1;
     break;
-  default: error("bad mean function in X to F");
+  default: Rf_error("bad mean function in X to F");
   } 
 }
 
@@ -1006,7 +1006,7 @@ Gp_Prior::Gp_Prior(unsigned int d,  MEAN_FN mean_fn) : Base_Prior(d)
   switch(mean_fn) {
   case CONSTANT: col = 1; break;
   case LINEAR: col = d+1; break;
-  default: error("unrecognized mean function: %d", mean_fn);
+  default: Rf_error("unrecognized mean function: %d", mean_fn);
   }
 
   /* regression coefficients */
@@ -1208,7 +1208,7 @@ void Gp_Prior::read_double(double * dparams)
   case 3: beta_prior=B0NOT; /* MYprintf(MYstdout, "linear prior: cart\n"); */ break;
   case 4: beta_prior=BMZT; /* MYprintf(MYstdout, "linear prior: b0 fixed with free tau2\n"); */ break;
   case 5: beta_prior=BMZNOT; /* MYprintf(MYstdout, "linear prior: b0 fixed with fixed tau2\n"); */ break;
-  default: error("bad linear prior model %d", (int)dparams[0]); break;
+  default: Rf_error("bad linear prior model %d", (int)dparams[0]); break;
   }
   
   /* must properly initialize T, based on beta_prior */
@@ -1292,7 +1292,7 @@ void Gp_Prior::read_double(double * dparams)
   case 5: corr_prior = new Twovar_Prior(d);
       //MYprintf(MYstdout, "correlation: sim power exponential\n");
     break;
-  default: error("bad corr model %d", (int)dparams[0]);
+  default: Rf_error("bad corr model %d", (int)dparams[0]);
   }
 
   /* set the gp_prior for this corr_prior */
@@ -1317,9 +1317,9 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
   /* later we will just enforce this inside the C code, rather than reading
      col through the control file */
   if(mean_fn == LINEAR && col != d+1) 
-    error("col should be d+1 for linear mean function");
+    Rf_error("col should be d+1 for linear mean function");
   else if(mean_fn == CONSTANT && col != 1)
-    error("col should be 1 for constant mean function");
+    Rf_error("col should be 1 for constant mean function");
 
   /* read the beta prior model */
   /* B0, BMLE (Emperical Bayes), BFLAT, or B0NOT, BMZT, BMZNOT */
@@ -1343,7 +1343,7 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
     beta_prior = B0;
     MYprintf(MYstdout, "beta prior: b0 hierarchical \n");
   } else {
-    error("%s is not a valid beta prior", strtok(line, "\t\n#"));
+    Rf_error("%s is not a valid beta prior", strtok(line, "\t\n#"));
   }
 
   /* must properly initialize T, based on beta_prior */
@@ -1427,7 +1427,7 @@ void Gp_Prior::read_ctrlfile(ifstream *ctrlfile)
     corr_prior = new Twovar_Prior(d);
     // MYprintf(MYstdout, "correlation: twovar linear\n");
   } else {
-    error("%s is not a valid correlation model", strtok(line, "\t\n#"));
+    Rf_error("%s is not a valid correlation model", strtok(line, "\t\n#"));
   }
 
   /* set the gp_prior for this corr_prior */
@@ -1509,7 +1509,7 @@ void Gp_Prior::read_beta(char *line)
   for(unsigned int i=1; i<col; i++) {
     char *l = strtok(NULL, " \t\n#");
     if(!l) {
-      error("not enough beta coefficients (%d)\n, there should be (%d)", 
+      Rf_error("not enough beta coefficients (%d)\n, there should be (%d)", 
 	    i+1, col);
     }
     b[i] = atof(l);
@@ -1693,7 +1693,7 @@ void Gp_Prior::Print(FILE* outfile)
   case LINEAR: MYprintf(MYstdout, "mean function: linear\n"); break;
   case CONSTANT: MYprintf(MYstdout, "mean function: constant\n"); break;
   case TWOLEVEL: MYprintf(MYstdout, "mean function: two-level\n"); break;
-  default: error("mean function not recognized");  break;
+  default: Rf_error("mean function not recognized");  break;
   }
   /* beta prior */
   switch (beta_prior) {
@@ -1703,7 +1703,7 @@ void Gp_Prior::Print(FILE* outfile)
   case B0NOT: MYprintf(MYstdout, "beta prior: cart\n"); break;
   case BMZT: MYprintf(MYstdout, "beta prior: b0 fixed with free tau2\n"); break;
   case BMZNOT: MYprintf(MYstdout, "beta prior: b0 fixed with fixed tau2\n"); break;
-  default: error("beta prior not supported");  break;
+  default: Rf_error("beta prior not supported");  break;
   }
 
   /* beta */

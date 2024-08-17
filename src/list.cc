@@ -21,10 +21,10 @@
  *
  ********************************************************************************/
 
-extern "C"
-{
+//extern "C"
+//{
 #include "rhelp.h"
-}
+//}
 #include "list.h"
 #include <stdlib.h>
 #include <string.h>
@@ -110,7 +110,7 @@ List::List(void)
 List::~List(void)
 {
 	curr = first;
-	if(curr) warning("nonempty list deleted");
+	if(curr) Rf_warning("nonempty list deleted");
 	while(curr) {
 		LNode* temp = curr;
 		curr = curr->next;

@@ -21,6 +21,7 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 #include <Rmath.h>
 #include <R.h>
@@ -32,7 +33,6 @@ extern "C"
 #include "rand_draws.h"
 #include "rand_pdf.h"
 #include "gen_covar.h"
-#include "rhelp.h"
 }
 #include "model.h"
 #include <stdlib.h>
@@ -67,7 +67,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
 #ifdef PARALLEL 
   parallel = true;
   if(RNG == CRAN && NUMTHREADS > 1)
-    warning("using thread unsafe unif_rand() with pthreads");
+    Rf_warning("using thread unsafe unif_rand() with pthreads");
 #else
   parallel = false;
 #endif
@@ -89,7 +89,7 @@ Model::Model(Params* params, unsigned int d, double** rect, int Id, bool trace,
 
   /* asynchronous writing to files by multiple threads is problematic */
   if(trace && parallel) 
-      warning("traces in parallel version of tgp not recommended\n");
+      Rf_warning("traces in parallel version of tgp not recommended\n");
   
   /* initialize tree operation statistics */
   swap = prune = change = grow = swap_try = change_try = grow_try = prune_try = 0;
@@ -469,7 +469,7 @@ bool Model::modify_tree(void *state)
   case 2: /* prune */ return prune_tree(state);
   case 3: /* change */ return change_tree(state);
   case 4: /* swap */ return swap_tree(state);
-  default: error("action %d not supported", action);
+  default: Rf_error("action %d not supported", action);
   }
 
   /* should not reach here */
@@ -925,7 +925,7 @@ void Model::close_parallel_preds(void)
   delete PP; PP = NULL;
 
 #else
-  error("close_parallel_preds: not compiled for pthreads");
+  Rf_error("close_parallel_preds: not compiled for pthreads");
 #endif
 }
 
@@ -961,7 +961,7 @@ void Model::init_parallel_preds(void)
   num_consumed = num_produced = 0;
   
 #else
-  error("init_parallel_preds: not compiled for pthreads\n");
+  Rf_error("init_parallel_preds: not compiled for pthreads\n");
 #endif
 }
 
@@ -984,7 +984,7 @@ void Model::predict_producer(Tree *leaf, Preds *preds, int index, bool dnorm)
   num_produced++;
   PP->EnQueue((void*) largs);
 #else
-  error("predict_producer: not compiled for pthreads");
+  Rf_error("predict_producer: not compiled for pthreads");
 #endif
 }
 
@@ -1010,7 +1010,7 @@ void Model::produce(void)
   pthread_mutex_unlock(l_mut);
   pthread_cond_signal(l_cond_nonempty);
 #else
-  error("produce: not compiled for pthreads");
+  Rf_error("produce: not compiled for pthreads");
 #endif
 }
 
@@ -1090,7 +1090,7 @@ void Model::predict_consumer(void)
   }
   
 #else
-  error("predict_consumer: not compiled for pthreads");
+  Rf_error("predict_consumer: not compiled for pthreads");
 #endif
 }
 
@@ -1130,7 +1130,7 @@ void Model::consumer_finish(void)
     pthread_join(*consumer[i], NULL);
   }
 #else
-  error("consumer_finish: not compiled for pthreads");
+  Rf_error("consumer_finish: not compiled for pthreads");
 #endif
 }
 
@@ -1147,11 +1147,11 @@ void Model::consumer_start(void)
   int success;
   for(unsigned int i=0; i<NUMTHREADS; i++) {
     success = pthread_create(consumer[i], NULL, predict_consumer_c, (void*) this);
-    if(!success) error("could not create pthread");
+    if(!success) Rf_error("could not create pthread");
     assert(success == 0);
   }
 #else
-  error("consumer_start: not compiled for pthreads");
+  Rf_error("consumer_start: not compiled for pthreads");
 #endif
 }
 
@@ -1186,7 +1186,7 @@ void Model::wrap_up_predictions(void)
   pthread_mutex_unlock(l_mut);
   num_consumed = num_produced = 0;
 #else
-  error("wrap_up_predictions: not compiled for pthreads");
+  Rf_error("wrap_up_predictions: not compiled for pthreads");
 #endif
 }
 
@@ -1251,7 +1251,7 @@ void Model::PrintBestPartitions()
   FILE *BESTPARTS;
   Tree *maxt = maxPosteriors();
   if(!maxt) {
-    warning("not enough MCMC rounds for MAP tree, using current");
+    Rf_warning("not enough MCMC rounds for MAP tree, using current");
     maxt = t;
   }
   assert(maxt);

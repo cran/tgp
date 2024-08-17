@@ -25,10 +25,10 @@
 #ifndef __BASE_H__
 #define __BASE_H__
 
-extern "C"
-{
+//extern "C"
+//{
 #include "rhelp.h"
-}
+//}
 #include <fstream>
 using namespace std;
 

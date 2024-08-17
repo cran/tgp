@@ -25,8 +25,17 @@ extern FILE *MYstdout, *MYstderr;
 #endif
 
 // void R_FlushConsole(void); /* R < 2.3 does not have this in R.h (in Rinterface.h) */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    void MYflush(FILE *outfile);
 void MYprintf(FILE *outfile, const char *str, ...);
-void MYflush(FILE *outfile);
 time_t MY_r_process_events(time_t itime);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

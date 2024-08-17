@@ -21,11 +21,11 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 extern "C" 
 {
 #include "matrix.h"
-#include "rhelp.h"
 }
 #include "params.h"
 #include "gp.h"
@@ -128,7 +128,7 @@ void Params::read_double(double *dparams)
   switch (mf) {
   case 0: mean_fn=LINEAR; /* MYprintf(MYstdout, "linear mean\n"); */ break;
   case 1: mean_fn=CONSTANT;/*  MYprintf(MYstdout, "constant mean\n");*/  break;
-  default: error("bad mean function %d", (int)dparams[5]); break;
+  default: Rf_error("bad mean function %d", (int)dparams[5]); break;
   }
 
   prior = new Gp_Prior(/*d*/ t_basemax,  mean_fn);
@@ -171,7 +171,7 @@ void Params::read_ctrlfile(ifstream* ctrlfile)
     mean_fn = CONSTANT;
     MYprintf(MYstdout, "mean function: constant\n");
   } else {
-    error("%s is not a valid mean function", strtok(line, "\t\n#"));
+    Rf_error("%s is not a valid mean function", strtok(line, "\t\n#"));
   }
 
   /* This will be needed for MrTgp */

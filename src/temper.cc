@@ -119,7 +119,7 @@ Temper::Temper(double *ditemps)
   case 1: it_lambda = OPT; break;
   case 2: it_lambda = NAIVE; break;
   case 3: it_lambda = ST; break;
-  default: error("IT lambda = %d unknown\n", dlambda);
+  default: Rf_error("IT lambda = %d unknown\n", dlambda);
   }
 
   /* init itemp-location pointer -- find closest to 1.0 */
@@ -267,7 +267,7 @@ double Temper::Propose(double *q_fwd, double *q_bak, void *state)
 {
   /* sanity check */
   if(knew != -1)
-    warning("did not accept or reject last proposed itemp");
+    Rf_warning("did not accept or reject last proposed itemp");
   
   if(k == 0) {
     
@@ -638,7 +638,7 @@ void Temper::EachESS(double *w, double *itemp, unsigned int wlen, double *essd)
 double Temper::LambdaST(double *w, double *itemp, unsigned int wlen, unsigned int verb)
 {
   /* ST not doable */
-  if(itemps[0] != 1.0) warning("itemps[0]=%g != 1.0", itemps[0]);
+  if(itemps[0] != 1.0) Rf_warning("itemps[0]=%g != 1.0", itemps[0]);
 
   /* get the weights at the i-th temperature */
   unsigned int len;
@@ -851,7 +851,7 @@ double Temper::LambdaIT(double *w, double *itemp, unsigned int R, double *essd,
   case OPT: ess = LambdaOpt(w, itemp, R, essd, verb); break;
   case NAIVE: ess = LambdaNaive(w, R, verb); EachESS(w, itemp, R, essd); break;
   case ST: ess = LambdaST(w, itemp, R, verb); EachESS(w, itemp, R, essd); break;
-  default: error("bad it_lambda\n");
+  default: Rf_error("bad it_lambda\n");
   }
 
   return ess;
@@ -926,7 +926,7 @@ double calc_ess(double *w, unsigned int n)
   else {
     double cv2 = calc_cv2(w,n);
     if(ISNAN(cv2) || !R_FINITE(cv2)) {
-      // warning("nan or inf found in cv2, probably due to zero weights");
+      // Rf_warning("nan or inf found in cv2, probably due to zero weights");
       return 0.0;
     } else return(1.0/(1.0+cv2));
   }

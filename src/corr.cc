@@ -21,6 +21,7 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 extern "C"
 {
@@ -29,7 +30,6 @@ extern "C"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "rand_pdf.h"
-#include "rhelp.h"
 }
 #include "corr.h"
 #include "params.h"

@@ -245,7 +245,7 @@ unsigned int Tree::add_XX(double **X_pred, unsigned int n_pred, unsigned int d_p
   /* do not recompute XX if it has already been computed */
   if(XX) { 
     assert(pp); 
-    warning("failed add_XX in leaf");
+    Rf_warning("failed add_XX in leaf");
     return 0; 
   }
   
@@ -385,7 +385,7 @@ void Tree::Predict(double *Zp, double *Zpm, double *Zpvm, double *Zps2, double *
 		   double *ZZm, double *ZZvm, double *ZZs2, double *Ds2x, double *Improv, 
 		   double Zmin, unsigned int wZmin, bool err, void *state)
 {
-  if(!n) warning("n = %d\n", n);
+  if(!n) Rf_warning("n = %d\n", n);
   assert(isLeaf() && n);
   if(Zp == NULL && nn == 0) return;
 

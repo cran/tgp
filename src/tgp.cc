@@ -21,12 +21,12 @@
  *
  ********************************************************************************/
 
+#include "rhelp.h"
 
 extern "C"
 {
 #include "matrix.h"
 #include "rand_draws.h"  
-#include "rhelp.h"
 #include "predict.h"
 }
 #include "tgp.h"
@@ -392,7 +392,7 @@ void Tgp::Rounds(void)
 void Tgp::Predict(void)
 {
   /* don't need multiple rounds R when just kriging */
-  if(R > 1) warning("R=%d (>0) not necessary for Kriging", R);
+  if(R > 1) Rf_warning("R=%d (>0) not necessary for Kriging", R);
 
   for(unsigned int i=0; i<R; i++) {
 

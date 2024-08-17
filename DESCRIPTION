@@ -1,7 +1,7 @@
 Package: tgp
 Title: Bayesian Treed Gaussian Process Models
-Version: 2.4-22
-Date: 2023-11-27
+Version: 2.4-22.1
+Date: 2024-08-27
 Author: Robert B. Gramacy <rbg@vt.edu> and Matt A. Taddy
 Depends: R (>= 2.14.0)
 Imports: maptree
@@ -23,6 +23,6 @@ Maintainer: Robert B. Gramacy  <rbg@vt.edu>
 License: LGPL
 URL: https://bobby.gramacy.com/r_packages/tgp/
 NeedsCompilation: yes
-Packaged: 2023-11-27 20:54:05 UTC; bobby
+Packaged: 2024-08-17 10:40:09 UTC; ripley
 Repository: CRAN
-Date/Publication: 2023-11-28 16:40:02 UTC
+Date/Publication: 2024-08-17 14:45:48 UTC
