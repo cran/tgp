@@ -21,7 +21,6 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
 extern "C"
 {
@@ -31,15 +30,16 @@ extern "C"
 #include "rand_pdf.h"
 #include "all_draws.h"
 #include "gen_covar.h"
+#include "rhelp.h"
 }
 #include "corr.h"
 #include "params.h"
 #include "model.h"
 #include "matern.h"
-#include <math.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 #include <Rmath.h>
 #include <string>
 #include <fstream>
@@ -78,7 +78,7 @@ Matern::Matern(unsigned int dim, Base_Prior *base_prior)
 
   /* allocate vector for K_bessel */
   nb = (long) floor(nu)+1;
-  bk = new_vector(nb);
+  bk = new_vector((unsigned) nb);
 
   /* set up stuff for the range parameter */
   d = ((Matern_Prior*) prior)->D();
@@ -104,10 +104,10 @@ Corr& Matern::operator=(const Corr &c)
   nu = e->nu;
 
   /* allocate a new bk if nb has changed */
-  if(floor(nu)+1 != nb) {
+  if(((long) floor(nu) + 1)  != nb) {
     free(bk);
     nb = (long) floor(nu)+1;
-    bk = new_vector(nb);
+    bk = new_vector((unsigned) nb);
   }
 
   /* copy "global" correllation stuff */

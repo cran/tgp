@@ -23,7 +23,7 @@
 
 
 #include "rhelp.h"
-
+#include <R_ext/Error.h> 
 #include "matrix.h"
 #include <assert.h>
 #include <math.h>
@@ -1086,7 +1086,7 @@ void quantiles(double *qs, double *q, unsigned int m, double *v,
     if(w == NULL) {
       
       /* calculate the index-position of the quantile */
-      k = (unsigned int) n*q[j];
+      k = (unsigned int) floor(n*q[j]);
       qs[j] = quick_select(v, n, k);
 
     } else { /* else using sorting method */
@@ -1152,8 +1152,8 @@ double* dseq(double from, double to, double by)
   
   by = fabs(by);
   
-  if(from <= to) n = (unsigned int) (to - from)/fabs(by) + 1;
-  else n = (unsigned int) (from - to)/fabs(by) + 1;
+  if(from <= to) n = (unsigned int) floor((to - from)/fabs(by)) + 1;
+  else n = (unsigned int) floor((from - to)/fabs(by)) + 1;
   
   if( n == 0 ) return NULL;
   
@@ -1190,7 +1190,7 @@ int* iseq(double from, double to)
   if(n == 0) return NULL;
   
   s = new_ivector(n);
-  s[0] = from;
+  s[0] = (int) from;
   for(i=1; i<n; i++) {
     s[i] = s[i-1] + by;
   }

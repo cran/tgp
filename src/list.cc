@@ -21,14 +21,15 @@
  *
  ********************************************************************************/
 
-//extern "C"
-//{
+#include <R_ext/Error.h>
+extern "C"
+{
 #include "rhelp.h"
-//}
+}
 #include "list.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
 
 /*

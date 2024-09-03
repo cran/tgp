@@ -21,7 +21,6 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
 #include <Rmath.h>
 #include <R.h>
@@ -33,13 +32,14 @@ extern "C"
 #include "rand_draws.h"
 #include "rand_pdf.h"
 #include "gen_covar.h"
+#include "rhelp.h"
 }
 #include "model.h"
-#include <stdlib.h>
-#include <assert.h>
-#include <unistd.h>
-#include <math.h>
-#include <time.h>
+#include <cstdlib>
+#include <cassert>
+// #include <unistd.h>
+#include <cmath>
+#include <ctime>
 
 #define DNORM true
 #define MEDBUFF 256

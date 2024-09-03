@@ -29,9 +29,9 @@ extern "C" {
 }
 #include "mstructs.h"
 #include "temper.h"
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
+#include <cstdlib>
+#include <cassert>
+#include <cmath>
 
 #define MEDBUFF 256
 

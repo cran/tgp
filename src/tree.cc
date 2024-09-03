@@ -39,9 +39,9 @@ extern "C"
 #include "base.h"
 #include "model.h"
 #include "params.h"
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
+#include <cstdlib>
+#include <cassert>
+#include <cmath>
 
 // #define DEBUG
 #define CPRUNEOP
@@ -1139,22 +1139,22 @@ double Tree::propose_val(void *state)
 double Tree::leavesPosterior(void)
 {
   Tree *first, *last;
-  int numLeaves = leaves(&first, &last);
-  assert(numLeaves > 0);
+  /* int numLeaves = */ leaves(&first, &last);
+  // assert(numLeaves > 0);
   double p = 0;
   while(first) {
     p += first->Posterior();
     if(!R_FINITE(p)) break;
     first = first->next;
-    numLeaves--;
+    // numLeaves--;
   }
-  assert(numLeaves == 0);
+  // assert(numLeaves == 0);
   return p;
 }
 
 
 /*
- * MartinalLikelihood:
+ * MarginalLikelihood:
  *
  * check to make sure the model (e.g., GP) is up to date
  * -- has correct data size --, if not then Update it,
@@ -1183,15 +1183,15 @@ double Tree::Posterior(void)
 unsigned int Tree::leavesN(void)
 {
   Tree *first, *last;
-  int numLeaves = leaves(&first, &last);
-  assert(numLeaves > 0);
+  /* int numLeaves = */ leaves(&first, &last);
+  // assert(numLeaves > 0);
   unsigned int N = 0;
   while(first) {
     N += first->n;
     first = first->next;
-    numLeaves--;
+    // numLeaves--;
   }
-  assert(numLeaves == 0);
+  // assert(numLeaves == 0);
   return N;
 }
 

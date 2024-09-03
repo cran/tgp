@@ -67,10 +67,10 @@ void* newRNGstate(unsigned long s)
  }
  case ERAND: {
    unsigned short *state = (unsigned short*) new_uivector(3);
-   state[0] = s / 1000000;
+   state[0] = (unsigned short) (s / 1000000);
    s = s % 1000000;
-   state[1] = s / 1000;
-   state[2] = s % 1000;
+   state[1] = (unsigned short) (s / 1000);
+   state[2] = (unsigned short) (s % 1000);
    return (void*) state;
  }
  default:
@@ -90,9 +90,9 @@ void* newRNGstate_rand(void *s)
 {
   unsigned long lstate;
   int state[3];
-  state[0] = 100*runi(s);
-  state[1] = 100*runi(s);
-  state[2] = 100*runi(s);
+  state[0] = (unsigned short) (100*runi(s));
+  state[1] = (unsigned short) (100*runi(s));
+  state[2] = (unsigned short) (100*runi(s));
   lstate = three2lstate(state);
   return(newRNGstate(lstate));
 }

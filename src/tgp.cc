@@ -21,24 +21,25 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
+#include <R_ext/Error.h>
 extern "C"
 {
 #include "matrix.h"
 #include "rand_draws.h"  
+#include "rhelp.h"
 #include "predict.h"
 }
 #include "tgp.h"
 #include "model.h"
 #include "params.h"
 #include "mstructs.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 #include <fstream>
-#include <time.h>
-#include <math.h>
+#include <ctime>
+#include <cmath>
 
 extern "C"
 {
@@ -70,7 +71,7 @@ void tgp(int* state_in,
 {
 
   /* create the RNG state */
-  unsigned int lstate = three2lstate(state_in);
+  unsigned long lstate = three2lstate(state_in);
   tgp_state = newRNGstate(lstate);
 
   /* possibly create NULL pointers that couldn't be passed by .C -- not sure if all are needed */

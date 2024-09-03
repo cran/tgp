@@ -221,7 +221,7 @@ double rk_double(rk_state *state)
 {
 	/* shifts : 67108864 = 0x4000000, 9007199254740992 = 0x20000000000000 */
 	long a = rk_random(state) >> 5, b = rk_random(state) >> 6;
-	return (a * 67108864.0 + b) / 9007199254740992.0;
+	return (((double) a) * 67108864.0 + ((double) b)) / 9007199254740992.0;
 }
 
 void rk_fill(void *buffer, size_t size, rk_state *state)
@@ -250,7 +250,7 @@ rk_error rk_devfill(void *buffer, size_t size, int strong)
 {
 #ifndef _WIN32
 	FILE *rfile;
-	int done;
+	long unsigned int done;
 
 	if (strong)
 		rfile = fopen(RK_DEV_RANDOM, "rb");

@@ -21,19 +21,20 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
+#include <R_ext/Error.h>
 extern "C" 
 {
 #include "matrix.h"
+#include "rhelp.h"
 }
 #include "params.h"
 #include "gp.h"
-#include <stdlib.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cassert>
 #include <fstream>
 using namespace std;
-#include <string.h>
+#include <cstring>
 
 
 /*

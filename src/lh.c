@@ -22,6 +22,7 @@
  ********************************************************************************/
 
 
+#include <R_ext/Error.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>

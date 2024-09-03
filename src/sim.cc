@@ -21,10 +21,10 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
 extern "C"
 {
+#include "rhelp.h"
 #include "matrix.h"
 #include "lh.h"
 #include "rand_draws.h"
@@ -40,10 +40,10 @@ int linalg_dpotrf(int n, double **var);
 #include "params.h"
 #include "model.h"
 #include "sim.h"
-#include <math.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include <cmath>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 #include <string>
 #include <fstream>
 using namespace std;

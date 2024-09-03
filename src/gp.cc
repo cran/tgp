@@ -21,11 +21,11 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
-
+#include <R_ext/Error.h>
 extern "C" 
 {
 #include "matrix.h"
+#include "rhelp.h"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "predict.h"
@@ -46,11 +46,11 @@ extern "C"
 #include "gp.h"
 #include "base.h"
 
-#include <stdlib.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cassert>
 #include <fstream>
 using namespace std;
-#include <string.h>
+#include <cstring>
 
 
 class Gp_Prior;
@@ -352,7 +352,7 @@ bool Gp::Draw(void *state)
     if(success != -1) break;
   }
 
-  /* handle possible Rf_errors in corr->Draw() */
+  /* handle possible errors in corr->Draw() */
   if(success == -1) MYprintf(MYstderr, "NOTICE: max tree warnings (%d), ", i);
   else if(success == -2)  MYprintf(MYstderr, "NOTICE: mixing problem, ");
   if(success < 0) { MYprintf(MYstderr, "backup to model\n"); return false; }

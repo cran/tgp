@@ -21,7 +21,6 @@
  *
  ********************************************************************************/
 
-#include "rhelp.h"
 
 extern "C"
 {
@@ -30,14 +29,15 @@ extern "C"
 #include "all_draws.h"
 #include "gen_covar.h"
 #include "rand_pdf.h"
+#include "rhelp.h"
 }
 #include "corr.h"
 #include "params.h"
 #include "model.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <math.h>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
+#include <cmath>
 #include <fstream>
 using namespace std;
 

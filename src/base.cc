@@ -25,9 +25,9 @@
 #include "base.h"
 #include "model.h"
 
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 
 //class GP_Prior;
 
